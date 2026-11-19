@@ -103,7 +103,6 @@ func _inicializar_navegacion_tabs() -> void:
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
-	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
 	var boton_garumis: Button = $Window/Margin/Column/TabButtons/Garumis
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
@@ -118,29 +117,26 @@ func _inicializar_navegacion_tabs() -> void:
 		tabs.current_tab = 1
 	)
 
-	boton_enciclopedia.pressed.connect(func() -> void:
-		tabs.current_tab = 2
-	)
 	boton_garumis.pressed.connect(func() -> void:
-		tabs.current_tab = 3
+		tabs.current_tab = 2
 		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
 		if pagina_garumis.has_method("abrir_en_garumis"):
 			pagina_garumis.call("abrir_en_garumis")
 	)
 	boton_mapa.pressed.connect(func() -> void:
-		tabs.current_tab = 4
+		tabs.current_tab = 3
 	)
 	boton_relaciones.pressed.connect(func() -> void:
-		tabs.current_tab = 5
+		tabs.current_tab = 4
 	)
 	boton_admin.pressed.connect(func() -> void:
-		tabs.current_tab = 6
+		tabs.current_tab = 5
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
 	)
 	boton_notas.pressed.connect(func() -> void:
-		tabs.current_tab = 7
+		tabs.current_tab = 6
 	)
 	boton_cerrar.pressed.connect(cerrar)
 
@@ -164,7 +160,7 @@ func _actualizar_visibilidad_tabs_descubrimiento(_dato = null) -> void:
 		and bool(GameState.call("ha_descubierto_criatura_o_garumi"))
 	)
 	var botones := $Window/Margin/Column/TabButtons
-	for nombre in ["Enciclopedia", "Garumis"]:
+	for nombre in ["Garumis"]:
 		var boton := botones.get_node_or_null(nombre) as Button
 		if is_instance_valid(boton):
 			boton.visible = desbloqueadas
@@ -174,7 +170,7 @@ func _actualizar_visibilidad_tabs_descubrimiento(_dato = null) -> void:
 	# inaccesible abierta.
 	if not desbloqueadas:
 		var tabs := $Window/Margin/Column/Tabs as TabContainer
-		if tabs.current_tab in [2, 3]:
+		if tabs.current_tab == 2:
 			tabs.current_tab = 0
 			$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
 
@@ -223,9 +219,16 @@ func configurar_mapa_zona(tipo_zona: String, zona: Node = null, contexto: WorldC
 
 
 func _configurar_relationships(relationship_system: RelationshipSystemService) -> void:
-	var relaciones: RelationshipsUI = $Window/Margin/Column/Tabs/Relaciones
-	if relationship_system != null:
-		relaciones.configurar(relationship_system)
+	var relaciones := get_node_or_null("Window/Margin/Column/Tabs/Relaciones") as Control
+	if not is_instance_valid(relaciones) or relationship_system == null:
+		return
+	# La escena carga relationships.gd como script adjunto a un Control.
+	# Evitar tiparlo con el class_name global aquí impide que una caché de
+	# clases de Godot convierta la referencia del nodo en un Script resource.
+	if relaciones.has_method("configurar"):
+		relaciones.call("configurar", relationship_system)
+	else:
+		push_warning("Inventario: la pestaña Relaciones no tiene el método configurar().")
 
 
 func _configurar_crafting() -> void:
@@ -374,7 +377,7 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _modo_historia and event is InputEventKey:
 		var tecla_historia := event as InputEventKey
-		if tecla_historia.pressed and not tecla_historia.echo and (tecla_historia.keycode == KEY_G or tecla_historia.physical_keycode == KEY_G or event.is_action_pressed("garumi_encyclopedia")):
+		if tecla_historia.pressed and not tecla_historia.echo and (tecla_historia.keycode == KEY_G or tecla_historia.physical_keycode == KEY_G or event.is_action_pressed("garumi_hub")):
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventKey:
@@ -386,8 +389,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if event.is_action_pressed("garumi_encyclopedia"):
-			toggle_enciclopedia_garumis()
+		if event.is_action_pressed("garumi_hub"):
+			toggle_garumi_hub()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("inventory"):
 			toggle()
@@ -402,7 +405,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
 	var botones := $Window/Margin/Column/TabButtons
-	for nombre in ["Crafteo", "Enciclopedia", "Garumis", "Mapa", "Relaciones", "Admin"]:
+	for nombre in ["Crafteo", "Garumis", "Mapa", "Relaciones", "Admin"]:
 		var boton := botones.get_node_or_null(nombre) as Button
 		if is_instance_valid(boton):
 			boton.visible = not activo
@@ -446,7 +449,7 @@ func _actualizar_admin_tab() -> void:
 		push_warning("Inventario: no se encontró la pestaña Admin; se omite su actualización.")
 		return
 	admin_tab.visible = es_admin and not _modo_historia
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
 		admin_tab.abrir(jugador)
@@ -467,23 +470,6 @@ func toggle() -> void:
 
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	if _abierto and tabs.current_tab == 4:
-		cerrar()
-		return
-	if not _abierto:
-		_abierto = true
-		visible = true
-		_notificar_estado_inventario_a_hogar(true)
-		_actualizar_admin_tab()
-	tabs.current_tab = 4
-	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
-	actualizar()
-
-
-func toggle_enciclopedia_garumis() -> void:
-	if not GameState.has_method("ha_descubierto_criatura_o_garumi") or not bool(GameState.call("ha_descubierto_criatura_o_garumi")):
-		return
-	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	if _abierto and tabs.current_tab == 3:
 		cerrar()
 		return
@@ -493,6 +479,23 @@ func toggle_enciclopedia_garumis() -> void:
 		_notificar_estado_inventario_a_hogar(true)
 		_actualizar_admin_tab()
 	tabs.current_tab = 3
+	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
+	actualizar()
+
+
+func toggle_garumi_hub() -> void:
+	if not GameState.has_method("ha_descubierto_criatura_o_garumi") or not bool(GameState.call("ha_descubierto_criatura_o_garumi")):
+		return
+	var tabs: TabContainer = $Window/Margin/Column/Tabs
+	if _abierto and tabs.current_tab == 2:
+		cerrar()
+		return
+	if not _abierto:
+		_abierto = true
+		visible = true
+		_notificar_estado_inventario_a_hogar(true)
+		_actualizar_admin_tab()
+	tabs.current_tab = 2
 	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
 	var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
 	if pagina_garumis.has_method("abrir_en_garumis"):
@@ -865,6 +868,10 @@ func _crear_slots_equipamiento() -> void:
 
 func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if objeto.is_empty():
+		return
+	var nombre_objeto := str(objeto.get("nombre", "")).strip_edges().to_lower()
+	if nombre_objeto.contains("espada") and not bool(GameState.world_state.flags.get("licencia_espadas", false)):
+		Events.notification_pushed.emit("Necesitas la licencia de espadas del Cuartel para equiparla.")
 		return
 	var source_index := _buscar_indice_objeto(objeto)
 	if source_index < 0:
@@ -1262,11 +1269,49 @@ func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
 func _al_usar_seleccionado() -> void:
 	if indice_seleccionado < 0 or _player == null or not is_instance_valid(_player):
 		return
+	# Las semillas se plantan desde el botón Usar del inventario. El bancal
+	# más cercano debe estar vacío y dentro del alcance del personaje.
+	var datos_uso := _enriquecer_datos_objeto(obtener_objeto(indice_seleccionado))
+	if _es_semilla_vivero(datos_uso):
+		if _intentar_plantar_semilla(datos_uso):
+			_refrescar_objeto_seleccionado()
+		return
 	# La acción desde el inventario es explícita y no debe quedar bloqueada
 	# por el GameplayInputGate que el propio menú mantiene activo.
-	var datos_uso := _enriquecer_datos_objeto(obtener_objeto(indice_seleccionado))
 	if inventory_controller.usar_objeto_desde_ui(indice_seleccionado, _player, datos_uso):
 		_refrescar_objeto_seleccionado()
+
+
+func _es_semilla_vivero(datos: Dictionary) -> bool:
+	var item_id := str(datos.get("item_id", datos.get("id", ""))).strip_edges()
+	return item_id in [
+		"b1000000-0000-4000-8000-000000000001",
+		"b1000000-0000-4000-8000-000000000002",
+		"b1000000-0000-4000-8000-000000000003"
+	]
+
+
+func _intentar_plantar_semilla(datos: Dictionary) -> bool:
+	var bancales := get_tree().get_nodes_in_group("interactable")
+	var candidatos: Array[Node] = []
+	for nodo in bancales:
+		if not is_instance_valid(nodo) or not nodo.has_method("plantar_semilla"):
+			continue
+		if not nodo is Node2D:
+			continue
+		if _player.global_position.distance_to((nodo as Node2D).global_position) <= 82.0:
+			candidatos.append(nodo)
+	candidatos.sort_custom(func(a: Node, b: Node) -> bool:
+		return _player.global_position.distance_squared_to((a as Node2D).global_position) < _player.global_position.distance_squared_to((b as Node2D).global_position)
+	)
+	for bancal in candidatos:
+		if bool(bancal.call("plantar_semilla", datos, self, indice_seleccionado, _player)):
+			return true
+	if candidatos.is_empty():
+		Events.notification_pushed.emit("Acércate a un bancal vacío del vivero para plantar.")
+	else:
+		Events.notification_pushed.emit("No hay bancales vacíos cerca.")
+	return false
 
 
 func _al_soltar_seleccionado() -> void:
@@ -1346,7 +1391,7 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	# Las partidas antiguas pueden guardar solo la identidad del objeto.
 	# Completar los campos de gameplay desde items_game permite que la UI y
 	# el consumo lean siempre las propiedades canónicas actuales.
-	for clave in ["nombre", "descripcion", "origen", "propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
+	for clave in ["nombre", "descripcion", "descripcion_detallada", "origen", "propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
 		if not canonico.has(clave):
 			continue
 		var valor_actual: Variant = resultado.get(clave, null)

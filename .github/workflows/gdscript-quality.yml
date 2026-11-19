@@ -1,0 +1,47 @@
+name: GDScript Quality (Advisory)
+
+on:
+  push:
+    branches: [main, "feat/npc-relational-memory-decay"]
+    paths:
+      - "scripts/**/*.gd"
+      - "tests/**/*.gd"
+      - ".github/workflows/gdscript-quality.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "scripts/**/*.gd"
+      - "tests/**/*.gd"
+      - ".github/workflows/gdscript-quality.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  gdscript-lint:
+    name: GDScript lint (non-blocking baseline)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install gdtoolkit
+        run: python -m pip install --disable-pip-version-check "gdtoolkit==4.5.0"
+
+      - name: Run gdlint (advisory)
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          gdlint scripts tests
+          status=$?
+          if [ "$status" -ne 0 ]; then
+            echo "::warning::gdlint found baseline or new GDScript style issues. This check is advisory until the existing codebase has been reviewed."
+          fi
+          exit "$status"

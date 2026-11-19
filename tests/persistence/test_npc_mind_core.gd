@@ -89,6 +89,24 @@ func _run() -> void:
 	if estado.get("aprendizaje", {}) != {}:
 		errores.append("Un personaje nuevo debe empezar sin preferencias aprendidas.")
 
+	# Supabase conserva autoridad sobre la identidad; la partida conserva
+	# las experiencias individuales al refrescar esos rasgos.
+	mind.registrar_personaje("perfil_actualizable", {"rasgos": {"sociabilidad": 20.0, "prudencia": 80.0}})
+	mind.registrar_resultado_actividad("perfil_actualizable", "leer", 0.8, "ocio", "2026:11:16")
+	var perfil_refrescado := mind.registrar_personaje(
+		"perfil_actualizable",
+		{"rasgos": {"sociabilidad": 75.0, "prudencia": 35.0}}
+	)
+	var rasgos_refrescados: Dictionary = perfil_refrescado.get("rasgos", {})
+	if not is_equal_approx(float(rasgos_refrescados.get("sociabilidad", 0.0)), 0.75):
+		errores.append("El perfil canónico no actualizó la sociabilidad tras cambiar en Supabase.")
+	if not is_equal_approx(float(rasgos_refrescados.get("prudencia", 0.0)), 0.35):
+		errores.append("El perfil canónico no actualizó la prudencia tras cambiar en Supabase.")
+	if not is_equal_approx(mind.obtener_preferencia_actividad("perfil_actualizable", "leer"), 0.2):
+		errores.append("Actualizar la identidad borró o alteró el aprendizaje acumulado.")
+	if mind.obtener_fuerza_habito("perfil_actualizable", "leer", "ocio") <= 0.0:
+		errores.append("Actualizar la identidad borró el hábito aprendido.")
+
 	mind.avanzar_tiempo("ivo", 2.0)
 	var tras_tiempo := mind.obtener_necesidades("ivo")
 	if float(tras_tiempo.get("descanso", 0.0)) <= 15.0:
@@ -215,6 +233,7 @@ func _run() -> void:
 	})
 	if float(actividad_objetivo.get("componentes", {}).get("objetivos", 0.0)) <= 0.0:
 		errores.append("Un objetivo activo no influyó en la evaluación de una actividad relacionada.")
+
 	if mind.obtener_objetivos_activos("ivo").size() != 1:
 		errores.append("El objetivo activo no se conservó.")
 	if not mind.completar_objetivo("ivo", "visitar_mara"):
@@ -243,8 +262,8 @@ func _run() -> void:
 		errores.append("El estado mental no sobrevivió a la recarga desde GameState.")
 
 	var cantidad_preferencias := (estado_recargado.get("aprendizaje", {}) as Dictionary).size()
-	if cantidad_preferencias != 1:
-		errores.append("Las preferencias aprendidas no se persistieron correctamente.")
+	if cantidad_preferencias != 2:
+		errores.append("Las dos preferencias aprendidas no se persistieron correctamente.")
 
 	var relationship := RelationshipScript.new() as RelationshipSystemService
 	relationship._game_state = game_state
@@ -261,6 +280,136 @@ func _run() -> void:
 		errores.append("No se pudo transmitir una noticia entre habitantes.")
 	if not relationship.conoce_conocimiento_npc("mara", "festival_plaza"):
 		errores.append("La noticia compartida no quedó registrada en la memoria del destinatario.")
+	if str(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("estado", "")) != "sospecha":
+		errores.append("Una noticia transmitida se registró como testimonio confirmado en vez de sospecha.")
+	var confianza_testimonio_inicial := float(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("confianza", 0.0))
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "festival_plaza", {"motivo": "repeticion"}):
+		errores.append("Repetir una noticia ya conocida se informó como fallo de transmisión.")
+	var confianza_testimonio_repetido := float(relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza").get("confianza", 0.0))
+	if not is_equal_approx(confianza_testimonio_inicial, confianza_testimonio_repetido):
+		errores.append("Repetir el testimonio de la misma persona aumentó la confianza.")
+
+	# Las transmisiones desde fuentes distintas conservan sus rutas de procedencia.
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "rutas_independientes",
+		"tipo": "noticia",
+		"compartible": true,
+		"fuente": "viajero_1",
+		"cadena_transmision": [{"de": "viajero_1", "a": "ivo"}]
+	})
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "rutas_independientes"):
+		errores.append("No se transmitió la primera ruta de conocimiento.")
+	relationship.registrar_conocimiento_npc("narel", {
+		"clave": "rutas_independientes",
+		"tipo": "noticia",
+		"compartible": true,
+		"fuente": "guardia_2",
+		"cadena_transmision": [{"de": "guardia_2", "a": "narel"}]
+	})
+	if not relationship.transmitir_conocimiento_npc("narel", "mara", "rutas_independientes"):
+		errores.append("No se transmitió la segunda ruta de conocimiento.")
+	var conocimiento_rutas := relationship.obtener_conocimiento_npc("mara", "rutas_independientes")
+	var rutas_variant: Variant = conocimiento_rutas.get("rutas_transmision", [])
+	if not rutas_variant is Array or (rutas_variant as Array).size() != 2:
+		errores.append("La segunda fuente reemplazó la ruta de transmisión que Mara ya conocía.")
+	else:
+		var firmas_rutas := JSON.stringify(rutas_variant)
+		if not firmas_rutas.contains("viajero_1") or not firmas_rutas.contains("guardia_2"):
+			errores.append("Las rutas conservadas no identifican ambas fuentes originales.")
+	if not relationship.transmitir_conocimiento_npc("ivo", "mara", "rutas_independientes"):
+		errores.append("Repetir una transmisión válida se informó como fallo.")
+	var rutas_tras_repeticion: Variant = relationship.obtener_conocimiento_npc(
+		"mara", "rutas_independientes"
+	).get("rutas_transmision", [])
+	if not rutas_tras_repeticion is Array or (rutas_tras_repeticion as Array).size() != 2:
+		errores.append("Repetir una ruta creó una procedencia duplicada.")
+
+	# La asistencia a un evento comunitario produce conocimiento por observación directa.
+	var observacion_evento := {
+		"clave": "mercado_vecinal",
+		"evento_id": "mercado_vecinal:2026:18",
+		"nombre": "Mercado vecinal",
+		"aviso": "Los vecinos se reunieron en la plaza."
+	}
+	if not relationship.registrar_observacion_evento_npc("mara", observacion_evento, "2026:18"):
+		errores.append("La asistencia al mercado no generó una observación directa.")
+	if relationship.registrar_observacion_evento_npc("mara", observacion_evento, "2026:18"):
+		errores.append("La misma asistencia generó dos observaciones independientes.")
+	var recuerdo_evento := relationship.obtener_evaluacion_creencia_npc(
+		"mara", "evento_comunitario:mercado_vecinal:2026:18"
+	)
+	if str(recuerdo_evento.get("estado", "")) != "conocimiento_sostenido":
+		errores.append("La observación directa no quedó diferenciada de un rumor.")
+
+	# La confianza de cada NPC depende de evidencias independientes, no de ecos.
+	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "viajero_1",
+		"tipo": "rumor",
+		"direccion": "apoya"
+	}):
+		errores.append("No se registró la primera evidencia del rumor.")
+	if relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "viajero_1",
+		"tipo": "testimonio",
+		"direccion": "apoya"
+	}):
+		errores.append("Una misma fuente aumentó la confianza al repetir su relato.")
+	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "guardia_2",
+		"tipo": "observacion",
+		"direccion": "apoya"
+	}):
+		errores.append("No se registró una observación independiente.")
+	var creencia_corroborrada := relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza")
+	if str(creencia_corroborrada.get("estado", "")) != "conocimiento_sostenido":
+		errores.append("Evidencias independientes no elevaron la creencia corroborada.")
+	if not relationship.registrar_evidencia_conocimiento_npc("mara", "festival_plaza", {
+		"fuente_id": "inspector_3",
+		"tipo": "prueba",
+		"direccion": "contradice"
+	}):
+		errores.append("No se registró evidencia contradictoria.")
+	var creencia_revisada := relationship.obtener_evaluacion_creencia_npc("mara", "festival_plaza")
+	if float(creencia_revisada.get("confianza", 1.0)) >= float(creencia_corroborrada.get("confianza", 0.0)):
+		errores.append("La evidencia contradictoria no redujo la confianza del NPC.")
+	# La privacidad y el consentimiento se respetan al retransmitir información.
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "secreto_mara",
+		"tipo": "confidencia",
+		"compartible": true,
+		"privacidad": "confidencial",
+		"fuente": "mara"
+	})
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "secreto_mara"):
+		errores.append("Un NPC retransmitió una confidencia marcada como confidencial.")
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "asunto_personal",
+		"tipo": "noticia",
+		"compartible": true,
+		"privacidad": "personal",
+		"permiso_transmision": true,
+		"fuente": "ivo"
+	})
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "asunto_personal"):
+		errores.append("Se compartió información personal sin suficiente confianza.")
+	relationship.registrar_interaccion_entre_npc("ivo", "narel", {"confianza": 35.0})
+	if not relationship.transmitir_conocimiento_npc("ivo", "narel", "asunto_personal"):
+		errores.append("No se pudo compartir información personal con permiso y confianza suficientes.")
+
+	relationship.registrar_conocimiento_npc("ivo", {
+		"clave": "nota_sin_permiso",
+		"tipo": "nota_personal",
+		"titulo": "Una nota privada"
+	})
+	if relationship.transmitir_conocimiento_npc("ivo", "narel", "nota_sin_permiso"):
+		errores.append("Una nota personal sin permiso se retransmitió automáticamente.")
+
+	# Los temas recordados quedan ligados a la persona con quien se hablaron.
+	relationship.registrar_tema_conversacion_npc("mara", "ivo", "la cantera", "2026-11-16T12:00:00")
+	if relationship.obtener_ultimo_tema_conversacion_npc("mara", "ivo").get("tema", "") != "la cantera":
+		errores.append("Mara no recordó un tema conversado con Ivo.")
+	if not relationship.obtener_ultimo_tema_conversacion_npc("mara", "narel").is_empty():
+		errores.append("Mara atribuyó a Narel un tema que sólo conversó con Ivo.")
 
 	var promesa_id := relationship.registrar_promesa_entre_npc("ivo", "mara", {
 		"clave": "devolver_libro",
@@ -302,6 +451,51 @@ func _run() -> void:
 		errores.append("Un motivo concreto no permitió una excepción al perfil reservado.")
 	if schedule._obtener_umbral_social("mara") <= schedule._obtener_umbral_social("ivo"):
 		errores.append("La sociabilidad no modificó el umbral de necesidad social.")
+
+	# La memoria personal puede frenar encuentros casuales tras experiencias
+	# negativas repetidas, pero no bloquea resolver una promesa o un asunto.
+	for indice_recuerdo in range(3):
+		relationship.registrar_recuerdo("mara", {
+			"tipo": "experiencia_npc",
+			"evento": "mal_trato",
+			"con_personaje": "narel",
+			"resultado": -1.0,
+			"importancia": 3.0,
+			"momento": "2026:11:16"
+		})
+	var memoria_negativa_mara := schedule._calcular_influencia_recuerdos_sociales("mara", "narel", "2026:11:16")
+	if memoria_negativa_mara > -8.0:
+		errores.append("Las experiencias negativas repetidas no consolidaron cautela hacia esa persona.")
+	if schedule._puede_iniciar_encuentro_social("mara", vinculo_cercano, false, "narel"):
+		errores.append("Un NPC reservado ignoró recuerdos negativos repetidos al evaluar un encuentro.")
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true, "narel"):
+		errores.append("Un motivo concreto no permitió resolver una situación con alguien que generó desconfianza.")
+	relationship.registrar_recuerdo("mara", {
+		"tipo": "experiencia_npc",
+		"evento": "ayuda_antigua",
+		"con_personaje": "bruna",
+		"resultado": 1.0,
+		"importancia": 3.0,
+		"momento": "2026:10:01"
+	})
+	var influencia_recuerdo_antiguo := schedule._calcular_influencia_recuerdos_sociales(
+		"mara", "bruna", "2026:11:16"
+	)
+	relationship.registrar_recuerdo("ivo", {
+		"tipo": "experiencia_npc",
+		"evento": "ayuda_reciente",
+		"con_personaje": "bruna",
+		"resultado": 1.0,
+		"importancia": 3.0,
+		"momento": "2026:11:16"
+	})
+	var influencia_recuerdo_reciente := schedule._calcular_influencia_recuerdos_sociales(
+		"ivo", "bruna", "2026:11:16"
+	)
+	if influencia_recuerdo_reciente <= influencia_recuerdo_antiguo:
+		errores.append("Un recuerdo antiguo conservó la misma influencia que uno reciente.")
+	if schedule._calcular_influencia_recuerdos_sociales("mara", "bruna", "fecha_invalida") <= 0.0:
+		errores.append("Una fecha inválida eliminó el recuerdo en lugar de usar su orden como respaldo.")
 	relationship.registrar_recuerdo("ivo", {
 		"tipo": "experiencia_npc",
 		"evento": "ayudar",
@@ -394,6 +588,52 @@ func _run() -> void:
 	if str(motivo_desacuerdo.get("tipo", "")) != "resolver_desacuerdo":
 		errores.append("Los NPC no detectaron un desacuerdo cuando no quedaban noticias pendientes.")
 
+	# Los huecos entre compromisos laborales se aprovechan sin desplazar
+	# el siguiente turno. El cálculo respeta días concretos y el ciclo de cinco días.
+	var agenda_huecos := [
+		{"clave":"turno_manana","hora_inicio":"09:00","hora_fin":"12:00","dias_semana":[0]},
+		{"clave":"turno_tarde","hora_inicio":"15:00","hora_fin":"18:00","dias_semana":[0]}
+	]
+	var hueco_entre_turnos := int(schedule.call(
+		"_obtener_minutos_hasta_siguiente_rutina", agenda_huecos, 0, 12 * 60
+	))
+	if hueco_entre_turnos != 180:
+		errores.append("El sistema no detectó las tres horas libres entre dos turnos.")
+	var hueco_antes_del_turno := int(schedule.call(
+		"_obtener_minutos_hasta_siguiente_rutina", agenda_huecos, 0, 8 * 60
+	))
+	if hueco_antes_del_turno != 60:
+		errores.append("El sistema no detectó el margen previo al primer turno.")
+	var sin_compromisos_hoy := int(schedule.call(
+		"_obtener_minutos_hasta_siguiente_rutina", agenda_huecos, 1, 8 * 60
+	))
+	if sin_compromisos_hoy <= 0:
+		errores.append("El calendario no buscó el siguiente compromiso en el ciclo semanal.")
+
+	# Las tareas interiores deben preferir puestos físicos coherentes con su intención.
+	var puestos_descanso := ScheduleScript.obtener_preferencias_mueble_actividad("descansar")
+	var puestos_estudio := ScheduleScript.obtener_preferencias_mueble_actividad("estudiar_documentos")
+	var puestos_trabajo := ScheduleScript.obtener_preferencias_mueble_actividad("hornear_pan")
+	if not puestos_descanso.has("cama") or not puestos_descanso.has("litera"):
+		errores.append("El descanso interior no reconoce camas ni literas.")
+	if not puestos_estudio.has("mesa") or not puestos_trabajo.has("horno"):
+		errores.append("Las tareas de estudio y trabajo no reconocen sus puestos de mobiliario.")
+	if not ScheduleScript.obtener_preferencias_mueble_actividad("pasear").is_empty():
+		errores.append("Un paseo interior recibió un mueble obligatorio sin corresponderle.")
+
+	var opciones_ocio_mixtas: Array = ScheduleScript.filtrar_opciones_ocio_validas([
+		{"id": "pasear", "ubicacion_clave": "plaza"},
+		{"id": "leer", "ubicacion_clave": "archivo_real"},
+		{"id": "destino_inexistente", "ubicacion_clave": "bosque_que_no_existe"},
+		{"id": "", "ubicacion_clave": "plaza"},
+		{"id": "sin_destino_valido", "ubicacion_clave": " "}
+	])
+	if opciones_ocio_mixtas.size() != 2:
+		errores.append("El catálogo de ocio no descartó actividades inválidas o destinos inexistentes.")
+	else:
+		if str(opciones_ocio_mixtas[0].get("id", "")) != "pasear" or str(opciones_ocio_mixtas[1].get("ubicacion_clave", "")) != "archivo_real":
+			errores.append("La validación del catálogo alteró una actividad o su destino válido.")
+
 	var ocio_ivo: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "ivo")
 	var ocio_mara: Dictionary = schedule.call("_obtener_opciones_ocio_npc", "mara")
 	var opciones_ivo: Array = ocio_ivo.get("opciones", [])
@@ -411,10 +651,14 @@ func _run() -> void:
 			actividades_mara.append(str((opcion as Dictionary).get("id", "")))
 		if not actividades_mara.has("pasear_sin_prisa") or actividades_mara.has("sentarse_un_rato"):
 			errores.append("El perfil de ocio de Mara no conserva sus alternativas propias.")
+	mind_habito_recargada.free()
 	schedule.free()
 	relationship.free()
 	mind.free()
 	mind_recargada.free()
+	game_state.free()
+	# Permite que Godot procese las liberaciones diferidas antes de cerrar el test.
+	await get_tree().process_frame
 	if not errores.is_empty():
 		for error in errores:
 			push_error("NPCMindCore: FAIL: " + error)

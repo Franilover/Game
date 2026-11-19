@@ -112,7 +112,7 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 			)
 		):
 			return true
-		var resultado := interaction_controller.interactuar(player)
+		var resultado := interaction_controller.interactuar(player, mano)
 
 		# Una recolección exitosa puede llamar queue_free(), que no elimina el
 		# nodo hasta el final del frame. Limpiar el objetivo aquí oculta el prompt

@@ -131,6 +131,10 @@ func _al_ataque_solicitado(
 ) -> void:
 	if player == null or _tiempo_desde_ataque > 0.0:
 		return
+	var nombre_objeto := str(objeto.get("nombre", "")).strip_edges().to_lower()
+	if nombre_objeto.contains("espada") and not bool(GameState.world_state.flags.get("licencia_espadas", false)):
+		Events.notification_pushed.emit("Necesitas la licencia de espadas del Cuartel para usarla.")
+		return
 
 	var direccion_ataque := _normalizar_direccion_ataque(direccion)
 
@@ -179,15 +183,11 @@ func _atacar_con_herramienta(
 			_consumir_durabilidad_herramienta()
 		return
 
-	var alcance := _obtener_alcance_arma(herramienta)
-	var ancho := _obtener_ancho_arma(herramienta)
-	_crear_ataque_melee(
-		direccion,
-		alcance,
-		ancho,
-		herramienta
-	)
-	_consumir_durabilidad_herramienta()
+	# Las herramientas no son armas: hacha, pico, hoz, azada, etc.
+	# sólo ejecutan su acción contextual desde InteractionSystem.
+	# Si no hay un objetivo compatible, el clic no debe convertirse
+	# accidentalmente en un ataque cuerpo a cuerpo.
+	return
 
 func _usar_pala() -> bool:
 	if world_context == null or not is_instance_valid(world_context):

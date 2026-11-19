@@ -13,6 +13,10 @@ var _world_context = null
 var _inventory = null
 var _world_items = null
 var _replica_red_cliente := false
+var _recoleccion_en_curso := false
+var _recoleccion_token: int = 0
+const TIEMPO_RECOLECCION_HERRAMIENTA: float = 1.25
+var _progreso_recoleccion: float = 0.0
 
 
 func _es_servidor_dedicado() -> bool:
@@ -42,11 +46,27 @@ func configurar_dependencias(
 	_world_context = nuevo_world_context
 	_inventory = nuevo_inventory
 	_world_items = nuevo_world_items
+	_conectar_catalogo_items()
+	_actualizar_estado_interaccion()
 
+
+
+func _normalizar_tipo_prop(valor: String) -> String:
+	var tipo_normalizado := valor.strip_edges().to_lower()
+	if tipo_normalizado in ["árbol", "arboles", "árboles", "tree", "trees"]:
+		return "arbol"
+	return tipo_normalizado
+
+
+func _es_arbol() -> bool:
+	var tipo_dato := _normalizar_tipo_prop(str(datos.get("tipo", tipo)))
+	var clave := _normalizar_tipo_prop(str(datos.get("clave", datos.get("prop_id", ""))))
+	var nombre := _normalizar_tipo_prop(str(datos.get("nombre", "")))
+	return tipo_dato == "arbol" or clave == "arbol" or nombre == "arbol"
 
 
 func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nueva_semilla: int, nuevos_datos: Dictionary = {}) -> void:
-	tipo = nuevo_tipo
+	tipo = _normalizar_tipo_prop(nuevo_tipo)
 	bioma = nuevo_bioma
 	variante = nueva_variante
 	semilla = nueva_semilla
@@ -59,6 +79,7 @@ func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nu
 		tipo == "recurso"
 		or tipo == "planta"
 		or tipo == "flor"
+		or tipo == "arbol"
 		or tipo == "cueva"
 		or tipo == "estructura"
 	)
@@ -71,7 +92,7 @@ func configurar(nuevo_tipo: String, nuevo_bioma: String, nueva_variante: int, nu
 	if interactuable:
 		add_to_group("interactable")
 
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -88,7 +109,9 @@ func obtener_datos() -> Dictionary:
 
 
 func es_recolectable() -> bool:
-	return _tiene_recoleccion_canonica()
+	# La identidad del árbol es suficiente para seleccionarlo como objetivo.
+	# El item de salida se resuelve al completar la acción, no al buscar objetivo.
+	return _es_arbol() or _tiene_recoleccion_canonica()
 
 
 func get_interaction_distance() -> float:
@@ -96,8 +119,10 @@ func get_interaction_distance() -> float:
 
 
 func get_interaction_priority() -> int:
+	if _es_arbol():
+		return 35
 	match tipo:
-		"recurso", "planta", "flor":
+		"recurso", "planta", "flor", "arbol":
 			return 30
 		"cueva", "estructura":
 			return 20
@@ -109,6 +134,12 @@ func get_interaction_text() -> String:
 	if _tiene_recoleccion_canonica():
 		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
 			return "Recolección no sincronizada"
+		var requisito := _obtener_requisito_herramienta()
+		match str(requisito.get("tipo", "")).strip_edges().to_lower():
+			"hacha", "axe":
+				return "Cortar"
+			"pico", "pickaxe":
+				return "Minar"
 		return "Recolectar"
 
 	match tipo:
@@ -206,6 +237,10 @@ func get_interaction_details() -> Dictionary:
 
 
 func interact(persona: Node) -> bool:
+	return interactuar_con_herramienta(persona, "mano_secundaria")
+
+
+func interactuar_con_herramienta(persona: Node, mano: String) -> bool:
 	if not can_interact(persona):
 		return false
 
@@ -213,137 +248,176 @@ func interact(persona: Node) -> bool:
 		if _replica_red_cliente or (_es_servidor_dedicado() and _inventory == null):
 			_emitir_notificacion("La recolección multijugador aún no está disponible.")
 			return true
-		if not _puede_recolectar(persona):
-			var requisito := _obtener_requisito_herramienta()
-			var tipo_herramienta: String = str(requisito.get("tipo", "herramienta"))
-			var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
-			_emitir_notificacion(
-				"Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido)
-			)
-			print(
-				"WorldProp: recolección bloqueada por herramienta → ",
-				tipo_herramienta,
-				" nivel ",
-				nivel_requerido
-			)
+
+		var requisito := _obtener_requisito_herramienta()
+		if not requisito.is_empty():
+			# El clic puede venir de cualquiera de las dos manos. Si la mano
+			# pulsada no lleva la herramienta, aceptar la otra mano equipada.
+			var mano_herramienta := mano
+			if not _puede_recolectar(persona, mano_herramienta):
+				var mano_alternativa := "derecha" if mano == "izquierda" else "izquierda"
+				if _puede_recolectar(persona, mano_alternativa):
+					mano_herramienta = mano_alternativa
+				else:
+					var tipo_herramienta := str(requisito.get("tipo", "herramienta"))
+					var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
+					_emitir_notificacion("Necesitas " + tipo_herramienta + " nivel " + str(nivel_requerido))
+					return true
+			if _recoleccion_en_curso:
+				return true
+			_recoleccion_en_curso = true
+			_progreso_recoleccion = 0.0
+			queue_redraw()
+			_recoleccion_token += 1
+			call_deferred("_ejecutar_recoleccion_con_herramienta", persona, mano_herramienta, _recoleccion_token)
 			return true
 
-		if _recolectar(persona):
-			return true
-
-		# La interacción fue reconocida, pero la recolección falló.
-		# No dejamos que este caso caiga silenciosamente en combate.
+		_recolectar(persona)
 		return true
 
 	var accion := get_interaction_text()
 	var categoria: String = tipo.capitalize()
-
 	if tipo == "cueva":
 		categoria = "Entrada"
 	elif tipo == "recurso":
 		categoria = "Recurso"
-
 	var mensaje := accion + " " + categoria
-
 	if not bioma.is_empty():
 		mensaje += " · " + bioma
-
-	_emitir_notificacion(
-		mensaje
-	)
-
-	print(
-		"WorldProp: interacción → ",
-		accion,
-		" | tipo=",
-		tipo,
-		" | bioma=",
-		bioma
-	)
-
+	_emitir_notificacion(mensaje)
+	print("WorldProp: interacción → ", accion, " | tipo=", tipo, " | bioma=", bioma)
 	return true
 
 
-func _tiene_recoleccion_canonica() -> bool:
-	var item_id := _obtener_item_id_recoleccion()
-	if item_id.is_empty():
-		return false
+func _ejecutar_recoleccion_con_herramienta(persona: Node, mano: String, token: int) -> void:
+	var herramienta: Dictionary = _inventory.obtener_objeto_mano_activa(mano).duplicate(true)
+	if persona.has_method("reproducir_animacion_herramienta"):
+		persona.call("reproducir_animacion_herramienta", herramienta, global_position)
 
-	# Supabase manda: un prop puede ser "decoracion" visualmente y aun así
-	# ser recolectable. La propiedad canónica es propiedades.recolectable.
+	var sprite := get_node_or_null("Sprite") as Sprite2D
+	if is_instance_valid(sprite):
+		var posicion_inicial := sprite.position
+		var sacudida := create_tween()
+		sacudida.tween_property(sprite, "position", posicion_inicial + Vector2(2.0, 0.0), 0.07)
+		sacudida.tween_property(sprite, "position", posicion_inicial + Vector2(-2.0, 0.0), 0.07)
+		sacudida.tween_property(sprite, "position", posicion_inicial, 0.07)
+
+	var tiempo_transcurrido := 0.0
+	while tiempo_transcurrido < TIEMPO_RECOLECCION_HERRAMIENTA:
+		if not is_instance_valid(self) or token != _recoleccion_token:
+			return
+		var paso := minf(0.05, TIEMPO_RECOLECCION_HERRAMIENTA - tiempo_transcurrido)
+		await get_tree().create_timer(paso).timeout
+		tiempo_transcurrido += paso
+		_progreso_recoleccion = clampf(tiempo_transcurrido / TIEMPO_RECOLECCION_HERRAMIENTA, 0.0, 1.0)
+		queue_redraw()
+	if not is_instance_valid(self) or token != _recoleccion_token:
+		return
+	_recoleccion_en_curso = false
+	_progreso_recoleccion = 0.0
+	queue_redraw()
+
+	if not is_instance_valid(persona) or not can_interact(persona):
+		return
+	if not _puede_recolectar(persona, mano):
+		return
+
+	# El recurso sólo se entrega al completar la animación y si el inventario
+	# todavía puede recibirlo. _recolectar conserva el vínculo canónico prop → item.
+	_recolectar(persona)
+
+
+func _tiene_recoleccion_canonica() -> bool:
+	# Supabase manda: respetar una declaración explícita, incluso si desactiva
+	# la recolección. Los árboles antiguos se reconocen por identidad mientras
+	# llega el snapshot actualizado con item_id y propiedades.
 	var propiedades_variant: Variant = datos.get("propiedades", {})
 	if propiedades_variant is Dictionary:
 		var propiedades := propiedades_variant as Dictionary
 		if propiedades.has("recolectable"):
 			return bool(propiedades.get("recolectable", false))
 
-	# Compatibilidad con snapshots donde la propiedad aún no viene incluida:
-	# si existe un item_id canónico, el vínculo prop → item sigue siendo válido.
-	return true
+	if _es_arbol():
+		return true
+
+	return not _obtener_item_id_recoleccion().is_empty()
 
 
 func _obtener_requisito_herramienta() -> Dictionary:
 	var requisito_variant: Variant = datos.get("herramienta_recoleccion", {})
-	if requisito_variant is Dictionary:
+	if requisito_variant is Dictionary and not (requisito_variant as Dictionary).is_empty():
 		return (requisito_variant as Dictionary).duplicate(true)
 
 	var propiedades_variant: Variant = datos.get("propiedades", {})
 	if propiedades_variant is Dictionary:
 		var propiedades := propiedades_variant as Dictionary
 		requisito_variant = propiedades.get("herramienta_recoleccion", {})
-		if requisito_variant is Dictionary:
+		if requisito_variant is Dictionary and not (requisito_variant as Dictionary).is_empty():
 			return (requisito_variant as Dictionary).duplicate(true)
 
+	# Los árboles actuales de props_game no tienen requisito explícito todavía.
+	# Su interacción de tala usa el hacha básica como herramienta mínima.
+	if _es_arbol():
+		return {"tipo": "hacha", "nivel": 1}
 	return {}
 
 
-func _puede_recolectar(persona: Node) -> bool:
+func _puede_recolectar(persona: Node, mano: String) -> bool:
 	var requisito := _obtener_requisito_herramienta()
 	if requisito.is_empty():
 		return true
-
-	var inventario: Node = _inventory
-	if inventario == null or not inventario.has_method("obtener_objeto_equipado"):
+	if not is_instance_valid(persona):
 		return false
 
-	var herramienta_variant: Variant = inventario.call(
-		"obtener_objeto_equipado",
-		"mano_secundaria"
-	)
+	var inventario: Node = _inventory
+	if inventario == null or not inventario.has_method("obtener_objeto_mano_activa"):
+		return false
+	if mano not in ["izquierda", "derecha", "mano_secundaria"]:
+		return false
 
+	var mano_inventario := "derecha" if mano == "mano_secundaria" else mano
+	var herramienta_variant: Variant = inventario.call("obtener_objeto_mano_activa", mano_inventario)
 	if not herramienta_variant is Dictionary:
 		return false
 
 	var herramienta := herramienta_variant as Dictionary
 	var propiedades_variant: Variant = herramienta.get("propiedades_game", {})
-	if not propiedades_variant is Dictionary:
-		return false
+	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+	var herramienta_recoleccion_variant: Variant = propiedades.get("herramienta_recoleccion", {})
+	var herramienta_recoleccion: Dictionary = herramienta_recoleccion_variant as Dictionary if herramienta_recoleccion_variant is Dictionary else {}
 
-	var propiedades := propiedades_variant as Dictionary
-	var herramienta_recoleccion_variant: Variant = propiedades.get(
-		"herramienta_recoleccion",
-		{}
-	)
-	if not herramienta_recoleccion_variant is Dictionary:
-		return false
-
-	var herramienta_recoleccion := herramienta_recoleccion_variant as Dictionary
 	var tipo_requerido := str(requisito.get("tipo", "")).strip_edges().to_lower()
 	var tipo_actual := str(herramienta_recoleccion.get("tipo", "")).strip_edges().to_lower()
-	var nivel_requerido: int = maxi(1, int(requisito.get("nivel", 1)))
-	var nivel_actual: int = int(herramienta_recoleccion.get("nivel", 0))
+	var nivel_actual := int(herramienta_recoleccion.get("nivel", 0))
 
-	return (
-		not tipo_requerido.is_empty()
-		and tipo_actual == tipo_requerido
-		and nivel_actual >= nivel_requerido
-	)
+	# Compatibilidad con las hachas ya registradas en items_game, cuyas
+	# propiedades todavía están vacías. El nombre del item determina tipo y nivel.
+	if tipo_actual.is_empty():
+		var nombre_herramienta := str(herramienta.get("nombre", "")).strip_edges().to_lower()
+		if nombre_herramienta.contains("hacha"):
+			tipo_actual = "hacha"
+			nivel_actual = 2 if nombre_herramienta.contains("piedra") else 1
+		elif nombre_herramienta.contains("pico"):
+			tipo_actual = "pico"
+			nivel_actual = 2 if nombre_herramienta.contains("piedra") else 1
+
+	var nivel_requerido := maxi(1, int(requisito.get("nivel", 1)))
+	return not tipo_requerido.is_empty() and tipo_actual == tipo_requerido and nivel_actual >= nivel_requerido
 
 
 func _obtener_item_id_recoleccion() -> String:
-	var item_id := str(datos.get("item_id", "")).strip_edges()
+	var item_id_variant: Variant = datos.get("item_id", null)
+	var item_id := "" if item_id_variant == null else str(item_id_variant).strip_edges()
 	if not item_id.is_empty():
 		return item_id
+
+	# Los árboles del catálogo actual no tienen item_id asociado. La tala
+	# entrega el recurso canónico Madera desde el catálogo de items_game.
+	if _es_arbol():
+		if not is_instance_valid(_world_items):
+			return ""
+		var madera: Dictionary = _world_items.buscar_item_por_nombre("Madera")
+		return str(madera.get("item_id", madera.get("id", ""))).strip_edges()
 
 	# El snapshot de props_game puede conservar el vínculo en
 	# propiedades.item_id aunque item_id no haya sido proyectado al nodo.
@@ -372,38 +446,20 @@ func _obtener_item_id_recoleccion() -> String:
 
 	if not is_instance_valid(_world_items):
 		return ""
-	for item_variant in _world_items.obtener_catalogo():
-		if not item_variant is Dictionary:
-			continue
-		var item := item_variant as Dictionary
-		var propiedades_item_variant: Variant = item.get("propiedades_game", {})
-		if not propiedades_item_variant is Dictionary:
-			continue
-		var propiedades_item := propiedades_item_variant as Dictionary
-		if str(propiedades_item.get("prop_id", "")).strip_edges() != prop_id:
-			continue
-		return str(item.get("item_id", item.get("id", ""))).strip_edges()
-
-	return ""
+	var item_vinculado: Dictionary = _world_items.buscar_item_por_prop_id(prop_id)
+	return str(item_vinculado.get("item_id", item_vinculado.get("id", ""))).strip_edges()
 
 
 func _obtener_cantidad_recoleccion() -> int:
 	var cantidad: int = 1
-	var recoleccion_variant: Variant = datos.get(
-		"recoleccion",
-		{}
-	)
+	var recoleccion_variant: Variant = datos.get("recoleccion", {})
+	if not recoleccion_variant is Dictionary:
+		var propiedades_variant: Variant = datos.get("propiedades", {})
+		if propiedades_variant is Dictionary:
+			recoleccion_variant = (propiedades_variant as Dictionary).get("recoleccion", {})
 
 	if recoleccion_variant is Dictionary:
-		cantidad = maxi(
-			1,
-			int(
-				(recoleccion_variant as Dictionary).get(
-					"cantidad",
-					1
-				)
-			)
-		)
+		cantidad = maxi(1, int((recoleccion_variant as Dictionary).get("cantidad", 1)))
 
 	return cantidad
 
@@ -424,10 +480,11 @@ func _recolectar(persona: Node) -> bool:
 	var item_id := _obtener_item_id_recoleccion()
 	if item_id.is_empty():
 		print(
-			"WorldProp: no se puede recolectar → prop sin item_id canónico. ",
+			"WorldProp: no se puede recolectar → item de salida no disponible. ",
 			"datos=",
 			datos
 		)
+		_emitir_notificacion("El catálogo de recursos aún no está disponible. Inténtalo de nuevo en un momento.")
 		return false
 
 	var item: Dictionary = _world_items.buscar_item_por_id(
@@ -438,6 +495,7 @@ func _recolectar(persona: Node) -> bool:
 			"WorldProp: el item canónico no está cargado → ",
 			item_id
 		)
+		_emitir_notificacion("No se pudo cargar el recurso Madera. El árbol sigue intacto; inténtalo de nuevo.")
 		return false
 
 	item["cantidad"] = _obtener_cantidad_recoleccion()
@@ -499,6 +557,8 @@ func activar_como_proxy() -> void:
 
 
 func desactivar_como_proxy() -> void:
+	_recoleccion_token += 1
+	_recoleccion_en_curso = false
 	set_process(false)
 	remove_from_group("interactable")
 	remove_from_group("world_resource")
@@ -510,7 +570,7 @@ func desactivar_como_proxy() -> void:
 func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	add_to_group("world_props")
 	datos = datos_game.duplicate(true)
-	tipo = str(datos.get("tipo", "decoracion"))
+	tipo = _normalizar_tipo_prop(str(datos.get("tipo", "decoracion")))
 	bioma = ""
 	var asset_path := str(datos.get("asset_path", "")).strip_edges()
 	_actualizar_estado_interaccion()
@@ -519,7 +579,7 @@ func configurar_desde_game_data(datos_game: Dictionary) -> void:
 	remove_from_group("world_cave")
 	remove_from_group("world_structure")
 
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -549,7 +609,7 @@ func aplicar_estado_red(posicion: Vector2) -> void:
 	visible = true
 	if interactuable:
 		add_to_group("interactable")
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -566,7 +626,7 @@ func reactivar_simulacion_local_red() -> void:
 	remove_from_group("world_structure")
 	if interactuable:
 		add_to_group("interactable")
-	if tipo == "recurso" or tipo == "planta":
+	if tipo in ["recurso", "planta", "arbol"]:
 		add_to_group("world_resource")
 	elif tipo == "cueva":
 		add_to_group("world_cave")
@@ -642,14 +702,22 @@ func _actualizar_profundidad() -> void:
 
 func _ready() -> void:
 	add_to_group("world_props")
-	if is_instance_valid(_world_items):
-		if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
-			_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
+	_conectar_catalogo_items()
+	_actualizar_estado_interaccion()
 	_actualizar_profundidad()
+
+
+func _conectar_catalogo_items() -> void:
+	if not is_instance_valid(_world_items):
+		return
+	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
+		_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
 
 
 func _process(_delta: float) -> void:
 	_actualizar_profundidad()
+	if _recoleccion_en_curso:
+		queue_redraw()
 
 
 func _al_cargar_catalogo_items(_items: Array) -> void:
@@ -665,7 +733,15 @@ func _actualizar_estado_interaccion() -> void:
 
 
 func _draw() -> void:
-	# Los props del mundo ya no se dibujan con geometría generada.
-	# Su representación visual viene exclusivamente de asset_path,
-	# definido por Supabase en props_game.
-	pass
+	# La barra temporal representa el progreso de la acción sobre este prop;
+	# el sprite principal sigue viniendo exclusivamente de asset_path.
+	if not _recoleccion_en_curso:
+		return
+	var sprite := get_node_or_null("Sprite") as Sprite2D
+	var alto_sprite := 24.0
+	if is_instance_valid(sprite) and sprite.texture != null:
+		alto_sprite = float(sprite.texture.get_height()) * absf(sprite.scale.y)
+	var origen := Vector2(-18.0, -alto_sprite * 0.5 - 12.0)
+	var fondo := Rect2(origen, Vector2(36.0, 5.0))
+	draw_rect(fondo, Color(0.12, 0.10, 0.08, 0.95), true)
+	draw_rect(Rect2(origen + Vector2.ONE, Vector2(34.0 * _progreso_recoleccion, 3.0)), Color(0.82, 0.68, 0.43, 1.0), true)

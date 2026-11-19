@@ -10,19 +10,34 @@ const MUEBLE_CAMA: Texture2D = preload("res://assets/art/places/Muebles/cama.png
 const MUEBLE_MESA: Texture2D = preload("res://assets/art/places/Muebles/mesa.png")
 const MUEBLE_HORNO: Texture2D = preload("res://assets/art/places/Muebles/horno.png")
 const MUEBLE_COFRE: Texture2D = preload("res://assets/art/places/Muebles/cofre.png")
+const MUEBLE_SILLA_DERECHA: Texture2D = preload("res://assets/art/places/Muebles/Silla Derecha.png")
+const MUEBLE_SILLA_FRENTE: Texture2D = preload("res://assets/art/places/Muebles/Silla Frente.png")
+const MUEBLE_ASIENTO: Texture2D = preload("res://assets/art/places/Muebles/asiento.png")
+const MUEBLE_YUNQUE: Texture2D = preload("res://assets/art/places/Muebles/Yunque.png")
+const MUEBLE_ESTANTERIA_PAN: Texture2D = preload("res://assets/art/places/Muebles/estanteria con pan.png")
+const MUEBLE_ARMARIO: Texture2D = preload("res://assets/art/places/Muebles/armario.png")
+const MUEBLE_MESA_DOCUMENTOS: Texture2D = preload("res://assets/art/places/Muebles/mesa documentos.png")
+const MUEBLE_MESA_PLATOS: Texture2D = preload("res://assets/art/places/Muebles/mesa platos.png")
+const MERCADO_PUESTO: Texture2D = preload("res://assets/art/places/Mercado Puesto.png")
+const PRODUCTO_PAN: Texture2D = preload("res://assets/art/items/Pan.png")
+const PRODUCTO_MANZANA: Texture2D = preload("res://assets/art/items/Manzana.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const WATERING_INTERACTABLE_SCRIPT: Script = preload("res://scripts/gameplay/watering_interactable.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
 const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
+const ROYAL_ARCHIVE_UI_SCRIPT: Script = preload("res://scripts/ui/royal_archive.gd")
+const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_service_ui.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
+const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
+const TORRES_VIVERO_BUILDER: Script = preload("res://scripts/world/torres_vivero_builder.gd")
 
-# Ampliación moderada respecto al interior original (448x272).
-# Mantiene el espacio compacto y reduce los bordes visibles sin vaciar la sala.
-const INTERIOR_ANCHO := 560.0
-const INTERIOR_ALTO := 352.0
-const INTERIOR_MEDIO_ANCHO := INTERIOR_ANCHO / 2.0
-const INTERIOR_MEDIO_ALTO := INTERIOR_ALTO / 2.0
+# Dimensión base. Los edificios grandes usan perfiles ampliados en _obtener_dimensiones_interior().
+const INTERIOR_ANCHO := 512.0
+const INTERIOR_ALTO := 320.0
+var _interior_ancho_actual: float = INTERIOR_ANCHO
+var _interior_alto_actual: float = INTERIOR_ALTO
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Los recursos ausentes conservan únicamente su estructura pixel-art disponible.
@@ -30,6 +45,8 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"castillo", "paths":["res://assets/art/places/Castillo.png","castillo.png","edificios/castillo.png"], "position":Vector2(0,-850), "size":Vector2(230,190), "hide":["CastleKeep","CastleFacade","CastleRoof","CastleDoor","CastleWindow","CastleTower"]},
 	{"key":"panaderia", "paths":["res://assets/art/places/Panaderia.png","casas/panaderia.png","edificios/panaderia.png","casas/casa.png"], "position":Vector2(-360,-120), "size":Vector2(96,92), "hide":["HouseBaker"]},
 	{"key":"posada", "paths":["res://assets/art/places/Posada.png","casas/posada.png","edificios/posada.png","casas/casa.png"], "position":Vector2(360,-120), "size":Vector2(104,102), "hide":["HouseInn"]},
+	{"key":"herbolario", "paths":["res://assets/art/places/Herbolario.png"], "position":Vector2(-150,160), "size":Vector2(112,96), "hide":[]},
+	{"key":"vivero", "paths":["res://assets/art/places/Vivero.png"], "position":Vector2(150,160), "size":Vector2(112,96), "hide":[]},
 	{"key":"casa_bruna", "sprite_node":"Sprite_Casa_Bruna", "paths":["res://assets/art/places/Casa_Comun.png","casas/vivienda_mason.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(-1000,-350), "size":Vector2(96,88), "hide":["HouseMason"]},
 	{"key":"casa_elian", "sprite_node":"Sprite_Casa_Elian", "paths":["res://assets/art/places/Casa_Comun.png","casas/casa_oriente_a.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(700,-350), "size":Vector2(96,90), "hide":["HouseEastA"]},
 	{"key":"casa_darven", "sprite_node":"Sprite_Casa_Darven", "paths":["res://assets/art/places/Casa_Comun.png","casas/casa_oriente_b.png","casas/vivienda.png","casas/casa.png"], "position":Vector2(850,-350), "size":Vector2(96,90), "hide":["HouseEastB"]},
@@ -38,6 +55,11 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"archivo_real", "paths":["res://assets/art/places/Archivo_Real.png"], "position":Vector2(-170,-280), "size":Vector2(116,94), "hide":["RoyalArchive"]},
 	{"key":"sala_consejo", "paths":["res://assets/art/places/Sala_del_Consejo.png"], "position":Vector2(170,-280), "size":Vector2(132,104), "hide":["CouncilHall"]},
 	{"key":"casa_estudio", "paths":["res://assets/art/places/Casa_de_Estudio_Oris.png"], "position":Vector2(-520,-430), "size":Vector2(122,98), "hide":["OrisStudy","StudyDome"]},
+	{"key":"biblioteca", "paths":["res://assets/art/places/Biblioteca.png"], "position":Vector2(0,-540), "size":Vector2(124,112), "hide":[]},
+	{"key":"centro_expediciones", "paths":["res://assets/art/places/Centro de Expediciones.png"], "position":Vector2(1180,300), "size":Vector2(136,120), "hide":[]},
+	{"key":"taberna", "paths":["res://assets/art/places/Taberna.png","res://assets/art/places/taberna.png"], "position":Vector2(760,-540), "size":Vector2(126,108), "hide":[]},
+	{"key":"escuela", "paths":["res://assets/art/places/Escuela.png","res://assets/art/places/escuela.png"], "position":Vector2(-760,-540), "size":Vector2(126,108), "hide":[]},
+	{"key":"clinica", "paths":["res://assets/art/places/Clinica.png"], "position":Vector2(360,430), "size":Vector2(116,104), "hide":[]},
 	{"key":"casa_comercio", "paths":["res://assets/art/places/Casa_de_Comercio.png"], "position":Vector2(500,180), "size":Vector2(122,100), "hide":["TradeHouse"]},
 	{"key":"cuartel", "paths":["res://assets/art/places/Cuartel_de_la_Guardia.png"], "position":Vector2(520,-430), "size":Vector2(126,104), "hide":["GuardBarracks","BarracksBed","BarracksBunk","BarracksArmor","BarracksArmory","BarracksWeaponRack","CuartelDetalle","DetalleCuartel"]},
 	{"key":"registro", "paths":["res://assets/art/places/Registro_de_la_Puerta.png"], "position":Vector2(1480,0), "size":Vector2(108,90), "hide":["GateOffice"]},
@@ -87,6 +109,21 @@ var _tiempo_ambiente_torres: float = 0.0
 var _aviso_evento_torres: Label = null
 var _decoracion_evento_torres: Node2D = null
 var _evento_decoracion_actual: String = ""
+var _menu_posada_layer: CanvasLayer = null
+var _menu_posada_panel: PanelContainer = null
+var _menu_posada_contenido: VBoxContainer = null
+var _menu_posada_estado: Label = null
+var _menu_posada_vista := "principal"
+const POSADA_COSTE_MENSUAL := 100
+const POSADA_DURACION_MES_DIAS := 30
+const POSADA_FLAG := "posada_estado"
+# Precios iniciales de la tienda; se mantienen centralizados para poder ajustar la economía.
+const POSADA_CATALOGO_MUEBLES: Array[Dictionary] = [
+	{"id": "mesa", "nombre": "Mesa", "precio": 35},
+	{"id": "silla", "nombre": "Silla", "precio": 20},
+	{"id": "armario", "nombre": "Armario", "precio": 60},
+	{"id": "cofre", "nombre": "Cofre", "precio": 100}
+]
 
 # La cámara se limita a la habitación activa y recupera exactamente sus límites
 # anteriores al salir, sin alterar el encuadre del exterior de Torres.
@@ -104,6 +141,8 @@ const DISTANCIA_INTERACCION_ENTRADA := 44.0
 const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
 	"panaderia": "panaderia",
 	"posada": "posada",
+	"herbolario": "herbolario",
+	"vivero": "vivero",
 	"forja": "forja",
 	"cuartel": "cuartel",
 	"registro": "registro",
@@ -111,6 +150,11 @@ const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
 	"archivo_real": "archivo_real",
 	"sala_consejo": "sala_consejo",
 	"casa_estudio": "casa_estudio",
+	"biblioteca": "biblioteca",
+	"centro_expediciones": "centro_expediciones",
+	"taberna": "taberna",
+	"escuela": "escuela",
+	"clinica": "clinica",
 	"reparaciones": "reparaciones",
 	"carpinteria": "carpinteria",
 	"granero": "granero",
@@ -139,6 +183,8 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"castillo","nombre":"Castillo de Torres","pos":Vector2(0,-738),"tipo":"castillo"},
 	{"id":"panaderia","nombre":"Panadería","pos":Vector2(-360,-58),"tipo":"panaderia"},
 	{"id":"posada","nombre":"Posada","pos":Vector2(360,-53),"tipo":"posada"},
+	{"id":"herbolario","nombre":"Herbolario","pos":Vector2(-150,222),"tipo":"herbolario"},
+	{"id":"vivero","nombre":"Vivero","pos":Vector2(150,222),"tipo":"vivero"},
 	{"id":"casa_bruna","nombre":"Casa de Bruna","pos":Vector2(-1000,-296),"tipo":"vivienda"},
 	{"id":"casa_elian","nombre":"Casa de Elian","pos":Vector2(700,-296),"tipo":"vivienda"},
 	{"id":"casa_darven","nombre":"Casa de Darven","pos":Vector2(850,-296),"tipo":"vivienda"},
@@ -147,6 +193,11 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"archivo_real","nombre":"Archivo real","pos":Vector2(-170,-217),"tipo":"archivo"},
 	{"id":"sala_consejo","nombre":"Sala del consejo","pos":Vector2(170,-212),"tipo":"consejo"},
 	{"id":"casa_estudio","nombre":"Laboratorio de Oris","pos":Vector2(-520,-365),"tipo":"laboratorio"},
+	{"id":"biblioteca","nombre":"Biblioteca","pos":Vector2(0,-478),"tipo":"biblioteca"},
+	{"id":"centro_expediciones","nombre":"Gremio de Aventureros","pos":Vector2(1180,362),"tipo":"centro_expediciones"},
+	{"id":"taberna","nombre":"Taberna","pos":Vector2(760,-478),"tipo":"taberna"},
+	{"id":"escuela","nombre":"Escuela de Oficios","pos":Vector2(-760,-478),"tipo":"escuela"},
+	{"id":"clinica","nombre":"Clínica","pos":Vector2(360,492),"tipo":"clinica"},
 	{"id":"casa_comercio","nombre":"Casa de comercio","pos":Vector2(500,246),"tipo":"comercio"},
 	{"id":"cuartel","nombre":"Cuartel de la guardia","pos":Vector2(520,-362),"tipo":"cuartel"},
 	{"id":"registro","nombre":"Registro de la puerta","pos":Vector2(1480,61),"tipo":"registro"},
@@ -170,16 +221,32 @@ const ENTRADAS: Array[Dictionary] = [
 ]
 
 
+func _exit_tree() -> void:
+	# La interfaz de la posada vive en SceneTree.root, fuera de esta escena.
+	# Ocultarla y liberarla evita conservar botones con Callables a este nodo.
+	_cerrar_menu_posada()
+	if is_instance_valid(_menu_posada_layer):
+		_menu_posada_layer.queue_free()
+	_menu_posada_layer = null
+	_menu_posada_panel = null
+	_menu_posada_contenido = null
+	_menu_posada_estado = null
+
+
 func _ready() -> void:
-	_expedition_entrance.body_entered.connect(_al_entrar_entrada_expedicion)
-	_expedition_entrance.body_exited.connect(_al_salir_entrada_expedicion)
-	_crear_entrada_hogar_al_final_del_camino()
+	# Los dos accesos laterales quedan cerrados: no abren selector ni cambian de zona.
+	if is_instance_valid(_expedition_entrance):
+		_expedition_entrance.set_deferred("monitoring", false)
+		_expedition_entrance.set_deferred("monitorable", false)
+		_expedition_entrance.collision_layer = 0
+		_expedition_entrance.collision_mask = 0
 	_crear_selector_viajes()
 	_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	_capa_interior = Node2D.new()
 	_capa_interior.name = "InteriorActivo"
 	_capa_interior.visible = false
 	add_child(_capa_interior)
+	_crear_grupos_edificios_nuevos()
 	_crear_objetivos_entrada()
 	# Preparar primero todos los elementos que sustituyen polígonos vectoriales.
 	# Esta fase es síncrona: no debe quedar un frame donde Torres muestre sus
@@ -188,6 +255,7 @@ func _ready() -> void:
 	_cargar_arboles_pixelart()
 	_cargar_puestos_pixelart()
 	_cargar_sprites_de_torres()
+	_registrar_pozos_agua()
 	_crear_luces_faroles()
 	_crear_ventanas_hogares()
 	_crear_charcos_torres()
@@ -201,22 +269,53 @@ func _ready() -> void:
 
 
 
+
+func _registrar_pozos_agua() -> void:
+	# El pozo de la plaza conserva su sprite de escena; añadimos un objetivo
+	# independiente para no alterar su textura ni sus colisiones.
+	for nodo_variant in find_children("*", "Sprite2D", true, false):
+		if not nodo_variant is Sprite2D:
+			continue
+		var sprite := nodo_variant as Sprite2D
+		if not sprite.name.to_lower().contains("pozo"):
+			continue
+		var objetivo := WATERING_INTERACTABLE_SCRIPT.new() as Node2D
+		objetivo.name = "InteraccionPozoAgua"
+		add_child(objetivo)
+		objetivo.global_position = sprite.global_position
+		objetivo.call("configurar_pozo")
+
+
 func _process(_delta: float) -> void:
 	_actualizar_luces_faroles()
 	_actualizar_ambiente_torres(_delta)
+	# Mientras el diálogo de viaje está abierto, ocultamos el aviso contextual
+	# para que no quede superpuesto el botón «Solicitar».
+	if get_tree().get_first_node_in_group("travel_ticket_dialog") != null:
+		var hud := get_tree().get_first_node_in_group("hud")
+		if is_instance_valid(hud) and hud.has_method("ocultar_interaccion"):
+			hud.call("ocultar_interaccion")
+	if _interior_activo and _entrada_interior_id == "posada_habitacion" and not _posada_tiene_acceso():
+		_salir_del_interior()
+		Events.notification_pushed.emit("Tu estancia terminó. Tus pertenencias siguen guardadas.")
 	if not is_instance_valid(_jugador):
 		_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	if not is_instance_valid(_jugador) or not _interior_activo:
 		return
 	var posicion_local := to_local(_jugador.global_position)
-	posicion_local.x = clampf(posicion_local.x, -INTERIOR_MEDIO_ANCHO + 30.0, INTERIOR_MEDIO_ANCHO - 30.0)
-	posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
+	var mitad_ancho := _interior_ancho_actual / 2.0
+	var mitad_alto := _interior_alto_actual / 2.0
+	posicion_local.x = clampf(posicion_local.x, -mitad_ancho + 30.0, mitad_ancho - 30.0)
+	posicion_local.y = clampf(posicion_local.y, -mitad_alto + 30.0, mitad_alto - 40.0)
 	_jugador.global_position = to_global(posicion_local)
-	var cerca_salida := posicion_local.y >= INTERIOR_MEDIO_ALTO - 60.0 \
+	var cerca_salida := posicion_local.y >= mitad_alto - 60.0 \
 		and posicion_local.x >= -12.0 \
 		and posicion_local.x <= 132.0
 	if cerca_salida:
-		_salir_del_interior()
+		if _entrada_interior_id == "posada_habitacion":
+			_volver_al_lobby_posada()
+		else:
+			_salir_del_interior()
 
 
 func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
@@ -244,6 +343,9 @@ func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
 		"archivo_real": "Grupo_edificio_archivo_real",
 		"sala_consejo": "Grupo_edificio_sala_consejo",
 		"casa_estudio": "Grupo_edificio_casa_estudio",
+		"biblioteca": "Grupo_edificio_biblioteca",
+		"centro_expediciones": "Grupo_edificio_centro_expediciones",
+		"clinica": "Grupo_edificio_clinica",
 		"casa_comercio": "Grupo_edificio_casa_comercio",
 		"cuartel": "Grupo_edificio_cuartel",
 		"registro": "Grupo_edificio_registro",
@@ -259,7 +361,26 @@ func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
 	return get_node_or_null(grupo_nombre) as Node2D
 
 
+func _crear_grupos_edificios_nuevos() -> void:
+	# Estos tres edificios no tenían nodos de fachada en la escena original.
+	# Los grupos mantienen una referencia estable para sprites, entradas y rutinas NPC.
+	for grupo_nombre: String in [
+		"Grupo_edificio_biblioteca",
+		"Grupo_edificio_centro_expediciones",
+		"Grupo_edificio_clinica"
+	]:
+		if is_instance_valid(get_node_or_null(grupo_nombre)):
+			continue
+		var grupo := Node2D.new()
+		grupo.name = grupo_nombre
+		add_child(grupo)
+
+
 func _obtener_marcador_entrada(entrada: Dictionary) -> Marker2D:
+	var id := str(entrada.get("id", ""))
+	var marcador_escena := get_node_or_null("LayoutEdificios/Posicion_entrada_" + id) as Marker2D
+	if is_instance_valid(marcador_escena):
+		return marcador_escena
 	var grupo := _obtener_grupo_entrada(entrada)
 	if not is_instance_valid(grupo):
 		return null
@@ -308,7 +429,10 @@ func _crear_objetivos_entrada() -> void:
 		if not is_instance_valid(objetivo):
 			continue
 		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
-		objetivo.position = marcador.position if is_instance_valid(marcador) else entrada.get("pos", Vector2.ZERO)
+		if is_instance_valid(marcador):
+			objetivo.position = grupo.to_local(marcador.global_position) if is_instance_valid(grupo) else to_local(marcador.global_position)
+		else:
+			objetivo.position = entrada.get("pos", Vector2.ZERO)
 		var nombre_lugar := str(entrada.get("nombre", "este lugar")).strip_edges()
 		objetivo.call(
 			"configurar",
@@ -361,32 +485,12 @@ func _crear_cesped_tilemap_dual() -> void:
 		for celda: Vector2i in celdas:
 			posiciones_unicas[celda] = true
 
-	var posiciones_esperadas := TORRES_TILEMAP_LAYOUT.COLUMNS * TORRES_TILEMAP_LAYOUT.ROWS
-	var necesita_reconstruccion := posiciones_unicas.size() != posiciones_esperadas
-	for capa: TileMapDual in capas:
-		if capa.position != TORRES_TILEMAP_LAYOUT.ORIGIN:
-			necesita_reconstruccion = true
-
-	# Si la escena todavía conserva el mapa anterior, regenerar las capas en
-	# ejecución evita cargar un reino recortado. El EditorScript permite guardar
-	# esta misma distribución como TileMaps editables en la escena.
-	if necesita_reconstruccion:
-		_reconstruir_tilemaps_torres()
-		celdas_por_capa.clear()
-		posiciones_unicas.clear()
-		celdas_totales = 0
-		for capa: TileMapDual in capas:
-			var celdas_nuevas: Array[Vector2i] = capa.get_used_cells()
-			celdas_por_capa[capa] = celdas_nuevas
-			celdas_totales += celdas_nuevas.size()
-			for celda: Vector2i in celdas_nuevas:
-				posiciones_unicas[celda] = true
-
-	if posiciones_unicas.size() != posiciones_esperadas:
-		push_error(
-			"ReinoTorres: la huella ampliada debe cubrir %d posiciones únicas; contiene %d (%d celdas entre las capas)."
-			% [posiciones_esperadas, posiciones_unicas.size(), celdas_totales]
-		)
+	# La distribución guardada en reino_torres.tscn es la fuente de verdad.
+	# No se compara contra una cantidad fija ni se corrige el origen en runtime:
+	# así puedes pintar, borrar, ampliar o desplazar las capas desde el editor
+	# sin que el juego deshaga esos cambios al iniciar la zona.
+	if posiciones_unicas.is_empty():
+		push_error("ReinoTorres: las capas editables no contienen celdas.")
 		return
 
 	print(
@@ -463,38 +567,12 @@ func _crear_cesped_tilemap_dual() -> void:
 		% [celdas_totales, posiciones_unicas.size()]
 	)
 
-func _reconstruir_tilemaps_torres() -> void:
-	var capas_por_zona: Dictionary = {}
-	for zona: int in TORRES_TILEMAP_LAYOUT.ZONES:
-		var capa := get_node_or_null("TerrainDual_Zone_%02d" % zona) as TileMapDual
-		if not is_instance_valid(capa):
-			push_error("ReinoTorres: no se puede reconstruir la capa de terreno %d." % zona)
-			return
-		capa.clear()
-		capa.position = TORRES_TILEMAP_LAYOUT.ORIGIN
-		capas_por_zona[zona] = capa
-
-	for y in range(TORRES_TILEMAP_LAYOUT.ROWS):
-		for x in range(TORRES_TILEMAP_LAYOUT.COLUMNS):
-			var celda := Vector2i(x, y)
-			var punto := TORRES_TILEMAP_LAYOUT.ORIGIN + Vector2(
-				(float(x) + 0.5) * TORRES_TILEMAP_LAYOUT.TILE_SIZE,
-				(float(y) + 0.5) * TORRES_TILEMAP_LAYOUT.TILE_SIZE
-			)
-			var zona: int = TORRES_TILEMAP_LAYOUT.zone_for_point(punto, celda)
-			var capa: TileMapDual = capas_por_zona[zona]
-			capa.set_cell(celda, 0, TORRES_TILEMAP_LAYOUT.BASE_ATLAS_TILE)
-
-	for zona: int in TORRES_TILEMAP_LAYOUT.ZONES:
-		var capa: TileMapDual = capas_por_zona[zona]
-		capa.update_internals()
-	print("ReinoTorres: terreno ampliado regenerado (%d x %d celdas)." % [
-		TORRES_TILEMAP_LAYOUT.COLUMNS,
-		TORRES_TILEMAP_LAYOUT.ROWS
-	])
-
 
 func _crear_muralla_montana() -> void:
+	# Si la muralla fue generada y guardada desde el editor, reutilizarla.
+	# Sólo crearla aquí como respaldo para escenas antiguas aún no guardadas.
+	if get_node_or_null("TerrenoMurallaMontana") != null:
+		return
 	# Reutiliza el mismo compositor procedural y el mismo atlas de Montaña
 	# que utiliza Mundo Abierto. El offset coincide con el límite del mapa.
 	var terreno := WorldTerrainVisual.new()
@@ -858,52 +936,66 @@ func _actualizar_decoracion_evento_torres() -> void:
 	if evento.is_empty():
 		return
 
-	var variante := posmod(dia, 4)
 	match evento:
 		"mercado":
-			# Dos puestos laterales mantienen libre el pozo y el eje central.
-			_crear_sprite_evento("PuestoMercadoOeste", "puesto", variante, Vector2(-112.0, -54.0), Vector2.ONE, 4)
-			_crear_sprite_evento("MercanciaMercadoOeste", "mercancia", variante, Vector2(-112.0, -42.0), Vector2.ONE, 5)
-			_crear_sprite_evento("PuestoMercadoEste", "puesto_azul", variante + 1, Vector2(112.0, -54.0), Vector2.ONE, 4)
-			_crear_sprite_evento("MercanciaMercadoEste", "mercancia", variante + 2, Vector2(112.0, -42.0), Vector2.ONE, 5)
+			# Mercadería limitada a los sprites originales de pan y manzana.
+			_crear_puesto_evento("PuestoMercadoOeste", Vector2(-112.0, -54.0), false, 4)
+			_crear_producto_puesto_evento("PanMercadoOeste", PRODUCTO_PAN, Vector2(-118.0, -42.0), 5)
+			_crear_producto_puesto_evento("ManzanaMercadoOeste", PRODUCTO_MANZANA, Vector2(-105.0, -42.0), 5)
+			_crear_puesto_evento("PuestoMercadoEste", Vector2(112.0, -54.0), true, 4)
+			_crear_producto_puesto_evento("PanMercadoEste", PRODUCTO_PAN, Vector2(105.0, -42.0), 5)
+			_crear_producto_puesto_evento("ManzanaMercadoEste", PRODUCTO_MANZANA, Vector2(118.0, -42.0), 5)
 		"comida":
+			# La mesa con platos ya contiene su comida: no se superponen
+			# raciones, adornos ni asientos generados por código.
 			for indice in range(3):
 				var x := -104.0 + float(indice) * 104.0
 				var mesa := Sprite2D.new()
 				mesa.name = "MesaComunitaria_%02d" % indice
-				mesa.texture = MUEBLE_MESA
+				mesa.texture = MUEBLE_MESA_PLATOS
 				mesa.position = Vector2(x, 66.0)
 				mesa.scale = Vector2(0.9, 0.8)
 				mesa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 				mesa.z_index = 4
 				_decoracion_evento_torres.add_child(mesa)
-				_crear_sprite_evento("ComidaMesa_%02d" % indice, "comida", variante + indice, Vector2(x, 54.0), Vector2.ONE, 5)
 		"temporada":
-			var estacion := str(tiempo.get("estacion", "temporada")).to_lower()
-			var variante_estacional := absi(estacion.hash()) % 4
-			_crear_sprite_evento("GuirnaldaNorteOeste", "guirnalda", variante_estacional, Vector2(-112.0, -112.0), Vector2.ONE, 5)
-			_crear_sprite_evento("GuirnaldaNorteEste", "guirnalda", variante_estacional + 1, Vector2(112.0, -112.0), Vector2.ONE, 5)
-			_crear_sprite_evento("FloresOeste", "flores", variante_estacional, Vector2(-158.0, 108.0), Vector2.ONE, 5)
-			_crear_sprite_evento("FloresEste", "flores", variante_estacional + 2, Vector2(158.0, 108.0), Vector2.ONE, 5)
+			# La celebración se anuncia, pero sus adornos esperan sprites propios.
+			pass
 
 
-func _crear_sprite_evento(
-	nombre: String,
-	tipo: String,
-	variante: int,
-	posicion: Vector2,
-	escala: Vector2,
-	z: int
-) -> void:
-	if not is_instance_valid(_decoracion_evento_torres):
+func _crear_puesto_evento(nombre: String, posicion: Vector2, invertir: bool, z: int) -> void:
+	if not is_instance_valid(_decoracion_evento_torres) or MERCADO_PUESTO == null:
 		return
 	var sprite := Sprite2D.new()
 	sprite.name = nombre
-	sprite.texture = TORRES_PIXEL_ART.crear_decoracion(tipo, variante)
+	sprite.texture = MERCADO_PUESTO
 	sprite.position = posicion
-	sprite.scale = escala
+	sprite.centered = true
+	sprite.flip_h = invertir
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	# El puesto conserva su proporción y se adapta a la huella de los puestos
+	# que ya ocupaban la plaza, sin deformar el dibujo original.
+	var tamano := MERCADO_PUESTO.get_size()
+	if tamano.x > 0.0 and tamano.y > 0.0:
+		var escala := minf(84.0 / tamano.x, 76.0 / tamano.y)
+		sprite.scale = Vector2.ONE * escala
+	sprite.z_index = z
+	_decoracion_evento_torres.add_child(sprite)
+
+
+func _crear_producto_puesto_evento(nombre: String, textura: Texture2D, posicion: Vector2, z: int) -> void:
+	if not is_instance_valid(_decoracion_evento_torres) or textura == null:
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = textura
+	sprite.position = posicion
 	sprite.centered = true
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var tamano := textura.get_size()
+	if tamano.x > 0.0 and tamano.y > 0.0:
+		var escala := minf(13.0 / tamano.x, 13.0 / tamano.y)
+		sprite.scale = Vector2.ONE * escala
 	sprite.z_index = z
 	_decoracion_evento_torres.add_child(sprite)
 
@@ -938,42 +1030,25 @@ func _crear_luces_faroles() -> void:
 	# norte/sur del centro; quedan sobre caminos y no en los extremos del mapa.
 	var faroles: Array[Dictionary] = [
 		{"nombre": "OesteNorte", "nodo": "Sprite_poste_oeste"},
-		{"nombre": "OesteCentroNorte", "posicion": Vector2(-600.0, -225.0)},
-		{"nombre": "OesteCentro", "posicion": Vector2(-600.0, 25.0)},
-		{"nombre": "OesteCentroSur", "posicion": Vector2(-600.0, 275.0)},
-		{"nombre": "OesteSur", "posicion": Vector2(-600.0, 500.0)},
+		{"nombre": "OesteCentroNorte", "nodo": "Sprite_poste_OesteCentroNorte"},
+		{"nombre": "OesteCentro", "nodo": "Sprite_poste_OesteCentro"},
+		{"nombre": "OesteCentroSur", "nodo": "Sprite_poste_OesteCentroSur"},
+		{"nombre": "OesteSur", "nodo": "Sprite_poste_OesteSur"},
 		{"nombre": "EsteNorte", "nodo": "Sprite_poste_este"},
-		{"nombre": "EsteCentroNorte", "posicion": Vector2(600.0, -225.0)},
-		{"nombre": "EsteCentro", "posicion": Vector2(600.0, 25.0)},
-		{"nombre": "EsteCentroSur", "posicion": Vector2(600.0, 275.0)},
-		{"nombre": "EsteSur", "posicion": Vector2(600.0, 500.0)},
-		{"nombre": "AccesoNorte", "posicion": Vector2(0.0, -500.0)},
-		{"nombre": "AccesoSur", "posicion": Vector2(0.0, 500.0)}
+		{"nombre": "EsteCentroNorte", "nodo": "Sprite_poste_EsteCentroNorte"},
+		{"nombre": "EsteCentro", "nodo": "Sprite_poste_EsteCentro"},
+		{"nombre": "EsteCentroSur", "nodo": "Sprite_poste_EsteCentroSur"},
+		{"nombre": "EsteSur", "nodo": "Sprite_poste_EsteSur"},
+		{"nombre": "AccesoNorte", "nodo": "Sprite_poste_AccesoNorte"},
+		{"nombre": "AccesoSur", "nodo": "Sprite_poste_AccesoSur"}
 	]
 
 	for farol_datos: Dictionary in faroles:
-		var farol: Sprite2D = null
-		var posicion_global := Vector2.ZERO
-		if farol_datos.has("nodo"):
-			farol = get_node_or_null(NodePath(str(farol_datos["nodo"]))) as Sprite2D
-			if not is_instance_valid(farol):
-				push_warning("ReinoTorres: no se encontró el farol: " + str(farol_datos["nodo"]))
-				continue
-			posicion_global = farol.to_global(Vector2(0.0, -8.0))
-		else:
-			var poste_existente := get_node_or_null("Sprite_poste_oeste") as Sprite2D
-			if not is_instance_valid(poste_existente):
-				continue
-			farol = Sprite2D.new()
-			farol.name = "Sprite_poste_" + str(farol_datos["nombre"])
-			farol.texture = poste_existente.texture
-			farol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			farol.centered = poste_existente.centered
-			farol.scale = poste_existente.scale
-			farol.z_index = poste_existente.z_index
-			farol.position = farol_datos["posicion"]
-			add_child(farol)
-			posicion_global = farol.to_global(Vector2(0.0, -8.0))
+		var farol := get_node_or_null(NodePath(str(farol_datos["nodo"]))) as Sprite2D
+		if not is_instance_valid(farol):
+			push_warning("ReinoTorres: falta el poste editable en la escena: " + str(farol_datos["nodo"]))
+			continue
+		var posicion_global := farol.to_global(Vector2(0.0, -8.0))
 
 		var nombre_farol := str(farol_datos["nombre"])
 		var posicion_local: Vector2 = to_local(posicion_global)
@@ -1072,29 +1147,62 @@ func _suavizar_luz(valor: float) -> float:
 
 
 func _cargar_puestos_pixelart() -> void:
-	_agrupar_poligonos_pixelart(
+	# Los puestos usan el sprite dibujado para Torres; no se rasterizan
+	# toldos, mostradores ni franjas mediante el generador procedural.
+	_agrupar_poligonos_con_textura(
 		["MarketCounter", "MarketCounterTop", "MarketAwningBase", "MarketAwningStripe1", "MarketAwningStripe2", "MarketAwningStripe3"],
-		"puesto", 0
+		MERCADO_PUESTO, false
 	)
-	_agrupar_poligonos_pixelart(
+	_agrupar_poligonos_con_textura(
 		["FishStall", "FishStallAwning", "FishStallStripe"],
-		"puesto_azul", 1
+		MERCADO_PUESTO, true
 	)
 	for indice in range(1, 5):
-		_agrupar_poligonos_pixelart(
+		_agrupar_poligonos_con_textura(
 			["MarketExtension%d" % indice, "MarketExtensionAwning%d" % indice, "MarketExtensionLegL%d" % indice, "MarketExtensionLegR%d" % indice],
-			"puesto" if indice % 2 == 0 else "puesto_azul", indice
+			MERCADO_PUESTO, indice % 2 == 1
 		)
+	# El pozo ya tiene sprite propio en la escena.
 	if get_node_or_null("Sprite_pozo") != null:
 		_ocultar_placeholder(["WellShadow", "WellOuter", "WellWater", "WellLipTop"])
-	else:
-		_agrupar_poligonos_pixelart(
-			["WellShadow", "WellOuter", "WellWater", "WellLipTop"],
-			"pozo", 0
-		)
 	_ocultar_placeholder(["LampWestPost", "LampEastPost"])
 	_agrupar_poligonos_pixelart(["LampWestGlow"], "lampara", 0)
 	_agrupar_poligonos_pixelart(["LampEastGlow"], "lampara", 1)
+
+
+func _agrupar_poligonos_con_textura(nombres: Array, textura: Texture2D, invertir: bool) -> void:
+	if textura == null:
+		return
+	var limites := Rect2()
+	var primero := true
+	var z_mayor := -100
+	var encontrados: Array[Polygon2D] = []
+	for valor: Variant in nombres:
+		var poligono := get_node_or_null(NodePath(String(valor))) as Polygon2D
+		if not is_instance_valid(poligono) or poligono.polygon.size() < 3:
+			continue
+		var limite_poligono := _limites_de_poligono(poligono)
+		if primero:
+			limites = limite_poligono
+			primero = false
+		else:
+			limites = limites.merge(limite_poligono)
+		z_mayor = maxi(z_mayor, poligono.z_index)
+		encontrados.append(poligono)
+	if primero:
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = "PuestoSprite_" + str(nombres[0])
+	sprite.texture = textura
+	sprite.position = limites.get_center()
+	sprite.centered = true
+	sprite.flip_h = invertir
+	sprite.scale = Vector2(limites.size.x / textura.get_width(), limites.size.y / textura.get_height())
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = z_mayor
+	add_child(sprite)
+	for poligono: Polygon2D in encontrados:
+		poligono.visible = false
 
 
 func _agrupar_poligonos_pixelart(nombres: Array, tipo: String, variante: int) -> void:
@@ -1156,8 +1264,11 @@ func _cargar_sprites_de_torres() -> void:
 		_ocultar_placeholder(building["hide"])
 		var grupo_edificio := _obtener_grupo_entrada({"id": clave})
 		var contenedor_sprite: Node = grupo_edificio if is_instance_valid(grupo_edificio) else self
+		var marcador_sprite := get_node_or_null("LayoutEdificios/Posicion_sprite_" + clave) as Marker2D
 		var sprite_existente := contenedor_sprite.get_node_or_null(NodePath(String(building.get("sprite_node", "Sprite_" + clave)))) as Sprite2D
 		if is_instance_valid(sprite_existente):
+			if is_instance_valid(marcador_sprite):
+				sprite_existente.position = contenedor_sprite.to_local(marcador_sprite.global_position)
 			print("ReinoTorres: sprite oficial de escena activo para ", clave)
 			continue
 
@@ -1171,7 +1282,10 @@ func _cargar_sprites_de_torres() -> void:
 		var sprite := Sprite2D.new()
 		sprite.name = String(building.get("sprite_node", "Sprite_" + clave.capitalize()))
 		sprite.texture = texture
-		sprite.position = building["position"]
+		if is_instance_valid(marcador_sprite):
+			sprite.position = contenedor_sprite.to_local(marcador_sprite.global_position)
+		else:
+			sprite.position = building["position"]
 		sprite.centered = true
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var target_size: Vector2 = building["size"]
@@ -1192,8 +1306,19 @@ func _cargar_sprites_de_torres() -> void:
 
 
 
+func obtener_posicion_exterior_para_viaje() -> Vector2:
+	if _interior_activo:
+		return _posicion_exterior
+	if is_instance_valid(_jugador):
+		return _jugador.global_position
+	return Vector2.ZERO
+
+
 func _entrar_al_interior(entrada: Dictionary) -> void:
 	if _interior_activo or not is_instance_valid(_jugador):
+		return
+	if str(entrada.get("id", "")) == "posada_habitacion" and not _posada_tiene_acceso():
+		Events.notification_pushed.emit("Tu suscripción de la posada no está activa.")
 		return
 	_ocultar_npcs_exteriores()
 	_posicion_exterior = _jugador.global_position
@@ -1215,6 +1340,8 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_limitar_camara_a_interior()
 	_interterior_colisiones(true)
 	_interior_activo = true
+	if _entrada_interior_id == "cuartel":
+		_abrir_menu_servicio_edificio("cuartel")
 	print("ReinoTorres: entrando a ", entrada["id"])
 
 
@@ -1482,9 +1609,18 @@ func _devolver_npcs_del_interior_al_exterior() -> void:
 			(npc as CanvasItem).visible = false
 
 
+func _volver_al_lobby_posada() -> void:
+	if not _interior_activo or _entrada_interior_id != "posada_habitacion" or not is_instance_valid(_jugador):
+		return
+	_entrada_interior_id = "posada"
+	_construir_habitacion({"id": "posada", "nombre": "Posada", "tipo": "posada"})
+	_jugador.global_position = to_global(Vector2(0, 70))
+
+
 func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
+	_cerrar_menu_posada()
 	_devolver_npcs_del_interior_al_exterior()
 	_restaurar_npcs_exteriores()
 	_capa_interior.visible = false
@@ -1530,6 +1666,8 @@ func restaurar_estado_guardado(estado: Dictionary) -> void:
 		if str(entrada.get("id", "")) == entrada_id:
 			entrada_guardada = entrada
 			break
+	if entrada_id == "posada_habitacion":
+		entrada_guardada = {"id": "posada_habitacion", "nombre": "Habitación de la posada", "tipo": "habitacion_posada", "pos": Vector2(360, -53)}
 	if entrada_guardada.is_empty():
 		push_warning("ReinoTorres: no se pudo restaurar el interior; entrada desconocida: " + entrada_id)
 		return
@@ -1576,8 +1714,8 @@ func _limitar_camara_a_interior() -> void:
 		"enabled": _camara_interior.limit_enabled,
 	}
 	# Coincide con los bordes exteriores de la habitación (incluyendo los muros).
-	var esquina_superior_izquierda := to_global(Vector2(-INTERIOR_MEDIO_ANCHO, -INTERIOR_MEDIO_ALTO))
-	var esquina_inferior_derecha := to_global(Vector2(INTERIOR_MEDIO_ANCHO, INTERIOR_MEDIO_ALTO))
+	var esquina_superior_izquierda := to_global(Vector2(-_interior_ancho_actual / 2.0, -_interior_alto_actual / 2.0))
+	var esquina_inferior_derecha := to_global(Vector2(_interior_ancho_actual / 2.0, _interior_alto_actual / 2.0))
 	_camara_interior.limit_left = floori(esquina_superior_izquierda.x)
 	_camara_interior.limit_top = floori(esquina_superior_izquierda.y)
 	_camara_interior.limit_right = ceili(esquina_inferior_derecha.x)
@@ -1640,6 +1778,20 @@ func _interterior_colisiones(_activar: bool) -> void:
 	return
 
 
+func _obtener_dimensiones_interior(tipo: String) -> Vector2:
+	# Las salas grandes ganan espacio para circulación y mobiliario; las
+	# viviendas y locales pequeños conservan una escala más íntima.
+	match tipo:
+		"castillo":
+			return Vector2(704.0, 416.0)
+		"biblioteca", "archivo", "centro_expediciones", "taberna", "escuela", "comercio", "consejo", "cuartel":
+			return Vector2(640.0, 384.0)
+		"vivero", "granero", "molino", "corrales", "clinica", "carpinteria", "taller":
+			return Vector2(608.0, 368.0)
+		_:
+			return Vector2(INTERIOR_ANCHO, INTERIOR_ALTO)
+
+
 func _construir_habitacion(entrada: Dictionary) -> void:
 	for hijo: Node in _capa_interior.get_children():
 		hijo.free()
@@ -1647,75 +1799,236 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	cuarto.name = "Habitacion_" + str(entrada["id"])
 	_capa_interior.add_child(cuarto)
 
-	# El suelo se conserva como TileMap y las paredes mantienen sus colisiones.
-	# Los muebles existentes se representan con sprites oficiales. Los objetos
-	# sin sprite propio quedan fuera hasta que se dibujen sus recursos pixel art.
-	_agregar_suelo_tilemap(cuarto)
-	# Muros perimetrales ampliados con una abertura de puerta al sur.
-	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -INTERIOR_MEDIO_ALTO - 4.0), Vector2(INTERIOR_ANCHO + 16.0, 16))
-	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-INTERIOR_MEDIO_ANCHO - 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
-	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(INTERIOR_MEDIO_ANCHO + 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
-	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2((-INTERIOR_MEDIO_ANCHO - 4.0 - 12.0) / 2.0, INTERIOR_MEDIO_ALTO + 4.0), Vector2(INTERIOR_MEDIO_ANCHO - 12.0, 16))
-	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2((132.0 + INTERIOR_MEDIO_ANCHO + 4.0) / 2.0, INTERIOR_MEDIO_ALTO + 4.0), Vector2(INTERIOR_MEDIO_ANCHO - 128.0, 16))
-
 	var tipo := str(entrada["tipo"])
+	var dimensiones := _obtener_dimensiones_interior(tipo)
+	_interior_ancho_actual = dimensiones.x
+	_interior_alto_actual = dimensiones.y
+
+	# Cada habitación recibe un acabado propio: suelo, zócalos, paredes y
+	# molduras se dibujan con una paleta coherente con el uso del edificio.
+	var acabado := Node2D.new()
+	acabado.name = "AcabadoInterior"
+	acabado.set_script(BUILDING_INTERIOR_STYLE_SCRIPT)
+	acabado.z_index = -10
+	acabado.call("configurar", tipo, dimensiones, _entrada_interior_id)
+	cuarto.add_child(acabado)
+
+	# Las colisiones siguen el tamaño real de esta habitación. La abertura
+	# inferior conserva la posición de la puerta usada por el jugador.
+	var mitad_ancho := _interior_ancho_actual / 2.0
+	var mitad_alto := _interior_alto_actual / 2.0
+	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -mitad_alto - 4.0), Vector2(_interior_ancho_actual + 16.0, 16))
+	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-mitad_ancho - 4.0, 0), Vector2(16, _interior_alto_actual + 16.0))
+	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(mitad_ancho + 4.0, 0), Vector2(16, _interior_alto_actual + 16.0))
+	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2((-mitad_ancho - 4.0 - 12.0) / 2.0, mitad_alto + 4.0), Vector2(mitad_ancho - 12.0, 16))
+	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2((132.0 + mitad_ancho + 4.0) / 2.0, mitad_alto + 4.0), Vector2(mitad_ancho - 128.0, 16))
+
 	match tipo:
 		"castillo":
-			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA, Vector2(0, -70), Vector2(1.6, 1), 1)
-			_agregar_sprite_mueble(cuarto, "MesaAudiencias", MUEBLE_MESA, Vector2(0, 45), Vector2(2.2, 1), 1)
-		"panaderia":
-			_agregar_sprite_mueble(cuarto, "Horno", MUEBLE_HORNO, Vector2(-150, -75), Vector2(2, 2), 1)
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(90, -20), Vector2(1.5, 1), 1)
-			_agregar_sprite_mueble(cuarto, "MesaAmasado", MUEBLE_MESA, Vector2(70, 65), Vector2(1.3, 1), 1)
-		"posada":
-			for i in range(3):
-				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA, Vector2(-110 + i * 110, -15), Vector2(1.0, 0.9), 1)
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(2.0, 1), 1)
-		"forja":
-			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-145, -70), Vector2(2, 2), 1)
-			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA, Vector2(115, 65), Vector2(1.4, 1), 1)
-		"archivo":
-			_agregar_sprite_mueble(cuarto, "MesaConsulta", MUEBLE_MESA, Vector2(0, 65), Vector2(1.8, 1), 1)
-		"consejo":
-			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA, Vector2(0, -5), Vector2(2.8, 1.8), 1)
-		"oris":
-			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA, Vector2(0, 25), Vector2(2.0, 1.4), 1)
-			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA, Vector2(-130, -65), Vector2(1.0, 1.1), 1)
-		"laboratorio":
-			_agregar_sprite_mueble(cuarto, "MesaExaminacion", MUEBLE_MESA, Vector2(-185, -105), Vector2(1.45, 1.2), 1)
-			_agregar_estacion_laboratorio(cuarto, "examen", "Examinar objetos", Vector2(-185, -55))
-			_agregar_sprite_mueble(cuarto, "MesaMezclas", MUEBLE_MESA, Vector2(-35, -105), Vector2(1.35, 1.15), 1)
-			_agregar_estacion_laboratorio(cuarto, "mezclas", "Preparar mezclas", Vector2(-35, -55))
-			_agregar_sprite_mueble(cuarto, "HornoTratamiento", MUEBLE_HORNO, Vector2(145, -105), Vector2(1.35, 1.35), 1)
-			_agregar_estacion_laboratorio(cuarto, "termica", "Aplicar tratamiento térmico", Vector2(145, -48))
-			_agregar_sprite_mueble(cuarto, "MesaObservacion", MUEBLE_MESA, Vector2(-125, 75), Vector2(1.35, 1.15), 1)
-			_agregar_estacion_laboratorio(cuarto, "observacion", "Observar estructuras", Vector2(-125, 120))
-			_agregar_sprite_mueble(cuarto, "MesaEterium", MUEBLE_MESA, Vector2(65, 75), Vector2(1.45, 1.15), 1)
-			_agregar_estacion_laboratorio(cuarto, "eterium", "Estudiar Eterium", Vector2(65, 120))
-			_agregar_sprite_mueble(cuarto, "AlmacenMuestras", MUEBLE_COFRE, Vector2(220, 85), Vector2(0.9, 0.9), 1)
-		"comercio", "registro", "almacen":
-			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -75), Vector2(2.6, 1), 1)
-			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA, Vector2(0, 55), Vector2(1.5, 1), 2)
-		"cuartel":
+			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -78), Vector2(1.5, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaAudiencias", MUEBLE_MESA, Vector2(0, 28), Vector2(2.0, 1), 1)
 			for i in range(4):
-				var posicion_litera := Vector2(-150 + (i % 2) * 300, -65 + int(i / 2) * 105)
-				_agregar_sprite_mueble(cuarto, "Litera%d" % i, MUEBLE_CAMA, posicion_litera, Vector2(0.85, 0.85), 1)
+				var x := -150.0 + float(i) * 100.0
+				_agregar_sprite_mueble(cuarto, "AsientoAudiencia%d" % i, MUEBLE_ASIENTO, Vector2(x, 88), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCastilloOeste", MUEBLE_ARMARIO, Vector2(-205, -125), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCastilloEste", MUEBLE_ARMARIO, Vector2(205, -125), Vector2(0.9, 0.9), 1)
+		"panaderia":
+			# Zona de producción a la izquierda y exhibición continua al fondo.
+			_agregar_sprite_mueble(cuarto, "Horno", MUEBLE_HORNO, Vector2(-190, -78), Vector2(1.8, 1.8), 1)
+			for i in range(4):
+				_agregar_sprite_mueble(cuarto, "EstanteriaPan%d" % i, MUEBLE_ESTANTERIA_PAN, Vector2(-35 + i * 66, -122), Vector2(1.35, 1.35), 1)
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA_PLATOS, Vector2(65, -12), Vector2(1.25, 1.05), 1)
+			_agregar_sprite_mueble(cuarto, "MesaAmasado", MUEBLE_MESA, Vector2(-35, 78), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "SillaPanadero", MUEBLE_SILLA_DERECHA, Vector2(55, 105), Vector2.ONE, 1, true)
+			_agregar_sprite_mueble(cuarto, "AlmacenHarina", MUEBLE_ARMARIO, Vector2(-205, 65), Vector2(0.9, 0.9), 1)
+		"posada":
+			_agregar_sprite_mueble(cuarto, "MostradorRecepcion", MUEBLE_MESA, Vector2(0, -112), Vector2(1.8, 1), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioPosada", MUEBLE_ARMARIO, Vector2(-205, -110), Vector2(0.9, 0.9), 1)
+			_agregar_estacion_posada(cuarto, Vector2(0, -68))
+			for i in range(3):
+				var x := -112.0 + float(i) * 112.0
+				_agregar_sprite_mueble(cuarto, "Mesa%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, -12), Vector2(0.95, 0.9), 1)
+				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
+				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
+		"vivero":
+			var tilemap_tierra: TileMapDual = TORRES_VIVERO_BUILDER.crear_tilemap_tierra(cuarto)
+			var capa_humedad: TileMapLayer = TORRES_VIVERO_BUILDER.crear_capa_tierra_mojada(cuarto)
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
+			if is_instance_valid(tilemap_tierra):
+				tilemap_tierra.call_deferred("reconstruir_renderer_dual")
+			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
+			_agregar_estacion_edificio(cuarto, "vivero", "Revisar vivero", Vector2(115, -98))
+			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(210, 105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-220, 105), Vector2(0.85, 0.85), 1)
+		"herbolario":
+			_agregar_sprite_mueble(cuarto, "MesaInvestigacionHerbolario", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, -78), Vector2(1.35, 1.05), 1)
+			_agregar_estacion_edificio(cuarto, "herbolario_investigacion", "Investigar muestras", Vector2(-105, -48))
+			_agregar_sprite_mueble(cuarto, "MesaProcesamientoHerbolario", MUEBLE_MESA_PLATOS, Vector2(90, -78), Vector2(1.25, 1.05), 1)
+			_agregar_estacion_edificio(cuarto, "herbolario_procesamiento", "Procesar muestras", Vector2(90, -48))
+			_agregar_sprite_mueble(cuarto, "ArmarioMuestrasHerbolario", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "CofreMuestrasHerbolario", MUEBLE_COFRE, Vector2(0, 115), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
+		"taberna":
+			# Barra al fondo y cinco mesas en dos zonas para que los grupos
+			# puedan reunirse sin bloquear el acceso ni la circulación central.
+			_agregar_sprite_mueble(cuarto, "BarraTaberna", MUEBLE_MESA_PLATOS, Vector2(0, -135), Vector2(2.0, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteTaberna", MUEBLE_ARMARIO, Vector2(-255, -125), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "HogarTaberna", MUEBLE_HORNO, Vector2(255, -125), Vector2(1.25, 1.25), 1)
+			for i in range(5):
+				var x := -250.0 + float(i) * 125.0
+				var y := 12.0 if i % 2 == 0 else 82.0
+				_agregar_sprite_mueble(cuarto, "MesaTaberna%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, y), Vector2(0.95, 0.9), 1)
+				_agregar_sprite_mueble(cuarto, "SillaTaberna%dA" % i, MUEBLE_SILLA_FRENTE, Vector2(x - 24, y + 34), Vector2.ONE, 1)
+				_agregar_sprite_mueble(cuarto, "SillaTaberna%dB" % i, MUEBLE_SILLA_FRENTE, Vector2(x + 24, y - 34), Vector2.ONE, 1)
+			_agregar_estacion_edificio(cuarto, "taberna", "Hablar en la taberna", Vector2(0, -85))
+		"escuela":
+			# Aula ampliada: cuatro columnas de pupitres y un corredor central.
+			_agregar_sprite_mueble(cuarto, "PizarraEscuela", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -145), Vector2(1.8, 0.8), 1)
+			_agregar_sprite_mueble(cuarto, "MesaDocenteEscuela", MUEBLE_MESA, Vector2(0, -98), Vector2(1.4, 0.9), 1)
+			for fila in range(2):
+				for columna in range(4):
+					var x := -225.0 + float(columna) * 150.0
+					var y := -12.0 + float(fila) * 100.0
+					_agregar_sprite_mueble(cuarto, "PupitreEscuela_%d_%d" % [fila, columna], MUEBLE_MESA_DOCUMENTOS, Vector2(x, y), Vector2(0.8, 0.7), 1)
+					_agregar_sprite_mueble(cuarto, "AsientoEscuela_%d_%d" % [fila, columna], MUEBLE_SILLA_FRENTE, Vector2(x, y + 28), Vector2(0.8, 0.8), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteEscuelaOeste", MUEBLE_ARMARIO, Vector2(-275, 112), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteEscuelaEste", MUEBLE_ARMARIO, Vector2(275, 112), Vector2(0.85, 0.85), 1)
+			_agregar_estacion_edificio(cuarto, "escuela", "Consultar lecciones", Vector2(0, -62))
+		"habitacion_posada":
+			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaHabitacion", MUEBLE_MESA, Vector2(125, -85), Vector2(1.0, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "SillaHabitacion", MUEBLE_SILLA_FRENTE, Vector2(125, -38), Vector2.ONE, 1)
+		"forja":
+			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-175, -82), Vector2(1.8, 1.8), 1)
+			_agregar_sprite_mueble(cuarto, "Yunque", MUEBLE_YUNQUE, Vector2(65, -20), Vector2(1.3, 1.3), 1)
+			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 92), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaInspeccionEquipo", MUEBLE_MESA_DOCUMENTOS, Vector2(180, -75), Vector2(1.25, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoInspeccionEquipo", MUEBLE_SILLA_FRENTE, Vector2(180, -20), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenForja", MUEBLE_ARMARIO, Vector2(-190, 95), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MaterialesForja", MUEBLE_COFRE, Vector2(195, 95), Vector2(0.85, 0.85), 1)
+			_agregar_estacion_edificio(cuarto, "forja", "Reparar herramientas", Vector2(65, 20))
+			_agregar_estacion_laboratorio(cuarto, "forja_inspeccion", "Inspeccionar armas y herramientas", Vector2(180, -48))
+		"archivo":
+			_agregar_sprite_mueble(cuarto, "EstanteArchivoOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteArchivoCentro", MUEBLE_ARMARIO, Vector2(-95, -105), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteArchivoEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaDocumentosPersonajes", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 38), Vector2(1.35, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoPersonajes", MUEBLE_SILLA_FRENTE, Vector2(-105, 88), Vector2.ONE, 1)
+			_agregar_estacion_archivo(cuarto, "documentos_personajes", "Consultar personajes", Vector2(-105, 8))
+			_agregar_sprite_mueble(cuarto, "MesaHistoriaTorres", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 38), Vector2(1.35, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoHistoria", MUEBLE_SILLA_FRENTE, Vector2(105, 88), Vector2.ONE, 1)
+			_agregar_estacion_archivo(cuarto, "historia_torres", "Consultar historia de Torres", Vector2(105, 8))
+		"biblioteca":
+			# Estanterías perimetrales, consulta central y dos puestos laterales
+			# que aprovechan el ancho extra sin cerrar el corredor de entrada.
+			for x in [-280.0, -140.0, 0.0, 140.0, 280.0]:
+				_agregar_sprite_mueble(cuarto, "EstanteriaBiblioteca_%d" % int(x), MUEBLE_ARMARIO, Vector2(x, -122), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "MesaConsultaBiblioteca", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.45, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MostradorBiblioteca", MUEBLE_MESA, Vector2(0, 105), Vector2(1.5, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaLecturaOeste", MUEBLE_MESA_DOCUMENTOS, Vector2(-230, 30), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "MesaLecturaEste", MUEBLE_MESA_DOCUMENTOS, Vector2(230, 30), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "SillaBibliotecaOeste", MUEBLE_SILLA_FRENTE, Vector2(-105, 55), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "SillaBibliotecaEste", MUEBLE_SILLA_FRENTE, Vector2(105, 55), Vector2.ONE, 1)
+		"centro_expediciones":
+			# La mesa central organiza las rutas; las mesas laterales sirven para
+			# revisar mapas y preparar el equipo antes de salir.
+			_agregar_sprite_mueble(cuarto, "MesaPlanificacionGremio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.8, 1.25), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesOeste", MUEBLE_ARMARIO, Vector2(-270, -112), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesEste", MUEBLE_ARMARIO, Vector2(270, -112), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMapasOeste", MUEBLE_MESA_DOCUMENTOS, Vector2(-225, 8), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMapasEste", MUEBLE_MESA_DOCUMENTOS, Vector2(225, 8), Vector2(0.9, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesOeste", MUEBLE_COFRE, Vector2(-185, 112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesEste", MUEBLE_COFRE, Vector2(185, 112), Vector2(0.9, 0.9), 1)
+			_agregar_estacion_edificio(cuarto, "centro_expediciones", "Mesa de expediciones", Vector2(0, 12))
+		"clinica":
+			# La recepción queda al fondo; las camas se mantienen como decoración
+			# clínica y no heredan la acción de dormir de las camas domésticas.
+			_agregar_sprite_mueble(cuarto, "MostradorClinica", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -118), Vector2(1.45, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMedicinasClinicaOeste", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMedicinasClinicaEste", MUEBLE_ARMARIO, Vector2(205, -112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_decorativo(cuarto, "CamaAtencionClinicaOeste", MUEBLE_CAMA, Vector2(-125, 8), Vector2(1.05, 1.05), 1)
+			_agregar_sprite_decorativo(cuarto, "CamaAtencionClinicaEste", MUEBLE_CAMA, Vector2(125, 8), Vector2(1.05, 1.05), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoClinicaOeste", MUEBLE_SILLA_FRENTE, Vector2(-125, 72), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "AsientoClinicaEste", MUEBLE_SILLA_FRENTE, Vector2(125, 72), Vector2.ONE, 1)
+		"consejo":
+			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.0, 1.25), 1)
+			for i in range(8):
+				var x := -240.0 + float(i % 4) * 160.0
+				var y := -105.0 if i < 4 else 92.0
+				_agregar_sprite_mueble(cuarto, "SillaConsejo%d" % i, MUEBLE_SILLA_DERECHA, Vector2(x, y), Vector2.ONE, 1, x > 0.0)
+			_agregar_sprite_mueble(cuarto, "ArmarioConsejo", MUEBLE_ARMARIO, Vector2(275, -125), Vector2(0.85, 0.85), 1)
+		"oris":
+			_agregar_sprite_mueble(cuarto, "ArmarioOrisOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioOrisEste", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaMuestras", MUEBLE_MESA_PLATOS, Vector2(-105, 5), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaEstudio", MUEBLE_MESA_DOCUMENTOS, Vector2(65, 28), Vector2(1.5, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "SillaEstudio", MUEBLE_SILLA_FRENTE, Vector2(65, 82), Vector2.ONE, 1)
+		"laboratorio":
+			# Una única mesa de análisis: el resto de procedimientos se integrará
+			# aquí cuando existan mecánicas reales que los justifiquen.
+			_agregar_sprite_mueble(cuarto, "MesaAnalisis", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -42), Vector2(1.45, 1.15), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoAnalisis", MUEBLE_SILLA_DERECHA, Vector2(-55, 18), Vector2.ONE, 1)
+			_agregar_estacion_laboratorio(cuarto, "examen", "Estudiar", Vector2(0, 18))
+		"comercio":
+			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-220, -125), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(220, -125), Vector2(0.85, 0.85), 1)
+			var vendedores := ["Bruna", "Elian", "Darven", "Saira", "Narel", "Nima", "Mara", "Ivo"]
+			for i in range(vendedores.size()):
+				var columna := i % 4
+				var fila := int(i / 4)
+				var posicion_puesto := Vector2(-225.0 + columna * 150.0, -48.0 + fila * 142.0)
+				_agregar_puesto_comercio(cuarto, str(vendedores[i]), posicion_puesto)
+		"registro", "almacen":
+			_agregar_sprite_mueble(cuarto, "Mostrador", MUEBLE_MESA, Vector2(0, -95), Vector2(1.9, 1), 1)
+			if tipo == "registro":
+				_agregar_estacion_edificio(cuarto, "pasaje_exterior", "Solicitar pasaje al mundo exterior", Vector2(0, -42))
+			_agregar_sprite_mueble(cuarto, "EstanteComercioOeste", MUEBLE_ARMARIO, Vector2(-190, -95), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteComercioEste", MUEBLE_ARMARIO, Vector2(190, -95), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaInventario", MUEBLE_MESA_DOCUMENTOS, Vector2(0, 55), Vector2(1.35, 1), 2)
+			_agregar_sprite_mueble(cuarto, "SillaInventario", MUEBLE_SILLA_FRENTE, Vector2(0, 103), Vector2.ONE, 1)
+		"cuartel":
+			_agregar_sprite_mueble(cuarto, "ArmarioCuartelOeste", MUEBLE_ARMARIO, Vector2(-205, -118), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCuartelEste", MUEBLE_ARMARIO, Vector2(205, -118), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaArsenal", MUEBLE_MESA, Vector2(105, 65), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaEntrenamiento", MUEBLE_MESA, Vector2(0, -5), Vector2(1.45, 1.15), 1)
 		"taller", "carpinteria":
-			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA, Vector2(0, 15), Vector2(2.2, 1.4), 1)
-			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(145, 65), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(-25, 5), Vector2(1.6, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(180, 72), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioHerramientas", MUEBLE_ARMARIO, Vector2(-190, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMateriales", MUEBLE_ARMARIO, Vector2(190, -105), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoTrabajo", MUEBLE_ASIENTO, Vector2(-25, 65), Vector2.ONE, 1)
+			if tipo == "carpinteria":
+				_agregar_estacion_edificio(cuarto, "carpinteria", "Encargar muebles", Vector2(-25, 5))
 		"granero", "molino", "semillas":
-			_agregar_sprite_mueble(cuarto, "MesaPesaje", MUEBLE_MESA, Vector2(0, 55), Vector2(1.6, 1), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenOeste", MUEBLE_ARMARIO, Vector2(-190, -100), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenEste", MUEBLE_ARMARIO, Vector2(190, -100), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "MesaPesaje", MUEBLE_MESA, Vector2(0, 45), Vector2(1.5, 1), 1)
+			_agregar_sprite_mueble(cuarto, "SacoAlmacen", MUEBLE_COFRE, Vector2(-145, 88), Vector2(0.85, 0.85), 1)
+		"corrales":
+			_agregar_sprite_mueble(cuarto, "AlmacenForraje", MUEBLE_COFRE, Vector2(-175, -90), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "MesaPreparacion", MUEBLE_MESA, Vector2(100, 65), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioCorrales", MUEBLE_ARMARIO, Vector2(195, -105), Vector2(0.85, 0.85), 1)
 		"alfareria":
 			_agregar_sprite_mueble(cuarto, "HornoCeramica", MUEBLE_HORNO, Vector2(-130, -65), Vector2(1.8, 1.8), 1)
+			_agregar_sprite_mueble(cuarto, "MesaCeramica", MUEBLE_MESA, Vector2(65, 50), Vector2(1.3, 1), 1)
+			_agregar_sprite_mueble(cuarto, "AlmacenCeramica", MUEBLE_ARMARIO, Vector2(190, -100), Vector2(0.9, 0.9), 1)
 		"vivienda":
-			var posicion_cama := Vector2(-145, -55)
-			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, posicion_cama, Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA, Vector2(75, 20), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(145, -75), Vector2.ONE, 1)
-			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 70), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Cama", MUEBLE_CAMA, Vector2(-145, -55), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Armario", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "Mesa", MUEBLE_MESA_PLATOS, Vector2(65, 20), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Silla", MUEBLE_SILLA_FRENTE, Vector2(65, 65), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(165, -75), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 78), Vector2(0.9, 0.9), 1)
 
 
-func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1) -> void:
+func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1, flip_h: bool = false) -> void:
 	if textura == null:
 		push_warning("ReinoTorres: no se pudo cargar el sprite del mueble: " + nombre)
 		return
@@ -1725,6 +2038,7 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 	sprite.position = posicion
 	sprite.scale = escala
 	sprite.centered = true
+	sprite.flip_h = flip_h
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	sprite.z_index = z
 	padre.add_child(sprite)
@@ -1741,6 +2055,298 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 		else:
 			objetivo.call("configurar_cofre", "torres:" + _entrada_interior_id + ":" + nombre)
 		padre.add_child(objetivo)
+
+
+func _agregar_sprite_decorativo(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1) -> void:
+	if textura == null:
+		push_warning("ReinoTorres: no se pudo cargar el sprite decorativo: " + nombre)
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = textura
+	sprite.position = posicion
+	sprite.scale = escala
+	sprite.centered = true
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = z
+	padre.add_child(sprite)
+
+
+# La estancia usa el calendario jugable: un mes equivale a 30 días del mundo.
+# El vencimiento se guarda como día absoluto y nunca depende del reloj del dispositivo.
+func _obtener_dia_absoluto_mundo() -> int:
+	var atmosfera := GameState._world_atmosphere as WorldAtmosphere
+	if not is_instance_valid(atmosfera) or not bool(atmosfera.obtener_tiempo().get("calendario_cargado", false)):
+		return -1
+	return atmosfera.anio * maxi(atmosfera.dias_por_anio, 1) + atmosfera.dia_del_anio
+
+
+func _obtener_estado_posada() -> Dictionary:
+	var estado_variant: Variant = GameState.world_state.flags.get(POSADA_FLAG, {})
+	if estado_variant is Dictionary:
+		return (estado_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func _guardar_estado_posada(estado: Dictionary) -> void:
+	GameState.world_state.flags[POSADA_FLAG] = estado.duplicate(true)
+	GameState.call_deferred("_ejecutar_guardado_rapido")
+
+
+func _posada_tiene_acceso() -> bool:
+	var estado := _obtener_estado_posada()
+	if not bool(estado.get("primer_mes_gratis_usado", false)):
+		return false
+	var hoy := _obtener_dia_absoluto_mundo()
+	return hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
+
+
+func _crear_interfaz_posada() -> void:
+	if is_instance_valid(_menu_posada_layer):
+		return
+	_menu_posada_layer = CanvasLayer.new()
+	_menu_posada_layer.name = "InterfazPosada"
+	_menu_posada_layer.layer = 45
+	get_tree().root.add_child(_menu_posada_layer)
+
+	var raiz := Control.new()
+	raiz.name = "Raiz"
+	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	raiz.mouse_filter = Control.MOUSE_FILTER_STOP
+	_menu_posada_layer.add_child(raiz)
+
+	var centrador := CenterContainer.new()
+	centrador.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	raiz.add_child(centrador)
+
+	_menu_posada_panel = PanelContainer.new()
+	_menu_posada_panel.name = "PanelPosada"
+	_menu_posada_panel.custom_minimum_size = Vector2(310, 0)
+	PIXEL_UI_THEME.apply(_menu_posada_panel, false)
+	centrador.add_child(_menu_posada_panel)
+
+	_menu_posada_contenido = VBoxContainer.new()
+	_menu_posada_contenido.add_theme_constant_override("separation", 8)
+	_menu_posada_panel.add_child(_menu_posada_contenido)
+
+
+func _crear_boton_posada(texto: String, accion: Callable, deshabilitado: bool = false) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(270, 38)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.disabled = deshabilitado
+	boton.pressed.connect(accion)
+	PIXEL_UI_THEME.apply(boton, false)
+	_menu_posada_contenido.add_child(boton)
+	return boton
+
+
+func _mostrar_menu_posada(vista: String = "principal") -> void:
+	_crear_interfaz_posada()
+	if not is_instance_valid(_menu_posada_contenido):
+		return
+	_menu_posada_vista = vista
+	for hijo in _menu_posada_contenido.get_children():
+		hijo.queue_free()
+
+	var panel_estado := PanelContainer.new()
+	panel_estado.name = "EstadoPosada"
+	panel_estado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var fondo_estado: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
+	if fondo_estado != null:
+		panel_estado.add_theme_stylebox_override("panel", fondo_estado)
+	_menu_posada_contenido.add_child(panel_estado)
+
+	_menu_posada_estado = Label.new()
+	_menu_posada_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_menu_posada_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_menu_posada_estado.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_estado.add_child(_menu_posada_estado)
+
+	var estado := _obtener_estado_posada()
+	var hoy := _obtener_dia_absoluto_mundo()
+	var gratis_disponible := not bool(estado.get("primer_mes_gratis_usado", false))
+	var activa := hoy >= 0 and int(estado.get("vence_dia_absoluto", -1)) > hoy
+
+	match vista:
+		"principal":
+			if gratis_disponible:
+				_menu_posada_estado.text = "Tu primera estancia de un mes es gratuita."
+			elif activa:
+				_menu_posada_estado.text = "Tu habitación está disponible."
+			else:
+				_menu_posada_estado.text = "Tu estancia ha terminado. Tus pertenencias siguen guardadas."
+			_crear_boton_posada("Comprar", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+			_crear_boton_posada("Ir a la habitación", Callable(self, "_ir_habitacion_posada"), not activa)
+		"comprar":
+			_menu_posada_estado.text = "La estancia cuesta 100 monedas por mes."
+			if gratis_disponible:
+				_crear_boton_posada("Activar primer mes gratis", Callable(self, "_comprar_estancia_posada").bind(true))
+			elif activa:
+				_crear_boton_posada("Estancia activa", Callable(self, "_mostrar_menu_posada").bind("comprar"), true)
+			else:
+				_crear_boton_posada("Renovar por 100 monedas", Callable(self, "_comprar_estancia_posada").bind(false))
+			_crear_boton_posada("Tienda de muebles", Callable(self, "_mostrar_menu_posada").bind("muebles"))
+		"muebles":
+			_menu_posada_estado.text = "Compra muebles para tu habitación. Las compras quedan guardadas en tu partida; falta conectar su colocación."
+			for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
+				var texto := "%s · %d monedas" % [str(mueble.nombre), int(mueble.precio)]
+				_crear_boton_posada(texto, Callable(self, "_comprar_mueble_posada").bind(str(mueble.id)))
+			_crear_boton_posada("Volver", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+
+	_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
+	_menu_posada_layer.visible = true
+
+
+func _ir_habitacion_posada() -> void:
+	if not _posada_tiene_acceso():
+		Events.notification_pushed.emit("Necesitas activar tu estancia en la recepción.")
+		_mostrar_menu_posada("principal")
+		return
+	if _interior_activo:
+		if _entrada_interior_id == "posada":
+			_cerrar_menu_posada()
+			call_deferred("_cambiar_de_lobby_a_habitacion_posada")
+		else:
+			_cerrar_menu_posada()
+		return
+	if not is_instance_valid(_jugador):
+		_jugador = get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(_jugador):
+		Events.notification_pushed.emit("No se encontró al jugador para entrar a la habitación.")
+		return
+
+	_cerrar_menu_posada()
+	var entrada := {
+		"id": "posada_habitacion",
+		"nombre": "Habitación de la posada",
+		"tipo": "habitacion_posada"
+	}
+	# La transición se ejecuta después de terminar la señal del botón.
+	# Así evitamos cambiar visibilidad, colisiones y cámara mientras la UI
+	# de recepción todavía está procesando su evento de pulsación.
+	call_deferred("_entrar_al_interior", entrada)
+
+
+func _cambiar_de_lobby_a_habitacion_posada() -> void:
+	if not _interior_activo or _entrada_interior_id != "posada" or not _posada_tiene_acceso():
+		return
+	if not is_instance_valid(_jugador):
+		return
+	_entrada_interior_id = "posada_habitacion"
+	_construir_habitacion({
+		"id": "posada_habitacion",
+		"nombre": "Habitación de la posada",
+		"tipo": "habitacion_posada"
+	})
+	_jugador.global_position = to_global(Vector2(0, 70))
+
+
+func _comprar_estancia_posada(gratis: bool) -> void:
+	_pagar_estancia_posada(gratis)
+	_mostrar_menu_posada("principal")
+
+
+func _cerrar_menu_posada() -> void:
+	if is_instance_valid(_menu_posada_layer):
+		_menu_posada_layer.visible = false
+
+
+func _comprar_mueble_posada(mueble_id: String) -> void:
+	var precio := -1
+	for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
+		if str(mueble.get("id", "")) == mueble_id:
+			precio = int(mueble.get("precio", -1))
+			break
+	if precio < 0:
+		push_warning("Posada: intento de compra con un mueble desconocido: " + mueble_id)
+		return
+	if not GameState.modificar_dinero(-precio):
+		if is_instance_valid(_menu_posada_estado):
+			_menu_posada_estado.text = "No tienes suficientes monedas."
+		return
+	var estado := _obtener_estado_posada()
+	var comprados_variant: Variant = estado.get("muebles_comprados", {})
+	var comprados: Dictionary = comprados_variant.duplicate(true) if comprados_variant is Dictionary else {}
+	comprados[mueble_id] = maxi(0, int(comprados.get(mueble_id, 0))) + 1
+	estado["muebles_comprados"] = comprados
+	_guardar_estado_posada(estado)
+	if is_instance_valid(_menu_posada_estado):
+		_menu_posada_estado.text = "Compraste: " + mueble_id.capitalize() + ". Ya está disponible para colocar."
+	_mostrar_menu_posada("muebles")
+
+
+func _pagar_estancia_posada(gratis: bool) -> void:
+	var hoy := _obtener_dia_absoluto_mundo()
+	if hoy < 0:
+		Events.notification_pushed.emit("El calendario del mundo todavía no está disponible.")
+		return
+	var estado := _obtener_estado_posada()
+	if gratis:
+		if bool(estado.get("primer_mes_gratis_usado", false)):
+			return
+		estado["primer_mes_gratis_usado"] = true
+	else:
+		if not GameState.modificar_dinero(-POSADA_COSTE_MENSUAL):
+			Events.notification_pushed.emit("No tienes suficientes monedas. Necesitas 100.")
+			return
+	var vencimiento_actual := int(estado.get("vence_dia_absoluto", hoy))
+	estado["vence_dia_absoluto"] = maxi(hoy, vencimiento_actual) + POSADA_DURACION_MES_DIAS
+	_guardar_estado_posada(estado)
+	Events.notification_pushed.emit("Tu estancia en la posada está activa durante un mes.")
+
+
+func _agregar_estacion_posada(padre: Node, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "RecepcionPosada"
+	objetivo.position = posicion
+	objetivo.call("configurar", "Gestionar habitación", 56.0, Callable(self, "_puede_interactuar_recepcion_posada"), Callable(self, "_interactuar_recepcion_posada"))
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_recepcion_posada(_jugador: Node) -> bool:
+	return _interior_activo and _entrada_interior_id == "posada"
+
+
+func _interactuar_recepcion_posada(_jugador: Node) -> void:
+	if _puede_interactuar_recepcion_posada(_jugador):
+		_mostrar_menu_posada("principal")
+
+
+func _agregar_estacion_archivo(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "EstacionArchivo_" + estacion_id
+	objetivo.position = posicion
+	objetivo.call(
+		"configurar",
+		texto,
+		58.0,
+		Callable(self, "_puede_interactuar_estacion_archivo").bind(estacion_id),
+		Callable(self, "_interactuar_estacion_archivo").bind(estacion_id)
+	)
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> bool:
+	return _interior_activo and _entrada_interior_id == "archivo_real" and estacion_id in ["documentos_personajes", "historia_torres"]
+
+
+func _interactuar_estacion_archivo(_jugador: Node, estacion_id: String) -> void:
+	if not _puede_interactuar_estacion_archivo(_jugador, estacion_id):
+		return
+	if get_tree().get_first_node_in_group("royal_archive_ui") != null:
+		return
+	var interfaz := ROYAL_ARCHIVE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.call("configurar_vista", estacion_id)
+	interfaz.add_to_group("royal_archive_ui")
+	get_tree().root.add_child(interfaz)
 
 
 func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: String, posicion: Vector2) -> void:
@@ -1760,7 +2366,7 @@ func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: Stri
 
 
 func _puede_interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> bool:
-	return _interior_activo and _entrada_interior_id == "casa_estudio" and estacion_id in ["examen", "mezclas", "termica", "observacion", "eterium"]
+	return _interior_activo and ((_entrada_interior_id == "casa_estudio" and estacion_id == "examen") or (_entrada_interior_id == "forja" and estacion_id == "forja_inspeccion"))
 
 
 func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> void:
@@ -1783,32 +2389,198 @@ func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> v
 	interfaz.call("configurar", inventario, estacion_id)
 
 
-func _agregar_suelo_tilemap(padre: Node) -> void:
-	var textura := load("res://assets/tilesets/Suelo.png") as Texture2D
-	if textura == null:
-		push_warning("ReinoTorres: no se pudo cargar assets/tilesets/Suelo.png")
+func _agregar_puesto_comercio(padre: Node, vendedor: String, posicion: Vector2) -> void:
+	_agregar_sprite_mueble(padre, "Puesto" + vendedor, MERCADO_PUESTO, posicion, Vector2(0.72, 0.72), 1)
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
 		return
+	objetivo.name = "InteraccionPuesto" + vendedor
+	objetivo.position = posicion + Vector2(0, 20)
+	objetivo.call(
+		"configurar",
+		"Puesto de " + vendedor,
+		54.0,
+		Callable(self, "_puede_interactuar_puesto_comercio").bind(vendedor),
+		Callable(self, "_interactuar_puesto_comercio").bind(vendedor)
+	)
+	padre.add_child(objetivo)
 
-	var tileset := TileSet.new()
-	tileset.tile_size = Vector2i(16, 16)
-	var atlas := TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(16, 16)
-	atlas.create_tile(Vector2i.ZERO)
-	tileset.add_source(atlas, 0)
 
-	var capa := TileMapLayer.new()
-	capa.name = "SueloTileMap"
-	capa.position = Vector2(-INTERIOR_MEDIO_ANCHO, -INTERIOR_MEDIO_ALTO)
-	capa.tile_set = tileset
-	capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	capa.z_index = -10
-	padre.add_child(capa)
+func _puede_interactuar_puesto_comercio(_jugador_objetivo: Node, _vendedor: String) -> bool:
+	return (
+		_interior_activo
+		and _entrada_interior_id == "casa_comercio"
+		and _saira_atiende_el_mercado()
+	)
 
-	# Los tiles cubren exactamente los 560 x 352 puntos del interior.
-	for y in range(int(INTERIOR_ALTO / 16.0)):
-		for x in range(int(INTERIOR_ANCHO / 16.0)):
-			capa.set_cell(Vector2i(x, y), 0, Vector2i.ZERO)
+
+func _saira_atiende_el_mercado() -> bool:
+	for candidato in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato is Creature or not is_instance_valid(candidato):
+			continue
+		var npc := candidato as Creature
+		if (
+			npc.is_alive
+			and npc.get_nombre_visual().strip_edges().to_lower() == "saira"
+			and bool(npc.get_meta("rutina_en_edificio", false))
+			and str(npc.get_meta("rutina_edificio_id", "")) == "casa_comercio"
+		):
+			return true
+	return false
+
+
+func _interactuar_puesto_comercio(_jugador_objetivo: Node, vendedor: String) -> void:
+	if not _puede_interactuar_puesto_comercio(_jugador_objetivo, vendedor):
+		return
+	if get_tree().get_first_node_in_group("npc_market_modal") != null:
+		return
+	var sistema := get_tree().get_first_node_in_group("interaction_system")
+	if not is_instance_valid(sistema):
+		Events.notification_pushed.emit("No se pudo acceder al sistema de comercio.")
+		return
+	var inventario := sistema.get("inventory") as InventoryController
+	var world_items := sistema.get("world_items") as GarliaWorldItems
+	if not is_instance_valid(inventario) or not is_instance_valid(world_items):
+		Events.notification_pushed.emit("No se pudo cargar el inventario o el catálogo.")
+		return
+	var npc_vendedor: Creature = null
+	for candidato in get_tree().get_nodes_in_group("creatures"):
+		if not candidato is Creature:
+			continue
+		var criatura := candidato as Creature
+		if criatura.get_nombre_visual().strip_edges().to_lower() == vendedor.to_lower():
+			npc_vendedor = criatura
+			break
+	if not is_instance_valid(npc_vendedor):
+		Events.notification_pushed.emit("No se pudo cargar el catálogo de " + vendedor + ".")
+		return
+	var capa := CanvasLayer.new()
+	capa.name = "MercadoNPC_" + vendedor
+	capa.layer = 46
+	capa.add_to_group("npc_market_modal")
+	var tienda := NPCMarketShop.new()
+	tienda.configurar(npc_vendedor, inventario, world_items, {"nombre": "Puesto de " + vendedor, "intermediaria_nombre": "Saira"})
+	var fisica_previa := _jugador.is_physics_processing() if is_instance_valid(_jugador) else true
+	var input_previo := _jugador.is_processing_input() if is_instance_valid(_jugador) else true
+	var unhandled_previo := _jugador.is_processing_unhandled_input() if is_instance_valid(_jugador) else true
+	if is_instance_valid(_jugador):
+		_jugador.set_physics_process(false)
+		_jugador.set_process_input(false)
+		_jugador.set_process_unhandled_input(false)
+	tienda.solicitar_cierre.connect(_cerrar_puesto_comercio.bind(capa, fisica_previa, input_previo, unhandled_previo))
+	get_tree().root.add_child(capa)
+	capa.add_child(tienda)
+
+
+func _cerrar_puesto_comercio(capa: CanvasLayer, fisica_previa: bool, input_previo: bool, unhandled_previo: bool) -> void:
+	if is_instance_valid(_jugador):
+		_jugador.set_physics_process(fisica_previa)
+		_jugador.set_process_input(input_previo)
+		_jugador.set_process_unhandled_input(unhandled_previo)
+	if is_instance_valid(capa):
+		capa.queue_free()
+
+
+func _abrir_menu_servicio_edificio(tipo: String) -> void:
+	if get_tree().get_first_node_in_group("building_service_ui") != null:
+		return
+	var sistema := get_tree().get_first_node_in_group("interaction_system")
+	if not is_instance_valid(sistema):
+		Events.notification_pushed.emit("No se pudo acceder al sistema de interacción.")
+		return
+	var inventario := sistema.get("inventory") as InventoryController
+	var world_items := sistema.get("world_items") as GarliaWorldItems
+	if not is_instance_valid(inventario):
+		Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	var interfaz := BUILDING_SERVICE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.add_to_group("building_service_ui")
+	if interfaz.has_signal("solicitar_selector_expediciones"):
+		interfaz.connect("solicitar_selector_expediciones", Callable(self, "_abrir_selector_viajes_desde_servicio"))
+	get_tree().root.add_child(interfaz)
+	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
+
+
+func _abrir_selector_viajes_desde_servicio() -> void:
+	_actualizar_selector_viajes()
+	if is_instance_valid(_selector_viajes_layer):
+		_selector_viajes_layer.visible = true
+		_posicionar_selector_viajes()
+
+
+func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posicion: Vector2) -> void:
+	var objetivo: Node2D = CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		return
+	objetivo.name = "EstacionEdificio_" + tipo
+	objetivo.position = posicion
+	objetivo.call(
+		"configurar",
+		texto,
+		58.0,
+		Callable(self, "_puede_interactuar_estacion_edificio").bind(tipo),
+		Callable(self, "_interactuar_estacion_edificio").bind(tipo)
+	)
+	padre.add_child(objetivo)
+
+
+func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> bool:
+	if not _interior_activo:
+		return false
+	if tipo == "pasaje_exterior":
+		return _entrada_interior_id == "registro"
+	if tipo.begins_with("cuartel_"):
+		return _entrada_interior_id == "cuartel"
+	if tipo.begins_with("herbolario_"):
+		return _entrada_interior_id == "herbolario"
+	return _entrada_interior_id == tipo
+
+
+func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> void:
+	if not _puede_interactuar_estacion_edificio(_jugador_objetivo, tipo):
+		return
+	if tipo == "pasaje_exterior":
+		_mostrar_confirmacion_pasaje_exterior()
+		return
+	_abrir_menu_servicio_edificio(tipo)
+
+
+func _mostrar_confirmacion_pasaje_exterior() -> void:
+	if get_tree().get_first_node_in_group("travel_ticket_dialog") != null:
+		return
+	var dialogo := ConfirmationDialog.new()
+	dialogo.name = "PasajeMundoExterior"
+	dialogo.add_to_group("travel_ticket_dialog")
+	dialogo.title = "Viaje al mundo exterior"
+	dialogo.dialog_text = "Viajar cuesta 10 monedas.\nDeberás regresar antes de las 22:00; a esa hora volverás automáticamente a Torres.\n\n¿Deseas viajar?"
+	dialogo.ok_button_text = "Viajar"
+	dialogo.cancel_button_text = "Cancelar"
+	dialogo.confirmed.connect(_al_confirmar_pasaje_exterior)
+	dialogo.confirmed.connect(dialogo.queue_free)
+	dialogo.canceled.connect(dialogo.queue_free)
+	get_tree().root.add_child(dialogo)
+	PIXEL_UI_THEME.apply(dialogo, false)
+	PIXEL_UI_THEME.apply(dialogo.get_ok_button(), false)
+	PIXEL_UI_THEME.apply(dialogo.get_cancel_button(), false)
+	dialogo.popup_centered()
+
+
+func _al_confirmar_pasaje_exterior() -> void:
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("iniciar_viaje_exterior"):
+		Events.notification_pushed.emit("No se pudo gestionar el pasaje.")
+		return
+	if not GameState.modificar_dinero(-10):
+		Events.notification_pushed.emit("No tienes suficientes monedas. El pasaje cuesta 10.")
+		return
+	var resultado: Variant = await zone_manager.call("iniciar_viaje_exterior")
+	if bool(resultado):
+		Events.notification_pushed.emit("Pasaje comprado por 10 monedas. Regresarás a Torres a las 22:00.")
+	else:
+		GameState.modificar_dinero(10)
+		Events.notification_pushed.emit("No se pudo iniciar el viaje. Se devolvieron las 10 monedas.")
 
 
 func _agregar_colision_muro(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:

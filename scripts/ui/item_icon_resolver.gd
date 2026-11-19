@@ -4,6 +4,7 @@ class_name ItemIconResolver
 
 const ITEMS_ASSET_ROOT: String = "res://assets/art/items"
 const PROPS_ASSET_ROOT: String = "res://assets/art/props"
+const FURNITURE_ASSET_ROOT: String = "res://assets/art/places/Muebles"
 
 const EXTENSIONES_IMAGEN: Array[String] = [
 	"png",
@@ -23,25 +24,41 @@ const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
 	preload("res://assets/art/items/Espada de Feliros.png"),
 	preload("res://assets/art/items/Espada de Topacio.png"),
 	preload("res://assets/art/items/Pechera Aoris.png"),
+	preload("res://assets/art/items/Botas de Aoris.png"),
 	preload("res://assets/art/items/Botas de Hierro.png"),
 	preload("res://assets/art/items/Escudo.png"),
 	preload("res://assets/art/items/Espada de Madera.png"),
 	preload("res://assets/art/items/Espada de Piedra.png"),
 	preload("res://assets/art/items/Flecha de Madera.png"),
 	preload("res://assets/art/items/Manzana.png"),
+	preload("res://assets/art/items/Semillas Flor Azul.png"),
+	preload("res://assets/art/items/Semillas Flor Morada.png"),
+	preload("res://assets/art/items/Semillas Flor Verde.png"),
+	preload("res://assets/art/items/Semillas.png"),
 	preload("res://assets/art/items/Pala de Madera.png"),
 	preload("res://assets/art/items/Pala de Piedra.png"),
 	preload("res://assets/art/items/Pico de Madera.png"),
 	preload("res://assets/art/items/Pico de Piedra.png"),
 	preload("res://assets/art/items/Pluma Aoris.png"),
+	preload("res://assets/art/items/regadera.png"),
+	preload("res://assets/art/items/regadera llena.png"),
+	preload("res://assets/art/items/regadera casi llena.png"),
+	preload("res://assets/art/items/regadera media.png"),
+	preload("res://assets/art/items/regadera casi vacia.png"),
+	preload("res://assets/art/items/regadera vacia.png"),
 	preload("res://assets/art/props/Arbusto Mediano.png"),
 	preload("res://assets/art/props/Arbusto Pequeño.png"),
 	preload("res://assets/art/props/Flor Azul.png"),
 	preload("res://assets/art/props/Flor Morada.png"),
+	preload("res://assets/art/props/Flor Verdel.png"),
 	preload("res://assets/art/props/Piedra Grande.png"),
 	preload("res://assets/art/props/Piedra Mediana.png"),
 	preload("res://assets/art/props/Piedra Pequeña.png"),
-	preload("res://assets/art/props/Árbol.png")
+	preload("res://assets/art/props/Árbol.png"),
+	preload("res://assets/art/places/Muebles/Silla.png"),
+	preload("res://assets/art/places/Muebles/mesa.png"),
+	preload("res://assets/art/places/Muebles/cofre.png"),
+	preload("res://assets/art/places/Muebles/armario.png")
 ]
 
 
@@ -68,10 +85,16 @@ static func obtener_icono(
 	if icono is Texture2D:
 		return icono
 
+	var ruta_icono_estado := str(datos.get("icono_ruta", "")).strip_edges()
+	if not ruta_icono_estado.is_empty() and ResourceLoader.exists(ruta_icono_estado):
+		return _cargar_textura(ruta_icono_estado)
+
+	# Los ejemplares únicos conservan el sprite del objeto base aunque
+	# tengan un nombre visible distinto (p. ej. "Carta Aoris de Elian").
 	var nombre := str(
 		datos.get(
-			"nombre",
-			""
+			"nombre_sprite",
+			datos.get("nombre", "")
 		)
 	).strip_edges()
 
@@ -84,9 +107,20 @@ static func obtener_icono(
 
 	# Nombres canónicos de Supabase que difieren ligeramente del archivo artístico.
 	var alias_sprite := {
+		"semillasdeflorazul": "Semillas Flor Azul.png",
+		"semillasdeflormorada": "Semillas Flor Morada.png",
+		"semillasdeflorverde": "Semillas Flor Verde.png",
+		"botasaoris": "Botas de Aoris.png",
+		"botasdeaoris": "Botas de Aoris.png",
 		"cartasaoris": "Carta Aoris.png",
-		"espadatopacio": "Espada de Topacio.png"
+		"espadatopacio": "Espada de Topacio.png",
+		"regadera": "regadera llena.png"
 	}
+	if clave == "florverde":
+		var ruta_flor_verde := PROPS_ASSET_ROOT.path_join("Flor Verdel.png")
+		_rutas_por_nombre[clave] = ruta_flor_verde
+		return _cargar_textura(ruta_flor_verde)
+
 	if alias_sprite.has(clave):
 		var ruta_alias := ITEMS_ASSET_ROOT.path_join(str(alias_sprite[clave]))
 		_rutas_por_nombre[clave] = ruta_alias
@@ -140,6 +174,9 @@ static func _asegurar_indice() -> void:
 	# Si no existe un icono específico en items/, usamos el PNG del prop.
 	_indexar_directorio(
 		PROPS_ASSET_ROOT
+	)
+	_indexar_directorio(
+		FURNITURE_ASSET_ROOT
 	)
 
 

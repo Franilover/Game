@@ -3,6 +3,7 @@ class_name DialogueSystem
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const NPC_MARKET_SHOP_SCRIPT = preload("res://scripts/ui/npc_market_shop.gd")
+const GARLIA_SHOP_UI_SCRIPT = preload("res://scripts/ui/shop_ui.gd")
 const NPC_VOICE_PROFILE = preload("res://scripts/gameplay/npc_voice_profile.gd")
 
 
@@ -18,6 +19,9 @@ var relationship_system: RelationshipSystemService = null
 var dialogue_panel: PanelContainer = null
 var speaker_label: Label = null
 var portrait_rect: TextureRect = null
+var _portrait_frame: PanelContainer = null
+var _dialogue_background: TextureRect = null
+var _dialogue_compacto: bool = false
 var text_label: Label = null
 var hint_label: Label = null
 var action_button: Button = null
@@ -66,6 +70,42 @@ var _variante_pendiente_mostrar: Dictionary = {}
 var _personaje_variante_pendiente: String = ""
 var _ciclo_variante_pendiente: String = ""
 var _contexto_rutina_conversacion: Dictionary = {}
+var _estilo_panel_dialogo_normal: StyleBox = null
+
+
+## Las escenas usan la misma tipografía y color de texto del diálogo habitual,
+## pero una superficie de botón para distinguir el cuadro sin perder legibilidad.
+func _aplicar_superficie_button(panel: PanelContainer) -> void:
+	if not is_instance_valid(panel):
+		return
+	var superficie := PIXEL_UI_THEME.button_surface_style()
+	if superficie != null:
+		panel.add_theme_stylebox_override("panel", superficie.duplicate())
+
+
+func configurar_estilo_cinematica(activar: bool) -> void:
+	if not is_instance_valid(dialogue_panel):
+		_crear_interfaz()
+	if not is_instance_valid(dialogue_panel):
+		return
+	if activar:
+		if _estilo_panel_dialogo_normal == null:
+			_estilo_panel_dialogo_normal = dialogue_panel.get_theme_stylebox("panel")
+		var fondo_boton := PIXEL_UI_THEME.button_surface_style()
+		if fondo_boton != null:
+			dialogue_panel.add_theme_stylebox_override("panel", fondo_boton)
+		else:
+			var fallback := StyleBoxFlat.new()
+			fallback.bg_color = Color("#4B3924")
+			fallback.border_color = Color("#8A6842")
+			fallback.set_border_width_all(2)
+			fallback.set_corner_radius_all(5)
+			dialogue_panel.add_theme_stylebox_override("panel", fallback)
+	else:
+		if _estilo_panel_dialogo_normal != null:
+			dialogue_panel.add_theme_stylebox_override("panel", _estilo_panel_dialogo_normal)
+		else:
+			dialogue_panel.remove_theme_stylebox_override("panel")
 
 
 func _ready() -> void:
@@ -277,6 +317,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		return false
 
 	_fuente = fuente
+	_actualizar_fondo_dialogo(datos_seleccionados)
 
 	if is_instance_valid(_fuente):
 		var personaje_id := _fuente.get_personaje_game_id().strip_edges()
@@ -329,15 +370,14 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 						_fuente.get_personaje_game_id().strip_edges()
 					)
 	_dialogo_en_transito = _es_dialogo_en_transito(datos_seleccionados)
-	var clave_dialogo_respuestas := str(datos_seleccionados.get("clave", "principal")).strip_edges().to_lower()
 	var acciones_final_variant: Variant = datos_seleccionados.get("acciones", [])
 	var tiene_accion_exclusiva := _dialogo_tiene_accion_final_exclusiva(acciones_final_variant)
-	if not iniciativa_directa and not tiene_accion_exclusiva and is_instance_valid(_fuente) and not _dialogo_en_transito and not bool(datos_seleccionados.get("_iniciativa_npc", false)):
-		# Las conversaciones cotidianas conservan el menú social aunque sus
-		# datos incluyan acciones auxiliares. Sólo las escenas que necesitan
-		# resolver una misión, un seguimiento o un evento mantienen su cierre propio.
-		_usa_menu_social = true
-		_respuestas = _crear_menu_principal_social()
+	_usa_menu_social = _debe_usar_menu_social(datos_seleccionados, iniciativa_directa, tiene_accion_exclusiva)
+	if _usa_menu_social:
+		# Las opciones propias del diálogo se conservan. El menú general sólo
+		# se usa como alternativa cuando el contenido no declara decisiones.
+		if _respuestas.is_empty():
+			_respuestas = _crear_menu_principal_social()
 		_acciones.clear()
 	_limpiar_botones_respuesta()
 
@@ -368,7 +408,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 	if _boton_preguntar_item != null:
 		_boton_preguntar_item.visible = not _dialogo_en_transito
 	if _boton_tienda_mercado != null:
-		_boton_tienda_mercado.visible = not _dialogo_en_transito and _es_horario_mercado()
+		_boton_tienda_mercado.visible = not _dialogo_en_transito and _puede_abrir_tienda_con_npc()
 	if not recuerdo_para_mencionar.is_empty() and relationship_system != null:
 		_recuerdo_pendiente_mostrar = recuerdo_para_mencionar.duplicate(true)
 		_personaje_recuerdo_pendiente = _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
@@ -390,7 +430,29 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 func abrir_iniciativa_npc(datos: Dictionary, fuente: Creature) -> bool:
 	if not is_instance_valid(fuente) or _abierto:
 		return false
-	return abrir(datos, fuente, true)
+	# Toda iniciativa dirigida al jugador entra al mismo flujo social. Las
+	# opciones individuales deciden si la conversación continúa o se despide.
+	var datos_unificados := datos.duplicate(true)
+	if not datos_unificados.has("_continuar_menu_social"):
+		datos_unificados["_continuar_menu_social"] = true
+	return abrir(datos_unificados, fuente, true)
+
+
+func _debe_usar_menu_social(
+	datos_dialogo: Dictionary,
+	iniciativa_directa: bool,
+	tiene_accion_exclusiva: bool
+) -> bool:
+	if not is_instance_valid(_fuente) or _dialogo_en_transito or tiene_accion_exclusiva:
+		return false
+	var tipo_contenido := str(datos_dialogo.get("tipo_contenido", "")).strip_edges().to_lower()
+	if tipo_contenido in ["historia", "story", "cinematica", "lineal"] or bool(datos_dialogo.get("_sin_menu_social", false)):
+		return false
+	if bool(datos_dialogo.get("_continuar_menu_social", false)):
+		return true
+	if iniciativa_directa or bool(datos_dialogo.get("_iniciativa_npc", false)):
+		return false
+	return true
 
 
 ## Estas acciones requieren una resolución propia y no deben mezclarse con
@@ -444,6 +506,8 @@ func cerrar() -> void:
 	_cerrar_selector_conversacion()
 	if dialogue_panel != null:
 		dialogue_panel.visible = false
+	if is_instance_valid(_dialogue_background):
+		_dialogue_background.visible = false
 
 	dialogue_finished.emit()
 	Events.dialog_closed.emit()
@@ -594,10 +658,12 @@ func _mostrar_linea_actual() -> void:
 			linea.get("text", "")
 		)
 	).strip_edges()
+	var npc_hablante := _buscar_npc_hablante(hablante)
 	var texto := _resolver_texto_por_personalidad(
 		texto_base,
 		linea.get("variantes_personalidad", {}),
-		linea.get("variantes_relacion", {})
+		linea.get("variantes_relacion", {}),
+		npc_hablante
 	)
 	var nombre_voz := hablante
 	if nombre_voz.is_empty() and is_instance_valid(_fuente):
@@ -612,8 +678,6 @@ func _mostrar_linea_actual() -> void:
 	_temporizador_lectura_transito = 0.0
 	_intervalo_caracter = INTERVALO_CARACTER_CAMINANDO if _dialogo_requiere_lectura_lenta() else 0.006
 	text_label.text = ""
-	if hint_label != null:
-		hint_label.text = "Toca para continuar" if DisplayServer.is_touchscreen_available() else "Clic / acción principal para continuar"
 	_actualizar_boton_accion()
 
 
@@ -628,13 +692,30 @@ func _dialogo_requiere_lectura_lenta() -> bool:
 	return _actividad_es_desplazamiento(actividad)
 
 
+func _buscar_npc_hablante(nombre_hablante: String) -> Creature:
+	var buscado := nombre_hablante.strip_edges().to_lower()
+	if buscado.is_empty():
+		return _fuente if is_instance_valid(_fuente) else null
+	if is_instance_valid(_fuente):
+		if buscado in [_fuente.get_nombre().strip_edges().to_lower(), _fuente.get_nombre_visual().strip_edges().to_lower()]:
+			return _fuente
+	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not nodo is Creature or not is_instance_valid(nodo):
+			continue
+		var npc := nodo as Creature
+		if buscado in [npc.get_nombre().strip_edges().to_lower(), npc.get_nombre_visual().strip_edges().to_lower()]:
+			return npc
+	return null
+
+
 func _resolver_texto_por_personalidad(
 	texto_base: String,
 	variantes_personalidad_variant: Variant,
-	variantes_relacion_variant: Variant
+	variantes_relacion_variant: Variant,
+	npc_hablante: Creature = null
 ) -> String:
 	var texto := texto_base
-	var personaje_id := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
+	var personaje_id := npc_hablante.get_personaje_game_id().strip_edges() if is_instance_valid(npc_hablante) else ""
 	if personaje_id.is_empty() or relationship_system == null:
 		return texto
 
@@ -682,22 +763,36 @@ func _resolver_texto_por_personalidad(
 	return texto
 
 
+func _actualizar_fondo_dialogo(datos_dialogo: Dictionary) -> void:
+	if not is_instance_valid(_dialogue_background):
+		return
+	var ruta := str(datos_dialogo.get("fondo", datos_dialogo.get("imagen_fondo", ""))).strip_edges()
+	if ruta.is_empty() or not ruta.begins_with("res://") or not ResourceLoader.exists(ruta):
+		_dialogue_background.texture = null
+		_dialogue_background.visible = false
+		return
+	var textura := ResourceLoader.load(ruta) as Texture2D
+	_dialogue_background.texture = textura
+	_dialogue_background.visible = textura != null
+
+
 func _actualizar_retrato(hablante: String) -> void:
 	if portrait_rect == null:
 		return
 
 	var nombre := hablante.strip_edges()
 	var nombres_retrato: Array[String] = []
-	if is_instance_valid(_fuente):
-		var nombre_individual := _fuente.get_nombre_visual().strip_edges()
-		var nombre_registro := _fuente.get_nombre().strip_edges()
+	var npc_retrato := _buscar_npc_hablante(nombre)
+	if is_instance_valid(npc_retrato):
+		var nombre_individual := npc_retrato.get_nombre_visual().strip_edges()
+		var nombre_registro := npc_retrato.get_nombre().strip_edges()
 		var hablante_es_fuente := (
 			nombre.is_empty()
 			or nombre.to_lower() == nombre_individual.to_lower()
 			or nombre.to_lower() == nombre_registro.to_lower()
 		)
 		if hablante_es_fuente:
-			var sprite_key := str(_fuente.datos.get("sprite_key", "")).strip_edges()
+			var sprite_key := str(npc_retrato.datos.get("sprite_key", "")).strip_edges()
 			if not sprite_key.is_empty():
 				nombres_retrato.append(sprite_key)
 			if not nombre_individual.is_empty():
@@ -723,18 +818,19 @@ func _actualizar_retrato(hablante: String) -> void:
 			break
 
 	portrait_rect.texture = textura
-	portrait_rect.visible = textura != null
+	var mostrar_retrato := textura != null and not _dialogue_compacto
+	portrait_rect.visible = mostrar_retrato
+	if is_instance_valid(_portrait_frame):
+		_portrait_frame.visible = mostrar_retrato
 
 
 
 
 ## Los encuentros durante un desplazamiento son breves: el NPC no se detiene a conversar.
 func _es_dialogo_en_transito(dialogo: Dictionary) -> bool:
-	# La marca de movimiento puede seguir activa mientras el NPC está pausado
-	# para conversar. Sólo el contenido elegido como diálogo de tránsito debe
-	# suprimir el menú social; no se consulta el estado físico de la rutina.
-	var clave := str(dialogo.get("clave", "")).strip_edges().to_lower()
-	return clave == "rutina_en_transito"
+	# El tránsito físico no debe convertir una conversación normal en un saludo
+	# que desaparece solo. El modo breve requiere una declaración explícita del dato.
+	return bool(dialogo.get("_dialogo_breve_sin_opciones", false))
 
 
 func _es_dialogo_cotidiano(dialogo: Dictionary) -> bool:
@@ -758,34 +854,45 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 			"elian":
 				texto = "Por cierto, todavía tengo presente el %s que me regalaste. Me ha alegrado tener ese detalle cerca." % item_nombre if reaccion in ["encanta", "gusta"] else "He estado pensando en el %s que me diste. Gracias por acordarte de mí." % item_nombre
 			"bruna":
-				texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente."
+				texto = "Le encontré utilidad al %s que me trajiste. No suelo decirlo, pero fue un buen regalo." % item_nombre if reaccion in ["encanta", "gusta"] else "Sobre el %s que me diste: gracias por el gesto. Lo tengo presente." % item_nombre
 			"darven":
 				texto = "El %s que me entregaste me ha resultado útil. Aprecio que hayas pensado en ello." % item_nombre if reaccion in ["encanta", "gusta"] else "Quería agradecerte de nuevo el %s. Fue un gesto considerado." % item_nombre
 			"saira":
-				texto = "¡Ah! El %s que me regalaste. Me hizo ilusión; estas pequeñas cosas también cuentan historias." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias, fue un detalle bonito." % item_nombre
+				texto = "Me acordé del %s que me regalaste. Me hizo ilusión; fue un detalle bonito." % item_nombre if reaccion in ["encanta", "gusta"] else "Me acuerdo del %s que me diste. Gracias por el detalle." % item_nombre
 			"narel":
 				texto = "He conservado el %s que me diste. Es interesante cómo un objeto puede adquirir significado por su contexto." % item_nombre if reaccion in ["encanta", "gusta"] else "Recuerdo el %s que me entregaste. Gracias por el detalle." % item_nombre
+			"ivo":
+				texto = "Sigo usando el %s que me regalaste. Gracias, me gustó que te acordaras de mí." % item_nombre
+			"nima":
+				texto = "Todavía tengo el %s que me regalaste. Me hizo ilusión que pensaras en mí." % item_nombre
+			"mara":
+				texto = "Quería agradecerte otra vez el %s. Fue un detalle considerado." % item_nombre
 			_:
-				texto = "Quería agradecerte otra vez el %s que me regalaste." % item_nombre
+				texto = "Quería agradecerte otra vez el %s." % item_nombre
 	elif tipo == "tema_conversacion":
 		var titulo_tema := str(recuerdo.get("titulo", "aquella conversación")).strip_edges()
 		var frase_jugador := str(recuerdo.get("frase_jugador", "")).strip_edges()
 		if frase_jugador.is_empty():
 			return {}
-		var respuesta_npc := str(recuerdo.get("respuesta_npc", "")).strip_edges()
 		match clave_nombre:
 			"elian":
-				texto = "Me acordé de lo que hablamos sobre %s. Te conté esto: %s ¿Has pensado algo más desde entonces?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Me he quedado pensando en nuestra conversación sobre %s. Recuerdo que dijiste: %s ¿Cómo lo ves ahora?" % [titulo_tema, frase_jugador]
+				texto = "Oye, me acordé de lo que hablamos sobre %s. ¿Has pensado algo más desde entonces?" % titulo_tema
 			"bruna":
-				texto = "Sobre lo que hablamos de %s: te expliqué cómo lo veía. %s ¿Has llegado a alguna conclusión?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Sobre lo que hablamos de %s: recuerdo tu punto de vista. Dijiste: %s ¿Sigues pensando igual?" % [titulo_tema, frase_jugador]
+				texto = "Volví a pensar en lo que hablamos de %s. ¿Llegaste a alguna conclusión?" % titulo_tema
 			"darven":
-				texto = "Quería retomar lo que hablamos sobre %s. Te comenté: %s ¿Has observado algo nuevo?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "Quería retomar lo que hablamos sobre %s. Recuerdo que comentaste: %s ¿Ha cambiado algo desde entonces?" % [titulo_tema, frase_jugador]
+				texto = "Quería retomar nuestra charla sobre %s. ¿Has observado algo nuevo?" % titulo_tema
 			"saira":
-				texto = "¡Me acordé de nuestra charla sobre %s! Te conté: %s ¿Y tú, has descubierto algo más?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "¡Oye! Me acordé de nuestra charla sobre %s. Dijiste algo que se me quedó dando vueltas: %s ¿Todavía lo ves así?" % [titulo_tema, frase_jugador]
+				texto = "Me acordé de nuestra conversación sobre %s. ¿Supiste algo más?" % titulo_tema
 			"narel":
-				texto = "He vuelto sobre nuestra conversación acerca de %s. Mi respuesta entonces fue: %s ¿Has encontrado algo que cambie nuestra interpretación?" % [titulo_tema, respuesta_npc] if not respuesta_npc.is_empty() else "He vuelto sobre nuestra conversación acerca de %s. Tu comentario fue: %s ¿Mantienes esa conclusión?" % [titulo_tema, frase_jugador]
+				texto = "He seguido dándole vueltas a lo que hablamos sobre %s. ¿Encontraste algo que cambie tu idea?" % titulo_tema
+			"ivo":
+				texto = "Oye, la otra vez hablamos de %s. ¿Cómo te fue con eso al final?" % titulo_tema
+			"nima":
+				texto = "Me quedé pensando en lo que comentaste sobre %s. ¿Averiguaste algo más?" % titulo_tema
+			"mara":
+				texto = "Me acordé de nuestra charla sobre %s. Si todavía quieres hablar de eso, te escucho." % titulo_tema
 			_:
-				texto = "Recuerdo que hablamos sobre %s y que dijiste: %s" % [titulo_tema, frase_jugador]
+				texto = "Me acordé de lo que hablamos sobre %s. ¿Ha cambiado algo desde entonces?" % titulo_tema
 	elif tipo == "evento_social":
 		var evento := str(recuerdo.get("evento", "")).strip_edges().to_lower()
 		var contexto_variant: Variant = recuerdo.get("contexto", {})
@@ -818,8 +925,8 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 				return {}
 		if not detalle.is_empty():
 			frase = detalle + ": " + frase
-		if not frase_jugador.is_empty():
-			frase = "Recuerdo que dijiste: %s %s" % [frase_jugador, frase]
+		if not frase_jugador.is_empty() and evento in ["mentir", "decir_verdad", "compartir_conocimiento"]:
+			frase += " También recuerdo lo que me dijiste."
 		match clave_nombre:
 			"elian":
 				texto = "Quería hablarte de algo que todavía recuerdo. " + frase
@@ -830,7 +937,13 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 			"saira":
 				texto = "Oye, hay algo de lo que pasó que todavía me ronda. " + frase
 			"narel":
-				texto = "He revisado mentalmente lo ocurrido y hay algo que quiero señalar. " + frase
+				texto = "He estado pensando en lo ocurrido. " + frase
+			"ivo":
+				texto = "Oye, quería decirte algo sobre lo que pasó. " + frase
+			"nima":
+				texto = "Hay algo de lo que pasó que sigo teniendo presente. " + frase
+			"mara":
+				texto = "Quería decirte que recuerdo lo que pasó entre nosotros. " + frase
 			_:
 				texto = frase
 	else:
@@ -841,7 +954,6 @@ func _crear_dialogo_recuerdo_social(recuerdo: Dictionary) -> Dictionary:
 		"clave": "recuerdo_social",
 		"lineas": [{"hablante": nombre, "texto": texto}]
 	}
-
 
 func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 	var variantes_variant: Variant = datos.get("variantes", [])
@@ -1601,6 +1713,47 @@ func _capturar_contexto_rutina_actual() -> Dictionary:
 	}
 
 
+## Convierte identificadores internos de rutina en frases naturales.
+## Desplazarse o descansar no se presenta como una obligación laboral.
+func _obtener_descripcion_actividad_dialogo(actividad: String) -> String:
+	var clave := actividad.strip_edges().to_lower()
+	match clave:
+		"hornear":
+			return "preparando una hornada"
+		"atender":
+			return "atendiendo la panadería"
+		"limpiar":
+			return "limpiando la panadería"
+		"forjar":
+			return "trabajando en la forja"
+		"revisar_herramientas":
+			return "revisando las herramientas"
+		"vigilar_acceso":
+			return "controlando el acceso"
+		"vigilar":
+			return "de guardia"
+		"patrullar":
+			return "haciendo una ronda"
+		"comerciar":
+			return "atendiendo el comercio"
+		"ordenar_mercancia":
+			return "ordenando la mercancía"
+		"visitar_comerciantes":
+			return "visitando a otros comerciantes"
+		"investigar_oris":
+			return "investigando fenómenos Oris"
+		"consultar_archivos":
+			return "consultando los archivos"
+		"registrar_observaciones":
+			return "registrando mis observaciones"
+		"leer":
+			return "leyendo"
+		_:
+			if _actividad_es_desplazamiento(clave) or clave in ["descansar", "dormir", "reposar", "ocio"]:
+				return ""
+			return "ocupándome de una tarea" if _actividad_impide_una_conversacion_larga(clave) else ""
+
+
 func _actividad_es_desplazamiento(actividad: String) -> bool:
 	var clave := actividad.strip_edges().to_lower()
 	for termino in ["camin", "pase", "recorr", "desplaz", "dirig", "ir_a", "volv", "regres", "viaj", "andar"]:
@@ -1691,9 +1844,9 @@ func _obtener_reaccion_despedida_rutina() -> String:
 				return "Voy a sentarme un rato antes de seguir recorriendo Torres. ¡Gracias por pasar!"
 			return "Ha sido bueno conversar. Me quedaré un rato por aquí; seguro que nos vemos de nuevo."
 		"elian":
-			return "No interrumpes. Me alegra que hayas pasado; cuando vuelva a tener un momento, seguimos hablando."
+			return "Me alegra que hayas pasado. Cuando volvamos a encontrarnos, seguimos hablando."
 		"bruna":
-			return "Está bien. Tengo que terminar esto, pero podemos continuar la conversación otro día."
+			return "Me gustó conversar contigo. Nos vemos luego."
 		"darven":
 			return "De acuerdo. Mantente a salvo y avísame si ocurre algo que deba saber."
 		"saira":
@@ -1828,6 +1981,14 @@ func _crear_opcion_dia_social() -> Dictionary:
 			respuesta = "Bien, aunque hoy tuve que parar un par de veces para descansar. Igual alcancé a saludar a medio reino, así que no fue un mal día."
 		"nima":
 			respuesta = "Bastante bien. Avancé con unas notas sobre fenómenos Oris y después fui a conversar un rato. Necesitaba despejarme."
+	# Las respuestas no deben afirmar que sigue siendo de mañana cuando ya
+	# cambió el periodo, ni ignorar la actividad real del personaje.
+	if not es_manana:
+		respuesta = respuesta.replace("La mañana", "El día")
+	var actividad_actual := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
+	var descripcion_actividad := _obtener_descripcion_actividad_dialogo(actividad_actual)
+	if nombre in ["elian", "bruna", "darven", "saira", "narel"] and not descripcion_actividad.is_empty():
+		respuesta += " Ahora mismo estoy " + descripcion_actividad + "."
 	return _crear_opcion_social("preguntar_dia", "Preguntar por su día", frase, respuesta)
 
 
@@ -1938,7 +2099,7 @@ func _crear_opcion_trabajo_social() -> Dictionary:
 					"¿Cómo van tus responsabilidades últimamente?",
 					"Estoy intentando localizar a un vendedor itinerante que trae preparados medicinales. Si averiguo cuándo vuelve, quizá pueda ayudar a Ivo."
 				)
-	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges() if is_instance_valid(_fuente) else ""
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower() if is_instance_valid(_fuente) else ""
 	var respuesta := "Tengo algunas tareas pendientes, como cualquiera. Intento organizarme para que no se me acumulen."
 	match nombre:
 		"elian":
@@ -1951,15 +2112,20 @@ func _crear_opcion_trabajo_social() -> Dictionary:
 			respuesta = "El comercio nunca se queda quieto. Hay que revisar cuentas, atender a la gente y estar pendiente de lo que llega desde fuera."
 		"narel":
 			respuesta = "Paso bastante tiempo revisando documentos y comparando observaciones. Una investigación rara vez avanza en línea recta."
-	if not actividad.is_empty():
-		respuesta += " Ahora mismo estoy con " + actividad + "."
+	var descripcion_actividad := _obtener_descripcion_actividad_dialogo(actividad)
+	if not descripcion_actividad.is_empty():
+		respuesta += " Ahora mismo estoy " + descripcion_actividad + "."
 	match nombre:
 		"mara":
 			respuesta = "No tengo un trabajo aquí. Me ocupo de mis cosas y procuro pasar desapercibida. Por ahora eso me basta."
 		"ivo":
 			respuesta = "No trabajo. Entre mis descansos y las vueltas que doy por el pueblo ya tengo el día bastante ocupado."
 		"nima":
-			respuesta = "Estudio por mi cuenta. Ahora estoy observando algunos fenómenos Oris, pero también leo sobre otras materias cuando encuentro algo interesante."
+			var actividad_nima := _obtener_descripcion_actividad_dialogo(actividad)
+			if not actividad_nima.is_empty():
+				respuesta = "Estudio por mi cuenta. Ahora mismo estoy " + actividad_nima + "."
+			else:
+				respuesta = "Estudio por mi cuenta. También leo sobre otras materias cuando encuentro algo interesante."
 	return _crear_opcion_social("hablar_trabajo", "Hablar sobre su trabajo", "¿Cómo van tus responsabilidades últimamente?", respuesta)
 
 
@@ -2109,9 +2275,10 @@ func _obtener_respuesta_ayuda_npc() -> String:
 			for detalle_disponible in lineas_disponibles:
 				texto += detalle_disponible + ". "
 		return texto.strip_edges()
-	var actividad := str(_fuente.datos.get("actividad_actual", "")).replace("_", " ").strip_edges()
-	if not actividad.is_empty():
-		return "Gracias por ofrecerte. Ahora mismo estoy con " + actividad + ", pero puedo arreglármelas por mi cuenta."
+	var actividad := str(_fuente.datos.get("actividad_actual", "")).strip_edges().to_lower()
+	var descripcion_actividad := _obtener_descripcion_actividad_dialogo(actividad)
+	if not descripcion_actividad.is_empty():
+		return "Gracias por ofrecerte. Ahora mismo estoy " + descripcion_actividad + ", pero puedo arreglármelas por mi cuenta."
 	match _nombre_social_actual():
 		"elian":
 			return "Gracias por ofrecerte. Por ahora tengo la panadería bajo control, pero si surge algún encargo te lo diré."
@@ -2965,8 +3132,16 @@ func _es_horario_mercado() -> bool:
 	return posmod(dia - 1, 5) == 4 and minutos >= 540 and minutos < 1020
 
 
+func _puede_abrir_tienda_con_npc() -> bool:
+	if _es_horario_mercado():
+		return true
+	if not is_instance_valid(_fuente):
+		return false
+	return not GARLIA_SHOP_UI_SCRIPT.tienda_para_npc(_fuente).is_empty()
+
+
 func _abrir_tienda_mercado() -> void:
-	if not _abierto or _dialogo_en_transito or not _es_horario_mercado() or not is_instance_valid(_fuente):
+	if not _abierto or _dialogo_en_transito or not _puede_abrir_tienda_con_npc() or not is_instance_valid(_fuente):
 		return
 	if not is_instance_valid(_inventario):
 		return
@@ -2989,9 +3164,11 @@ func _abrir_tienda_mercado() -> void:
 	_tienda_mercado.name = "NPCMarketShop"
 	_tienda_mercado.z_index = 40
 	_tienda_mercado.set_anchors_preset(Control.PRESET_FULL_RECT)
-	_tienda_mercado.configurar(_fuente, _inventario, world_items)
+	var tienda_edificio := GARLIA_SHOP_UI_SCRIPT.tienda_para_npc(_fuente)
+	_tienda_mercado.configurar(_fuente, _inventario, world_items, tienda_edificio)
 	_tienda_mercado.solicitar_cierre.connect(_cerrar_tienda_mercado)
 	dialogue_panel.add_child(_tienda_mercado)
+	_aplicar_superficie_button(_tienda_mercado)
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = false
 
@@ -3384,6 +3561,17 @@ func _crear_interfaz() -> void:
 	if dialogue_panel != null and is_instance_valid(dialogue_panel):
 		return
 
+	if not is_instance_valid(_dialogue_background):
+		_dialogue_background = TextureRect.new()
+		_dialogue_background.name = "DialogueBackgroundImage"
+		_dialogue_background.set_anchors_preset(Control.PRESET_FULL_RECT)
+		_dialogue_background.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		_dialogue_background.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_COVERED
+		_dialogue_background.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		_dialogue_background.z_index = 2999
+		_dialogue_background.visible = false
+		ui_root.add_child(_dialogue_background)
+
 	dialogue_panel = PanelContainer.new()
 	dialogue_panel.name = "DialoguePanel"
 	dialogue_panel.visible = false
@@ -3394,19 +3582,6 @@ func _crear_interfaz() -> void:
 	dialogue_panel.clip_contents = false
 	dialogue_panel.z_as_relative = false
 
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.075, 0.05, 0.032, 0.97)
-	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-
-	dialogue_panel.add_theme_stylebox_override(
-		"panel",
-		style
-	)
 
 	var margin := MarginContainer.new()
 	_dialogue_margin = margin
@@ -3423,17 +3598,33 @@ func _crear_interfaz() -> void:
 	content_row.alignment = BoxContainer.ALIGNMENT_CENTER
 	margin.add_child(content_row)
 
+	_portrait_frame = PanelContainer.new()
+	_portrait_frame.name = "SpeakerPortraitFrame"
+	_portrait_frame.custom_minimum_size = Vector2(188, 188)
+	_portrait_frame.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	_portrait_frame.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var estilo_retrato := PIXEL_UI_THEME.button_surface_style()
+	if estilo_retrato != null:
+		_portrait_frame.add_theme_stylebox_override("panel", estilo_retrato)
+	content_row.add_child(_portrait_frame)
+
+	var margen_retrato := MarginContainer.new()
+	margen_retrato.add_theme_constant_override("margin_left", 5)
+	margen_retrato.add_theme_constant_override("margin_top", 5)
+	margen_retrato.add_theme_constant_override("margin_right", 5)
+	margen_retrato.add_theme_constant_override("margin_bottom", 5)
+	_portrait_frame.add_child(margen_retrato)
+
 	portrait_rect = TextureRect.new()
 	portrait_rect.name = "SpeakerPortrait"
-	# El retrato ocupa prácticamente toda la altura interior del panel.
-	# Al ser cuadrado y conservar el aspecto, el sprite crece sin deformarse.
+	# El sprite conserva su proporción dentro de un marco con el mismo diseño de Button.
 	portrait_rect.custom_minimum_size = Vector2(176, 176)
 	portrait_rect.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	portrait_rect.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	portrait_rect.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	portrait_rect.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	portrait_rect.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	portrait_rect.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	content_row.add_child(portrait_rect)
+	margen_retrato.add_child(portrait_rect)
 
 	var column := VBoxContainer.new()
 	_dialogue_text_column = column
@@ -3441,6 +3632,29 @@ func _crear_interfaz() -> void:
 	column.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	column.add_theme_constant_override("separation", 8)
 	content_row.add_child(column)
+
+	# Nombre y parlamento comparten una única superficie Button, colocada
+	# junto al retrato y centrada verticalmente respecto a su marco.
+	var panel_texto := PanelContainer.new()
+	panel_texto.name = "SpeakerTextButtonSurface"
+	panel_texto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_texto.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	var estilo_texto := PIXEL_UI_THEME.button_surface_style()
+	if estilo_texto != null:
+		panel_texto.add_theme_stylebox_override("panel", estilo_texto)
+	column.add_child(panel_texto)
+
+	var margen_texto := MarginContainer.new()
+	margen_texto.add_theme_constant_override("margin_left", 12)
+	margen_texto.add_theme_constant_override("margin_top", 10)
+	margen_texto.add_theme_constant_override("margin_right", 12)
+	margen_texto.add_theme_constant_override("margin_bottom", 10)
+	panel_texto.add_child(margen_texto)
+
+	var contenido_texto := VBoxContainer.new()
+	contenido_texto.name = "SpeakerTextContent"
+	contenido_texto.add_theme_constant_override("separation", 6)
+	margen_texto.add_child(contenido_texto)
 
 	speaker_label = Label.new()
 	speaker_label.name = "Speaker"
@@ -3450,7 +3664,7 @@ func _crear_interfaz() -> void:
 		Color(0.93, 0.84, 0.65, 1.0)
 	)
 	speaker_label.add_theme_font_size_override("font_size", 14)
-	column.add_child(speaker_label)
+	contenido_texto.add_child(speaker_label)
 
 	text_label = Label.new()
 	text_label.name = "Text"
@@ -3462,16 +3676,11 @@ func _crear_interfaz() -> void:
 		Color(0.82, 0.75, 0.63, 1.0)
 	)
 	text_label.add_theme_font_size_override("font_size", 13)
-	column.add_child(text_label)
+	contenido_texto.add_child(text_label)
 
-	hint_label = Label.new()
-	hint_label.name = "DialogueContinueHint"
-	hint_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	hint_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	hint_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	hint_label.add_theme_color_override("font_color", Color(0.62, 0.55, 0.43, 1.0))
-	hint_label.add_theme_font_size_override("font_size", 9)
-	column.add_child(hint_label)
+	# La continuación se realiza con los controles habituales; no se muestra
+	# texto auxiliar que compita visualmente con el diálogo.
+	hint_label = null
 
 	_botones_accion = HBoxContainer.new()
 	_botones_accion.name = "DialogueActions"
@@ -3509,7 +3718,7 @@ func _crear_interfaz() -> void:
 	_dialogue_social_column = columna_social
 	columna_social.name = "DialogueSocialActions"
 	columna_social.custom_minimum_size = Vector2(48, 0)
-	columna_social.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	columna_social.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	columna_social.add_theme_constant_override("separation", 8)
 	content_row.add_child(columna_social)
 
@@ -3632,7 +3841,10 @@ func _crear_interfaz() -> void:
 	selector_scroll.add_child(_selector_items_grid)
 
 	ui_root.add_child(dialogue_panel)
-	PIXEL_UI_THEME.apply(dialogue_panel)
+	PIXEL_UI_THEME.apply(dialogue_panel, false)
+	_aplicar_superficie_button(dialogue_panel)
+	_aplicar_superficie_button(_selector_conversacion)
+	_aplicar_superficie_button(_selector_items)
 	dialogue_panel.visible = false
 	if not get_viewport().size_changed.is_connected(_adaptar_panel_dialogo):
 		get_viewport().size_changed.connect(_adaptar_panel_dialogo)
@@ -3658,6 +3870,7 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 	dialogue_panel.size = Vector2(ancho, alto)
 
 	var compacto := viewport_size.x < 520.0
+	_dialogue_compacto = compacto
 	var movil := viewport_size.x < 720.0
 	if _dialogue_margin != null:
 		var margen := 8 if compacto else (12 if movil else 22)
@@ -3671,6 +3884,10 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 		portrait_rect.visible = not compacto
 		var retrato := 80.0 if compacto else (120.0 if movil else 176.0)
 		portrait_rect.custom_minimum_size = Vector2(retrato, retrato)
+	if is_instance_valid(_portrait_frame):
+		_portrait_frame.visible = not compacto and portrait_rect != null and portrait_rect.texture != null
+		var marco_retrato := 92.0 if compacto else (132.0 if movil else 188.0)
+		_portrait_frame.custom_minimum_size = Vector2(marco_retrato, marco_retrato)
 	if _dialogue_social_column != null:
 		var social_size := 36.0 if compacto else (40.0 if movil else 48.0)
 		_dialogue_social_column.custom_minimum_size = Vector2(social_size, 0.0)
@@ -3683,8 +3900,6 @@ func _adaptar_panel_dialogo(tamano_viewport: Vector2 = Vector2.ZERO) -> void:
 		speaker_label.add_theme_font_size_override("font_size", 13 if movil else 14)
 	if text_label != null:
 		text_label.add_theme_font_size_override("font_size", 12 if compacto else 13)
-	if hint_label != null:
-		hint_label.add_theme_font_size_override("font_size", 8 if movil else 9)
 	if action_button != null:
 		action_button.custom_minimum_size = Vector2(110 if compacto else (140 if movil else 180), 32 if movil else 34)
 	if cancel_button != null:

@@ -1,3 +1,4 @@
+@tool
 class_name DisplayLayer
 extends TileMapLayer
 ##[br] A single TileMapLayer whose purpose is to display tiles to maintain the Dual Grid illusion.

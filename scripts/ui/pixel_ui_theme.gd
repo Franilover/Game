@@ -3,7 +3,6 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
-const PANEL_BACKGROUND_MARGIN := 8
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
@@ -11,8 +10,11 @@ static func apply(root: Control, use_pixel_titles: bool = true) -> void:
 	if root == null:
 		return
 	_apply_control(root, use_pixel_titles)
+	_vigilar_panel_menu(root)
 	for node in root.find_children("*", "Control", true, false):
-		_apply_control(node as Control, use_pixel_titles)
+		var control := node as Control
+		_apply_control(control, use_pixel_titles)
+		_vigilar_panel_menu(control)
 
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
@@ -53,10 +55,9 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
-		# El panel de detalle del crafteo comparte exactamente la superficie
-		# de los botones. Mantener esta excepción aquí evita que una nueva
-		# aplicación global del tema restaure el marco clásico del panel.
-		var panel: StyleBox = button_surface_style() if control.name == "DetailPanel" else _texture_style("panel_background.png", PANEL_BACKGROUND_MARGIN)
+		# Los paneles conservan su fondo propio. Solo los paneles de detalle
+		# que fueron diseñados como superficies de botón comparten esa textura.
+		var panel: StyleBox = button_surface_style() if control.name in ["DetailPanel", "SpeakerPortraitFrame"] else _texture_style("panel_background.png", 8)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
@@ -138,3 +139,12 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 			control.add_theme_stylebox_override("background", bar_background)
 		if bar_fill != null:
 			control.add_theme_stylebox_override("fill", bar_fill)
+
+
+static func _vigilar_panel_menu(control: Control) -> void:
+	if not (control is PanelContainer or control is Panel):
+		return
+	var anclado_al_centro := is_equal_approx(control.anchor_left, 0.5) and is_equal_approx(control.anchor_right, 0.5) and is_equal_approx(control.anchor_top, 0.5) and is_equal_approx(control.anchor_bottom, 0.5)
+	var centrado_por_contenedor := control.get_parent() is CenterContainer
+	if anclado_al_centro or centrado_por_contenedor:
+		MenuLayout.vigilar_panel_centrado(control)

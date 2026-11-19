@@ -26,7 +26,17 @@ func _run() -> void:
 	origen.world_state.current_scene = "res://scenes/world/main.tscn"
 	origen.world_state.flags = {
 		"inventario_estado": {
-			"items": [{"id": "espada_test", "cantidad": 1}],
+			"items": [{
+				"id": "carta_aoris_id",
+				"item_id": "carta_aoris_id",
+				"nombre": "Carta Aoris de Elian",
+				"nombre_sprite": "Carta Aoris",
+				"ejemplar_id": "ejemplar_elian_test",
+				"es_ejemplar": true,
+				"descripcion_detallada": "Descripción única de prueba.",
+				"cantidad": 1,
+				"max_stack": 1
+			}],
 			"hotbar": [0, -1, -1]
 		},
 		"estado_zona_actual": {
@@ -61,8 +71,20 @@ func _run() -> void:
 		errores.append("El tiempo de mundo no sobrevivió al roundtrip.")
 
 	var flags := destino.world_state.flags
-	if (flags.get("inventario_estado", {}) as Dictionary).get("items", []) != [{"id": "espada_test", "cantidad": 1}]:
+	var inventario_guardado: Dictionary = flags.get("inventario_estado", {}) as Dictionary
+	var items_guardados: Array = inventario_guardado.get("items", []) as Array
+	if items_guardados.is_empty():
 		errores.append("El inventario no sobrevivió al roundtrip.")
+	else:
+		var ejemplar_guardado: Dictionary = items_guardados[0] as Dictionary
+		if str(ejemplar_guardado.get("ejemplar_id", "")) != "ejemplar_elian_test":
+			errores.append("La identidad del ejemplar no sobrevivió al roundtrip.")
+		if str(ejemplar_guardado.get("nombre", "")) != "Carta Aoris de Elian":
+			errores.append("El nombre propio del ejemplar no sobrevivió al roundtrip.")
+		if str(ejemplar_guardado.get("nombre_sprite", "")) != "Carta Aoris":
+			errores.append("La referencia al sprite base no sobrevivió al roundtrip.")
+		if str(ejemplar_guardado.get("descripcion_detallada", "")) != "Descripción única de prueba.":
+			errores.append("La descripción del ejemplar no sobrevivió al roundtrip.")
 	if (flags.get("estado_zona_actual", {}) as Dictionary).get("interior", "") != "casa_ivo":
 		errores.append("El estado de interior/zona no sobrevivió al roundtrip.")
 	if (flags.get("proceso_ium_equipado", {}) as Dictionary).get("id", "") != "ium_test":

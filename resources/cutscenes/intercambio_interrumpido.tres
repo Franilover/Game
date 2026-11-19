@@ -6,7 +6,7 @@
 script = ExtResource("1")
 clave = "intercambio_interrumpido_{{clave}}"
 descripcion = "Intercambio social con cambio de turno: un personaje interrumpe, los participantes redirigen su atención y la conversación continúa."
-modo = "en_vivo"
+modo = "planeada"
 pasos = Array[Dictionary]([{
 "tipo": "camara",
 "x": "{{x}}",

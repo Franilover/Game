@@ -1,3 +1,4 @@
+@tool
 class_name Display
 extends Node2D
 ##[br] A Node designed to hold and manage up to 2 DisplayLayer children.

@@ -328,6 +328,94 @@ func _guardar_partida_si_disponible() -> void:
 			push_warning("ZoneManager: no se pudo guardar el estado después del viaje.")
 
 
+## Viaje regular al mundo exterior desde el Registro de la Puerta.
+## El retorno se calcula con el reloj del mundo y queda persistido en la partida.
+func iniciar_viaje_exterior() -> bool:
+	if _transicionando or tipo_actual != TIPO_REINO_TORRES:
+		return false
+	var jugador := _obtener_jugador_principal()
+	if not is_instance_valid(jugador):
+		return false
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_previo: Variant = flags.get("viaje_exterior_estado", {})
+	if estado_previo is Dictionary and bool((estado_previo as Dictionary).get("activo", false)):
+		return false
+	var posicion_retorno := jugador.global_position
+	if is_instance_valid(zona_actual) and zona_actual.has_method("obtener_posicion_exterior_para_viaje"):
+		var posicion_exterior: Variant = zona_actual.call("obtener_posicion_exterior_para_viaje")
+		if posicion_exterior is Vector2:
+			posicion_retorno = posicion_exterior
+	flags["viaje_exterior_estado"] = {
+		"activo": true,
+		"retorno_en_curso": false,
+		"retorno_pendiente": false,
+		"origen_posicion": {"x": posicion_retorno.x, "y": posicion_retorno.y}
+	}
+	GameState.marcar_reino_torres_visitado()
+	_salida_reino_pendiente = true
+	await _cambiar_zona(MUNDO_ABIERTO_PATH, TIPO_MUNDO_ABIERTO)
+	if tipo_actual != TIPO_MUNDO_ABIERTO:
+		flags.erase("viaje_exterior_estado")
+		_salida_reino_pendiente = false
+		return false
+	_guardar_partida_si_disponible()
+	return true
+
+
+func debe_regresar_viaje_exterior() -> bool:
+	var estado_variant: Variant = GameState.world_state.flags.get("viaje_exterior_estado", {})
+	if not estado_variant is Dictionary:
+		return false
+	var estado := estado_variant as Dictionary
+	return (
+		bool(estado.get("activo", false))
+		and not bool(estado.get("retorno_en_curso", false))
+		and tipo_actual == TIPO_MUNDO_ABIERTO
+		and not _transicionando
+	)
+
+
+func regresar_viaje_exterior() -> bool:
+	if not debe_regresar_viaje_exterior():
+		return false
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_variant: Variant = flags.get("viaje_exterior_estado", {})
+	var estado := (estado_variant as Dictionary).duplicate(true)
+	estado["retorno_en_curso"] = true
+	flags["viaje_exterior_estado"] = estado
+	await _cambiar_zona(REINO_TORRES_ESCENA_PATH, TIPO_REINO_TORRES)
+	if tipo_actual != TIPO_REINO_TORRES:
+		estado["retorno_en_curso"] = false
+		flags["viaje_exterior_estado"] = estado
+		return false
+	estado["activo"] = false
+	estado["retorno_en_curso"] = false
+	estado["retorno_pendiente"] = true
+	flags["viaje_exterior_estado"] = estado
+	_guardar_partida_si_disponible()
+	return true
+
+
+func consumir_retorno_viaje_exterior() -> Dictionary:
+	var flags: Dictionary = GameState.world_state.flags
+	var estado_variant: Variant = flags.get("viaje_exterior_estado", {})
+	if not estado_variant is Dictionary:
+		return {}
+	var estado := (estado_variant as Dictionary).duplicate(true)
+	if not bool(estado.get("retorno_pendiente", false)):
+		return {}
+	var origen_variant: Variant = estado.get("origen_posicion", {})
+	if not origen_variant is Dictionary:
+		return {}
+	var origen := origen_variant as Dictionary
+	estado["retorno_pendiente"] = false
+	flags["viaje_exterior_estado"] = estado
+	return {
+		"valido": true,
+		"posicion": Vector2(float(origen.get("x", 0.0)), float(origen.get("y", 0.0)))
+	}
+
+
 func entrar_hogar() -> void:
 	if _transicionando:
 		return

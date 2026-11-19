@@ -58,6 +58,11 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 	_world_entity_spawner = spawner
 	_inventario = inventario
 	_world_items = world_items
+	if is_instance_valid(_world_items):
+		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_objetos_disponible):
+			_world_items.catalogo_cargado.connect(_al_catalogo_objetos_disponible)
+		if _world_items.catalogo_disponible:
+			call_deferred("_al_catalogo_objetos_disponible", _world_items.obtener_catalogo())
 
 
 func configurar_aldeanos(relationship_system: Node, zone_manager: Node) -> void:
@@ -242,11 +247,10 @@ func _cargar_criaturas() -> void:
 		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 	)
 
+	var cuadricula := _crear_cuadricula()
 	for criatura in criaturas:
-		_crear_fila(
-			str(criatura.get("nombre", "Criatura")),
-			criatura
-		)
+		var nombre := str(criatura.get("nombre", "Criatura"))
+		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_criatura(nombre), criatura)
 
 
 func _cargar_objetos() -> void:
@@ -261,16 +265,19 @@ func _cargar_objetos() -> void:
 	var grupos: Dictionary = {}
 	var ordenes_grupos: Dictionary = {}
 
+	if catalogo.is_empty():
+		var aviso := Label.new()
+		aviso.text = "Cargando objetos desde Supabase..." if not _world_items.catalogo_disponible else "El catálogo no contiene objetos."
+		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_lista.add_child(aviso)
+		return
+
 	for item in catalogo:
-		# Los objetos sin arte propio permanecen en Supabase, pero todavía no
-		# se ofrecen como contenido jugable ni como objetos de prueba del admin.
-		if not ItemIconResolver.tiene_icono(item):
-			continue
 		var categoria_variant: Variant = item.get("categoria", {})
-		if not categoria_variant is Dictionary or (categoria_variant as Dictionary).is_empty():
-			continue
-		var categoria := categoria_variant as Dictionary
-		var grupo := str(categoria.get("nombre", "Sin categoría"))
+		var categoria: Dictionary = categoria_variant as Dictionary if categoria_variant is Dictionary else {}
+		var grupo := str(categoria.get("nombre", "Sin categoría")).strip_edges()
+		if grupo.is_empty():
+			grupo = "Sin categoría"
 		if not grupos.has(grupo):
 			grupos[grupo] = []
 			ordenes_grupos[grupo] = int(categoria.get("orden", 999))
@@ -296,8 +303,19 @@ func _cargar_objetos() -> void:
 			return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 		)
 
+		var cuadricula := _crear_cuadricula()
 		for item in objetos:
-			_crear_fila(str(item.get("nombre", "Objeto")), item)
+			var nombre := str(item.get("nombre", "Objeto"))
+			var icono := ItemIconResolver.obtener_icono(item)
+			if icono != null:
+				_crear_celda_sprite(cuadricula, nombre, icono, item)
+			else:
+				_crear_fila(nombre, item)
+
+
+func _al_catalogo_objetos_disponible(_items: Array) -> void:
+	if _modo == "objetos" and visible:
+		_cargar_objetos()
 
 
 func _cargar_aldeanos() -> void:
@@ -305,8 +323,35 @@ func _cargar_aldeanos() -> void:
 	personajes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
 	)
+	var cuadricula := _crear_cuadricula()
 	for personaje in personajes:
-		_crear_fila(str(personaje.get("nombre", "Personaje")), personaje)
+		var nombre := str(personaje.get("nombre", "Personaje"))
+		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_aldeano(personaje), personaje)
+
+
+func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
+	var claves: Array[String] = []
+	for campo in ["sprite_key", "nombre_individual", "nombre_personaje", "nombre_npc", "nombre"]:
+		var clave := str(personaje.get(campo, "")).strip_edges()
+		if not clave.is_empty() and not claves.has(clave):
+			claves.append(clave)
+
+	for clave in claves:
+		if clave.contains("/") or clave.contains("\\"):
+			continue
+		for extension in [".png", ".PNG"]:
+			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
+			if not ResourceLoader.exists(ruta):
+				continue
+			var textura := load(ruta) as Texture2D
+			if textura != null:
+				return textura
+
+	# Mismo respaldo humano que utiliza Creature cuando falta el retrato propio.
+	var ruta_base := "res://assets/art/characters/Sprite-0004.png"
+	if ResourceLoader.exists(ruta_base):
+		return load(ruta_base) as Texture2D
+	return null
 
 
 func _obtener_grupo_objeto(item: Dictionary) -> String:
@@ -324,6 +369,64 @@ func _crear_fila(nombre: String, datos: Dictionary) -> void:
 	boton.pressed.connect(_seleccionar.bind(datos))
 	PIXEL_UI_THEME.apply(boton, false)
 	_lista.add_child(boton)
+
+
+func _crear_cuadricula() -> GridContainer:
+	var cuadricula := GridContainer.new()
+	cuadricula.columns = 4
+	cuadricula.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	cuadricula.add_theme_constant_override("h_separation", 5)
+	cuadricula.add_theme_constant_override("v_separation", 5)
+	_lista.add_child(cuadricula)
+	return cuadricula
+
+
+func _crear_celda_sprite(contenedor: GridContainer, nombre: String, textura: Texture2D, datos: Dictionary) -> void:
+	var boton := Button.new()
+	boton.text = ""
+	boton.tooltip_text = nombre
+	boton.custom_minimum_size = Vector2(52, 52)
+	boton.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	boton.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	boton.pressed.connect(_seleccionar.bind(datos))
+	PIXEL_UI_THEME.apply(boton, false)
+	contenedor.add_child(boton)
+
+	if textura != null:
+		var imagen := TextureRect.new()
+		imagen.name = "Sprite"
+		imagen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		imagen.offset_left = 6.0
+		imagen.offset_top = 6.0
+		imagen.offset_right = -6.0
+		imagen.offset_bottom = -6.0
+		imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		imagen.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		imagen.texture = textura
+		boton.add_child(imagen)
+
+
+func _obtener_sprite_criatura(nombre: String) -> Texture2D:
+	var rutas := [
+		"res://assets/art/creatures/" + nombre + ".png",
+		"res://assets/art/creatures/" + nombre + ".PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + ".png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + ".PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Idle.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Idle.PNG",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.PNG"
+	]
+	if nombre.to_lower() == "humano":
+		rutas.push_front("res://assets/art/creatures/Humano.png")
+	for ruta in rutas:
+		if ResourceLoader.exists(ruta):
+			var recurso: Resource = load(ruta)
+			if recurso is Texture2D:
+				return recurso as Texture2D
+	return null
 
 
 func _seleccionar(datos: Dictionary) -> void:
@@ -364,11 +467,7 @@ func _mostrar_detalle() -> void:
 	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	if _modo == "criaturas":
-		var ruta := "res://assets/art/creatures/" + nombre + ".png"
-		if nombre.to_lower() == "humano":
-			ruta = "res://assets/art/creatures/Humano.png"
-		if ResourceLoader.exists(ruta):
-			icono.texture = load(ruta)
+		icono.texture = _obtener_sprite_criatura(nombre)
 	else:
 		icono.texture = ItemIconResolver.obtener_icono(_seleccion)
 
@@ -415,6 +514,13 @@ func _mostrar_detalle_aldeano() -> void:
 	var nombre := str(_seleccion.get("nombre", "Personaje"))
 	var personaje_id := str(_seleccion.get("id", ""))
 	var npc := _buscar_npc_aldeano(personaje_id, nombre)
+	var retrato := TextureRect.new()
+	retrato.custom_minimum_size = Vector2(120, 120)
+	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	retrato.texture = _obtener_sprite_aldeano(_seleccion)
+	_detalle.add_child(retrato)
 	var titulo := Label.new()
 	titulo.text = nombre
 	titulo.add_theme_font_size_override("font_size", 18)

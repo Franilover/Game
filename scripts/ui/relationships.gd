@@ -175,7 +175,8 @@ func _actualizar() -> void:
 		var asset_key := str(personaje.get("asset_key", nombre)).strip_edges()
 		_personajes_por_id[personaje_id] = {
 			"nombre": nombre,
-			"asset_key": asset_key
+			"asset_key": asset_key,
+			"sprite_key": str(personaje.get("sprite_key", "")).strip_edges()
 		}
 
 		var boton := Button.new()
@@ -218,21 +219,31 @@ func _actualizar() -> void:
 			iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			boton.add_child(iniciales)
 
+		var fondo_nombre := PanelContainer.new()
+		fondo_nombre.name = "NameButtonSurface"
+		fondo_nombre.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+		fondo_nombre.offset_left = 2.0
+		fondo_nombre.offset_right = -2.0
+		fondo_nombre.offset_top = -16.0
+		fondo_nombre.offset_bottom = -1.0
+		fondo_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		fondo_nombre.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+		var nombre_margen := MarginContainer.new()
+		nombre_margen.add_theme_constant_override("margin_left", 2)
+		nombre_margen.add_theme_constant_override("margin_right", 2)
+		nombre_margen.add_theme_constant_override("margin_top", 0)
+		nombre_margen.add_theme_constant_override("margin_bottom", 0)
 		var etiqueta := Label.new()
-		etiqueta.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-		etiqueta.offset_left = 2.0
-		etiqueta.offset_right = -2.0
-		etiqueta.offset_top = -15.0
-		etiqueta.offset_bottom = -1.0
 		etiqueta.text = nombre
 		etiqueta.clip_text = true
 		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 		etiqueta.add_theme_font_size_override("font_size", 8)
 		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
-		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
-		etiqueta.add_theme_constant_override("outline_size", 2)
 		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		boton.add_child(etiqueta)
+		nombre_margen.add_child(etiqueta)
+		fondo_nombre.add_child(nombre_margen)
+		boton.add_child(fondo_nombre)
 
 		lista.add_child(boton)
 		_botones.append(boton)
@@ -261,6 +272,29 @@ func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
 			var recurso: Resource = load(ruta)
 			if recurso is Texture2D:
 				return recurso as Texture2D
+	return null
+
+
+func _cargar_sprite_mapa(sprite_key: String, nombre: String, tiene_personaje: bool) -> Texture2D:
+	var claves: Array[String] = []
+	if not sprite_key.is_empty() and not sprite_key.contains("/") and not sprite_key.contains("\\"):
+		claves.append(sprite_key)
+	if not nombre.is_empty() and not nombre.contains("/") and not nombre.contains("\\") and nombre not in claves:
+		claves.append(nombre)
+	for clave in claves:
+		for extension in [".png", ".PNG"]:
+			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
+			if not ResourceLoader.exists(ruta):
+				continue
+			var recurso: Resource = load(ruta)
+			if recurso is Texture2D:
+				return recurso as Texture2D
+
+	# Es el mismo fallback que utiliza Creature._cargar_sprite() en el mapa.
+	if tiene_personaje:
+		var ruta_base := "res://assets/art/characters/Sprite-0004.png"
+		if ResourceLoader.exists(ruta_base):
+			return load(ruta_base) as Texture2D
 	return null
 
 
@@ -296,43 +330,76 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 
 	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
 	var asset_key := str(datos_personaje.get("asset_key", nombre))
+	var sprite_key := str(datos_personaje.get("sprite_key", "")).strip_edges()
 	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
-	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
-	var fondo_retrato := Button.new()
-	fondo_retrato.name = "CharacterFaceFrame"
-	fondo_retrato.text = ""
-	fondo_retrato.custom_minimum_size = Vector2(0.0, 96.0)
-	fondo_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	fondo_retrato.focus_mode = Control.FOCUS_NONE
-	fondo_retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	fondo_retrato.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-	PIXEL_UI_THEME.apply(fondo_retrato, false)
-	detalle.add_child(fondo_retrato)
+	var textura_retrato := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
+	var textura_mapa := _cargar_sprite_mapa(sprite_key, nombre, not personaje_id.is_empty())
 
-	if textura != null:
-		var retrato_cara := TextureRect.new()
-		retrato_cara.name = "CharacterFace"
-		retrato_cara.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		retrato_cara.offset_left = 5.0
-		retrato_cara.offset_top = 4.0
-		retrato_cara.offset_right = -5.0
-		retrato_cara.offset_bottom = -4.0
-		retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		retrato_cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		retrato_cara.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		retrato_cara.texture = textura
-		fondo_retrato.add_child(retrato_cara)
+	# Las dos referencias visuales comparten el mismo ancho: retrato de perfil
+	# a la izquierda y sprite real de exploración a la derecha.
+	# Cada imagen tiene su propia superficie Button y no necesita rótulo.
+	var fila_imagenes := HBoxContainer.new()
+	fila_imagenes.name = "CharacterImagesRow"
+	fila_imagenes.custom_minimum_size = Vector2(0.0, 112.0)
+	fila_imagenes.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fila_imagenes.add_theme_constant_override("separation", 5)
+	detalle.add_child(fila_imagenes)
+
+	var marco_retrato := PanelContainer.new()
+	marco_retrato.name = "PortraitButtonSurface"
+	marco_retrato.custom_minimum_size = Vector2(0.0, 112.0)
+	marco_retrato.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	marco_retrato.size_flags_stretch_ratio = 1.0
+	marco_retrato.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+	fila_imagenes.add_child(marco_retrato)
+
+	var retrato_cara := TextureRect.new()
+	retrato_cara.name = "CharacterFace"
+	retrato_cara.custom_minimum_size = Vector2(0.0, 102.0)
+	retrato_cara.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	retrato_cara.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	retrato_cara.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	retrato_cara.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	retrato_cara.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	retrato_cara.texture = textura_retrato
+	if textura_retrato == null:
+		var iniciales_retrato := Label.new()
+		iniciales_retrato.name = "CharacterFaceFallback"
+		iniciales_retrato.text = nombre.substr(0, 2).to_upper()
+		iniciales_retrato.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		iniciales_retrato.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		iniciales_retrato.add_theme_font_size_override("font_size", 20)
+		marco_retrato.add_child(iniciales_retrato)
 	else:
-		var iniciales := Label.new()
-		iniciales.name = "CharacterFaceFallback"
-		iniciales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		iniciales.text = nombre.substr(0, 2).to_upper()
-		iniciales.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		iniciales.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		iniciales.add_theme_font_size_override("font_size", 24)
-		iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fondo_retrato.add_child(iniciales)
+		marco_retrato.add_child(retrato_cara)
+
+	var marco_mapa := PanelContainer.new()
+	marco_mapa.name = "MapSpriteButtonSurface"
+	marco_mapa.custom_minimum_size = Vector2(0.0, 112.0)
+	marco_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	marco_mapa.size_flags_stretch_ratio = 1.0
+	marco_mapa.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+	fila_imagenes.add_child(marco_mapa)
+
+	var sprite_mapa := TextureRect.new()
+	sprite_mapa.name = "CharacterMapSprite"
+	sprite_mapa.custom_minimum_size = Vector2(0.0, 102.0)
+	sprite_mapa.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sprite_mapa.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	sprite_mapa.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	sprite_mapa.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	sprite_mapa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite_mapa.texture = textura_mapa
+	if textura_mapa == null:
+		var sin_sprite := Label.new()
+		sin_sprite.name = "MapSpriteFallback"
+		sin_sprite.text = "—"
+		sin_sprite.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		sin_sprite.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		sin_sprite.add_theme_font_size_override("font_size", 18)
+		marco_mapa.add_child(sin_sprite)
+	else:
+		marco_mapa.add_child(sprite_mapa)
 
 	var titulo := Button.new()
 	titulo.name = "CharacterName"
@@ -358,9 +425,9 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var panel_amistad := PanelContainer.new()
 	panel_amistad.name = "FriendshipPanel"
 	panel_amistad.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	var fondo_amistad: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
-	if fondo_amistad != null:
-		panel_amistad.add_theme_stylebox_override("panel", fondo_amistad)
+	# La superficie Button del panel derecho ya contiene toda la columna;
+	# la sección de amistad queda transparente para evitar un segundo recuadro.
+	panel_amistad.add_theme_stylebox_override("panel", StyleBoxEmpty.new())
 	detalle.add_child(panel_amistad)
 
 	var margen_amistad := MarginContainer.new()

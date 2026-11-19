@@ -37,8 +37,6 @@ const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_
 const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
-const NPC_SCHEDULE_SYSTEM_SCRIPT = preload("res://scripts/world/npc_schedule_system.gd")
-const NPC_CONVERSATION_SYSTEM_SCRIPT = preload("res://scripts/world/npc_conversation_system.gd")
 const CUTSCENE_DIRECTOR_SCRIPT = preload("res://scripts/gameplay/cutscene_director.gd")
 
 # Perfiles visuales locales por zona. Para habilitar uno en Aventura en el futuro,
@@ -52,8 +50,8 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 @onready var _story_loading_overlay: Control = $UI/StoryLoadingOverlay
 var _reino_descubrimiento_elapsed: float = 0.0
 var _torres_rutina_elapsed: float = 0.0
-var _npc_schedule_system: Node = null
-var _npc_conversation_system: Node = null
+@onready var _npc_schedule_system: Node = $Systems/NPCScheduleSystem
+@onready var _npc_conversation_system: Node = $Systems/NPCConversationSystem
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
@@ -126,21 +124,17 @@ func _ready() -> void:
 		push_error("Main: falta World/ZoneManager.")
 		return
 
-	_npc_schedule_system = NPC_SCHEDULE_SYSTEM_SCRIPT.new() as Node
-	if is_instance_valid(_npc_schedule_system):
-		_npc_schedule_system.name = "NPCScheduleSystem"
-		add_child(_npc_schedule_system)
+	if not is_instance_valid(_npc_schedule_system):
+		push_error("Main: falta Systems/NPCScheduleSystem.")
+	else:
 		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager, RelationshipSystem)
-	else:
-		push_error("Main: no se pudo inicializar NPCScheduleSystem.")
 
-	_npc_conversation_system = NPC_CONVERSATION_SYSTEM_SCRIPT.new() as Node
-	if is_instance_valid(_npc_conversation_system):
-		_npc_conversation_system.name = "NPCConversationSystem"
-		add_child(_npc_conversation_system)
-		_npc_conversation_system.configurar(_world_atmosphere, _zone_manager, GameState, RelationshipSystem, MissionManager)
+	if not is_instance_valid(_npc_conversation_system):
+		push_error("Main: falta Systems/NPCConversationSystem.")
 	else:
-		push_error("Main: no se pudo inicializar NPCConversationSystem.")
+		_npc_conversation_system.configurar(
+			_world_atmosphere, _zone_manager, GameState, RelationshipSystem, MissionManager
+		)
 
 	if not _zone_manager.zona_cambiada.is_connected(_al_cambio_de_zona):
 		_zone_manager.zona_cambiada.connect(_al_cambio_de_zona)
@@ -252,16 +246,29 @@ func _input(event: InputEvent) -> void:
 				get_viewport().set_input_as_handled()
 				return
 	var input_controller = PLAYER_INPUT_CONTROLLER_SCRIPT.new()
-	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo() and input_controller.es_combinacion_viaje(event):
-		get_viewport().set_input_as_handled()
-		return
 	if not input_controller.es_combinacion_viaje(event):
 		return
-	if _realm_menu == null or not is_instance_valid(_realm_menu):
+	get_viewport().set_input_as_handled()
+	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo():
 		return
-	if _realm_menu.has_method("alternar"):
-		_realm_menu.call("alternar", _supabase_client, GameState, _zone_manager.obtener_tipo_actual())
-		get_viewport().set_input_as_handled()
+	if not is_instance_valid(_zone_manager):
+		return
+	var zona_actual: String = str(_zone_manager.obtener_tipo_actual())
+	if zona_actual == "mundo_abierto":
+		if _zone_manager.has_method("regresar_viaje_exterior"):
+			var regreso: Variant = await _zone_manager.call("regresar_viaje_exterior")
+			if bool(regreso):
+				return
+		_zone_manager.entrar_reino("torres")
+		return
+	if zona_actual.begins_with("expedicion:"):
+		if _zone_manager.has_method("salir_expedicion"):
+			_zone_manager.call("salir_expedicion")
+		else:
+			_zone_manager.entrar_reino("torres")
+		return
+	if zona_actual != "reino_torres":
+		_zone_manager.entrar_reino("torres")
 
 
 func _es_modo_historia() -> bool:
@@ -270,6 +277,9 @@ func _es_modo_historia() -> bool:
 
 func _al_solicitar_destino_reino(clave: String) -> void:
 	var clave_normalizada := clave.strip_edges().to_lower()
+	if clave_normalizada != "torres":
+		push_warning("Main: los viajes a otros destinos están deshabilitados; sólo se permite regresar a Torres.")
+		return
 	print("Main: destino solicitado desde RealmMenu → ", clave_normalizada)
 	if _zone_manager == null or not is_instance_valid(_zone_manager):
 		return
@@ -340,6 +350,26 @@ func _process(delta: float) -> void:
 	if _reino_descubrimiento_elapsed >= 0.5:
 		_reino_descubrimiento_elapsed = 0.0
 		_detectar_reinos_descubiertos()
+
+	# Los pasajes al exterior tienen hora de regreso obligatoria: 22:00 del reloj del mundo.
+	if (
+		is_instance_valid(_zone_manager)
+		and is_instance_valid(_world_atmosphere)
+		and is_instance_valid(_world_generator)
+		and _world_generator.is_world_ready()
+		and _zone_manager.has_method("debe_regresar_viaje_exterior")
+		and bool(_zone_manager.call("debe_regresar_viaje_exterior"))
+		and _world_atmosphere.hora_del_dia >= 22.0
+	):
+		call_deferred("_regresar_de_viaje_exterior")
+
+
+func _regresar_de_viaje_exterior() -> void:
+	if not is_instance_valid(_zone_manager) or not _zone_manager.has_method("regresar_viaje_exterior"):
+		return
+	var resultado: Variant = await _zone_manager.call("regresar_viaje_exterior")
+	if bool(resultado):
+		Events.notification_pushed.emit("El pasaje ha vencido. Has regresado automáticamente a Torres.")
 
 
 func _detectar_reinos_descubiertos() -> void:
@@ -621,6 +651,13 @@ func _inicializar_runtime_de_zona() -> void:
 				var posicion_retorno: Variant = retorno.get("posicion", Vector2.ZERO)
 				if posicion_retorno is Vector2:
 					_player.global_position = posicion_retorno
+		if _zone_manager.has_method("consumir_retorno_viaje_exterior"):
+			var retorno_pasaje: Dictionary = _zone_manager.call("consumir_retorno_viaje_exterior")
+			if bool(retorno_pasaje.get("valido", false)):
+				var posicion_pasaje: Variant = retorno_pasaje.get("posicion", Vector2.ZERO)
+				if posicion_pasaje is Vector2:
+					_player.global_position = posicion_pasaje
+		_player.velocity = Vector2.ZERO
 		print("Main: reino activo → ", tipo_zona_actual)
 	else:
 		print("Main: mundo abierto listo.")
@@ -1642,6 +1679,9 @@ func _configurar_dialogo() -> void:
 		_cutscene_director.name = "CutsceneDirector"
 		add_child(_cutscene_director)
 	_cutscene_director.configurar(_player, _dialogue_system, _camera)
+	var callback_finalizada := Callable(self, "_al_cinematica_finalizada")
+	if not _cutscene_director.cinematica_finalizada.is_connected(callback_finalizada):
+		_cutscene_director.cinematica_finalizada.connect(callback_finalizada)
 	if not _cutscene_director.evento_solicitado.is_connected(_al_evento_cinematica_solicitado):
 		_cutscene_director.evento_solicitado.connect(_al_evento_cinematica_solicitado)
 	var admin_tab := get_node_or_null("UI/Inventory/Window/Margin/Column/Tabs/Admin") as AdminInventory
@@ -1661,6 +1701,18 @@ func _configurar_dialogo() -> void:
 			_npc_conversation_system.connect("cinematica_reunion_nocturna_solicitada", callback_reunion)
 	if _bienvenida_torres_pendiente and str(_zone_manager.obtener_tipo_actual()) == "reino_torres":
 		call_deferred("_iniciar_bienvenida_torres")
+
+
+## Sincroniza el caché de cámara del mundo después de cada escena.
+## Evita que _seguir_jugador conserve una posición anterior al paneo.
+func _al_cinematica_finalizada(_clave: String) -> void:
+	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		return
+	_camera.enabled = true
+	_camera.make_current()
+	_camera.global_position = _player.global_position
+	_camera.reset_smoothing()
+	_ultima_posicion_camara = _player.global_position
 
 
 func _al_evento_cinematica_solicitado(evento: String, datos: Dictionary) -> void:
@@ -1692,6 +1744,45 @@ func _buscar_npc_cinematica(nombre: String) -> Creature:
 	return null
 
 
+func _distancia_cinematica_historia_valida(npc_a: Creature, npc_b: Creature) -> bool:
+	if not is_instance_valid(npc_a) or not is_instance_valid(npc_b):
+		return false
+	if npc_a.global_position.distance_to(npc_b.global_position) <= 180.0:
+		return true
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")):
+		return false
+	var edificio_actual := str(zona.get("_entrada_interior_id")).strip_edges()
+	if edificio_actual.is_empty():
+		return false
+	for npc in [npc_a, npc_b]:
+		if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != edificio_actual:
+			return false
+	return npc_a.global_position.distance_to(npc_b.global_position) <= 360.0
+
+
+func _npc_libre_para_cinematica_historia(npc_a: Creature, npc_b: Creature) -> bool:
+	if _npc_libre_para_cinematica(npc_a) and _npc_libre_para_cinematica(npc_b):
+		return true
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node if is_instance_valid(_zone_manager) else null
+	if not is_instance_valid(zona) or not bool(zona.get("_interior_activo")):
+		return false
+	var edificio_actual := str(zona.get("_entrada_interior_id")).strip_edges()
+	if edificio_actual.is_empty():
+		return false
+	for npc in [npc_a, npc_b]:
+		if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
+			return false
+		if not bool(npc.get_meta("rutina_en_edificio", false)) or str(npc.get_meta("rutina_edificio_id", "")) != edificio_actual:
+			return false
+		for meta_clave in ["rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
+			if bool(npc.get_meta(meta_clave, false)):
+				return false
+		if npc.velocity.length() > 5.0:
+			return false
+	return true
+
+
 func _npc_libre_para_cinematica(npc: Creature, permitir_actividad_social: bool = false) -> bool:
 	if not is_instance_valid(npc) or not npc.is_inside_tree() or not npc.is_visible_in_tree() or not npc.is_alive:
 		return false
@@ -1715,10 +1806,11 @@ func _al_cinematica_narrativa_solicitada(
 	nombre_b: String,
 	posicion_global: Vector2,
 	etapa: int,
+	duracion: float = 12.0,
 	desde_cola: bool = false
 ) -> void:
 	if not desde_cola:
-		_encolar_cinematica_proximidad("narrativa", clave, nombre_a, nombre_b, posicion_global, etapa)
+		_encolar_cinematica_proximidad("narrativa", clave, nombre_a, nombre_b, posicion_global, etapa, duracion)
 		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
 		return
@@ -1730,12 +1822,12 @@ func _al_cinematica_narrativa_solicitada(
 		return
 	var npc_a := _buscar_npc_cinematica(nombre_a)
 	var npc_b := _buscar_npc_cinematica(nombre_b)
-	if not _npc_libre_para_cinematica(npc_a) or not _npc_libre_para_cinematica(npc_b):
+	if not _npc_libre_para_cinematica_historia(npc_a, npc_b):
 		return
-	if npc_a == npc_b or npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
+	if npc_a == npc_b or not _distancia_cinematica_historia_valida(npc_a, npc_b):
 		return
 	var centro_real := (npc_a.global_position + npc_b.global_position) * 0.5
-	if _player.global_position.distance_to(centro_real) > 260.0:
+	if _player.global_position.distance_to(centro_real) > 520.0:
 		return
 
 	var escenas: Dictionary = {
@@ -1747,13 +1839,22 @@ func _al_cinematica_narrativa_solicitada(
 	}
 	var escena_variant: Variant = escenas.get(clave, {"gesto_a":"asentir","gesto_b":"asentir"})
 	var escena: Dictionary = escena_variant
+	var datos_dialogo_historia: Dictionary = {}
+	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_method("obtener_dialogo_historia"):
+		datos_dialogo_historia = _npc_conversation_system.call("obtener_dialogo_historia", clave)
+	if datos_dialogo_historia.is_empty():
+		push_warning("Main: no se pudo preparar el diálogo de historia '%s'." % clave)
+		return
 	var zoom_actual := _camera.zoom.x
-	await _ejecutar_cinematica_intercambio_social(
+	var completada := await _ejecutar_cinematica_intercambio_social(
 		"relacion_%s_etapa_%d" % [clave, etapa], nombre_a, nombre_b, centro_real,
 		zoom_actual * (1.08 if etapa == 1 else 1.14),
 		str(escena.get("gesto_a", "asentir")), str(escena.get("gesto_b", "asentir")),
-		0.75, 0.25, 0.5, 0.6
+		0.75, 0.25, 0.25, 0.6,
+		{"npc": nombre_a, "datos": datos_dialogo_historia}
 	)
+	if completada and is_instance_valid(_npc_conversation_system):
+		_npc_conversation_system.call("finalizar_cinematica_historia", clave, true)
 
 
 
@@ -1882,10 +1983,11 @@ func _ejecutar_cinematica_intercambio_social(
 	duracion_camara: float,
 	pausa_antes: float,
 	pausa_despues: float,
-	duracion_gesto: float
-) -> void:
+	duracion_gesto: float,
+	dialogo_extra: Dictionary = {}
+) -> bool:
 	if not is_instance_valid(_cutscene_director):
-		return
+		return false
 	var es_encuentro_trio := clave.contains("encuentro_trio_mara_ivo_nima")
 	var tercero: Creature
 	if es_encuentro_trio:
@@ -1902,7 +2004,7 @@ func _ejecutar_cinematica_intercambio_social(
 		var centro_grupo := (npc_a_grupo.global_position + npc_b_grupo.global_position + tercero.global_position) / 3.0
 		var secuencia_grupo := load("res://resources/cutscenes/reunion_trio.tres") as CutsceneSequence
 		if is_instance_valid(secuencia_grupo):
-			await _cutscene_director.ejecutar_recurso(secuencia_grupo, {
+			return await _cutscene_director.ejecutar_recurso(secuencia_grupo, {
 				"clave": clave,
 				"npc_a": nombre_a,
 				"npc_b": nombre_b,
@@ -1911,8 +2013,8 @@ func _ejecutar_cinematica_intercambio_social(
 				"y": centro_grupo.y,
 				"zoom": zoom,
 				"duracion_camara": duracion_camara
-			}, "en_vivo")
-			return
+			}, "planeada", dialogo_extra)
+			return false
 	var ruta_secuencia := "res://resources/cutscenes/intercambio_con_tercero.tres" if usar_tercero else ("res://resources/cutscenes/intercambio_interrumpido.tres" if usar_interrupcion else "res://resources/cutscenes/intercambio_social.tres")
 	var invertir_turno := posmod(hash(nombre_a + "|" + nombre_b + "|" + clave), 2) == 1
 	var interrumpe := nombre_a if invertir_turno else nombre_b
@@ -1920,15 +2022,21 @@ func _ejecutar_cinematica_intercambio_social(
 	var secuencia := load(ruta_secuencia) as CutsceneSequence
 	if not is_instance_valid(secuencia):
 		push_warning("Main: no se pudo cargar la secuencia de intercambio social.")
-		return
+		return false
+	var centro_encuadre := centro
+	if usar_tercero:
+		# El tercer participante conserva la posición que tenía al capturar la escena.
+		var npc_a_obj := _buscar_npc_cinematica(nombre_a)
+		var npc_b_obj := _buscar_npc_cinematica(nombre_b)
+		centro_encuadre = (npc_a_obj.global_position + npc_b_obj.global_position + tercero.global_position) / 3.0
 	var parametros := {
 		"clave": clave,
 		"npc_a": nombre_a,
 		"npc_b": nombre_b,
 		"interrumpe": interrumpe,
 		"interrumpido": interrumpido,
-		"x": centro.x,
-		"y": centro.y,
+		"x": centro_encuadre.x,
+		"y": centro_encuadre.y,
 		"zoom": zoom,
 		"gesto_a": gesto_a,
 		"gesto_b": gesto_b,
@@ -1938,24 +2046,8 @@ func _ejecutar_cinematica_intercambio_social(
 		"duracion_gesto": duracion_gesto
 	}
 	if usar_tercero:
-		var npc_a_obj := _buscar_npc_cinematica(nombre_a)
-		var npc_b_obj := _buscar_npc_cinematica(nombre_b)
-		var eje := (npc_b_obj.global_position - npc_a_obj.global_position).normalized()
-		if eje.length_squared() < 0.01:
-			eje = Vector2.RIGHT
-		var lateral := Vector2(-eje.y, eje.x)
-		var posicion_llegada := centro + lateral * 34.0
-		var direccion_salida := (tercero.global_position - centro).normalized()
-		if direccion_salida.length_squared() < 0.01:
-			direccion_salida = lateral
-		var posicion_salida := tercero.global_position + direccion_salida * 28.0
 		parametros["tercero"] = tercero.get_nombre_visual()
-		parametros["tercero_llegada_x"] = posicion_llegada.x
-		parametros["tercero_llegada_y"] = posicion_llegada.y
-		parametros["tercero_salida_x"] = posicion_salida.x
-		parametros["tercero_salida_y"] = posicion_salida.y
-	await _cutscene_director.ejecutar_recurso(secuencia, parametros, "en_vivo")
-
+	return await _cutscene_director.ejecutar_recurso(secuencia, parametros, "planeada", dialogo_extra)
 
 ## Las señales cinematográficas no se descartan por estar el jugador lejos,
 ## ocupado en otra escena o entrando a un interior. Se conservan hasta que
@@ -1988,7 +2080,8 @@ func _encolar_cinematica_proximidad(
 	nombre_a: String,
 	nombre_b: String,
 	posicion_global: Vector2,
-	etapa: int = 0
+	etapa: int = 0,
+	duracion: float = 12.0
 ) -> void:
 	var clave_pendiente := "%s|%s|%s|%s|%d" % [
 		tipo, clave, nombre_a.to_lower(), nombre_b.to_lower(), etapa
@@ -2005,23 +2098,28 @@ func _encolar_cinematica_proximidad(
 		"npc_b": nombre_b,
 		"posicion": posicion_global,
 		"etapa": etapa,
+		"duracion": maxf(1.0, duracion),
 		"prioridad": _prioridad_cinematica(tipo),
 		"creada_ms": creada_ms
 	})
 	# Si la cola se llena, conserva las escenas importantes y descarta primero
 	# la petición menos prioritaria; entre iguales, la más antigua.
 	while _cinematicas_pendientes.size() > 16:
-		var indice_descartar := 0
+		var indice_descartar := -1
 		var prioridad_menor := 2147483647
 		var mas_antigua := 2147483647
 		for indice in range(_cinematicas_pendientes.size()):
 			var candidata: Dictionary = _cinematicas_pendientes[indice]
+			if str(candidata.get("tipo", "")) == "narrativa":
+				continue
 			var prioridad := int(candidata.get("prioridad", 0))
 			var momento := int(candidata.get("creada_ms", 0))
 			if prioridad < prioridad_menor or (prioridad == prioridad_menor and momento < mas_antigua):
 				prioridad_menor = prioridad
 				mas_antigua = momento
 				indice_descartar = indice
+		if indice_descartar < 0:
+			break
 		_cinematicas_pendientes.remove_at(indice_descartar)
 
 
@@ -2049,7 +2147,7 @@ func _procesar_cinematicas_pendientes() -> void:
 		var tipo := str(pendiente.get("tipo", ""))
 		var creada_ms := int(pendiente.get("creada_ms", ahora_ms))
 		var caducidad_ms := _caducidad_cinematica_ms(tipo)
-		if caducidad_ms <= 0 or ahora_ms - creada_ms > caducidad_ms:
+		if tipo != "narrativa" and (caducidad_ms <= 0 or ahora_ms - creada_ms > caducidad_ms):
 			_cinematicas_pendientes.remove_at(indice)
 			continue
 
@@ -2060,24 +2158,30 @@ func _procesar_cinematicas_pendientes() -> void:
 		var npc_a := _buscar_npc_cinematica(nombre_a)
 		var npc_b := _buscar_npc_cinematica(nombre_b)
 		if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
-			_cinematicas_pendientes.remove_at(indice)
+			if tipo != "narrativa":
+				_cinematicas_pendientes.remove_at(indice)
 			continue
 
 		var centro_actual := (npc_a.global_position + npc_b.global_position) * 0.5
-		# La escena sólo sigue vigente mientras sus participantes permanezcan
-		# cerca del lugar donde ocurrió el acontecimiento.
+		# Las escenas opcionales caducan si el acontecimiento ya pasó; las
+		# narrativas siguen a sus participantes para que el jugador no las pierda.
 		if centro_actual.distance_to(posicion) > 240.0:
-			_cinematicas_pendientes.remove_at(indice)
-			continue
+			if tipo == "narrativa":
+				posicion = centro_actual
+				pendiente["posicion"] = centro_actual
+				_cinematicas_pendientes[indice] = pendiente
+			else:
+				_cinematicas_pendientes.remove_at(indice)
+				continue
 
 		var distancia_activacion := 0.0
 		match tipo:
 			"narrativa":
-				if not _npc_libre_para_cinematica(npc_a) or not _npc_libre_para_cinematica(npc_b):
+				if not _npc_libre_para_cinematica_historia(npc_a, npc_b):
 					continue
-				if npc_a.global_position.distance_to(npc_b.global_position) > 180.0:
+				if not _distancia_cinematica_historia_valida(npc_a, npc_b):
 					continue
-				distancia_activacion = 260.0
+				distancia_activacion = 520.0
 			"acontecimiento":
 				if not _npc_libre_para_cinematica(npc_a, true) or not _npc_libre_para_cinematica(npc_b, true):
 					continue
@@ -2130,7 +2234,9 @@ func _procesar_cinematicas_pendientes() -> void:
 		"narrativa":
 			await _al_cinematica_narrativa_solicitada(
 				clave_elegida, nombre_a_elegido, nombre_b_elegido, posicion_elegida,
-				int(pendiente_elegida.get("etapa", 0)), true
+				int(pendiente_elegida.get("etapa", 0)),
+				float(pendiente_elegida.get("duracion", 12.0)),
+				true
 			)
 		"acontecimiento":
 			await _al_cinematica_acontecimiento_solicitada(

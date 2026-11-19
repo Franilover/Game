@@ -858,6 +858,24 @@ func registrar_conocimiento_npc(personaje_id: String, conocimiento: Dictionary) 
 	registro["fuentes"] = fuentes
 	registro["conocido_desde"] = primera_vez if not primera_vez.is_empty() else Time.get_datetime_string_from_system(true)
 	registro["ultimo_contacto"] = Time.get_datetime_string_from_system(true)
+	# Los testimonios y rumores declarados por los diálogos empiezan como
+	# sospechas; no se promueven a hechos por el mero hecho de recibirlos.
+	var verificacion := str(registro.get("verificacion", "")).strip_edges().to_lower()
+	if verificacion in ["testimonio_no_verificado", "rumor_no_verificado"] and not registro.has("evidencias"):
+		var tipo_evidencia := "testimonio" if verificacion == "testimonio_no_verificado" else "rumor"
+		var fuente_evidencia := str(registro.get("fuente", "")).strip_edges()
+		if not fuente_evidencia.is_empty():
+			var evidencia_inicial := {
+				"fuente_id": fuente_evidencia,
+				"tipo": tipo_evidencia,
+				"direccion": "apoya",
+				"peso": 0.1 if tipo_evidencia == "testimonio" else 0.08,
+				"momento": str(registro.get("conocido_desde", ""))
+			}
+			registro["evidencias"] = [evidencia_inicial]
+			var evaluacion_inicial := evaluar_creencia_conocimiento_npc(registro)
+			registro["confianza_creencia"] = float(evaluacion_inicial.get("confianza", 0.5))
+			registro["estado_epistemico"] = str(evaluacion_inicial.get("estado", "sospecha"))
 	if conocimiento.has("cadena_transmision"):
 		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
 		if cadena_variant is Array:
@@ -884,6 +902,205 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 		return []
 	var lista_variant: Variant = (todos_variant as Dictionary).get(id, [])
 	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
+## Registra un acontecimiento comunitario que el habitante presencia directamente.
+## La observación sólo se atribuye a quien participa en la rutina del evento.
+func registrar_observacion_evento_npc(
+	personaje_id: String,
+	evento: Dictionary,
+	momento: String = ""
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave_evento := str(evento.get("clave", "")).strip_edges().to_lower()
+	var evento_id := str(evento.get("evento_id", "")).strip_edges()
+	if id.is_empty() or clave_evento.is_empty() or evento_id.is_empty():
+		return false
+	var clave_conocimiento := "evento_comunitario:%s" % evento_id
+	var conocimiento_existente := obtener_conocimiento_npc(id, clave_conocimiento)
+	if not conocimiento_existente.is_empty():
+		var evidencias_variant: Variant = conocimiento_existente.get("evidencias", [])
+		if evidencias_variant is Array:
+			for evidencia_variant in evidencias_variant:
+				if not evidencia_variant is Dictionary:
+					continue
+				var evidencia_existente := evidencia_variant as Dictionary
+				if (
+					str(evidencia_existente.get("fuente_id", "")) == "observacion:%s:%s" % [evento_id, id]
+					and str(evidencia_existente.get("direccion", "apoya")) == "apoya"
+				):
+					return false
+	var momento_registro := momento if not momento.strip_edges().is_empty() else Time.get_datetime_string_from_system(true)
+	var titulo := str(evento.get("nombre", clave_evento.replace("_", " "))).strip_edges()
+	var detalle := str(evento.get("aviso", evento.get("detalle", titulo))).strip_edges()
+	if not registrar_conocimiento_npc(id, {
+		"clave": clave_conocimiento,
+		"tema": clave_evento,
+		"titulo": titulo,
+		"detalle": detalle,
+		"tipo": "evento_comunitario",
+		"verificacion": "observacion_directa",
+		"fuente": evento_id,
+		"compartible": true,
+		"privacidad": "publico",
+		"momento": momento_registro
+	}):
+		return false
+	return registrar_evidencia_conocimiento_npc(id, clave_conocimiento, {
+		"fuente_id": "observacion:%s:%s" % [evento_id, id],
+		"tipo": "observacion",
+		"direccion": "apoya",
+		"detalle": detalle,
+		"momento": momento_registro
+	})
+
+
+## Registra evidencia para la creencia de un NPC sin convertirla en verdad
+## global. Cada personaje mantiene su propia evaluación del mismo hecho.
+func registrar_evidencia_conocimiento_npc(
+	personaje_id: String,
+	clave_conocimiento: String,
+	evidencia: Dictionary
+) -> bool:
+	var id := personaje_id.strip_edges()
+	var clave := clave_conocimiento.strip_edges()
+	var fuente := str(evidencia.get("fuente_id", evidencia.get("fuente", ""))).strip_edges()
+	var tipo := str(evidencia.get("tipo", "testimonio")).strip_edges().to_lower()
+	var direccion := str(evidencia.get("direccion", "apoya")).strip_edges().to_lower()
+	if id.is_empty() or clave.is_empty() or fuente.is_empty():
+		return false
+	if direccion not in ["apoya", "contradice"]:
+		return false
+	var conocimiento := obtener_conocimiento_npc(id, clave)
+	if conocimiento.is_empty():
+		return false
+	var evidencias_variant: Variant = conocimiento.get("evidencias", [])
+	var evidencias: Array = evidencias_variant.duplicate(true) if evidencias_variant is Array else []
+	# Una misma fuente no aumenta su credibilidad por repetir el mismo relato.
+	for existente_variant in evidencias:
+		if not existente_variant is Dictionary:
+			continue
+		var existente := existente_variant as Dictionary
+		if (
+			str(existente.get("fuente_id", "")) == fuente
+			and str(existente.get("direccion", "apoya")) == direccion
+		):
+			return false
+	var pesos := {
+		"rumor": 0.08,
+		"testimonio": 0.1,
+		"observacion": 0.38,
+		"prueba": 0.62
+	}
+	var peso := clampf(float(evidencia.get("peso", pesos.get(tipo, 0.12))), 0.0, 0.75)
+	evidencias.append({
+		"fuente_id": fuente,
+		"tipo": tipo,
+		"direccion": direccion,
+		"peso": peso,
+		"momento": str(evidencia.get("momento", Time.get_datetime_string_from_system(true))),
+		"detalle": str(evidencia.get("detalle", ""))
+	})
+	while evidencias.size() > 24:
+		evidencias.pop_front()
+	conocimiento["evidencias"] = evidencias
+	var evaluacion := evaluar_creencia_conocimiento_npc(conocimiento)
+	conocimiento["confianza_creencia"] = float(evaluacion.get("confianza", 0.5))
+	conocimiento["estado_epistemico"] = str(evaluacion.get("estado", "sospecha"))
+	return registrar_conocimiento_npc(id, conocimiento)
+
+
+## Calcula la confianza con fuentes independientes. Repetir una fuente no
+## añade peso; evidencia contraria reduce la confianza sin borrar el recuerdo.
+func evaluar_creencia_conocimiento_npc(conocimiento: Dictionary) -> Dictionary:
+	var evidencias_variant: Variant = conocimiento.get("evidencias", [])
+	var evidencias: Array = evidencias_variant if evidencias_variant is Array else []
+	var apoyo := 0.0
+	var contradiccion := 0.0
+	var fuentes_apoyo: Dictionary = {}
+	var fuentes_contrarias: Dictionary = {}
+	for evidencia_variant in evidencias:
+		if not evidencia_variant is Dictionary:
+			continue
+		var evidencia := evidencia_variant as Dictionary
+		var fuente := str(evidencia.get("fuente_id", "")).strip_edges()
+		if fuente.is_empty():
+			continue
+		var peso := clampf(float(evidencia.get("peso", 0.0)), 0.0, 0.75)
+		if str(evidencia.get("direccion", "apoya")) == "contradice":
+			fuentes_contrarias[fuente] = maxf(float(fuentes_contrarias.get(fuente, 0.0)), peso)
+		else:
+			fuentes_apoyo[fuente] = maxf(float(fuentes_apoyo.get(fuente, 0.0)), peso)
+	for fuente in fuentes_apoyo:
+		apoyo += float(fuentes_apoyo[fuente])
+	for fuente in fuentes_contrarias:
+		contradiccion += float(fuentes_contrarias[fuente])
+	var confianza := clampf(0.5 + apoyo - contradiccion, 0.0, 1.0)
+	var estado := "sospecha"
+	if confianza >= 0.82:
+		estado = "conocimiento_sostenido"
+	elif confianza >= 0.62:
+		estado = "creencia_firme"
+	elif confianza <= 0.25:
+		estado = "creencia_refutada"
+	return {
+		"confianza": confianza,
+		"estado": estado,
+		"fuentes_apoyo": fuentes_apoyo.size(),
+		"fuentes_contrarias": fuentes_contrarias.size()
+	}
+
+
+func obtener_evaluacion_creencia_npc(personaje_id: String, clave_conocimiento: String) -> Dictionary:
+	var conocimiento := obtener_conocimiento_npc(personaje_id, clave_conocimiento)
+	if conocimiento.is_empty():
+		return {}
+	var evaluacion := evaluar_creencia_conocimiento_npc(conocimiento)
+	evaluacion["clave"] = clave_conocimiento
+	evaluacion["tema"] = str(conocimiento.get("tema", ""))
+	return evaluacion
+
+
+## Registra el tema tratado con una persona concreta, no como un rasgo
+## general del NPC. Así recuerda de qué hablar con cada interlocutor.
+func registrar_tema_conversacion_npc(
+	personaje_id: String,
+	con_personaje: String,
+	tema: String,
+	momento: String = ""
+) -> void:
+	var id := personaje_id.strip_edges()
+	var otro := con_personaje.strip_edges()
+	var tema_limpio := tema.strip_edges()
+	if id.is_empty() or otro.is_empty() or id == otro or tema_limpio.is_empty():
+		return
+	var clave := "tema:%s:%s" % [otro.to_lower(), tema_limpio.to_lower()]
+	registrar_recuerdo(id, {
+		"tipo": "tema_conversacion",
+		"clave": clave,
+		"con_personaje": otro,
+		"tema": tema_limpio,
+		"momento": momento if not momento.is_empty() else Time.get_datetime_string_from_system(true),
+		"importancia": 1.0
+	})
+
+
+func obtener_ultimo_tema_conversacion_npc(personaje_id: String, con_personaje: String) -> Dictionary:
+	var id := personaje_id.strip_edges()
+	var otro := con_personaje.strip_edges()
+	if id.is_empty() or otro.is_empty():
+		return {}
+	var recuerdos := obtener_recuerdos(id)
+	for indice in range(recuerdos.size() - 1, -1, -1):
+		if not recuerdos[indice] is Dictionary:
+			continue
+		var recuerdo := recuerdos[indice] as Dictionary
+		if (
+			str(recuerdo.get("tipo", "")) == "tema_conversacion"
+			and str(recuerdo.get("con_personaje", "")).to_lower() == otro.to_lower()
+		):
+			return recuerdo.duplicate(true)
+	return {}
 
 
 ## Registra un asunto concreto que un habitante quiere resolver con otra persona.
@@ -1111,19 +1328,144 @@ func transmitir_conocimiento_npc(
 		var conocimiento := (conocimiento_variant as Dictionary).duplicate(true)
 		if str(conocimiento.get("clave", "")) != clave:
 			continue
-		var cadena_variant: Variant = conocimiento.get("cadena_transmision", [])
-		var cadena: Array = cadena_variant.duplicate(true) if cadena_variant is Array else []
-		cadena.append({
+		if not puede_compartir_conocimiento_npc(origen, destino, conocimiento):
+			return false
+		var conocimiento_previo := obtener_conocimiento_npc(destino, clave)
+		var momento_transmision := Time.get_datetime_string_from_system(true)
+		var enlace := {
 			"de": origen,
 			"a": destino,
-			"momento": Time.get_datetime_string_from_system(true),
+			"momento": momento_transmision,
 			"contexto": contexto.duplicate(true)
-		})
+		}
+		# Un conocimiento puede llegar por varias personas. No se debe borrar
+		# la ruta que el receptor ya conocía al recibir una segunda versión.
+		var rutas_origen: Array = []
+		var rutas_origen_variant: Variant = conocimiento.get("rutas_transmision", [])
+		if rutas_origen_variant is Array:
+			for ruta_variant in rutas_origen_variant:
+				if ruta_variant is Array:
+					rutas_origen.append(ruta_variant.duplicate(true))
+		if rutas_origen.is_empty():
+			var cadena_origen_variant: Variant = conocimiento.get("cadena_transmision", [])
+			if cadena_origen_variant is Array and not (cadena_origen_variant as Array).is_empty():
+				rutas_origen.append((cadena_origen_variant as Array).duplicate(true))
+		if rutas_origen.is_empty():
+			rutas_origen.append([])
+		var rutas_nuevas: Array = []
+		for ruta_variant in rutas_origen:
+			if not ruta_variant is Array:
+				continue
+			var ruta_nueva: Array = (ruta_variant as Array).duplicate(true)
+			ruta_nueva.append(enlace.duplicate(true))
+			rutas_nuevas.append(ruta_nueva)
+		var rutas_destino: Array = []
+		var rutas_destino_variant: Variant = conocimiento_previo.get("rutas_transmision", [])
+		if rutas_destino_variant is Array:
+			for ruta_variant in rutas_destino_variant:
+				if ruta_variant is Array:
+					rutas_destino.append((ruta_variant as Array).duplicate(true))
+		if rutas_destino.is_empty():
+			var cadena_destino_variant: Variant = conocimiento_previo.get("cadena_transmision", [])
+			if cadena_destino_variant is Array and not (cadena_destino_variant as Array).is_empty():
+				rutas_destino.append((cadena_destino_variant as Array).duplicate(true))
+		for ruta_nueva in rutas_nuevas:
+			var firma_nueva := _firma_ruta_transmision(ruta_nueva)
+			var repetida := false
+			for ruta_existente in rutas_destino:
+				if _firma_ruta_transmision(ruta_existente) == firma_nueva:
+					repetida = true
+					break
+			if not repetida:
+				rutas_destino.append(ruta_nueva)
+		while rutas_destino.size() > 12:
+			rutas_destino.pop_front()
+		var cadena: Array = rutas_destino.back().duplicate(true) if not rutas_destino.is_empty() else [enlace.duplicate(true)]
+		conocimiento["rutas_transmision"] = rutas_destino
+		conocimiento["cadena_transmision"] = cadena
+		# El receptor no hereda como propia la observación del emisor:
+		# recibe un testimonio atribuible a esa persona.
+		var evidencias_previas_variant: Variant = conocimiento_previo.get("evidencias", [])
+		var evidencias_previas: Array = evidencias_previas_variant.duplicate(true) if evidencias_previas_variant is Array else []
 		conocimiento["cadena_transmision"] = cadena
 		conocimiento["fuente"] = origen
 		conocimiento["transmitido_por"] = origen
-		return registrar_conocimiento_npc(destino, conocimiento)
+		conocimiento["verificacion"] = "testimonio_no_verificado"
+		conocimiento.erase("confianza_creencia")
+		conocimiento.erase("estado_epistemico")
+		if evidencias_previas.is_empty():
+			conocimiento.erase("evidencias")
+		else:
+			conocimiento["evidencias"] = evidencias_previas
+		if not registrar_conocimiento_npc(destino, conocimiento):
+			return false
+		if evidencias_previas.is_empty():
+			return true
+		registrar_evidencia_conocimiento_npc(destino, clave, {
+			"fuente_id": origen,
+			"tipo": "testimonio",
+			"direccion": "apoya",
+			"detalle": "Información transmitida por %s" % origen
+		})
+		# La noticia se entregó aunque la evidencia del emisor ya estuviera registrada.
+		return true
 	return false
+
+
+func _firma_ruta_transmision(ruta: Array) -> String:
+	var firma := ""
+	for tramo_variant in ruta:
+		if not tramo_variant is Dictionary:
+			continue
+		var tramo := tramo_variant as Dictionary
+		if not firma.is_empty():
+			firma += "|"
+		firma += "%s>%s" % [
+			str(tramo.get("de", "")).strip_edges(),
+			str(tramo.get("a", "")).strip_edges()
+		]
+	return firma
+
+
+## Los testimonios públicos se pueden repetir. La información privada requiere
+## permiso explícito y un vínculo de confianza suficiente; lo confidencial no
+## se retransmite automáticamente aunque el receptor lo conozca.
+func puede_compartir_conocimiento_npc(
+	personaje_origen: String,
+	personaje_destino: String,
+	conocimiento: Dictionary
+) -> bool:
+	var origen := personaje_origen.strip_edges()
+	var destino := personaje_destino.strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino:
+		return false
+	var tipo := str(conocimiento.get("tipo", "")).strip_edges().to_lower()
+	var tipo_publico := tipo in ["noticia", "evento_publico", "conocimiento_compartible", "evento_comunitario"]
+	if not bool(conocimiento.get("compartible", tipo_publico)):
+		return false
+	var privacidad := str(conocimiento.get("privacidad", "publica")).strip_edges().to_lower()
+	if privacidad in ["publica", "publico", "rumor_publico"]:
+		return true
+	if privacidad == "confidencial":
+		return false
+	if privacidad in ["personal", "reservada", "privada"]:
+		if not bool(conocimiento.get("permiso_transmision", false)):
+			return false
+		var relacion := obtener_relacion_entre_npc(origen, destino)
+		return float(relacion.get("confianza", 0.0)) >= 30.0
+	return false
+
+
+## Devuelve sólo información que este NPC puede repetir a esa persona.
+func obtener_conocimientos_compartibles_npc(personaje_origen: String, personaje_destino: String) -> Array:
+	var resultado: Array = []
+	for conocimiento_variant in obtener_conocimientos_npc(personaje_origen):
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		if puede_compartir_conocimiento_npc(personaje_origen, personaje_destino, conocimiento):
+			resultado.append(conocimiento.duplicate(true))
+	return resultado
 
 
 func _clave_pareja_npc(personaje_a: String, personaje_b: String) -> String:

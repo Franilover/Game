@@ -62,9 +62,13 @@ var _jugador_unhandled_previo := true
 static func tienda_para_npc(npc: Node) -> Dictionary:
 	if not is_instance_valid(npc):
 		return {}
-	if not bool(npc.get_meta("rutina_en_edificio", false)):
+	# Estas metadata no existen en todos los estados del NPC. Comprobarlas
+	# explícitamente evita errores de Object.get_meta() en personajes sin rutina.
+	if not npc.has_meta("rutina_en_edificio") or not bool(npc.get_meta("rutina_en_edificio")):
 		return {}
-	var ubicacion := str(npc.get_meta("rutina_ubicacion", "")).strip_edges().to_lower()
+	if not npc.has_meta("rutina_ubicacion"):
+		return {}
+	var ubicacion := str(npc.get_meta("rutina_ubicacion")).strip_edges().to_lower()
 	var tienda_variant: Variant = TIENDAS.get(ubicacion, {})
 	if not tienda_variant is Dictionary:
 		return {}

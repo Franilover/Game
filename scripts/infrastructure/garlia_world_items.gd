@@ -6,30 +6,55 @@ const WORLD_ITEM_SCENE: PackedScene = preload("res://scenes/world/world_item.tsc
 
 
 const MAX_OBJECTOS_EN_MUNDO: int = 3
-const HTTP_TIMEOUT: float = 15.0
+const CATALOG_CACHE_PATH: String = "user://cache/items_game.json"
+const RECIPES_CACHE_PATH: String = "user://cache/recetas_game.json"
+const DROPS_CACHE_PATH: String = "user://cache/criatura_drops.json"
+const EXEMPLARES_CACHE_PATH: String = "user://cache/item_ejemplares.json"
+const MAX_RECIPES_RETRIES: int = 3
+const INTERVALO_REINTENTO_OFFLINE: float = 30.0
+const INTERVALO_ACTUALIZACION_CATALOGOS: float = 300.0
 const MAX_CATALOG_RETRIES: int = 3
 const CATALOG_RETRY_DELAY: float = 1.5
-const DROP_RETRY_DELAY: float = 2.0
-const MAX_DROP_RETRIES: int = 3
 
 
 signal catalogo_cargado(items: Array)
+signal recetas_cargadas(recetas: Array)
 signal carga_fallida(mensaje: String)
 signal objeto_recogido(datos: Dictionary)
 signal drops_generados(drops: Array)
+signal ejemplares_cargados(ejemplares: Array)
 
 
-var _request: HTTPRequest
-var _request_drops: HTTPRequest
+var _request_id_catalogo: int = -1
+var _request_id_recetas: int = -1
+var _request_id_drops: int = -1
+var _request_id_ejemplares: int = -1
+var _timer_actualizacion_catalogos: Timer
 
 var _cargando: bool = false
 var _intentos_catalogo: int = 0
+var _intentos_recetas: int = 0
+var _intentos_catalogo_drops: int = 0
+var _cargando_recetas: bool = false
 var _cargando_drops: bool = false
-var _solicitud_drop_actual: Dictionary = {}
-var _reintentos_drop_actual: int = 0
+var _cargando_ejemplares: bool = false
+var _procesando_drop_actual: bool = false
 var _cola_drops: Array[Dictionary] = []
+var _reglas_drops_por_criatura: Dictionary = {}
+var drops_disponibles: bool = false
 
 var catalogo: Array[Dictionary] = []
+var catalogo_disponible: bool = false
+var origen_catalogo: String = ""
+var recetas: Array[Dictionary] = []
+var recetas_disponibles: bool = false
+var origen_recetas: String = ""
+var _items_por_id: Dictionary = {}
+var _items_por_nombre: Dictionary = {}
+var _items_por_prop_id: Dictionary = {}
+var ejemplares: Array[Dictionary] = []
+var _ejemplares_por_id: Dictionary = {}
+var ejemplares_disponibles: bool = false
 
 var _objetos_generados_en_escena: bool = false
 var _generacion_habilitada: bool = true
@@ -60,17 +85,24 @@ func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entit
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	_request = HTTPRequest.new()
-	_request.timeout = HTTP_TIMEOUT
-	add_child(_request)
-	_request.request_completed.connect(_al_recibir_catalogo)
+	if not SupabaseClient.request_completed.is_connected(_al_respuesta_catalogos):
+		SupabaseClient.request_completed.connect(_al_respuesta_catalogos)
+	catalogo_cargado.connect(_al_catalogo_disponible_para_drops)
 
-	_request_drops = HTTPRequest.new()
-	_request_drops.timeout = HTTP_TIMEOUT
-	add_child(_request_drops)
-	_request_drops.request_completed.connect(_al_recibir_drops)
-
+	_cargar_catalogo_local()
+	_cargar_recetas_local()
+	_cargar_drops_local()
+	_cargar_ejemplares_local()
 	call_deferred("cargar_catalogo")
+	call_deferred("cargar_recetas")
+	call_deferred("cargar_drops")
+	call_deferred("cargar_ejemplares")
+	_timer_actualizacion_catalogos = Timer.new()
+	_timer_actualizacion_catalogos.one_shot = true
+	_timer_actualizacion_catalogos.wait_time = INTERVALO_ACTUALIZACION_CATALOGOS
+	add_child(_timer_actualizacion_catalogos)
+	_timer_actualizacion_catalogos.timeout.connect(_actualizar_catalogos_periodicamente)
+	_timer_actualizacion_catalogos.start()
 
 
 func establecer_generacion_habilitada(habilitada: bool) -> void:
@@ -100,13 +132,11 @@ func cargar_catalogo() -> void:
 	_cargando = true
 	_intentos_catalogo += 1
 
-	var url := (
-		str(GarliaAuth.SUPABASE_URL)
-		+ "/rest/v1/items_game"
-		+ "?select=item_id,tipo,max_stack,propiedades,"
+	var consulta := (
+		"select=item_id,tipo,max_stack,propiedades,"
 		+ "categoria:categorias_items_game!items_game_categoria_clave_fkey(clave,nombre,descripcion,orden),"
 		+ "item:items!inner("
-		+ "id,nombre,descripcion,origen,"
+		+ "id,nombre,descripcion,descripcion_detallada,origen,"
 		+ "propiedades_fisicas,estado_fisico,"
 		+ "geometria_fisica,material_id,creador_id,"
 		+ "tipo_objeto:worldbuilder_tipos_objeto!items_tipo_objeto_id_fkey("
@@ -115,36 +145,48 @@ func cargar_catalogo() -> void:
 		+ ")"
 		+ ")"
 	)
-
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-
-	print("GarliaWorldItems: cargando catálogo público...")
-
-	var resultado := _request.request(
-		url,
-		headers,
-		HTTPClient.METHOD_GET
-	)
-
-	if resultado != OK:
+	print("GarliaWorldItems: cargando catálogo público mediante SupabaseClient...")
+	_request_id_catalogo = SupabaseClient.get_rest("items_game", consulta)
+	if _request_id_catalogo < 0:
 		_cargando = false
-		var mensaje := "Error iniciando consulta de items_game: " + str(resultado)
-		print("GarliaWorldItems: ", mensaje)
-		_cargar_catalogo_reintentando(mensaje)
+		_cargar_catalogo_reintentando("SupabaseClient no pudo iniciar la consulta de items_game.")
 
 
 func _cargar_catalogo_reintentando(mensaje: String) -> void:
 	if _intentos_catalogo >= MAX_CATALOG_RETRIES:
 		carga_fallida.emit(mensaje)
+		print("GarliaWorldItems: sincronización de objetos pausada; nuevo intento en ", INTERVALO_REINTENTO_OFFLINE, "s.")
+		await get_tree().create_timer(INTERVALO_REINTENTO_OFFLINE).timeout
+		if is_inside_tree() and not _cargando:
+			_intentos_catalogo = 0
+			cargar_catalogo()
 		return
 
 	print("GarliaWorldItems: reintentando catálogo → intento ", str(_intentos_catalogo + 1), "/", str(MAX_CATALOG_RETRIES), " en ", str(CATALOG_RETRY_DELAY), "s")
 	await get_tree().create_timer(CATALOG_RETRY_DELAY).timeout
-	if not _cargando and catalogo.is_empty():
+	if is_inside_tree() and not _cargando:
 		cargar_catalogo()
+
+
+func _al_respuesta_catalogos(
+	request_id: int,
+	resultado: int,
+	response_code: int,
+	headers: PackedStringArray,
+	body: PackedByteArray
+) -> void:
+	if request_id == _request_id_catalogo:
+		_request_id_catalogo = -1
+		_al_recibir_catalogo(resultado, response_code, headers, body)
+	elif request_id == _request_id_recetas:
+		_request_id_recetas = -1
+		_al_recibir_recetas(resultado, response_code, headers, body)
+	elif request_id == _request_id_drops:
+		_request_id_drops = -1
+		_al_recibir_drops(resultado, response_code, headers, body)
+	elif request_id == _request_id_ejemplares:
+		_request_id_ejemplares = -1
+		_al_recibir_ejemplares(resultado, response_code, headers, body)
 
 
 func _al_recibir_catalogo(
@@ -184,7 +226,19 @@ func _al_recibir_catalogo(
 		return
 
 	_intentos_catalogo = 0
-	catalogo.clear()
+	_procesar_catalogo(datos, "Supabase", true)
+
+
+func _cargar_catalogo_local() -> void:
+	var datos := _leer_cache_catalogo(CATALOG_CACHE_PATH)
+	if datos.is_empty():
+		print("GarliaWorldItems: no existe caché local válida de objetos.")
+		return
+	_procesar_catalogo(datos, "caché local", false)
+
+
+func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> void:
+	var catalogo_nuevo: Array[Dictionary] = []
 
 	for fila in datos:
 		if not fila is Dictionary:
@@ -192,19 +246,12 @@ func _al_recibir_catalogo(
 
 		var fila_game := fila as Dictionary
 		var item_variant: Variant = fila_game.get("item", null)
-
 		if not item_variant is Dictionary:
 			continue
 
 		var item := (item_variant as Dictionary).duplicate(true)
-
 		item["item_id"] = str(fila_game.get("item_id", item.get("id", "")))
-		# tipo_objeto se selecciona como campo hermano de item en la consulta
-		# PostgREST; no necesariamente viene dentro de la fila items anidada.
-		var tipo_objeto_variant: Variant = fila_game.get(
-			"tipo_objeto",
-			item.get("tipo_objeto", null)
-		)
+		var tipo_objeto_variant: Variant = fila_game.get("tipo_objeto", item.get("tipo_objeto", null))
 		if tipo_objeto_variant is Dictionary:
 			item["tipo_objeto"] = (tipo_objeto_variant as Dictionary).duplicate(true)
 		else:
@@ -213,10 +260,7 @@ func _al_recibir_catalogo(
 		item["max_stack"] = maxi(1, int(fila_game.get("max_stack", 1)))
 
 		var propiedades: Variant = fila_game.get("propiedades", {})
-		if propiedades is Dictionary:
-			item["propiedades_game"] = (propiedades as Dictionary).duplicate(true)
-		else:
-			item["propiedades_game"] = {}
+		item["propiedades_game"] = (propiedades as Dictionary).duplicate(true) if propiedades is Dictionary else {}
 
 		var categoria_variant: Variant = fila_game.get("categoria", null)
 		if categoria_variant is Dictionary:
@@ -226,58 +270,239 @@ func _al_recibir_catalogo(
 			item["categoria"] = {}
 			item["categoria_clave"] = ""
 
-		catalogo.append(item)
+		catalogo_nuevo.append(item)
 
-	print("GarliaWorldItems: catálogo público cargado → ", catalogo.size(), " items.")
+	if catalogo_nuevo.is_empty() and not datos.is_empty():
+		print("GarliaWorldItems: ", origen, " no contiene objetos interpretables; se conserva el catálogo anterior.")
+		return
+
+	catalogo = catalogo_nuevo
+	_items_por_id.clear()
+	_items_por_nombre.clear()
+	_items_por_prop_id.clear()
+	for item in catalogo:
+		var id := str(item.get("item_id", item.get("id", ""))).strip_edges()
+		var nombre := str(item.get("nombre", "")).strip_edges().to_lower()
+		if not id.is_empty():
+			_items_por_id[id] = item
+		if not nombre.is_empty():
+			_items_por_nombre[nombre] = item
+		var propiedades_variant: Variant = item.get("propiedades_game", {})
+		if propiedades_variant is Dictionary:
+			var prop_id := str((propiedades_variant as Dictionary).get("prop_id", "")).strip_edges()
+			if not prop_id.is_empty():
+				_items_por_prop_id[prop_id] = item
+	catalogo_disponible = true
+	origen_catalogo = origen
+
+	if guardar_cache:
+		_guardar_cache_catalogo(CATALOG_CACHE_PATH, datos, "objetos")
+
+	print("GarliaWorldItems: catálogo cargado desde ", origen, " → ", catalogo.size(), " items.")
 	catalogo_cargado.emit(catalogo.duplicate(true))
+
+
+func _guardar_cache_catalogo(ruta: String, datos: Array, etiqueta: String) -> void:
+	var directorio := ProjectSettings.globalize_path("user://cache")
+	var error_directorio := DirAccess.make_dir_recursive_absolute(directorio)
+	if error_directorio != OK:
+		push_warning("GarliaWorldItems: no se pudo crear la carpeta de caché (%s)." % str(error_directorio))
+		return
+	var archivo := FileAccess.open(ruta, FileAccess.WRITE)
+	if archivo == null:
+		push_warning("GarliaWorldItems: no se pudo guardar caché de %s (%s)." % [etiqueta, str(FileAccess.get_open_error())])
+		return
+	archivo.store_string(JSON.stringify({
+		"version": 1,
+		"actualizado_en": Time.get_datetime_string_from_system(true),
+		"datos": datos
+	}))
+	archivo.close()
+	print("GarliaWorldItems: caché de %s actualizada." % etiqueta)
+
+
+func _leer_cache_catalogo(ruta: String) -> Array:
+	if not FileAccess.file_exists(ruta):
+		return []
+	var archivo := FileAccess.open(ruta, FileAccess.READ)
+	if archivo == null:
+		push_warning("GarliaWorldItems: no se pudo abrir caché %s." % ruta)
+		return []
+	var texto := archivo.get_as_text()
+	archivo.close()
+	var datos: Variant = JSON.parse_string(texto)
+	if datos is Array:
+		return datos
+	if datos is Dictionary:
+		var contenido: Variant = (datos as Dictionary).get("datos", [])
+		if contenido is Array:
+			return contenido
+	push_warning("GarliaWorldItems: caché inválida en %s." % ruta)
+	return []
+
+
+func cargar_recetas() -> void:
+	if _cargando_recetas:
+		return
+	_cargando_recetas = true
+	_intentos_recetas += 1
+	var consulta := "select=id,nombre,descripcion,categoria,ingredientes,resultado,propiedades&order=nombre.asc"
+	_request_id_recetas = SupabaseClient.get_rest("recetas_game", consulta)
+	if _request_id_recetas < 0:
+		_cargando_recetas = false
+		_reintentar_recetas("SupabaseClient no pudo iniciar la consulta de recetas.")
+
+
+func _cargar_recetas_local() -> void:
+	var datos := _leer_cache_catalogo(RECIPES_CACHE_PATH)
+	if datos.is_empty():
+		print("GarliaWorldItems: no existe caché local de recetas.")
+		return
+	_procesar_recetas(datos, "caché local", false)
+
+
+func _al_recibir_recetas(resultado: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	_cargando_recetas = false
+	var texto := body.get_string_from_utf8()
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		_reintentar_recetas("falló conexión: " + str(resultado))
+		return
+	if response_code < 200 or response_code >= 300:
+		_reintentar_recetas("HTTP " + str(response_code) + ": " + texto.left(400))
+		return
+	var datos: Variant = JSON.parse_string(texto)
+	if not datos is Array:
+		_reintentar_recetas("respuesta JSON de recetas inválida")
+		return
+	_procesar_recetas(datos as Array, "Supabase", true)
+
+
+func _procesar_recetas(datos: Array, origen: String, guardar_cache: bool) -> void:
+	var nuevas: Array[Dictionary] = []
+	for fila in datos:
+		if fila is Dictionary:
+			nuevas.append((fila as Dictionary).duplicate(true))
+	if nuevas.is_empty() and not datos.is_empty():
+		print("GarliaWorldItems: la respuesta de ", origen, " no contiene recetas interpretables.")
+		return
+	recetas = nuevas
+	recetas_disponibles = true
+	origen_recetas = origen
+	if guardar_cache:
+		_guardar_cache_catalogo(RECIPES_CACHE_PATH, datos, "recetas")
+	_intentos_recetas = 0
+	print("GarliaWorldItems: recetas cargadas desde ", origen, " → ", recetas.size())
+	recetas_cargadas.emit(obtener_recetas())
+
+
+func _reintentar_recetas(mensaje: String) -> void:
+	print("GarliaWorldItems: ", mensaje)
+	if _intentos_recetas >= MAX_RECIPES_RETRIES:
+		print("GarliaWorldItems: se conserva la caché de recetas; nuevo intento en ", INTERVALO_REINTENTO_OFFLINE, "s.")
+		await get_tree().create_timer(INTERVALO_REINTENTO_OFFLINE).timeout
+		if is_inside_tree() and not _cargando_recetas:
+			_intentos_recetas = 0
+			cargar_recetas()
+		return
+	await get_tree().create_timer(CATALOG_RETRY_DELAY * float(_intentos_recetas)).timeout
+	if is_inside_tree() and not _cargando_recetas:
+		cargar_recetas()
+
+
+func obtener_recetas() -> Array[Dictionary]:
+	return recetas.duplicate(true)
 
 
 func obtener_catalogo() -> Array[Dictionary]:
 	return catalogo.duplicate(true)
 
 
-func buscar_item_por_id(
-	item_id: String
-) -> Dictionary:
-	var buscado: String = item_id.strip_edges()
-
+func buscar_item_por_id(item_id: String) -> Dictionary:
+	var buscado := item_id.strip_edges()
 	if buscado.is_empty():
 		return {}
-
-	for item in catalogo:
-		var actual_id: String = str(
-			item.get(
-				"item_id",
-				item.get("id", "")
-			)
-		).strip_edges()
-
-		if actual_id == buscado:
-			return item.duplicate(true)
-
-	return {}
+	var item: Variant = _items_por_id.get(buscado, {})
+	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
 
 
-func buscar_item_por_nombre(
-	nombre: String
-) -> Dictionary:
-	var buscado: String = nombre.strip_edges().to_lower()
-
+func buscar_item_por_nombre(nombre: String) -> Dictionary:
+	var buscado := nombre.strip_edges().to_lower()
 	if buscado.is_empty():
 		return {}
+	var item: Variant = _items_por_nombre.get(buscado, {})
+	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
 
-	for item in catalogo:
-		var nombre_item: String = str(
-			item.get(
-				"nombre",
-				""
-			)
-		).strip_edges()
 
-		if nombre_item.to_lower() == buscado:
-			return item.duplicate(true)
+func buscar_item_por_prop_id(prop_id: String) -> Dictionary:
+	var buscado := prop_id.strip_edges()
+	if buscado.is_empty():
+		return {}
+	var item: Variant = _items_por_prop_id.get(buscado, {})
+	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
 
-	return {}
+
+func obtener_ejemplares() -> Array[Dictionary]:
+	return ejemplares.duplicate(true)
+
+
+func buscar_ejemplar_por_id(ejemplar_id: String) -> Dictionary:
+	var buscado := ejemplar_id.strip_edges()
+	var fila: Variant = _ejemplares_por_id.get(buscado, {})
+	return (fila as Dictionary).duplicate(true) if fila is Dictionary else {}
+
+
+func crear_datos_ejemplar(ejemplar_id: String, cantidad: int = 1) -> Dictionary:
+	var ejemplar := buscar_ejemplar_por_id(ejemplar_id)
+	if ejemplar.is_empty():
+		return {}
+	var item_base_id := str(ejemplar.get("item_base_id", "")).strip_edges()
+	var item_base := buscar_item_por_id(item_base_id)
+	if item_base.is_empty():
+		push_warning("GarliaWorldItems: el ejemplar referencia un objeto base que no está en el catálogo: " + item_base_id)
+		return {}
+	var resultado := item_base.duplicate(true)
+	var nombre_base := str(item_base.get("nombre", "Objeto"))
+	resultado["nombre_sprite"] = nombre_base
+	resultado["ejemplar_id"] = str(ejemplar.get("id", ""))
+	resultado["es_ejemplar"] = true
+	resultado["nombre"] = str(ejemplar.get("nombre", nombre_base))
+	var descripcion_variant: Variant = ejemplar.get("descripcion", null)
+	resultado["descripcion"] = str(descripcion_variant).strip_edges() if descripcion_variant != null else ""
+	if str(resultado["descripcion"]).is_empty():
+		var descripcion_base_variant: Variant = item_base.get("descripcion", null)
+		resultado["descripcion"] = str(descripcion_base_variant) if descripcion_base_variant != null else ""
+	var descripcion_detallada_variant: Variant = ejemplar.get("descripcion_detallada", null)
+	resultado["descripcion_detallada"] = str(descripcion_detallada_variant).strip_edges() if descripcion_detallada_variant != null else ""
+	var vinculos_variant: Variant = ejemplar.get("vinculos", [])
+	resultado["vinculos"] = (vinculos_variant as Array).duplicate(true) if vinculos_variant is Array else []
+	var metadatos_variant: Variant = ejemplar.get("metadatos", {})
+	resultado["metadatos_ejemplar"] = (metadatos_variant as Dictionary).duplicate(true) if metadatos_variant is Dictionary else {}
+	resultado["max_stack"] = 1
+	resultado["cantidad"] = maxi(1, cantidad)
+	return resultado
+
+
+func generar_ejemplar_en_mundo(ejemplar_id: String, posicion: Vector2) -> bool:
+	var datos := crear_datos_ejemplar(ejemplar_id, 1)
+	if datos.is_empty():
+		return false
+	return _generar_world_item(datos, posicion)
+
+
+func _actualizar_catalogos_periodicamente() -> void:
+	if not is_inside_tree():
+		return
+	cargar_catalogo()
+	cargar_recetas()
+	cargar_drops()
+	cargar_ejemplares()
+	_timer_actualizacion_catalogos.start()
+
+
+func _al_catalogo_disponible_para_drops(_items: Array) -> void:
+	_procesar_siguiente_drop()
+
+
 
 
 func generar_drops_criatura(
@@ -302,194 +527,176 @@ func generar_drops_criatura(
 	_procesar_siguiente_drop()
 
 
-func _procesar_siguiente_drop() -> void:
+func cargar_ejemplares() -> void:
+	if _cargando_ejemplares:
+		return
+	_cargando_ejemplares = true
+	var consulta := "select=id,item_base_id,nombre,descripcion,descripcion_detallada,metadatos,vinculos:item_ejemplar_vinculos(id,tipo_vinculo,personaje_id,lugar_id,evento_id,etiqueta)&order=nombre.asc"
+	_request_id_ejemplares = SupabaseClient.get_rest("item_ejemplares", consulta)
+	if _request_id_ejemplares < 0:
+		_cargando_ejemplares = false
+		push_warning("GarliaWorldItems: no se pudo iniciar la carga de ejemplares.")
+
+
+func _cargar_ejemplares_local() -> void:
+	var datos := _leer_cache_catalogo(EXEMPLARES_CACHE_PATH)
+	if not datos.is_empty():
+		_procesar_ejemplares(datos, "caché local", false)
+
+
+func _al_recibir_ejemplares(resultado: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	_cargando_ejemplares = false
+	var texto := body.get_string_from_utf8()
+	if resultado != HTTPRequest.RESULT_SUCCESS or response_code < 200 or response_code >= 300:
+		push_warning("GarliaWorldItems: no se pudieron cargar los ejemplares (HTTP %s). Se conserva la caché." % str(response_code))
+		return
+	var datos: Variant = JSON.parse_string(texto)
+	if not datos is Array:
+		push_warning("GarliaWorldItems: respuesta de ejemplares inválida; se conserva la caché.")
+		return
+	_procesar_ejemplares(datos as Array, "Supabase", true)
+
+
+func _procesar_ejemplares(datos: Array, origen: String, guardar_cache: bool) -> void:
+	var nuevos: Array[Dictionary] = []
+	var por_id: Dictionary = {}
+	for fila_variant in datos:
+		if not fila_variant is Dictionary:
+			continue
+		var fila := (fila_variant as Dictionary).duplicate(true)
+		var id := str(fila.get("id", "")).strip_edges()
+		var base_id := str(fila.get("item_base_id", "")).strip_edges()
+		if id.is_empty() or base_id.is_empty():
+			continue
+		nuevos.append(fila)
+		por_id[id] = fila
+	ejemplares = nuevos
+	_ejemplares_por_id = por_id
+	ejemplares_disponibles = true
+	if guardar_cache:
+		_guardar_cache_catalogo(EXEMPLARES_CACHE_PATH, datos, "ejemplares")
+	print("GarliaWorldItems: ejemplares cargados desde ", origen, " → ", ejemplares.size())
+	ejemplares_cargados.emit(obtener_ejemplares())
+
+
+func cargar_drops() -> void:
 	if _cargando_drops:
 		return
+	_cargando_drops = true
+	_intentos_catalogo_drops += 1
+	_request_id_drops = SupabaseClient.get_rest("criatura_drops", "select=criatura_id,item_id,probabilidad")
+	if _request_id_drops < 0:
+		_cargando_drops = false
+		_reintentar_catalogo_drops("SupabaseClient no pudo iniciar la consulta de drops.")
 
-	if _cola_drops.is_empty():
+
+func _cargar_drops_local() -> void:
+	var datos := _leer_cache_catalogo(DROPS_CACHE_PATH)
+	if datos.is_empty():
+		print("GarliaWorldItems: no existe caché local de drops.")
+		return
+	_procesar_catalogo_drops(datos, "caché local", false)
+
+
+func _al_recibir_drops(resultado: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	_cargando_drops = false
+	var texto := body.get_string_from_utf8()
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		_reintentar_catalogo_drops("falló conexión: " + str(resultado))
+		return
+	if response_code < 200 or response_code >= 300:
+		_reintentar_catalogo_drops("HTTP " + str(response_code) + ": " + texto.left(400))
+		return
+	var datos: Variant = JSON.parse_string(texto)
+	if not datos is Array:
+		_reintentar_catalogo_drops("respuesta JSON de drops inválida")
+		return
+	_procesar_catalogo_drops(datos as Array, "Supabase", true)
+
+
+func _procesar_catalogo_drops(datos: Array, origen: String, guardar_cache: bool) -> void:
+	var reglas_nuevas: Dictionary = {}
+	for fila_variant in datos:
+		if not fila_variant is Dictionary:
+			continue
+		var fila := fila_variant as Dictionary
+		var criatura_id := str(fila.get("criatura_id", "")).strip_edges()
+		var item_id := str(fila.get("item_id", "")).strip_edges()
+		if criatura_id.is_empty() or item_id.is_empty():
+			continue
+		if not reglas_nuevas.has(criatura_id):
+			reglas_nuevas[criatura_id] = []
+		(reglas_nuevas[criatura_id] as Array).append({
+			"item_id": item_id,
+			"probabilidad": clampf(float(fila.get("probabilidad", 100.0)), 0.0, 100.0)
+		})
+	if reglas_nuevas.is_empty() and not datos.is_empty():
+		print("GarliaWorldItems: respuesta de drops no interpretable; se conserva la caché.")
+		return
+	_reglas_drops_por_criatura = reglas_nuevas
+	drops_disponibles = true
+	_intentos_catalogo_drops = 0
+	if guardar_cache:
+		_guardar_cache_catalogo(DROPS_CACHE_PATH, datos, "drops")
+	print("GarliaWorldItems: reglas de drops cargadas desde ", origen, " → ", datos.size(), " reglas.")
+	_procesar_siguiente_drop()
+
+
+func _reintentar_catalogo_drops(mensaje: String) -> void:
+	print("GarliaWorldItems: ", mensaje)
+	if _intentos_catalogo_drops >= MAX_CATALOG_RETRIES:
+		print("GarliaWorldItems: se conserva la caché de drops; nuevo intento en ", INTERVALO_REINTENTO_OFFLINE, "s.")
+		await get_tree().create_timer(INTERVALO_REINTENTO_OFFLINE).timeout
+		if is_inside_tree() and not _cargando_drops:
+			_intentos_catalogo_drops = 0
+			cargar_drops()
+		return
+	await get_tree().create_timer(CATALOG_RETRY_DELAY * float(_intentos_catalogo_drops)).timeout
+	if is_inside_tree() and not _cargando_drops:
+		cargar_drops()
+
+
+func _procesar_siguiente_drop() -> void:
+	if _procesando_drop_actual or _cola_drops.is_empty():
+		return
+	if not catalogo_disponible or not drops_disponibles:
 		return
 
 	var solicitud_variant: Variant = _cola_drops.pop_front()
 	if not solicitud_variant is Dictionary:
 		_procesar_siguiente_drop()
 		return
-
-	var solicitud: Dictionary = solicitud_variant as Dictionary
-	_solicitud_drop_actual = solicitud.duplicate(true)
-	var criatura_id: String = str(solicitud.get("criatura_id", ""))
+	var solicitud := solicitud_variant as Dictionary
+	var criatura_id := str(solicitud.get("criatura_id", "")).strip_edges()
 	_posicion_drops_pendiente = solicitud.get("posicion", Vector2.ZERO) as Vector2
-
 	if criatura_id.is_empty():
 		_procesar_siguiente_drop()
 		return
 
-	_cargando_drops = true
-
-	var url := (
-		str(GarliaAuth.SUPABASE_URL)
-		+ "/rest/v1/criatura_drops"
-		+ "?select="
-		+ "item_id,probabilidad,"
-		+ "item:items!inner("
-		+ "id,nombre,descripcion,origen,"
-		+ "propiedades_fisicas,estado_fisico,"
-		+ "geometria_fisica,material_id,creador_id,"
-		+ "tipo_objeto:worldbuilder_tipos_objeto!items_tipo_objeto_id_fkey("
-		+ "id,clave,nombre_humano,categoria_canonica,plantilla_id,"
-		+ "plantilla:plantillas_geometricas!worldbuilder_tipos_objeto_plantilla_id_fkey(categoria)"
-		+ " ),"
-		+ "items_game!inner("
-		+ "item_id,tipo,max_stack,propiedades,"
-		+ "categoria:categorias_items_game!items_game_categoria_clave_fkey(clave,nombre,descripcion,orden)"
-		+ ")"
-		+ ")"
-		+ "&criatura_id=eq."
-		+ criatura_id
-	)
-
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-
-	print(
-		"GarliaWorldItems: consultando drops públicos → ",
-		criatura_id
-	)
-
-	var resultado := _request_drops.request(
-		url,
-		headers,
-		HTTPClient.METHOD_GET
-	)
-
-	if resultado != OK:
-		_cargando_drops = false
-		_reintentar_drop_actual("error iniciando consulta: " + str(resultado))
-
-
-func _al_recibir_drops(
-	resultado: int,
-	response_code: int,
-	_headers: PackedStringArray,
-	body: PackedByteArray
-) -> void:
-	_cargando_drops = false
-
-	var texto := body.get_string_from_utf8()
-
-	if resultado != HTTPRequest.RESULT_SUCCESS:
-		_reintentar_drop_actual("falló conexión: " + str(resultado))
-		return
-
-	if response_code < 200 or response_code >= 300:
-		_reintentar_drop_actual("HTTP " + str(response_code) + ": " + texto)
-		return
-
-	var datos: Variant = JSON.parse_string(texto)
-
-	if not datos is Array:
-		_reintentar_drop_actual("respuesta JSON inválida: " + texto)
-		return
-
-	var resultado_drops: Array = []
-
-	for fila in datos:
-		if not fila is Dictionary:
-			continue
-
-		var drop := fila as Dictionary
-		var probabilidad := clampf(float(drop.get("probabilidad", 100.0)), 0.0, 100.0)
-		var tirada := randf() * 100.0
-
-		if tirada >= probabilidad:
-			continue
-
-		var item_variant: Variant = drop.get("item", null)
-		if not item_variant is Dictionary:
-			continue
-
-		var item := (item_variant as Dictionary).duplicate(true)
-		var item_game_variant: Variant = item.get("items_game", null)
-		var item_game: Dictionary = {}
-
-		if item_game_variant is Dictionary:
-			item_game = (item_game_variant as Dictionary)
-		elif item_game_variant is Array:
-			var items_game := item_game_variant as Array
-			if items_game.is_empty() or not items_game[0] is Dictionary:
+	_procesando_drop_actual = true
+	var reglas_variant: Variant = _reglas_drops_por_criatura.get(criatura_id, [])
+	var resultado_drops: Array[Dictionary] = []
+	if reglas_variant is Array:
+		for regla_variant in reglas_variant as Array:
+			if not regla_variant is Dictionary:
 				continue
-			item_game = items_game[0] as Dictionary
-		else:
-			continue
-
-		item["item_id"] = str(drop.get("item_id", item.get("id", "")))
-		var tipo_objeto_variant: Variant = item.get("tipo_objeto", null)
-		if tipo_objeto_variant is Dictionary:
-			item["tipo_objeto"] = (tipo_objeto_variant as Dictionary).duplicate(true)
-		else:
-			item["tipo_objeto"] = {}
-		item["tipo"] = str(item_game.get("tipo", ""))
-		item["max_stack"] = maxi(1, int(item_game.get("max_stack", 1)))
-
-		var propiedades: Variant = item_game.get("propiedades", {})
-		if propiedades is Dictionary:
-			item["propiedades_game"] = (propiedades as Dictionary).duplicate(true)
-		else:
-			item["propiedades_game"] = {}
-
-		var categoria_variant: Variant = item_game.get("categoria", null)
-		if categoria_variant is Dictionary:
-			item["categoria"] = (categoria_variant as Dictionary).duplicate(true)
-			item["categoria_clave"] = str((categoria_variant as Dictionary).get("clave", ""))
-		else:
-			item["categoria"] = {}
-			item["categoria_clave"] = ""
-
-		item["cantidad"] = 1
-		resultado_drops.append(item)
-
-		print(
-			"GarliaWorldItems: drop obtenido → ",
-			str(item.get("nombre", "Objeto")),
-			" | ",
-			str(item.get("tipo", "")),
-			" | probabilidad=",
-			probabilidad,
-			" | tirada=",
-			tirada
-		)
-
-	_reintentos_drop_actual = 0
-	_solicitud_drop_actual.clear()
-	print("GarliaWorldItems: drops generados → ", resultado_drops.size())
+			var regla := regla_variant as Dictionary
+			var probabilidad := clampf(float(regla.get("probabilidad", 100.0)), 0.0, 100.0)
+			if randf() * 100.0 >= probabilidad:
+				continue
+			var item_id := str(regla.get("item_id", "")).strip_edges()
+			var item := buscar_item_por_id(item_id)
+			if item.is_empty():
+				push_warning("GarliaWorldItems: drop referencia un item ausente del catálogo: " + item_id)
+				continue
+			item["cantidad"] = 1
+			resultado_drops.append(item)
 
 	for item in resultado_drops:
 		_generar_world_item(item, _posicion_drops_pendiente)
-
+	print("GarliaWorldItems: drops generados para ", criatura_id, " → ", resultado_drops.size())
 	drops_generados.emit(resultado_drops.duplicate(true))
-	_procesar_siguiente_drop()
-
-
-func _reintentar_drop_actual(mensaje: String) -> void:
-	print("GarliaWorldItems: ", mensaje)
-	if _solicitud_drop_actual.is_empty():
-		_procesar_siguiente_drop()
-		return
-	if _reintentos_drop_actual >= MAX_DROP_RETRIES:
-		print("GarliaWorldItems: solicitud de drop conservada para recuperación manual → ", _solicitud_drop_actual)
-		_cola_drops.push_front(_solicitud_drop_actual.duplicate(true))
-		_solicitud_drop_actual.clear()
-		_reintentos_drop_actual = 0
-		return
-	_reintentos_drop_actual += 1
-	var espera := DROP_RETRY_DELAY * float(_reintentos_drop_actual)
-	print("GarliaWorldItems: reintento de drop ", _reintentos_drop_actual, "/", MAX_DROP_RETRIES, " en ", espera, "s")
-	await get_tree().create_timer(espera).timeout
-	if not is_inside_tree():
-		return
-	_cola_drops.push_front(_solicitud_drop_actual.duplicate(true))
-	_solicitud_drop_actual.clear()
+	_procesando_drop_actual = false
 	_procesar_siguiente_drop()
 
 
@@ -539,7 +746,11 @@ func colocar_objeto(datos: Dictionary, posicion: Vector2) -> bool:
 		return false
 
 	var datos_prop := prop.duplicate(true)
-	datos_prop["asset_path"] = "res://assets/art/props/" + str(prop.get("nombre", "")) + ".png"
+	var clave_prop := str(prop.get("clave", "")).strip_edges()
+	if clave_prop == "flor_verde" or clave_prop.begins_with("flor_verde_"):
+		datos_prop["asset_path"] = "res://assets/art/props/Flor Verdel.png"
+	else:
+		datos_prop["asset_path"] = "res://assets/art/props/" + str(prop.get("nombre", "")) + ".png"
 	datos_prop["item_id"] = str(datos.get("item_id", datos.get("id", "")))
 	datos_prop["colocado_por_jugador"] = true
 

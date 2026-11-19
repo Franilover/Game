@@ -135,15 +135,17 @@ func _probar_entrega_idempotente(errores: Array[String]) -> void:
 
 func _probar_resolucion_item_canonico(errores: Array[String]) -> void:
 	var world_items := WorldItemsScript.new() as GarliaWorldItems
-	world_items.catalogo = [{
-		"id": "item_uuid_canonico",
+	world_items._procesar_catalogo([{
 		"item_id": "item_uuid_canonico",
-		"nombre": "Espada de Madera",
-		"descripcion": "Espada de prueba desde catálogo.",
+		"item": {
+			"id": "item_uuid_canonico",
+			"nombre": "Espada de Madera",
+			"descripcion": "Espada de prueba desde catálogo."
+		},
 		"tipo": "arma",
 		"max_stack": 1,
-		"propiedades_game": {"danio": 8}
-	}]
+		"propiedades": {"danio": 8}
+	}], "prueba", false)
 	var recompensa := {
 		"tipo": "item",
 		"item_id": "item_uuid_canonico",

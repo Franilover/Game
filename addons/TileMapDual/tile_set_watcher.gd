@@ -1,3 +1,4 @@
+@tool
 class_name TileSetWatcher
 extends Resource
 ## Provides information about a TileSet and sends signals when it changes.

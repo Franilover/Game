@@ -828,6 +828,8 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 
 - Las promesas y asuntos pendientes se guardan entre partidas. Los NPC pueden buscar a la persona implicada para cumplir una promesa o pedir/recibir ayuda.
 - Los habitantes comparten conocimientos marcados como públicos/compartibles cuando el otro aún no los conoce, conservando procedencia y cadena de transmisión.
+- Si un mismo conocimiento llega por varias personas, se conservan hasta 12 rutas de transmisión distintas; la cadena más reciente sigue disponible para consumidores antiguos. La repetición de una misma ruta no crea otra copia.
+- La procedencia distingue el origen inicial de cada ruta y cada enlace posterior; el receptor mantiene sus propias evidencias y no hereda como observación propia lo que sólo presenció el emisor.
 - La tensión entre dos habitantes puede provocar un encuentro para intentar resolver el desacuerdo; la resolución modifica tensión, confianza/amistad y recuerdos.
 - Los cambios dejan recuerdos individuales en ambos NPC y afectan sus vínculos futuros.
 - Los compromisos originados en recuerdos usan identificadores estables para no reaparecer tras resolverse.
@@ -908,3 +910,117 @@ La prueba cubre recuperación y preservación del respaldo; no sustituye pruebas
 - Se añadieron pruebas para perfiles reservados/sociables, vínculos cercanos y excepciones por motivos concretos.
 - Se utilizan los campos actuales de Supabase; no se modificó el esquema ni se escribieron datos en Supabase.
 - Pendiente: ejecutar las pruebas con Godot 4.7 y validar en partida la frecuencia y selección de encuentros.
+
+
+## Memoria social bilateral y decaimiento temporal (2026-11-17)
+- La selección de encuentros casuales evalúa recuerdos desde la perspectiva de ambos participantes; una buena relación no se presupone simétrica si solo uno conserva experiencias positivas.
+- Los recuerdos sociales recientes tienen más influencia que los antiguos. La vigencia cae gradualmente con una semivida aproximada de 14 días de mundo; los recuerdos sin fecha válida conservan el peso basado en orden como mecanismo de compatibilidad.
+- Experiencias negativas repetidas pueden frenar encuentros casuales con una persona concreta, incluso para NPC sociables. Una promesa, una solicitud de ayuda o una noticia relevante permite una excepción para resolver el asunto.
+- Experiencias positivas repetidas pueden elevar la familiaridad efectiva antes de que amistad o confianza general hayan cambiado mucho.
+- La influencia está acotada y no cambia los rasgos base de personalidad ni reescribe los valores canónicos de Supabase.
+- Se añadieron pruebas para cautela por experiencias negativas, excepción por motivo concreto y decaimiento temporal.
+- Pendiente: ejecutar CI Godot 4.7 y validar el ritmo de decaimiento en días de mundo dentro de una partida.
+
+
+## Sincronización de identidad canónica (2026-11-17)
+- Cuando `RelationshipSystem` confirma que terminó la carga y existe una fila social propia del NPC, `NPCScheduleSystem` entrega sus rasgos a `NPCMind`.
+- `NPCMind` actualiza los rasgos base con los valores recibidos de Supabase incluso si ya había valores anteriores en la partida.
+- La sincronización no sustituye necesidades, preferencias aprendidas, hábitos, objetivos ni recuerdos.
+- Mientras las reglas cargan, o si el NPC no tiene una fila propia, no se aplica el perfil neutral de respaldo sobre el estado guardado.
+- Se añadió una prueba de regresión que cambia los rasgos canónicos y comprueba que el aprendizaje y los hábitos permanecen.
+- No se modificó el esquema ni se escribieron datos en Supabase.
+
+
+## Memoria conversacional y privacidad de conocimiento (2026-11-17)
+- Las conversaciones sociales autónomas registran el tema compartido en la memoria de cada participante, asociado al ID del otro NPC. En un siguiente encuentro pueden recuperar una referencia al último tema compartido; no se generaliza a otros interlocutores.
+- El registro se crea sólo al completar la conversación, no si se interrumpe.
+- La retransmisión de conocimiento respeta `compartible` y `privacidad`: los datos públicos conservan compatibilidad; los confidenciales no se retransmiten automáticamente; los personales/reservados requieren `permiso_transmision=true` y confianza >= 30 entre origen y destino.
+- La procedencia y cadena de transmisión continúan registrándose en el conocimiento del destinatario.
+- Se añadieron pruebas de aislamiento de temas por interlocutor y de las reglas de privacidad/consentimiento.
+- No se añaden columnas ni se modifica Supabase; la información sigue en el guardado local de conversaciones NPC.
+- Pendiente: ejecutar CI Godot 4.7 y comprobar el flujo en una partida real.
+
+
+## Cobertura general de memoria conversacional y creencias (2026-11-17)
+- La memoria de temas ya no depende de `_social_autonoma`: se registra al completar cualquier conversación entre dos o tres NPC que estén presentes en el registro del mundo y tengan `personaje_game_id`.
+- Incluye encuentros autónomos, conversaciones guionizadas y conversaciones grupales. Se puede excluir un caso excepcional con `_sin_memoria_conversacional=true`.
+- El tema se toma de `tema_memoria`, `_tema_social`, `tema` o `motivo`; en conversaciones antiguas sin esos campos se conserva la clave de la escena como referencia.
+- Cada pareja recibe recuerdos bilaterales, no un recuerdo global compartido.
+- Nueva evaluación epistemológica local por NPC: rumores y testimonios no verificados empiezan como sospechas; observaciones y pruebas pueden aumentar la confianza; evidencias contradictorias la reducen.
+- La misma fuente no gana peso por repetir la misma versión. La evaluación distingue sospecha, creencia firme, conocimiento sostenido y creencia refutada; no cambia la verdad global del mundo.
+- Las APIs nuevas son `registrar_evidencia_conocimiento_npc`, `evaluar_creencia_conocimiento_npc` y `obtener_evaluacion_creencia_npc`.
+- No se modificó Supabase ni se usa IA generativa. CI sigue pendiente de validación completa; hay fallos existentes de `NPCMindCore` que requieren aislarse antes de afirmar que la suite pasa.
+
+
+## Aprendizaje por observación de eventos comunitarios (2026-11-17)
+- Cuando un NPC llega realmente al punto de reunión de un acontecimiento comunitario de Torres, registra una observación directa individual. La asignación de la rutina o el trayecto no cuentan como presencia.
+- La clave de conocimiento incluye evento, año y día; la evidencia usa ese identificador estable para impedir que cada actualización de rutina cuente como un nuevo testigo.
+- El registro conserva título, detalle, procedencia y momento. No se atribuye la observación a NPC sin identidad canónica ni a habitantes que no entraron en la rutina del evento.
+- La observación queda como conocimiento público compartible, sin afirmar nada sobre sucesos que el NPC no presenció.
+- Se añadió una regresión para confirmar la primera observación, la deduplicación y su estado epistemológico.
+- La integración cubre por ahora los eventos comunitarios del calendario de Torres; todavía falta conectar observaciones de incidentes, trabajo, acciones del jugador y pruebas materiales.
+
+
+## Correcciones de aprendizaje y privacidad en decisiones sociales (2026-11-17)
+- Las experiencias recientes ahora tienen más peso que las antiguas al ajustar la afinidad por un lugar; un historial previo favorable puede cambiar cuando se acumulan experiencias negativas.
+- Un objetivo cuyo identificador coincide con una actividad influye en su utilidad aunque el registro no repita el campo `actividad`.
+- La selección de noticias y la puntuación de encuentros usan la misma lista de conocimientos realmente compartibles con el destinatario, evitando ofrecer información confidencial o reservada como tema casual.
+- El conocimiento sin metadatos explícitos sólo se considera público automáticamente para tipos reconocidos de noticia/evento público; una nota personal no se retransmite por defecto.
+- Se corrigió la expectativa de persistencia del test para contar las dos actividades aprendidas que efectivamente se registran.
+
+
+## Procedencia epistemológica en transmisiones entre NPC (2026-11-17)
+- Un NPC que recibe una noticia no hereda como propia la observación directa de quien se la contó: se registra como testimonio atribuido al emisor.
+- Los testimonios no verificados parten de una confianza menor y permanecen como sospechas hasta recibir evidencia independiente.
+- La evidencia de observación directa identifica al NPC testigo y al evento, para que compartir el recuerdo no lo convierta en una observación propia del receptor.
+- La transmisión conserva la cadena de procedencia y las evidencias que el receptor ya había reunido; no reemplaza sus recuerdos anteriores.
+
+
+## NPC: selección de ocio consciente de destinos
+
+- El catálogo de actividades de ocio se valida antes de que NPCMind puntúe las opciones: cada alternativa debe tener identificador y una ubicación existente en Torres.
+- Cuando la malla de navegación está lista, las alternativas cuyo destino no puede alcanzarse desde la posición actual se excluyen antes de elegir.
+- Si no queda ninguna alternativa válida, el NPC conserva su rutina base en lugar de recibir una ubicación sustituta.
+- Se añade una regresión para destinos desconocidos, identificadores vacíos y preservación de ubicaciones válidas.
+- Alcance: esta mejora cubre la selección de ocio en días libres; no cambia horarios laborales, datos canónicos ni Supabase.
+
+
+## NPC: autonomía durante huecos del calendario
+
+La selección de actividades ya no depende exclusivamente de los días libres. Cuando el selector de horarios no encuentra una rutina activa, el sistema comprueba que el NPC sí tenga un calendario definido y calcula cuánto falta para el siguiente compromiso dentro del ciclo semanal de cinco días. Si dispone de al menos una hora, puede elegir una actividad cotidiana compatible con sus necesidades, preferencias aprendidas y destinos alcanzables.
+
+Los turnos, guardias, citas y demás rutinas activas conservan prioridad. El hueco se vuelve a evaluar por hora y la rutina programada vuelve a tomar el control al comenzar. Los NPC sin calendario no reciben actividades improvisadas por este mecanismo.
+
+
+## NPC: actividades interiores vinculadas al mobiliario
+
+Al ejecutar una actividad dentro de un edificio abierto, el NPC busca primero un puesto junto al mueble compatible con su intención: camas/literas para descansar, mesas para leer o estudiar, hornos y bancos para cocinar, reparar o trabajar, y mesas/mostradores para atender o conversar. Si el edificio no contiene un mueble adecuado, conserva los puntos generales de movimiento interior. La animación de actividad existente se mantiene y se inicia cuando el NPC ya está en el edificio; no se altera el horario ni se fuerza la entrada a interiores cerrados.
+
+
+## Diálogos: continuidad entre conversación y actividad
+
+- Las respuestas a «¿Cómo va tu día?» incorporan la actividad actual de los NPC con oficio y evitan presentar caminar o pasear como trabajo.
+- Las referencias temporales de esas respuestas se ajustan para no hablar de «la mañana» cuando ya pasó ese periodo.
+- Nima describe sus estudios según lo que está haciendo realmente; ya no afirma estar observando fenómenos Oris mientras camina o descansa.
+- Las descripciones de tareas laborales usan frases legibles en vez de exponer identificadores internos de rutina.
+- Se ampliaron las regresiones de `DialogueSocialMenu` para cubrir actividades reales y evitar contradicciones entre rutina y conversación.
+- No se modificaron datos narrativos de Supabase ni se introdujo generación de diálogo.
+
+
+## Progresión encadenada de historias locales
+
+- La historia de Mara e Ivo debe completar sus tres etapas antes de desbloquear la investigación de Nima.
+- La investigación de Nima e Ivo debe completar sus tres etapas antes de desbloquear el contacto de Saira.
+- Los requisitos usan el progreso guardado de cada cadena (etapa 3), por lo que abandonar una escena o completar sólo su primera etapa no habilita la siguiente.
+- La comprobación se realiza antes de iniciar la escena; las cadenas ya iniciadas conservan su etapa guardada.
+- Se añadieron regresiones para impedir que estas historias se desbloqueen prematuramente.
+
+## Separación de historia y contenido opcional
+
+- Las cadenas con etapas y efectos se clasifican como historia; cada etapa conserva el progreso guardado y no vuelve a reproducirse al completarse.
+- Las conversaciones locales con progresión también son parte de la historia.
+- Los acontecimientos diarios, reuniones y rutinas compartidas siguen siendo contenido ambiental opcional y repetible.
+- Al comenzar una conversación de historia, se solicita el encuadre automático de cámara y se mantiene el seguimiento durante la duración calculada de sus líneas, para que el jugador pueda verla completa.
+- Las cadenas narrativas pueden activarse cuando los participantes están en el mismo interior que el jugador, además de los encuentros exteriores. Cada etapa puede declarar `activacion_historia` con `anio`, `dia`, `hora_desde` y `hora_hasta`; también admite requisitos de progreso por clave y etapa.
+- Las solicitudes de cámara narrativas no caducan ni se descartan para hacer espacio a eventos opcionales; siguen la posición actual de los participantes.
+- No se alteran datos de Supabase; la clasificación y el progreso usan los datos locales existentes.

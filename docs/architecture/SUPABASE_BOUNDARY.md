@@ -30,7 +30,9 @@ Presentation
 | Ecosistema | `ecosistemas` | WorldData |
 | Habitat | `habitats` | WorldData |
 | Criatura | `criaturas` + relaciones ecológicas | Creature data / spawn |
-| Item | `items` + `items_game` | Item runtime |
+| Item | `items` + `items_game` | `GarliaWorldItems` |
+| Receta | `recetas_game` | `GarliaWorldItems` → CraftingUI |
+| Drop de criatura | `criatura_drops` | `GarliaWorldItems` + catálogo de items |
 | Misión | `misiones_game` + objetivos/recompensas | MissionManager |
 | Personaje | `personajes_game` | NPC/Creature |
 | Inventario persistente | `inventario_usuario` | Inventory persistence |
@@ -51,6 +53,21 @@ Godot no puede:
 - inventar una categoría que debería venir del catálogo
 - sustituir relaciones canónicas con arrays locales
 - decidir que un item es arma por una heurística si `items_game.tipo` ya define la categoría.
+
+### Catálogos de juego
+
+`GarliaWorldItems` es la fachada compartida para datos de objetos que necesita el runtime:
+
+- Items: `obtener_catalogo()`, `buscar_item_por_id()`, `buscar_item_por_nombre()` y `buscar_item_por_prop_id()`.
+- Recetas: `obtener_recetas()`.
+- Señales: `catalogo_cargado` y `recetas_cargadas`.
+- Caché local: `user://cache/items_game.json`, `user://cache/recetas_game.json` y `user://cache/criatura_drops.json`.
+- Las reglas de drops se descargan una vez, se agrupan por criatura y se resuelven contra el índice local de items; el combate no hace un JOIN REST por cada muerte.
+- La caché se presenta inmediatamente y se actualiza desde Supabase; los errores de red no vacían una copia válida.
+- Los consumidores reciben el servicio por inyección de dependencias. No crean sus propios `HTTPRequest`, consultas REST, arrays de items ni índices locales.
+- Los objetos se resuelven por los métodos del servicio. No recorrer `catalogo` manualmente ni usar `ItemIconResolver` como fuente de datos; ese resolver sólo entrega arte.
+
+Las recetas son otro catálogo del mismo servicio, pero mantienen su propio conjunto de datos y caché. Los catálogos especializados (Garumis, movimientos, reglas de Eterium, etc.) siguen en sus repositorios/dominios y usan `SupabaseClient` como transporte compartido; no deben mezclarse dentro del catálogo de objetos.
 
 ### Escritura
 

@@ -2,7 +2,7 @@ name: Garlia Godot 4.7 Regression Tests
 
 on:
   push:
-    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion", "feat/torres-night-lanterns", "feat/dialogue-continuity-npcs", "fix/p0-godot47-crafting-token-type"]
+    branches: [main, "feat/ecologia-habilidades-sociales-supabase", "fix/combat-temporal-contract-v1", "feat/garumi-world-presence", "feat/garumi-triple-combat-supabase-attacks", "refactor/p1-player-locomotion", "feat/torres-night-lanterns", "feat/dialogue-continuity-npcs", "fix/p0-godot47-crafting-token-type", "feat/npc-relational-memory-decay"]
     paths:
       - "scenes/**"
       - "scripts/world/procedural/**"
@@ -131,6 +131,17 @@ jobs:
           printf '%s\n' "$output"
           if grep -E 'SCRIPT ERROR: Parse Error|SCRIPT ERROR: Compile Error|Failed to load script' <<<"$output"; then
             echo "Godot reported script compilation errors during import."
+            exit 1
+          fi
+
+      - name: Run Torres nursery builder regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_torres_vivero_builder.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|TorresViveroBuilder: FAIL:' <<<"$output"; then
+            echo "Torres nursery builder regression test reported errors."
             exit 1
           fi
 

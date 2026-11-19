@@ -4,8 +4,9 @@ class_name WorldInteractable
 ## Los objetos solo declaran su tipo; el HUD y la ejecución son compartidos.
 
 const CHEST_UI_SCRIPT = preload("res://scripts/ui/hogar_chest_inventory.gd")
+const CALENDAR_PANEL_SCRIPT = preload("res://scripts/ui/world_calendar_panel.gd")
 
-enum ActionType { CHEST, BED }
+enum ActionType { CHEST, BED, CALENDAR }
 
 var _action_type: ActionType = ActionType.CHEST
 var _interaction_text := ""
@@ -14,6 +15,7 @@ var _storage_id := ""
 var _storage_owner: Node = null
 var _storage_index := -1
 var _chest_ui: Node = null
+var _calendar_ui: Node = null
 var _durmiendo: bool = false
 
 
@@ -30,6 +32,15 @@ func configurar_cofre(storage_id: String, storage_owner: Node = null, storage_in
 func configurar_cama(storage_owner: Node = null, storage_index: int = -1) -> void:
 	_action_type = ActionType.BED
 	_interaction_text = "Dormir"
+	_interaction_distance = 72.0
+	_storage_owner = storage_owner
+	_storage_index = storage_index
+	add_to_group("interactable")
+
+
+func configurar_calendario(storage_owner: Node = null, storage_index: int = -1) -> void:
+	_action_type = ActionType.CALENDAR
+	_interaction_text = "Consultar"
 	_interaction_distance = 72.0
 	_storage_owner = storage_owner
 	_storage_index = storage_index
@@ -64,7 +75,12 @@ func can_interact(jugador: Node) -> bool:
 			if bool(_storage_owner.call("esta_cofre_abierto")):
 				return false
 	if is_instance_valid(_storage_owner) and _storage_owner.has_method("puede_interactuar_mueble"):
-		var tipo := "cofre" if _action_type == ActionType.CHEST else "cama"
+		var tipo := "cofre"
+		match _action_type:
+			ActionType.BED:
+				tipo = "cama"
+			ActionType.CALENDAR:
+				tipo = "calendario"
 		if not bool(_storage_owner.call("puede_interactuar_mueble", tipo, jugador, _storage_index)):
 			return false
 	return (jugador as Node2D).global_position.distance_to(global_position) <= _interaction_distance
@@ -78,6 +94,8 @@ func interact(jugador: Node) -> void:
 			_abrir_cofre()
 		ActionType.BED:
 			_dormir()
+		ActionType.CALENDAR:
+			_abrir_calendario()
 
 
 func _abrir_cofre() -> void:
@@ -155,6 +173,24 @@ func cerrar_cofre() -> void:
 		interfaz.remove_from_group("modal_ui")
 	interfaz.queue_free()
 
+
+
+func _abrir_calendario() -> void:
+	if is_instance_valid(_calendar_ui):
+		return
+	var atmosfera := _obtener_atmosfera()
+	if not is_instance_valid(atmosfera) or not atmosfera.has_method("obtener_tiempo"):
+		push_warning("WorldInteractable: no se encontró el calendario del mundo.")
+		return
+	var interfaz := CALENDAR_PANEL_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	var escena := get_tree().current_scene
+	if not is_instance_valid(escena):
+		escena = get_tree().root
+	escena.add_child(interfaz)
+	_calendar_ui = interfaz
+	interfaz.call("abrir", atmosfera, self)
 
 func _obtener_atmosfera() -> Node:
 	return get_tree().root.find_child("WorldAtmosphere", true, false)

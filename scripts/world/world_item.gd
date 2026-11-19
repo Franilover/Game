@@ -88,74 +88,9 @@ func _actualizar_icono() -> void:
 
 
 func _draw() -> void:
-	# Solo dibujamos un respaldo cuando el objeto no tiene un icono local.
-	if is_instance_valid(_icono) and _icono.visible:
-		return
-	
-	var tipo: String = str(datos_objeto.get("tipo", "")).to_lower().strip_edges()
-	var sombra := Color(0.04, 0.025, 0.015, 0.65)
-	var borde := Color(0.18, 0.10, 0.05, 1.0)
-	
-	draw_rect(Rect2(-10.0, 8.0, 20.0, 5.0), sombra)
-	
-	match tipo:
-		"arma":
-			_dibujar_arma(borde)
-		"armadura":
-			_dibujar_armadura(borde)
-		"herramienta":
-			_dibujar_herramienta(borde)
-		"recurso":
-			_dibujar_recurso(borde)
-		_:
-			_dibujar_objeto_generico(borde)
-
-
-func _dibujar_arma(borde: Color) -> void:
-	var hoja := Color(0.72, 0.68, 0.56, 1.0)
-	var empunadura := Color(0.34, 0.19, 0.09, 1.0)
-	draw_rect(Rect2(-2.0, -17.0, 4.0, 21.0), hoja)
-	draw_rect(Rect2(-5.0, 2.0, 10.0, 3.0), borde)
-	draw_rect(Rect2(-2.0, 5.0, 4.0, 9.0), empunadura)
-	draw_rect(Rect2(-3.0, 14.0, 6.0, 3.0), borde)
-
-
-func _dibujar_armadura(borde: Color) -> void:
-	var metal := Color(0.55, 0.57, 0.52, 1.0)
-	draw_rect(Rect2(-10.0, -10.0, 20.0, 20.0), borde)
-	draw_rect(Rect2(-8.0, -8.0, 16.0, 16.0), metal)
-	draw_rect(Rect2(-3.0, -5.0, 6.0, 10.0), borde)
-
-
-func _dibujar_herramienta(borde: Color) -> void:
-	var madera := Color(0.48, 0.27, 0.12, 1.0)
-	var metal := Color(0.68, 0.64, 0.52, 1.0)
-	draw_rect(Rect2(-2.0, -13.0, 4.0, 26.0), madera)
-	draw_rect(Rect2(-9.0, -15.0, 18.0, 6.0), borde)
-	draw_rect(Rect2(-7.0, -14.0, 14.0, 4.0), metal)
-
-
-func _dibujar_recurso(borde: Color) -> void:
-	var pluma := Color(0.82, 0.82, 0.72, 1.0)
-	draw_colored_polygon(
-		PackedVector2Array([
-			Vector2(0.0, -14.0), Vector2(7.0, -5.0), Vector2(5.0, 8.0),
-			Vector2(0.0, 14.0), Vector2(-5.0, 8.0), Vector2(-7.0, -5.0)
-		]),
-		pluma
-	)
-	draw_polyline(
-		PackedVector2Array([Vector2(0.0, -14.0), Vector2(0.0, 14.0)]),
-		borde,
-		2.0
-	)
-
-
-func _dibujar_objeto_generico(borde: Color) -> void:
-	var objeto := Color(0.69, 0.51, 0.25, 1.0)
-	draw_rect(Rect2(-9.0, -9.0, 18.0, 18.0), borde)
-	draw_rect(Rect2(-7.0, -7.0, 14.0, 14.0), objeto)
-	draw_rect(Rect2(-3.0, -3.0, 6.0, 6.0), Color(0.85, 0.72, 0.42, 1.0))
+	# Los objetos del mundo sólo se representan mediante su sprite de assets.
+	# No se dibujan armas, armaduras ni objetos genéricos con formas de código.
+	pass
 
 
 func consumir_por_criatura(item_ids_permitidos: Array) -> bool:

@@ -88,6 +88,11 @@ func _process(delta: float) -> void:
 	_camera.zoom = _camera.zoom.lerp(Vector2.ONE * zoom_ajustado, clampf(delta * 2.8, 0.0, 1.0))
 
 
+func _normalizar_modo_cinematica(_tipo: String) -> String:
+	# El mundo se congela y la secuencia se reproduce sobre una instantánea.
+	return "planeada"
+
+
 func esta_activo() -> bool:
 	return _ocupado
 
@@ -119,7 +124,8 @@ func _resolver_parametros_cinematica(valor: Variant, parametros: Dictionary) -> 
 func ejecutar_recurso(
 	secuencia: CutsceneSequence,
 	parametros: Dictionary = {},
-	tipo_override: String = ""
+	tipo_override: String = "",
+	dialogo_extra: Dictionary = {}
 ) -> bool:
 	if not is_instance_valid(secuencia):
 		push_warning("CutsceneDirector: el recurso de secuencia no es válido.")
@@ -141,6 +147,14 @@ func ejecutar_recurso(
 		push_warning("CutsceneDirector [%s]: los pasos resueltos no forman una lista." % secuencia.clave)
 		return false
 	var pasos_resueltos: Array = pasos_variant
+	if not dialogo_extra.is_empty():
+		var datos_dialogo_variant: Variant = dialogo_extra.get("datos", {})
+		if datos_dialogo_variant is Dictionary and not (datos_dialogo_variant as Dictionary).is_empty():
+			pasos_resueltos.append({
+				"tipo": "dialogo",
+				"npc": str(dialogo_extra.get("npc", "")),
+				"datos": (datos_dialogo_variant as Dictionary).duplicate(true)
+			})
 	var clave_resuelta := str(_resolver_parametros_cinematica(secuencia.clave, parametros))
 	return await ejecutar(clave_resuelta, pasos_resueltos, modo_ejecucion)
 
@@ -160,11 +174,10 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 	_tweens_actores.clear()
 	_jugador_movido_cinematica = false
 	_estado_rutas_npc.clear()
-	if is_instance_valid(_camera):
-		_zoom_original = _camera.zoom
-		_offset_original = _camera.offset
+	# El zoom y offset originales se capturan en configurar(). No volver a
+	# capturarlos aquí: una escena anterior no debe contaminar el siguiente retorno.
 	_clave_actual = clave_limpia
-	_modo_cinematica = "en_vivo" if tipo.strip_edges().to_lower() in ["en_vivo", "vivo", "live"] else "planeada"
+	_modo_cinematica = _normalizar_modo_cinematica(tipo)
 	if _modo_cinematica == "planeada":
 		_pausa_previa = get_tree().paused
 		_process_mode_dialogo_previo = _dialogue.process_mode
@@ -177,7 +190,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 		add_to_group("modal_ui")
 	_capturar_y_ocultar_ui()
 	if _modo_cinematica == "planeada":
-		_ocultar_npcs_fuera_de_cinematica()
+		_congelar_npcs_del_mundo()
 	cinematica_iniciada.emit(_clave_actual)
 
 	for paso_variant in pasos:
@@ -194,6 +207,7 @@ func ejecutar(clave: String, pasos: Array, tipo: String = "planeada") -> bool:
 				if not datos_variant is Dictionary:
 					continue
 				var dialogo_abierto := false
+				_dialogue.configurar_estilo_cinematica(true)
 				if paso.has("npc"):
 					var fuente_dialogo := _buscar_npc(str(paso.get("npc", "")))
 					if _modo_cinematica == "planeada" and is_instance_valid(fuente_dialogo):
@@ -711,7 +725,8 @@ func _ocultar_elemento_ui(nodo: Node) -> void:
 	if not is_instance_valid(nodo):
 		return
 	var panel_dialogo: Node = _dialogue.dialogue_panel if is_instance_valid(_dialogue) else null
-	if nodo == panel_dialogo:
+	var fondo_dialogo: Node = _dialogue._dialogue_background if is_instance_valid(_dialogue) else null
+	if nodo == panel_dialogo or nodo == fondo_dialogo:
 		return
 	if is_instance_valid(panel_dialogo) and nodo.is_ancestor_of(panel_dialogo):
 		for hijo in nodo.get_children():
@@ -723,17 +738,11 @@ func _ocultar_elemento_ui(nodo: Node) -> void:
 		item.hide()
 
 
-func _ocultar_npcs_fuera_de_cinematica() -> void:
-	# Las cinemáticas planeadas muestran únicamente a los NPC que participan
-	# explícitamente. Así se evita que las rutinas del pueblo distraigan al fondo.
+func _congelar_npcs_del_mundo() -> void:
+	# Mantiene a cada NPC visible en su posición capturada y detiene sus rutinas.
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not nodo is Creature:
-			continue
-		var npc := nodo as Creature
-		if not is_instance_valid(npc):
-			continue
-		_guardar_estado_npc(npc)
-		npc.hide()
+		if nodo is Creature and is_instance_valid(nodo):
+			_guardar_estado_npc(nodo as Creature)
 
 
 func _detener_animaciones_rutina_temporales(npc: Creature) -> void:
@@ -762,7 +771,8 @@ func _detener_animaciones_rutina_temporales(npc: Creature) -> void:
 		}
 	]
 	for animacion in animaciones:
-		var tween_variant: Variant = npc.get_meta(str(animacion.get("tween", "")), null)
+		var clave_tween := str(animacion.get("tween", ""))
+		var tween_variant: Variant = npc.get_meta(clave_tween) if npc.has_meta(clave_tween) else null
 		if tween_variant is Tween and is_instance_valid(tween_variant):
 			(tween_variant as Tween).kill()
 		if is_instance_valid(sprite):
@@ -792,7 +802,11 @@ func _guardar_estado_npc(npc: Creature) -> void:
 	_detener_animaciones_rutina_temporales(npc)
 	var metas := {}
 	for clave in ["rutina_en_edificio", "rutina_en_transito", "actividad_social_activa", "acercamiento_social_activo", "conversacion_npc_bloqueada", "cinematica_npc_activa"]:
-		metas[clave] = {"tenia": npc.has_meta(clave), "valor": npc.get_meta(clave, null)}
+		var tenia_meta := npc.has_meta(clave)
+		# No llamar get_meta() para claves inexistentes: algunos NPC no inicializan
+		# metadatos opcionales y Godot reporta un error si se leen sin existir.
+		var valor_meta: Variant = npc.get_meta(clave) if tenia_meta else null
+		metas[clave] = {"tenia": tenia_meta, "valor": valor_meta}
 	_estado_npcs_cinematica[id] = {
 		"nodo": npc, "posicion": npc.global_position, "visible": npc.visible,
 		"velocity": npc.velocity, "process_mode": npc.process_mode, "metas": metas
@@ -979,6 +993,8 @@ func _restaurar_camara() -> void:
 	_seguimiento_camara_npcs.clear()
 	if not is_instance_valid(_camera) or not is_instance_valid(_player):
 		return
+	_camera.enabled = true
+	_camera.make_current()
 	if is_instance_valid(_tween_camara) and _tween_camara.is_running():
 		_tween_camara.kill()
 	_tween_camara = create_tween()
@@ -989,12 +1005,37 @@ func _restaurar_camara() -> void:
 	_tween_camara.tween_property(_camera, "zoom", _zoom_original, 0.65)
 	_tween_camara.tween_property(_camera, "offset", _offset_original, 0.65)
 	await _tween_camara.finished
+	if is_instance_valid(_camera) and is_instance_valid(_player):
+		_camera.global_position = _player.global_position
+		_camera.zoom = _zoom_original
+		_camera.offset = _offset_original
+		_camera.enabled = true
+		_camera.make_current()
+		_camera.reset_smoothing()
 
 
 func _finalizar() -> void:
 	if not _ocupado:
 		return
 	_restaurar_estado_temporal()
+	if is_instance_valid(_dialogue):
+		_dialogue.configurar_estilo_cinematica(false)
+	if is_instance_valid(_player):
+		# Restablecer también el estado lógico de locomoción, no sólo velocity.
+		# Así una acción interrumpida no deja al jugador en RUN/JUMP/DASH.
+		_player.locomotion.reiniciar()
+		_player._movement_input_direction = Vector2.ZERO
+		_player.state = Player.State.IDLE
+		if _player is CharacterBody2D:
+			(_player as CharacterBody2D).velocity = Vector2.ZERO
+	if is_instance_valid(_camera):
+		if is_instance_valid(_player):
+			_camera.global_position = _player.global_position
+		_camera.zoom = _zoom_original
+		_camera.offset = _offset_original
+		_camera.enabled = true
+		_camera.make_current()
+		_camera.reset_smoothing()
 	if is_instance_valid(_panel_fundido):
 		_panel_fundido.color = Color(0.0, 0.0, 0.0, 0.0)
 		_panel_fundido.hide()
@@ -1010,6 +1051,7 @@ func _finalizar() -> void:
 	_modo_cinematica = "planeada"
 	_seguimiento_camara_npcs.clear()
 	_estado_rutas_npc.clear()
-	if is_in_group("modal_ui"):
-		remove_from_group("modal_ui")
+	# El router de gameplay bloquea el movimiento mientras este nodo está
+	# en modal_ui. Liberarlo siempre evita dejar la entrada atrapada.
+	remove_from_group("modal_ui")
 	cinematica_finalizada.emit(clave_finalizada)

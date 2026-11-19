@@ -77,6 +77,11 @@ var _caminando_frames_totales: int = 1
 var _caminando_tiempo: float = 0.0
 var _caminando_fps: float = 8.0
 
+var _sprite_npc_base: Texture2D = null
+var _sprite_npc_lateral: Texture2D = null
+var _sprite_npc_espalda: Texture2D = null
+var _npc_direccion_anterior := Vector2.DOWN
+
 
 func configurar_dependencias(
 	dialogue_system: Node,
@@ -262,6 +267,14 @@ func _cargar_sprite() -> void:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null:
 		return
+	# Cada configuración parte de la escala neutra para no heredar ajustes
+	# de un habitante anterior cuando una instancia se reutiliza.
+	sprite.scale = Vector2.ONE
+	sprite.flip_h = false
+	_sprite_npc_base = null
+	_sprite_npc_lateral = null
+	_sprite_npc_espalda = null
+	_npc_direccion_anterior = Vector2.DOWN
 
 	var rutas: Array[String] = []
 
@@ -315,6 +328,8 @@ func _cargar_sprite() -> void:
 			var textura_personaje := recurso_personaje as Texture2D
 			if textura_personaje != null:
 				sprite.texture = textura_personaje
+				_configurar_sprites_direccionales_npc(sprite_key_local, sprite)
+				_normalizar_escala_sprite_personaje(sprite)
 				sprite.visible = true
 				remove_meta("sprite_placeholder_humano")
 				remove_meta("sprite_key_no_encontrado")
@@ -390,6 +405,9 @@ func _cargar_sprite() -> void:
 			continue
 
 		sprite.texture = textura
+		if _es_humano() and ruta.begins_with("res://assets/art/characters/"):
+			_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
+			_normalizar_escala_sprite_personaje(sprite)
 		return
 
 	# Mientras cada NPC recibe su sprite propio, reutilizamos el cuerpo humano
@@ -400,10 +418,87 @@ func _cargar_sprite() -> void:
 			var textura_base := load(sprite_humano_base) as Texture2D
 			if textura_base != null:
 				sprite.texture = textura_base
+				_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
+				_normalizar_escala_sprite_personaje(sprite)
 				set_meta("sprite_placeholder_humano", true)
 				return
 
 	sprite.texture = null
+
+
+func _configurar_sprites_direccionales_npc(sprite_key: String, sprite: Sprite2D) -> void:
+	_sprite_npc_base = sprite.texture
+	_sprite_npc_lateral = null
+	_sprite_npc_espalda = null
+	_npc_direccion_anterior = Vector2.DOWN
+	if sprite_key.is_empty() or sprite_key.contains("/") or sprite_key.contains("\\"):
+		return
+
+	var clave_lateral := sprite_key
+	var clave_espalda := sprite_key
+	match sprite_key.to_lower():
+		"mara":
+			clave_lateral = "Maral"
+		"bruna":
+			clave_espalda = "Brunal"
+		"elian":
+			clave_espalda = "Ellan"
+
+	_sprite_npc_lateral = _cargar_sprite_direccional_personaje(clave_lateral + "_Walking_Left.png")
+	_sprite_npc_espalda = _cargar_sprite_direccional_personaje(clave_espalda + "_Walking_Back.png")
+
+
+func _cargar_sprite_direccional_personaje(nombre_archivo: String) -> Texture2D:
+	var ruta := "res://assets/art/characters/" + nombre_archivo
+	if not ResourceLoader.exists(ruta):
+		return null
+	return ResourceLoader.load(ruta) as Texture2D
+
+
+func _actualizar_sprite_direccional_npc() -> void:
+	if _sprite_npc_base == null or _ataque_animando or _caminando_animando:
+		return
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+
+	if velocity.length_squared() > 0.25:
+		if absf(velocity.x) > absf(velocity.y):
+			_npc_direccion_anterior = Vector2.RIGHT if velocity.x > 0.0 else Vector2.LEFT
+		else:
+			_npc_direccion_anterior = Vector2.DOWN if velocity.y > 0.0 else Vector2.UP
+
+	var textura := _sprite_npc_base
+	sprite.flip_h = false
+	var postura := str(get_meta("postura_npc", ""))
+	if postura == "dormir":
+		if _sprite_npc_espalda != null:
+			textura = _sprite_npc_espalda
+	elif velocity.length_squared() > 0.25:
+		if _npc_direccion_anterior == Vector2.UP and _sprite_npc_espalda != null:
+			textura = _sprite_npc_espalda
+		elif absf(_npc_direccion_anterior.x) > 0.0 and _sprite_npc_lateral != null:
+			textura = _sprite_npc_lateral
+			sprite.flip_h = _npc_direccion_anterior.x > 0.0
+
+	if sprite.texture != textura:
+		sprite.texture = textura
+		sprite.hframes = 1
+		sprite.vframes = 1
+		sprite.frame = 0
+		_normalizar_escala_sprite_personaje(sprite)
+
+
+func _normalizar_escala_sprite_personaje(sprite: Sprite2D) -> void:
+	if sprite == null or sprite.texture == null:
+		return
+
+	# Los sprites de habitantes usan una altura visual común de 48 px.
+	# Así se admiten dibujos con más resolución sin reducir sus píxeles ni
+	# alterar su proporción; los sprites clásicos de 32x48 conservan escala 1.
+	var altura_textura := maxf(float(sprite.texture.get_height()), 1.0)
+	var escala_uniforme := 48.0 / altura_textura
+	sprite.scale = Vector2.ONE * escala_uniforme
 
 
 func configurar_chunk(
@@ -674,6 +769,12 @@ func take_damage(
 ) -> void:
 	if not is_alive:
 		return
+	# Los sparrings del Cuartel nunca pueden morir: conservan 1 HP y
+	# recuperan su estado original al cerrar la sesión.
+	if bool(get_meta("barracks_training_target", false)):
+		cantidad = mini(cantidad, maxi(health - 1, 0))
+		if cantidad <= 0:
+			return
 
 	var salud_anterior := health
 
@@ -1054,6 +1155,7 @@ func _physics_process(delta: float) -> void:
 		global_position = global_position.lerp(_red_posicion_objetivo, factor)
 		velocity = _red_velocidad_objetivo
 		_actualizar_animacion_caminando(delta)
+		_actualizar_sprite_direccional_npc()
 		return
 	if _siguiendo_jugador:
 		_procesar_seguimiento()
@@ -1072,6 +1174,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 
 	_actualizar_animacion_caminando(delta)
+	_actualizar_sprite_direccional_npc()
 
 
 func iniciar_seguimiento_jugador(nuevo_jugador: Node) -> bool:

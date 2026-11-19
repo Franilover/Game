@@ -138,9 +138,11 @@ func es_objetivo_contextual(candidato: Node) -> bool:
 		return true
 	return false
 
-func interactuar(player: Node) -> bool:
+func interactuar(player: Node, mano: String = "derecha") -> bool:
 	if objetivo_actual == null or not is_instance_valid(objetivo_actual):
 		return false
+	if objetivo_actual.has_method("interactuar_con_herramienta"):
+		return bool(objetivo_actual.call("interactuar_con_herramienta", player, mano))
 	if not objetivo_actual.has_method("interact"):
 		return false
 	objetivo_actual.call("interact", player)

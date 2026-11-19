@@ -20,14 +20,14 @@ var _ruta_rutina: PackedVector2Array = PackedVector2Array()
 var _indice_ruta_rutina: int = 0
 var _rutina_completada: bool = false
 
-# Seguro local contra bloqueos: registra el progreso y alterna el rodeo cuando
+# Seguro local contra bloqueos: registra el progreso y busca un desvío estable cuando
 # otro habitante, una esquina o una entrada impiden avanzar.
 var _ultima_posicion_seguro: Vector2 = Vector2.ZERO
 var _seguro_inicializado: bool = false
 var _direccion_base_atasco: Vector2 = Vector2.ZERO
+var _direccion_desvio_atasco: Vector2 = Vector2.ZERO
 var _tiempo_sin_progreso: float = 0.0
 var _lado_desvio: float = 1.0
-var _tiempo_cambio_lado: float = 0.0
 
 var _rng := RandomNumberGenerator.new()
 
@@ -35,7 +35,7 @@ const DISTANCIA_SEPARACION_NPC := 34.0
 const DISTANCIA_CEDER_PASO_NPC := 27.0
 const FACTOR_PROGRESO_NPC := 0.25
 const TIEMPO_REACCION_ATASCO_NPC := 0.8
-const INTERVALO_CAMBIO_LADO_NPC := 0.75
+const DISTANCIA_PRUEBA_DESVIO_NPC := 8.0
 
 
 func configurar(
@@ -63,9 +63,9 @@ func configurar(
 	_ultima_posicion_seguro = nueva_criatura.global_position if is_instance_valid(nueva_criatura) else Vector2.ZERO
 	_seguro_inicializado = is_instance_valid(nueva_criatura)
 	_direccion_base_atasco = Vector2.ZERO
+	_direccion_desvio_atasco = Vector2.ZERO
 	_tiempo_sin_progreso = 0.0
 	_lado_desvio = -1.0 if posmod(semilla, 2) == 0 else 1.0
-	_tiempo_cambio_lado = 0.0
 
 
 func configurar_chunk(nuevos_limites: Rect2) -> void:
@@ -303,22 +303,14 @@ func _comparten_entrada_destino(a: Creature, b: Creature) -> bool:
 	return not destino_a.is_empty() and destino_a == destino_b
 
 
-## Si el cuerpo deja de avanzar, alterna el rodeo sin cancelar su destino.
-## Esto evita que una colisión temporal o un NPC parado en una entrada
-## deje la rutina bloqueada para siempre.
+## Si el cuerpo deja de avanzar, busca un desvío libre y lo mantiene estable.
+## Si no hay espacio, espera sin vibrar y vuelve a probar cuando el bloqueo cambie.
 func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	if (
 		direccion.length_squared() <= 0.001
 		or not creature is Creature
 		or not (creature as Creature).is_in_group("torres_game_npc")
 	):
-		_reiniciar_seguro_atasco()
-		return direccion
-
-	# Si otro habitante cercano comparte el edificio de destino, el rodeo
-	# lateral empeora la congestión de la puerta. Ambos pueden cruzarse:
-	# los cuerpos de los NPC no bloquean físicamente el paso.
-	if _hay_otro_npc_cercano_con_mismo_destino():
 		_reiniciar_seguro_atasco()
 		return direccion
 
@@ -333,8 +325,8 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	var umbral_progreso := maxf(move_speed * maxf(delta, 0.0) * FACTOR_PROGRESO_NPC, 0.05)
 	if avance >= umbral_progreso:
 		_tiempo_sin_progreso = 0.0
-		_tiempo_cambio_lado = 0.0
 		_direccion_base_atasco = Vector2.ZERO
+		_direccion_desvio_atasco = Vector2.ZERO
 		return direccion
 
 	_tiempo_sin_progreso += maxf(delta, 0.0)
@@ -344,41 +336,35 @@ func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
 	if _direccion_base_atasco.length_squared() <= 0.001:
 		_direccion_base_atasco = direccion.normalized()
 
-	_tiempo_cambio_lado += maxf(delta, 0.0)
-	if _tiempo_cambio_lado >= INTERVALO_CAMBIO_LADO_NPC:
-		_lado_desvio *= -1.0
-		_tiempo_cambio_lado = 0.0
+	# Mantener el mismo desvío mientras siga libre evita que dos NPC
+	# alternen el rodeo y vibren en el sitio.
+	if _direccion_desvio_atasco.length_squared() > 0.001:
+		var desplazamiento_desvio := _direccion_desvio_atasco * maxf(DISTANCIA_PRUEBA_DESVIO_NPC, move_speed * 0.25)
+		if not creature.test_move(creature.global_transform, desplazamiento_desvio):
+			return _direccion_desvio_atasco
+		_direccion_desvio_atasco = Vector2.ZERO
 
-	var lateral := _direccion_base_atasco.orthogonal() * _lado_desvio
-	return (lateral * 0.92 + _direccion_base_atasco * 0.08).normalized()
+	var rumbo := _direccion_base_atasco.normalized()
+	var lateral_preferido := rumbo.orthogonal() * _lado_desvio
+	var candidatos: Array[Vector2] = [
+		(lateral_preferido + rumbo * 0.25).normalized(),
+		(-lateral_preferido + rumbo * 0.25).normalized(),
+		rumbo
+	]
+	for candidato in candidatos:
+		var desplazamiento := candidato * maxf(DISTANCIA_PRUEBA_DESVIO_NPC, move_speed * 0.25)
+		if not creature.test_move(creature.global_transform, desplazamiento):
+			_direccion_desvio_atasco = candidato
+			return candidato
 
-
-func _hay_otro_npc_cercano_con_mismo_destino() -> bool:
-	if not creature is Creature:
-		return false
-	var npc_actual := creature as Creature
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if (
-			not nodo is Creature
-			or nodo == npc_actual
-			or not is_instance_valid(nodo)
-			or nodo.is_queued_for_deletion()
-		):
-			continue
-		var otro := nodo as Creature
-		if not otro.is_alive or otro.get_parent() != npc_actual.get_parent():
-			continue
-		if not _comparten_entrada_destino(npc_actual, otro):
-			continue
-		if npc_actual.global_position.distance_to(otro.global_position) <= DISTANCIA_CEDER_PASO_NPC * 2.0:
-			return true
-	return false
+	# Si no hay espacio, detenerse hasta que el personaje que bloquea se aparte.
+	return Vector2.ZERO
 
 
 func _reiniciar_seguro_atasco() -> void:
 	_tiempo_sin_progreso = 0.0
-	_tiempo_cambio_lado = 0.0
 	_direccion_base_atasco = Vector2.ZERO
+	_direccion_desvio_atasco = Vector2.ZERO
 	if creature != null and is_instance_valid(creature):
 		_ultima_posicion_seguro = creature.global_position
 		_seguro_inicializado = true

@@ -18,6 +18,8 @@ var sprite_walk_left: Texture2D = null
 var sprite_walk_back: Texture2D = null
 var _tween_comida: Tween = null
 var _sprite_comida: Sprite2D = null
+var _tween_herramienta: Tween = null
+var _sprite_herramienta: Sprite2D = null
 
 
 func configurar(
@@ -126,6 +128,53 @@ func reproducir_animacion_comer(objeto: Dictionary) -> void:
 	_tween_comida.parallel().tween_property(_sprite_comida, "scale", Vector2(0.18, 0.18), 0.18)
 	_tween_comida.parallel().tween_property(_sprite_comida, "modulate:a", 0.0, 0.18)
 	_tween_comida.tween_callback(_limpiar_sprite_comida)
+
+
+func reproducir_animacion_herramienta(objeto: Dictionary, facing: Vector2) -> void:
+	if not is_instance_valid(visual):
+		return
+	if is_instance_valid(_tween_herramienta) and _tween_herramienta.is_running():
+		_tween_herramienta.kill()
+	if is_instance_valid(_sprite_herramienta):
+		_sprite_herramienta.queue_free()
+		_sprite_herramienta = null
+
+	var textura := ItemIconResolver.obtener_icono(objeto)
+	if textura == null:
+		return
+
+	var direccion := facing.normalized()
+	if direccion == Vector2.ZERO:
+		direccion = Vector2.DOWN
+	_sprite_herramienta = Sprite2D.new()
+	_sprite_herramienta.name = "HerramientaAnimada"
+	_sprite_herramienta.texture = textura
+	_sprite_herramienta.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite_herramienta.scale = Vector2(0.78, 0.78)
+	_sprite_herramienta.z_index = 9
+
+	var origen := sprite.position + Vector2(direccion.x * 10.0, -8.0 + direccion.y * 5.0) if is_instance_valid(sprite) else Vector2(0.0, -20.0)
+	var lado := -1.0 if direccion.x < -0.1 else 1.0
+	_sprite_herramienta.position = origen + Vector2(0.0, 7.0)
+	_sprite_herramienta.rotation = -0.9 * lado
+	visual.add_child(_sprite_herramienta)
+
+	_tween_herramienta = visual.create_tween()
+	_tween_herramienta.set_trans(Tween.TRANS_QUAD)
+	_tween_herramienta.set_ease(Tween.EASE_OUT)
+	_tween_herramienta.tween_property(_sprite_herramienta, "position", origen + Vector2(direccion.x * 7.0, direccion.y * 5.0 - 5.0), 0.14)
+	_tween_herramienta.parallel().tween_property(_sprite_herramienta, "rotation", 0.95 * lado, 0.14)
+	_tween_herramienta.set_ease(Tween.EASE_IN)
+	_tween_herramienta.tween_property(_sprite_herramienta, "position", origen + Vector2(0.0, 4.0), 0.12)
+	_tween_herramienta.parallel().tween_property(_sprite_herramienta, "modulate:a", 0.0, 0.12)
+	_tween_herramienta.tween_callback(_limpiar_sprite_herramienta)
+
+
+func _limpiar_sprite_herramienta() -> void:
+	if is_instance_valid(_sprite_herramienta):
+		_sprite_herramienta.queue_free()
+	_sprite_herramienta = null
+	_tween_herramienta = null
 
 
 func _reproducir_saltito_comiendo() -> void:

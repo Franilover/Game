@@ -3,15 +3,7 @@ extends Control
 class_name CraftingUI
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
-const HTTP_TIMEOUT: float = 20.0
-const MAX_RECETAS_INTENTOS: int = 3
-const RETRASO_REINTENTO_RECETAS: float = 1.5
-
-var _request: HTTPRequest
 var _recetas: Array[Dictionary] = []
-var _cargando: bool = false
-var _intentos_recetas: int = 0
-var _reintento_recetas_programado: bool = false
 @onready var _lista: VBoxContainer = $Margin/Column/Content/RecipeScroll/RecipeList
 @onready var _lista_scroll: ScrollContainer = $Margin/Column/Content/RecipeScroll
 @onready var _estado: Label = $Margin/Column/Status
@@ -28,12 +20,16 @@ var _world_items: GarliaWorldItems = null
 func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 	_inventory = inventario
 	_world_items = world_items
-	if _world_items != null:
+	if _world_items != null and is_instance_valid(_world_items):
 		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_cargado):
 			_world_items.catalogo_cargado.connect(_al_catalogo_cargado)
-		# El catálogo puede haber terminado de cargar antes de la inyección.
-		if not _world_items.catalogo.is_empty():
+		if not _world_items.recetas_cargadas.is_connected(_al_recetas_cargadas):
+			_world_items.recetas_cargadas.connect(_al_recetas_cargadas)
+		_recetas = _world_items.obtener_recetas()
+		if _world_items.recetas_disponibles:
 			call_deferred("_renderizar_recetas")
+	elif is_instance_valid(_estado):
+		_estado.text = "No se ha conectado el catálogo compartido."
 
 
 func _ready() -> void:
@@ -51,128 +47,16 @@ func _ready() -> void:
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
-	# GarliaAuth restaura la sesión de forma asíncrona al iniciar el juego.
-	# Esperamos ese resultado para no consultar recetas con un contexto
-	# anónimo mientras la sesión del jugador todavía se está recuperando.
-	if GarliaAuth.esta_restaurando_sesion():
-		if not GarliaAuth.session_restore_finished.is_connected(_al_finalizar_restauracion_auth):
-			GarliaAuth.session_restore_finished.connect(_al_finalizar_restauracion_auth, CONNECT_ONE_SHOT)
-	else:
-		_cargar_recetas()
+	# Las recetas se cargan y cachean desde GarliaWorldItems.
 
 
-func _al_finalizar_restauracion_auth() -> void:
-	if is_inside_tree():
-		_cargar_recetas()
-
-
-
-
-
-func _cargar_recetas() -> void:
-	if _cargando or _reintento_recetas_programado:
-		return
-
-	if _request == null or not is_instance_valid(_request):
-		_request = HTTPRequest.new()
-		_request.timeout = HTTP_TIMEOUT
-		add_child(_request)
-		_request.request_completed.connect(_al_recibir_recetas)
-
-	_cargando = true
-	_intentos_recetas += 1
-
-	var url := (
-		str(GarliaAuth.SUPABASE_URL)
-		+ "/rest/v1/recetas_game"
-		+ "?select=id,nombre,descripcion,categoria,ingredientes,resultado,propiedades"
-		+ "&order=nombre.asc"
-	)
-
-	# La clave publicable identifica el proyecto mediante apikey; no es un JWT.
-	# Authorization solo debe contener el JWT real de una sesión iniciada.
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-	var access_token: String = GarliaAuth.access_token
-	if not access_token.is_empty():
-		headers.append("Authorization: Bearer " + access_token)
-
-	var resultado := _request.request(url, headers, HTTPClient.METHOD_GET)
-
-	if resultado != OK:
-		_cargando = false
-		_estado.text = "Conexión inestable. Reintentando recetas..."
-		push_error("Crafting[%s]: no se pudo iniciar GET de recetas → %s" % [str(get_instance_id()), str(resultado)])
-		call_deferred("_programar_reintento_recetas", "inicio de solicitud " + str(resultado))
-	else:
-		_estado.text = "Consultando recetas..."
-		print("Crafting[%s]: GET recetas iniciado. intento=%d/%d Auth=%s" % [str(get_instance_id()), _intentos_recetas, MAX_RECETAS_INTENTOS, str(GarliaAuth.esta_autenticado())])
-
-
-func _al_recibir_recetas(
-	resultado: int,
-	response_code: int,
-	_headers: PackedStringArray,
-	body: PackedByteArray
-) -> void:
-	_cargando = false
-	var texto_respuesta := body.get_string_from_utf8()
-	print("Crafting[%s]: callback recetas result=%d HTTP=%d bytes=%d" % [str(get_instance_id()), resultado, response_code, body.size()])
-
-	if resultado != HTTPRequest.RESULT_SUCCESS:
-		_estado.text = "Conexión inestable. Reintentando recetas..."
-		push_error("Crafting[%s]: fallo de red recetas result=%d intento=%d/%d" % [str(get_instance_id()), resultado, _intentos_recetas, MAX_RECETAS_INTENTOS])
-		call_deferred("_programar_reintento_recetas", "resultado de red " + str(resultado))
-		return
-
-	if response_code < 200 or response_code >= 300:
-		if response_code == 429 or response_code >= 500:
-			_estado.text = "Supabase está tardando. Reintentando recetas..."
-			push_error("Crafting[%s]: Supabase respondió HTTP %d; intento=%d/%d" % [str(get_instance_id()), response_code, _intentos_recetas, MAX_RECETAS_INTENTOS])
-			call_deferred("_programar_reintento_recetas", "HTTP " + str(response_code))
-		else:
-			_estado.text = "No se pudieron cargar las recetas (HTTP " + str(response_code) + ")."
-			push_error("Crafting[%s]: fallo HTTP recetas: %s" % [str(get_instance_id()), texto_respuesta.left(500)])
-		return
-
-	var json := JSON.new()
-	var error_parseo := json.parse(texto_respuesta)
-	if error_parseo != OK:
-		_estado.text = "Respuesta de recetas inválida."
-		push_error("Crafting[%s]: JSON inválido: %s" % [str(get_instance_id()), texto_respuesta.left(500)])
-		return
-	if not json.data is Array:
-		_estado.text = "Respuesta de recetas inválida."
-		push_error("Crafting[%s]: se esperaba Array y llegó %s" % [str(get_instance_id()), type_string(typeof(json.data))])
-		return
-
-	_intentos_recetas = 0
+func _al_recetas_cargadas(nuevas_recetas: Array) -> void:
 	_recetas.clear()
-	for fila_variant in json.data as Array:
-		if fila_variant is Dictionary:
-			_recetas.append((fila_variant as Dictionary).duplicate(true))
-
-	print("Crafting[%s]: recetas recibidas=%d; filas JSON=%d" % [str(get_instance_id()), _recetas.size(), (json.data as Array).size()])
+	for receta_variant in nuevas_recetas:
+		if receta_variant is Dictionary:
+			_recetas.append((receta_variant as Dictionary).duplicate(true))
 	_renderizar_recetas()
 
-
-func _programar_reintento_recetas(motivo: String) -> void:
-	if _reintento_recetas_programado or _intentos_recetas >= MAX_RECETAS_INTENTOS:
-		if _intentos_recetas >= MAX_RECETAS_INTENTOS:
-			_estado.text = "No se pudo conectar con Supabase. Intenta abrir Crafteo de nuevo."
-			print("Crafting[%s]: agotados los intentos de carga de recetas (%s)." % [str(get_instance_id()), motivo])
-		return
-
-	_reintento_recetas_programado = true
-	var espera := RETRASO_REINTENTO_RECETAS * float(_intentos_recetas)
-	print("Crafting[%s]: reintentando recetas → intento %d/%d en %.1fs (%s)" % [str(get_instance_id()), _intentos_recetas + 1, MAX_RECETAS_INTENTOS, espera, motivo])
-	await get_tree().create_timer(espera).timeout
-	_reintento_recetas_programado = false
-	if not is_inside_tree() or not _recetas.is_empty():
-		return
-	_cargar_recetas()
 
 func _al_catalogo_cargado(_items: Array) -> void:
 	_renderizar_recetas()

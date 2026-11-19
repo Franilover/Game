@@ -61,6 +61,17 @@ func configurar(
 	entity_manager = nuevo_entity_manager
 	admin_player_editor = nuevo_admin_player_editor
 	world_items = nuevo_world_items
+	_conectar_catalogo_objetos()
+
+
+func _conectar_catalogo_objetos() -> void:
+	if world_items == null or not is_instance_valid(world_items):
+		return
+	if not world_items.catalogo_cargado.is_connected(_al_datos_disponibles):
+		world_items.catalogo_cargado.connect(_al_datos_disponibles)
+	if world_items.catalogo_disponible:
+		call_deferred("_al_datos_disponibles", world_items.obtener_catalogo())
+
 
 func _ready() -> void:
 	layer = 100
@@ -78,8 +89,7 @@ func _ready() -> void:
 			_al_datos_disponibles
 		)
 
-	if world_items != null:
-		world_items.catalogo_cargado.connect(_al_datos_disponibles)
+	_conectar_catalogo_objetos()
 
 
 func _input(event: InputEvent) -> void:
@@ -322,7 +332,10 @@ func _actualizar_sugerencias() -> void:
 		return
 
 	if _es_comando_con_sugerencias(texto, COMANDO_GIVE):
-		if world_items.catalogo.is_empty():
+		if world_items == null or not is_instance_valid(world_items):
+			_ocultar_sugerencias()
+			return
+		if not world_items.catalogo_disponible:
 			world_items.cargar_catalogo()
 
 		var nombre_parcial: String = _extraer_argumento(texto, COMANDO_GIVE)
@@ -603,7 +616,9 @@ func _deduplicar_nombres(
 
 func _obtener_nombres_objetos() -> Array[String]:
 	var nombres: Array[String] = []
-	var catalogo: Array[Dictionary] = world_items.catalogo
+	if world_items == null or not is_instance_valid(world_items):
+		return nombres
+	var catalogo: Array[Dictionary] = world_items.obtener_catalogo()
 
 	for item in catalogo:
 		var nombre: String = str(

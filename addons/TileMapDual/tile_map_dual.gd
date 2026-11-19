@@ -60,6 +60,15 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_changed()
 
+	# In-game, ReinoTorres and WorldTerrainVisual explicitly initialize their
+	# saved cells after the renderer is ready. The scene editor has no such
+	# runtime owner, so initialize the Dual Grid here as well; otherwise the
+	# invisible source TileMap remains the only serialized layer and the
+	# editor shows stale/partial terrain instead of the actual composed map.
+	if Engine.is_editor_hint() and is_instance_valid(_display):
+		reconstruir_renderer_dual()
+		_display.update(get_used_cells())
+
 
 func _notification(what: int) -> void:
 	# Leaving the tree can be temporary, so release watcher state only on deletion.

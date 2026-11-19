@@ -3,6 +3,9 @@ extends Node
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const DialogueSystemScript = preload("res://scripts/gameplay/dialogue_system.gd")
 const NPCVoiceProfileScript = preload("res://scripts/gameplay/npc_voice_profile.gd")
+const NPCConversationSystemScript = preload("res://scripts/world/npc_conversation_system.gd")
+const CutsceneDirectorScript = preload("res://scripts/gameplay/cutscene_director.gd")
+const PlayerScene = preload("res://scenes/characters/player.tscn")
 
 
 func _ready() -> void:
@@ -26,6 +29,101 @@ func _run() -> void:
 	if voz_darven != "¿Te apetece hablar?":
 		errores.append("El perfil común impuso un modismo que no corresponde a todas las voces.")
 
+	# Las escenas de Ivo y Nima deben avanzar por consentimiento y hechos,
+	# no por amenazas o conflictos que ninguno de los dos ha provocado.
+	var conversaciones: Array = NPCConversationSystemScript.CONVERSACIONES_HABITANTES
+	var investigacion_ivo: Dictionary = {}
+	var contacto_saira_ivo: Dictionary = {}
+	for conversacion_variant in conversaciones:
+		if not conversacion_variant is Dictionary:
+			continue
+		var conversacion := conversacion_variant as Dictionary
+		match str(conversacion.get("clave", "")):
+			"nima_ivo_investigacion":
+				investigacion_ivo = conversacion
+			"saira_ivo_contacto":
+				contacto_saira_ivo = conversacion
+	if investigacion_ivo.is_empty() or contacto_saira_ivo.is_empty():
+		errores.append("No se encontraron las conversaciones de Ivo con Nima y Saira.")
+	else:
+		for etapa_clave in ["lineas", "lineas_siguientes", "lineas_tercera_etapa"]:
+			var etapa_variant: Variant = investigacion_ivo.get(etapa_clave, [])
+			if not etapa_variant is Array:
+				continue
+			var textos: Array[String] = []
+			for linea_variant in etapa_variant as Array:
+				if linea_variant is Dictionary:
+					textos.append(str((linea_variant as Dictionary).get("texto", "")))
+			var intercambio := " ".join(textos).to_lower()
+			if intercambio.contains("caso de estudio") or intercambio.contains("me voy"):
+				errores.append("La etapa %s de Nima e Ivo inventa una amenaza o una ofensa." % etapa_clave)
+		if not str(investigacion_ivo.get("lineas", [])).contains("te cuento lo que recuerde"):
+			errores.append("Ivo no responde con naturalidad a la petición respetuosa de Nima.")
+		var contacto_lineas: Array = contacto_saira_ivo.get("lineas", [])
+		var contacto_texto := ""
+		for linea_variant in contacto_lineas:
+			if linea_variant is Dictionary:
+				contacto_texto += " " + str((linea_variant as Dictionary).get("texto", ""))
+		if contacto_texto.contains("todo Torres está hablando de mí"):
+			errores.append("Ivo supone que todo el pueblo habla de él sin que la escena lo justifique.")
+		if not contacto_texto.contains("¿Quién te lo comentó?"):
+			errores.append("Ivo no pregunta de forma concreta por el origen de la información.")
+
+	# Las cinemáticas también deben evitar frases grandilocuentes que no
+	# corresponden a la situación concreta.
+	var reuniones: Array = NPCConversationSystemScript.CONVERSACIONES_REUNION_CASTILLO
+	var escena_mara_darven: Dictionary = {}
+	var escena_ivo_elian: Dictionary = {}
+	for reunion_variant in reuniones:
+		if not reunion_variant is Dictionary:
+			continue
+		var reunion := reunion_variant as Dictionary
+		match str(reunion.get("clave", "")):
+			"noche_mara_darven_puerta":
+				escena_mara_darven = reunion
+			"noche_ivo_elian_mesa":
+				escena_ivo_elian = reunion
+	if escena_mara_darven.is_empty() or escena_ivo_elian.is_empty():
+		errores.append("No se encontraron las cinemáticas de Mara-Darven e Ivo-Elian.")
+	else:
+		var escena_mara_texto := str(escena_mara_darven.get("lineas", []))
+		if escena_mara_texto.contains("entregues la vida de alguien") or escena_mara_texto.contains("No te pediré que mientas"):
+			errores.append("La escena de Mara y Darven dramatiza innecesariamente una petición de información.")
+		var escena_ivo_texto := str(escena_ivo_elian.get("lineas", []))
+		if escena_ivo_texto.contains("todos cambiaran sus planes por mí") or escena_ivo_texto.contains("la comida no se va a marchar"):
+			errores.append("La escena de Ivo y Elian conserva una respuesta demasiado escrita para la situación.")
+
+	# Las cadenas con etapas son historia; reuniones y sucesos diarios
+	# siguen siendo opcionales y pueden volver a aparecer.
+	var historia_principal: Dictionary = NPCConversationSystemScript.CONVERSACIONES[0]
+	var historia_local: Dictionary = NPCConversationSystemScript.CONVERSACIONES_HABITANTES[0]
+	var charla_reunion: Dictionary = NPCConversationSystemScript.CONVERSACIONES_REUNION_CASTILLO[0]
+	var acontecimiento: Dictionary = NPCConversationSystemScript.ACONTECIMIENTOS_DIARIOS[0]
+	if not NPCConversationSystemScript.es_conversacion_historia(historia_principal):
+		errores.append("Las cadenas principales deben clasificarse como historia.")
+	if not NPCConversationSystemScript.es_conversacion_historia(historia_local):
+		errores.append("Las historias locales de habitantes deben clasificarse como historia.")
+	# Las historias de Ivo forman una cadena: cada hilo debe terminar sus
+	# tres etapas antes de desbloquear el siguiente, no basta con iniciarlo.
+	var requisito_nima: Dictionary = investigacion_ivo.get("requiere_progreso", {})
+	var requisito_saira: Dictionary = contacto_saira_ivo.get("requiere_progreso", {})
+	if str(requisito_nima.get("clave", "")) != "mara_ivo_apoyo" or int(requisito_nima.get("etapa", 0)) != 3:
+		errores.append("La investigación de Nima debe esperar a que concluya la historia de apoyo de Mara e Ivo.")
+	if str(requisito_saira.get("clave", "")) != "nima_ivo_investigacion" or int(requisito_saira.get("etapa", 0)) != 3:
+		errores.append("El contacto de Saira debe esperar a que concluya la investigación de Nima e Ivo.")
+	if not NPCConversationSystemScript.es_conversacion_opcional(charla_reunion):
+		errores.append("Las reuniones ambientales deben ser opcionales.")
+	if not NPCConversationSystemScript.es_conversacion_opcional(acontecimiento):
+		errores.append("Los acontecimientos diarios deben ser opcionales.")
+
+	# Las historias pueden esperar a un día y una franja concretos.
+	var historia_programada := historia_local.duplicate(true)
+	historia_programada["activacion_historia"] = {"anio": 2, "dia": 7, "hora_desde": 9.0, "hora_hasta": 12.0}
+	if not NPCConversationSystemScript.cumple_activacion_historia(historia_programada, {"anio": 2, "dia": 7, "hora_del_dia": 10.0}):
+		errores.append("La historia programada no se activa dentro de su día y horario.")
+	if NPCConversationSystemScript.cumple_activacion_historia(historia_programada, {"anio": 2, "dia": 8, "hora_del_dia": 10.0}):
+		errores.append("La historia programada se activa fuera del día acordado.")
+
 	var npc := CreatureScene.instantiate() as Creature
 	var dialogo := DialogueSystemScript.new() as DialogueSystem
 	if npc == null or dialogo == null:
@@ -34,6 +132,106 @@ func _run() -> void:
 
 	add_child(npc)
 	add_child(dialogo)
+	var conversacion_visual := NPCConversationSystemScript.new() as NPCConversationSystem
+	add_child(conversacion_visual)
+	npc.nombre_individual = "Mara"
+	conversacion_visual._npc_por_nombre = {"mara": npc}
+	conversacion_visual._conversacion_activa = {
+		"clave": "historia_dialogo_compartido_test",
+		"tipo_contenido": "historia",
+		"lineas": [
+			{"npc": "mara", "texto": "Esta escena debe usar el diálogo normal."},
+			{"npc": "ivo", "texto": "Y conservar el cambio de hablante."}
+		],
+		"fondo": "res://assets/art/backgrounds/historia_test.png"
+	}
+	var datos_historia := conversacion_visual.obtener_dialogo_historia("historia_dialogo_compartido_test")
+	var lineas_historia: Array = datos_historia.get("lineas", [])
+	if lineas_historia.size() != 2:
+		errores.append("La historia no se convirtió en una secuencia completa de diálogo compartido.")
+	elif str(lineas_historia[0].get("hablante", "")) != "Mara" or str(lineas_historia[1].get("hablante", "")) != "ivo":
+		errores.append("La conversión de historia no conservó los hablantes de cada intervención.")
+	if str(datos_historia.get("fondo", "")) != "res://assets/art/backgrounds/historia_test.png":
+		errores.append("La conversión de historia perdió la referencia opcional a su imagen de fondo.")
+	conversacion_visual._conversacion_activa.clear()
+	var burbuja_prueba := conversacion_visual._obtener_burbuja(npc)
+	var texto_burbuja := burbuja_prueba.get_node_or_null("Text") as Label
+	if texto_burbuja == null or texto_burbuja.has_theme_font_override("font"):
+		errores.append("Las burbujas ambientales deben heredar la tipografía normal, no Pixelgrafia.")
+	if ResourceLoader.exists("res://assets/art/UI/Menus/button_normal.png"):
+		if not burbuja_prueba.get_theme_stylebox("panel") is StyleBoxTexture:
+			errores.append("Las burbujas ambientales no usan el fondo button_normal.")
+	# Ivo, Mara y Nima deben recorrer la misma política de opciones que
+	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
+	dialogo._fuente = npc
+	dialogo._dialogo_en_transito = false
+	for nombre_iniciativa in ["Elian", "Bruna", "Darven", "Saira", "Narel", "Mara", "Ivo", "Nima", "Abel", "Liam"]:
+		npc.nombre_individual = nombre_iniciativa
+		var iniciativa_amigo := conversacion_visual._crear_dialogo_iniciativa_amigo(
+			npc,
+			{"anio": 1, "dia": 1, "hora_del_dia": 12.0}
+		)
+		var opciones_iniciativa: Array = iniciativa_amigo.get("respuestas", [])
+		if not bool(iniciativa_amigo.get("_continuar_menu_social", false)):
+			errores.append("%s no declara continuidad del menú social en su iniciativa." % nombre_iniciativa)
+		if not dialogo._debe_usar_menu_social(iniciativa_amigo, true, false):
+			errores.append("%s no conserva el menú común después de iniciar el diálogo." % nombre_iniciativa)
+		if opciones_iniciativa.size() < 3:
+			errores.append("%s no recibió las opciones iniciales de su iniciativa." % nombre_iniciativa)
+		else:
+			for indice_opcion in range(3):
+				if bool((opciones_iniciativa[indice_opcion] as Dictionary).get("despedida", false)):
+					errores.append("%s termina prematuramente una respuesta de conversación amistosa." % nombre_iniciativa)
+		var respuestas_mision := conversacion_visual._crear_respuestas_iniciativa(npc, "mision", false)
+		for respuesta_mision in respuestas_mision:
+			if not bool(respuesta_mision.get("despedida", false)):
+				errores.append("El seguimiento de misión de %s debe conservar su cierre explícito." % nombre_iniciativa)
+
+	# Una rutina en tránsito ya no fuerza el cierre automático ni suprime las opciones.
+	dialogo._dialogo_en_transito = dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"})
+	if dialogo._dialogo_en_transito or not dialogo._debe_usar_menu_social({"clave": "rutina_en_transito"}, false, false):
+		errores.append("Un NPC que camina sigue perdiendo el menú social y sus opciones.")
+	dialogo._dialogo_en_transito = dialogo._es_dialogo_en_transito({"_dialogo_breve_sin_opciones": true})
+	if not dialogo._dialogo_en_transito or dialogo._debe_usar_menu_social({"_dialogo_breve_sin_opciones": true}, false, false):
+		errores.append("El modo breve explícito no conserva su comportamiento especial.")
+	dialogo._dialogo_en_transito = false
+	if dialogo._debe_usar_menu_social({"tipo_contenido": "historia"}, false, false):
+		errores.append("Una escena de historia terminó mostrando el menú social casual.")
+	if not dialogo._debe_usar_menu_social({"clave": "principal"}, false, false):
+		errores.append("Un diálogo cotidiano perdió el menú social compartido.")
+
+	npc.nombre_individual = "Ivo"
+	var recuerdo_ivo := dialogo._crear_dialogo_recuerdo_social({
+		"tipo": "tema_conversacion",
+		"titulo": "los viajes de Saira",
+		"frase_jugador": "¿Crees que Saira debería viajar menos?",
+		"respuesta_npc": "No quiero decidir eso por ella."
+	})
+	var texto_recuerdo_ivo := str(recuerdo_ivo.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_recuerdo_ivo.contains("los viajes de Saira") or not texto_recuerdo_ivo.contains("¿Cómo te fue con eso al final?"):
+		errores.append("Ivo no retoma el tema anterior con una pregunta cotidiana.")
+	if texto_recuerdo_ivo.contains("Dijiste:") or texto_recuerdo_ivo.contains("¿Crees que Saira debería viajar menos?"):
+		errores.append("Ivo repite literalmente la frase anterior en vez de continuar la charla.")
+	npc.nombre_individual = "Mara"
+	var recuerdo_mara := dialogo._crear_dialogo_recuerdo_social({
+		"tipo": "tema_conversacion",
+		"titulo": "su vida en Torres",
+		"frase_jugador": "Me gusta este pueblo.",
+		"respuesta_npc": "Me alegra que te sientas a gusto."
+	})
+	var texto_recuerdo_mara := str(recuerdo_mara.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_recuerdo_mara.contains("Si todavía quieres hablar de eso, te escucho"):
+		errores.append("Mara no conserva su forma prudente de retomar un tema personal.")
+	npc.nombre_individual = "Nima"
+	var recuerdo_nima := dialogo._crear_dialogo_recuerdo_social({
+		"tipo": "tema_conversacion",
+		"titulo": "las observaciones Oris",
+		"frase_jugador": "Vi algo extraño cerca del río.",
+		"respuesta_npc": "Habría que comprobarlo."
+	})
+	var texto_recuerdo_nima := str(recuerdo_nima.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_recuerdo_nima.contains("¿Averiguaste algo más?"):
+		errores.append("Nima no formula una continuación coherente con su curiosidad.")
 	npc.set_meta("rutina_en_transito", true)
 	dialogo._fuente = npc
 
@@ -59,8 +257,10 @@ func _run() -> void:
 
 	if dialogo._es_dialogo_en_transito({"clave": "rutina_contextual"}):
 		errores.append("Una conversación cotidiana se clasificó como diálogo de tránsito por la marca de movimiento.")
-	if not dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"}):
-		errores.append("Un diálogo de tránsito explícito dejó de reconocerse.")
+	if dialogo._es_dialogo_en_transito({"clave": "rutina_en_transito"}):
+		errores.append("Una rutina en tránsito siguió tratándose como cierre automático sin declarar ese modo.")
+	if not dialogo._es_dialogo_en_transito({"_dialogo_breve_sin_opciones": true}):
+		errores.append("Un diálogo breve explícito dejó de reconocerse.")
 
 	# Las frases de rutina distinguen desplazarse de estar trabajando.
 	npc.nombre_individual = "Bruna"
@@ -91,10 +291,25 @@ func _run() -> void:
 	dialogo._contexto_rutina_conversacion["actividad"] = "caminar"
 
 	dialogo._contexto_rutina_conversacion = {
+		"actividad": "",
+		"destino": "la plaza",
+		"en_transito": false
+	}
+	npc.nombre_individual = "Bruna"
+	var despedida_bruna_libre := dialogo._obtener_reaccion_despedida_rutina()
+	if despedida_bruna_libre.contains("terminar esto") or despedida_bruna_libre.contains("tengo que"):
+		errores.append("Bruna afirma que debe terminar un trabajo aunque no tiene una actividad laboral activa.")
+	npc.nombre_individual = "Elian"
+	var despedida_elian_libre := dialogo._obtener_reaccion_despedida_rutina()
+	if despedida_elian_libre.contains("No interrumpes") or despedida_elian_libre.contains("vuelva a tener un momento"):
+		errores.append("Elian responde como si estuviera ocupado aunque no tiene una tarea activa.")
+
+	dialogo._contexto_rutina_conversacion = {
 		"actividad": "forjar",
 		"destino": "la forja",
 		"en_transito": false
 	}
+	npc.nombre_individual = "Bruna"
 	var despedida_trabajando := dialogo._obtener_reaccion_despedida_rutina()
 	if not despedida_trabajando.contains("terminar esta pieza") or despedida_trabajando.contains("No interrumpes"):
 		errores.append("La despedida contradice el contexto de Bruna mientras trabaja en una pieza.")
@@ -113,6 +328,50 @@ func _run() -> void:
 		errores.append("La despedida de un NPC que camina dentro del edificio anunció un destino exterior.")
 	if not dialogo._obtener_frase_despedida_jugador_rutina().contains("por aquí"):
 		errores.append("La despedida del jugador no reconoce que el NPC camina dentro del edificio.")
+
+	# Las opciones sociales no deben presentar caminar o pasear como trabajo.
+	npc.nombre_individual = "Bruna"
+	npc.datos["actividad_actual"] = "caminar"
+	dialogo._fuente = npc
+	var trabajo_caminando := dialogo._crear_opcion_trabajo_social()
+	if str(trabajo_caminando.get("respuesta", "")).contains("caminar") or str(trabajo_caminando.get("respuesta", "")).contains("pasear"):
+		errores.append("La pregunta por el trabajo presenta un desplazamiento como una obligación.")
+	var ayuda_caminando := dialogo._obtener_respuesta_ayuda_npc()
+	if ayuda_caminando.contains("estoy con caminar") or ayuda_caminando.contains("estoy con pasear"):
+		errores.append("La respuesta sobre ayuda presenta caminar como una tarea laboral.")
+	npc.nombre_individual = "Nima"
+	npc.datos["actividad_actual"] = "caminar"
+	var trabajo_nima_caminando := dialogo._crear_opcion_trabajo_social()
+	if str(trabajo_nima_caminando.get("respuesta", "")).contains("observando algunos fenómenos Oris"):
+		errores.append("Nima afirma estar observando fenómenos Oris aunque sólo está caminando.")
+	npc.datos["actividad_actual"] = "investigar_oris"
+	var trabajo_nima_investigando := dialogo._crear_opcion_trabajo_social()
+	if not str(trabajo_nima_investigando.get("respuesta", "")).contains("investigando fenómenos Oris"):
+		errores.append("Nima no refleja su investigación actual al hablar de sus estudios.")
+	npc.nombre_individual = "Bruna"
+	npc.datos["actividad_actual"] = "forjar"
+	var trabajo_forjando := dialogo._crear_opcion_trabajo_social()
+	if not str(trabajo_forjando.get("respuesta", "")).contains("trabajando en la forja"):
+		errores.append("La pregunta por el trabajo no traduce la actividad de forjar a una frase natural.")
+	var ayuda_forjando := dialogo._obtener_respuesta_ayuda_npc()
+	if not ayuda_forjando.contains("trabajando en la forja"):
+		errores.append("La respuesta sobre ayuda no conserva la actividad laboral real.")
+	# Preguntar por el día debe reflejar la actividad actual y el momento.
+	npc.nombre_individual = "Bruna"
+	npc.datos["actividad_actual"] = "forjar"
+	var dia_forjando := dialogo._crear_opcion_dia_social()
+	if not str(dia_forjando.get("respuesta", "")).contains("trabajando en la forja"):
+		errores.append("La respuesta sobre el día ignora que Bruna está trabajando en la forja.")
+	npc.datos["actividad_actual"] = "caminar"
+	var dia_caminando := dialogo._crear_opcion_dia_social()
+	if str(dia_caminando.get("respuesta", "")).contains("estoy caminando"):
+		errores.append("La respuesta sobre el día presenta caminar como una tarea laboral.")
+	npc.datos["actividad_actual"] = "pasear"
+	if not dialogo._obtener_descripcion_actividad_dialogo("pasear").is_empty():
+		errores.append("Pasear debe quedar fuera de las descripciones de trabajo.")
+	if dialogo._obtener_descripcion_actividad_dialogo("descansar") != "":
+		errores.append("Descansar no debe presentarse como una tarea laboral.")
+
 
 	# Al cerrar el selector Hablar/Preguntar debe reaparecer el menú social
 	# principal, incluso después de una conversación cotidiana.
@@ -167,6 +426,60 @@ func _run() -> void:
 	if dialogo._respuestas.size() != 4 or dialogo._respuestas_container.get_child_count() != 4:
 		errores.append("El menú social no volvió tras responder a un tema cotidiano.")
 
+	# Una escena debe devolver la cámara, el estado de locomoción y el bloqueo modal.
+	var jugador_prueba := PlayerScene.instantiate() as Player
+	var camara_prueba := Camera2D.new()
+	var director_prueba := CutsceneDirectorScript.new() as CutsceneDirector
+	add_child(jugador_prueba)
+	add_child(camara_prueba)
+	add_child(director_prueba)
+	await get_tree().process_frame
+	camara_prueba.zoom = Vector2(2.0, 2.0)
+	director_prueba.configurar(jugador_prueba, dialogo, camara_prueba)
+	# Un NPC sin la metadata opcional cinematica_npc_activa debe poder
+	# congelarse y restaurarse sin provocar errores de Object.get_meta().
+	if npc.has_meta("cinematica_npc_activa"):
+		npc.remove_meta("cinematica_npc_activa")
+	director_prueba._guardar_estado_npc(npc)
+	if not npc.has_meta("cinematica_npc_activa"):
+		errores.append("La captura no marcó al NPC durante la cinemática.")
+	director_prueba._restaurar_estado_temporal()
+	if npc.has_meta("cinematica_npc_activa"):
+		errores.append("La restauración dejó metadata cinematica_npc_activa que antes no existía.")
+	if not npc.has_meta("rutina_en_transito") or not bool(npc.get_meta("rutina_en_transito")):
+		errores.append("La restauración no conservó la metadata previa de la rutina del NPC.")
+	# Incluso si un recurso antiguo solicita el modo en vivo, se normaliza a escena congelada.
+	if director_prueba._normalizar_modo_cinematica("en_vivo") != "planeada":
+		errores.append("El director todavía permite cinematográficas en tiempo real.")
+	for ruta_recurso in [
+		"res://resources/cutscenes/intercambio_social.tres",
+		"res://resources/cutscenes/intercambio_interrumpido.tres",
+		"res://resources/cutscenes/intercambio_con_tercero.tres",
+		"res://resources/cutscenes/reunion_trio.tres"
+	]:
+		var secuencia := load(ruta_recurso) as CutsceneSequence
+		if not is_instance_valid(secuencia) or secuencia.modo != "planeada":
+			errores.append("La secuencia %s no está configurada como reproducción congelada." % ruta_recurso)
+	jugador_prueba.velocity = Vector2(25.0, 0.0)
+	jugador_prueba.state = Player.State.RUN
+	camara_prueba.global_position = Vector2(600.0, 400.0)
+	camara_prueba.zoom = Vector2(0.7, 0.7)
+	director_prueba._ocupado = true
+	director_prueba._clave_actual = "test_restauracion"
+	director_prueba._modo_cinematica = "en_vivo"
+	director_prueba.add_to_group("modal_ui")
+	director_prueba._finalizar()
+	if director_prueba.esta_activo() or director_prueba.is_in_group("modal_ui"):
+		errores.append("La finalización de la cinemática dejó activo el bloqueo modal.")
+	if camara_prueba.global_position.distance_to(jugador_prueba.global_position) > 0.01 or camara_prueba.zoom.distance_to(Vector2(2.0, 2.0)) > 0.01:
+		errores.append("La finalización no devolvió la cámara y su zoom al jugador.")
+	if jugador_prueba.velocity.length_squared() > 0.01 or jugador_prueba.state != Player.State.IDLE:
+		errores.append("La finalización no restableció la locomoción del jugador.")
+
+	conversacion_visual.queue_free()
+	director_prueba.queue_free()
+	camara_prueba.queue_free()
+	jugador_prueba.queue_free()
 	npc.queue_free()
 	dialogo.queue_free()
 	await get_tree().process_frame

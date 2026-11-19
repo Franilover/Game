@@ -1056,6 +1056,16 @@ func reproducir_animacion_comer(objeto: Dictionary) -> void:
 	visual_controller.reproducir_animacion_comer(objeto)
 
 
+func reproducir_animacion_herramienta(objeto: Dictionary, objetivo_global: Vector2) -> void:
+	var direccion := global_position.direction_to(objetivo_global)
+	if direccion.length_squared() > 0.01:
+		facing = direccion.normalized()
+		_update_dir_marker()
+		_update_visual()
+	if is_instance_valid(visual_controller):
+		visual_controller.reproducir_animacion_herramienta(objeto, facing)
+
+
 func _update_visual() -> void:
 	visual_controller.actualizar_estado(state, facing)
 

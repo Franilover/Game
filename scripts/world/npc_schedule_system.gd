@@ -15,6 +15,11 @@ const COSTE_CAMINO_TIERRA := 1.0
 const COSTE_OTRO_TERRENO := 1.55
 # Espera breve para agrupar varios cambios de posición/tamaño en una sola reconstrucción.
 const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
+# Saira coordina el mercado; dos de los otros vendedores se turnan por franja.
+const VENDEDORES_MERCADO_ROTATIVOS: Array[String] = ["bruna", "elian", "darven", "narel", "nima", "mara", "ivo"]
+const INICIO_TURNO_MERCADO := 9 * 60
+const CAMBIO_TURNO_MERCADO := 14 * 60
+const FIN_TURNO_MERCADO := 18 * 60
 
 # Coordenadas locales relativas al origen de cada edificio. El destino real
 # se sitúa 28 px al sur de este punto, en el umbral de la entrada.
@@ -186,8 +191,19 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc.is_alive:
 			continue
 		_actualizar_mente_npc(npc, minutos, tiempo)
-		if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
-			continue
+		var es_hora_de_dormir := minutos >= 21 * 60 or minutos < 6 * 60
+		if es_hora_de_dormir:
+			# Las conversaciones ambientales también podían retener al NPC antes
+			# de que el planificador aplicara su rutina de regreso al hogar.
+			if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+				npc.remove_meta("_conversacion_ambiental_activa")
+				var movimiento_nocturno := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+				if is_instance_valid(movimiento_nocturno):
+					movimiento_nocturno.detener_por_rutina()
+				npc.set_meta("rutina_en_transito", false)
+				npc.set_meta("rutina_firma", "")
+			if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
+				_finalizar_actividad_social(npc)
 		if _actualizar_actividad_social(npc, delta):
 			continue
 		if _actualizar_objetivo_social_npc(npc, delta, minutos):
@@ -489,7 +505,11 @@ func _aplicar_preferencia_terreno(malla: AStarGrid2D, celda: Vector2i, posicion_
 
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
-	if bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
+	var horario_nocturno := minutos >= 21 * 60 or minutos < 6 * 60
+	if horario_nocturno and (bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false))):
+		# Cancela acercamientos y charlas iniciadas antes de la hora de dormir.
+		_finalizar_actividad_social(npc)
+	elif bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
 		return
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
@@ -540,9 +560,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			"activo": true
 		}
 		npc.set_meta("evento_comunitario_actual", clave_evento)
+		npc.set_meta("evento_comunitario_datos", evento_comunitario.duplicate(true))
 		_notificar_evento_comunitario(evento_comunitario)
 	else:
 		npc.set_meta("evento_comunitario_actual", "")
+		npc.remove_meta("evento_comunitario_datos")
 
 	# El encuentro de tres sólo puede usar tiempo libre que no esté reservado
 	# por invitaciones ni acontecimientos comunitarios.
@@ -550,15 +572,47 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if not encuentro_trio.is_empty():
 		rutina = encuentro_trio
 
+	# En horario comercial, algunos vecinos cubren puestos por turnos.
+	# Los trabajos esenciales y los eventos comunitarios conservan prioridad.
+	rutina = _aplicar_turno_comercio_rotativo(npc, rutina, dia_semana, minutos)
+
 	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
 
-	# Reunión social nocturna: sólo invita a quienes ya terminaron sus tareas.
-	# La asistencia rota cada noche y no sustituye trabajo, guardias ni planes aceptados.
-	var reunion_castillo := _obtener_rutina_reunion_castillo(npc, rutina, minutos)
-	if not reunion_castillo.is_empty():
-		rutina = reunion_castillo
+	# Prioridad nocturna global: ninguna rutina de ocio, evento comunitario,
+	# invitación o encuentro puede concentrar habitantes en la plaza/castillo.
+	# Cada NPC vuelve a su hogar para dormir; los turnos laborales explícitos
+	# se mantienen únicamente si están marcados como trabajo/guardia.
+	var hora_nocturna := minutos >= 21 * 60 or minutos < 6 * 60
+	if hora_nocturna:
+		var actividad_previa := str(rutina.get("actividad_clave", "")).strip_edges().to_lower()
+		var es_turno_esencial := (
+			actividad_previa.contains("trabaj")
+			or actividad_previa.contains("guard")
+			or actividad_previa.contains("vigilar")
+			or actividad_previa.contains("investig")
+		)
+		if not es_turno_esencial:
+			var hogar_nocturno := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
+			if not POSICIONES.has(hogar_nocturno):
+				hogar_nocturno = obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
+			rutina = {
+				"clave": "dormir_en_hogar",
+				"ubicacion_clave": hogar_nocturno,
+				"actividad_clave": "dormir"
+			}
+			npc.set_meta("evento_comunitario_actual", "")
+			npc.remove_meta("evento_comunitario_datos")
+			npc.remove_meta("grupo_social_castillo_id")
+			npc.remove_meta("grupo_social_castillo_nombres")
+			npc.remove_meta("puesto_social_castillo")
+			npc.remove_meta("reunion_castillo_fase")
+			npc.remove_meta("reunion_castillo_firma_asistentes")
+			npc.remove_meta("reunion_castillo_dia")
+
+	# Las reuniones nocturnas automáticas están desactivadas: al llegar la noche,
+	# los habitantes libres deben regresar a sus hogares para dormir.
 
 	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	var hogar := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
@@ -582,6 +636,13 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var actividad := str(rutina.get("actividad_clave", "volver_a_casa" if not esta_en_horario else "descansar")).strip_edges()
 	if actividad.is_empty():
 		actividad = "descansar"
+	# Cuando termina el horario y no hay una actividad especial, cada habitante
+	# regresa a su hogar al comenzar la noche. Las reuniones, invitaciones y
+	# turnos activos conservan prioridad porque ya producen una rutina propia.
+	if not esta_en_horario and (minutos >= 21 * 60 or minutos < 6 * 60):
+		clave_rutina = "dormir_en_hogar"
+		ubicacion = hogar
+		actividad = "dormir"
 	# Ivo sólo va a comprar pan si Elian tiene turno en la panadería en
 	# este mismo tramo. Si no coincide, aprovecha ese rato en la plaza.
 	if nombre_npc == "ivo" and ubicacion == "panaderia" and not _el_npc_tiene_rutina_en_ubicacion("elian", "panaderia", dia_semana, minutos):
@@ -700,7 +761,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
 	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
 	if esta_dentro and edificio_id == edificio_actual:
-		_actualizar_rutina_interior(npc, edificio_actual, minutos)
+		_actualizar_rutina_interior(npc, edificio_actual, minutos, actividad)
 		npc.set_meta("actividad_actual", actividad)
 		_actualizar_animacion_actividad_interior(npc)
 		if clave_rutina == "reunion_nocturna_castillo":
@@ -833,6 +894,13 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.set_meta("rutina_destino_es_edificio", not edificio_id.is_empty())
 	npc.set_meta("rutina_edificio_objetivo", edificio_id)
 	npc.datos["actividad_actual"] = actividad
+	# La observación se intenta después de resolver el desplazamiento y actualizar
+	# la rutina; así sólo cuenta cuando el NPC ya llegó al punto del evento.
+	if (
+		not evento_comunitario.is_empty()
+		and str(rutina.get("clave", "")) == str(evento_comunitario.get("clave", ""))
+	):
+		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
 
 
 ## Agrupa a los asistentes según sus vínculos reales y distribuye sus
@@ -1216,9 +1284,28 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 	return true
 
 
+## Traduce la intención de una actividad a tipos de mobiliario disponibles.
+## Se usa para escoger un puesto físico y probar la regla sin escenas.
+static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[String]:
+	var texto := actividad.strip_edges().to_lower()
+	if texto.contains("dorm") or texto.contains("descans"):
+		return ["cama", "litera"]
+	if texto.contains("sentar"):
+		return ["silla", "asiento"]
+	if texto.contains("leer") or texto.contains("estudi") or texto.contains("investig") or texto.contains("observar") or texto.contains("nota") or texto.contains("informe"):
+		return ["mesa", "consulta", "estudio", "muestra"]
+	if texto.contains("hornear") or texto.contains("cocinar") or texto.contains("preparar") or texto.contains("forj") or texto.contains("repar") or texto.contains("herramient") or texto.contains("trabaj"):
+		return ["horno", "hogar", "banco", "mesa", "mostrador"]
+	if texto.contains("atender_puesto_comercio"):
+		return ["puesto"]
+	if texto.contains("comer") or texto.contains("servir") or texto.contains("atender") or texto.contains("convers") or texto.contains("reunir"):
+		return ["mesa", "mostrador"]
+	return []
+
+
 ## Pequeños recorridos dentro del edificio: los NPC no quedan congelados
 ## durante toda una franja horaria. Se activan sólo al abrir ese interior.
-func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int) -> void:
+func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int, actividad: String) -> void:
 	if not is_instance_valid(npc):
 		return
 	if bool(npc.get_meta("cinematica_npc_activa", false)) or bool(npc.get_meta("_conversacion_ambiental_activa", false)):
@@ -1257,12 +1344,46 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		return
 	if posmod(minutos - siguiente, 1440) > 720:
 		return
-	# Puntos compactos para que funcionen en interiores pequeños y grandes.
+	# Primero busca un puesto junto al mueble que corresponde a la tarea.
+	# Si el edificio no tiene ese mueble, conserva los puntos de paseo generales.
+	var puntos: Array[Vector2] = []
+	var hora_de_dormir := minutos >= 21 * 60 or minutos < 6 * 60
+	var postura := ""
+	if actividad.to_lower().contains("dorm") or (actividad.to_lower().contains("descans") and hora_de_dormir):
+		postura = "dormir"
+	elif actividad.to_lower().contains("sentar") or actividad.to_lower().contains("descans"):
+		postura = "sentado"
+	npc.set_meta("postura_npc", postura)
+	if npc.has_method("_actualizar_sprite_direccional_npc"):
+		npc.call("_actualizar_sprite_direccional_npc")
+	var preferencias := obtener_preferencias_mueble_actividad(
+		"dormir" if postura == "dormir" else ("sentarse" if postura == "sentado" else actividad)
+	)
+	if not preferencias.is_empty():
+		for hijo in npc.get_parent().get_children():
+			if not hijo is Sprite2D:
+				continue
+			var mueble := hijo as Sprite2D
+			var nombre_mueble := mueble.name.strip_edges().to_lower()
+			var coincide := false
+			for preferencia in preferencias:
+				if nombre_mueble.contains(preferencia):
+					coincide = true
+					break
+			if not coincide or not is_instance_valid(mueble.texture):
+				continue
+			var semiancho := mueble.texture.get_width() * absf(mueble.scale.x) * 0.5
+			var semialto := mueble.texture.get_height() * absf(mueble.scale.y) * 0.5
+			var puesto := mueble.position + Vector2(0.0, semialto + 12.0)
+			if nombre_mueble.contains("cama") or nombre_mueble.contains("litera"):
+				puesto = mueble.position + Vector2(semiancho + 12.0, 0.0)
+			puntos.append(puesto)
+	if puntos.is_empty():
+		puntos = [
+			Vector2(-42.0, 12.0), Vector2(42.0, 12.0),
+			Vector2(0.0, -18.0), Vector2(0.0, 38.0)
+		]
 	# Cada personaje usa un orden distinto y no todos parten al mismo tiempo.
-	var puntos: Array[Vector2] = [
-		Vector2(-42.0, 12.0), Vector2(42.0, 12.0),
-		Vector2(0.0, -18.0), Vector2(0.0, 38.0)
-	]
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
 	var destino_local := Vector2.ZERO
@@ -1308,23 +1429,48 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 		_detener_animacion_actividad_interior(npc)
 		return
 	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
+	var postura_actual := str(npc.get_meta("postura_npc", ""))
+	var clave_animacion := actividad + "|" + postura_actual
 	if bool(npc.get_meta("animacion_actividad_interior_activa", false)):
-		if str(npc.get_meta("animacion_actividad_interior_clave", "")) == actividad:
+		if str(npc.get_meta("animacion_actividad_interior_clave", "")) == clave_animacion:
 			return
 		_detener_animacion_actividad_interior(npc)
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 	if not is_instance_valid(sprite):
 		return
 	npc.set_meta("animacion_actividad_interior_activa", true)
-	npc.set_meta("animacion_actividad_interior_clave", actividad)
+	npc.set_meta("animacion_actividad_interior_clave", clave_animacion)
 	npc.set_meta("animacion_actividad_interior_posicion", sprite.position)
 	npc.set_meta("animacion_actividad_interior_rotacion", sprite.rotation)
 	npc.set_meta("animacion_actividad_interior_escala", sprite.scale)
-	var tween := create_tween()
-	tween.set_loops()
+	var tween := npc.create_tween()
 	tween.set_trans(Tween.TRANS_SINE)
 	tween.set_ease(Tween.EASE_IN_OUT)
-	if actividad.contains("leer") or actividad.contains("nota") or actividad.contains("estudi") or actividad.contains("investig"):
+	var postura := str(npc.get_meta("postura_npc", ""))
+	if postura == "dormir" or postura == "sentado":
+		var padre := npc.get_parent()
+		var tokens := ["cama", "litera"] if postura == "dormir" else ["silla", "asiento"]
+		var mueble_objetivo: Sprite2D = null
+		if is_instance_valid(padre):
+			for hijo in padre.get_children():
+				if not hijo is Sprite2D:
+					continue
+				var nombre_mueble := str(hijo.name).to_lower()
+				for token in tokens:
+					if nombre_mueble.contains(token):
+						mueble_objetivo = hijo as Sprite2D
+						break
+				if is_instance_valid(mueble_objetivo):
+					break
+		var destino_sprite := sprite.position
+		if is_instance_valid(mueble_objetivo):
+			destino_sprite = mueble_objetivo.position - npc.position
+			destino_sprite.y -= 5.0 if postura == "sentado" else 0.0
+		var origen_sprite := sprite.position
+		tween.tween_property(sprite, "position", origen_sprite + Vector2(0.0, -10.0), 0.16)
+		tween.tween_property(sprite, "position", destino_sprite, 0.18)
+		tween.tween_callback(Callable(self, "_iniciar_idle_postura_npc").bind(npc, sprite, postura, destino_sprite))
+	elif actividad.contains("leer") or actividad.contains("nota") or actividad.contains("estudi") or actividad.contains("investig"):
 		tween.tween_property(sprite, "rotation", 0.035, 0.9)
 		tween.tween_interval(0.8)
 		tween.tween_property(sprite, "rotation", 0.0, 0.45)
@@ -1346,6 +1492,22 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	npc.set_meta("animacion_actividad_interior_tween", tween)
 
 
+func _iniciar_idle_postura_npc(npc: Creature, sprite: Sprite2D, postura: String, destino: Vector2) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(sprite):
+		return
+	var tween := npc.create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	if postura == "dormir":
+		tween.tween_property(sprite, "scale:y", sprite.scale.y * 1.025, 1.1)
+		tween.tween_property(sprite, "scale:y", sprite.scale.y / 1.025, 1.1)
+	else:
+		tween.tween_property(sprite, "position:y", destino.y - 0.8, 0.65)
+		tween.tween_property(sprite, "position:y", destino.y, 0.65)
+	npc.set_meta("animacion_actividad_interior_tween", tween)
+
+
 func _detener_animacion_actividad_interior(npc: Creature) -> void:
 	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_actividad_interior_activa", false)):
 		return
@@ -1359,6 +1521,9 @@ func _detener_animacion_actividad_interior(npc: Creature) -> void:
 		sprite.position = posicion if posicion is Vector2 else sprite.position
 		sprite.scale = escala if escala is Vector2 else sprite.scale
 		sprite.rotation = float(npc.get_meta("animacion_actividad_interior_rotacion", sprite.rotation))
+	npc.remove_meta("postura_npc")
+	if npc.has_method("_actualizar_sprite_direccional_npc"):
+		npc.call("_actualizar_sprite_direccional_npc")
 	for clave in ["animacion_actividad_interior_activa", "animacion_actividad_interior_clave", "animacion_actividad_interior_posicion", "animacion_actividad_interior_rotacion", "animacion_actividad_interior_escala", "animacion_actividad_interior_tween"]:
 		npc.remove_meta(clave)
 
@@ -1704,19 +1869,70 @@ func _marcar_npc_dentro_edificio(npc: Creature, edificio_id: String) -> void:
 ## Añade variedad ambiental sin sustituir horarios ni destinos de trabajo.
 ## La elección depende del día del mundo y del tramo horario, por lo que no
 ## cambia en cada actualización del sistema.
+## Descarta opciones mal formadas o con destinos que no existen.
+## Una ubicación desconocida nunca debe convertirse silenciosamente en la plaza.
+static func filtrar_opciones_ocio_validas(opciones: Array) -> Array:
+	var validas: Array = []
+	for opcion_variant in opciones:
+		if not opcion_variant is Dictionary:
+			continue
+		var opcion: Dictionary = (opcion_variant as Dictionary).duplicate(true)
+		var actividad := str(opcion.get("id", "")).strip_edges().to_lower()
+		var ubicacion := str(opcion.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+		if actividad.is_empty() or not tiene_ubicacion(ubicacion):
+			continue
+		opcion["id"] = actividad
+		opcion["ubicacion_clave"] = ubicacion
+		validas.append(opcion)
+	return validas
+
+
+## Además de validar el catálogo, comprueba que el destino sea alcanzable
+## desde la posición actual cuando la malla de navegación ya está preparada.
+func _filtrar_opciones_ocio_alcanzables(npc: Creature, opciones: Array) -> Array:
+	var validas := filtrar_opciones_ocio_validas(opciones)
+	if not _malla_lista or _malla == null or not is_instance_valid(_zona):
+		return validas
+	var alcanzables: Array = []
+	for opcion_variant in validas:
+		var opcion: Dictionary = opcion_variant
+		var ubicacion := str(opcion.get("ubicacion_clave", "plaza"))
+		var destino_local: Vector2 = POSICIONES[ubicacion]
+		var destino_global := _zona.to_global(destino_local)
+		if npc.global_position.distance_to(destino_global) <= DISTANCIA_LLEGADA:
+			alcanzables.append(opcion)
+			continue
+		if _crear_ruta(npc.global_position, destino_global).is_empty():
+			continue
+		alcanzables.append(opcion)
+	return alcanzables
+
+
 func _aplicar_variacion_tiempo_libre(
 	npc: Creature,
 	rutina_base: Dictionary,
 	dia_semana: int,
 	minutos: int
 ) -> Dictionary:
+	var es_intervalo_libre := false
+	var minutos_hasta_compromiso := 0
 	if rutina_base.is_empty():
-		return rutina_base
-
-	var clave_base := str(rutina_base.get("clave", ""))
-	var ubicacion_base := str(rutina_base.get("ubicacion_clave", ""))
-	if not clave_base.begins_with("dia_libre") or ubicacion_base != "plaza":
-		return rutina_base
+		var rutinas_variant: Variant = npc.datos.get("rutinas", [])
+		if not rutinas_variant is Array or (rutinas_variant as Array).is_empty():
+			return rutina_base
+		minutos_hasta_compromiso = _obtener_minutos_hasta_siguiente_rutina(
+			rutinas_variant, dia_semana, minutos
+		)
+		# Sólo se ocupa un hueco real con margen suficiente. Una rutina activa
+		# (trabajo, guardia, cita o traslado) nunca llega a esta rama.
+		if minutos_hasta_compromiso < 60:
+			return rutina_base
+		es_intervalo_libre = true
+	else:
+		var clave_base := str(rutina_base.get("clave", ""))
+		var ubicacion_base := str(rutina_base.get("ubicacion_clave", ""))
+		if not clave_base.begins_with("dia_libre") or ubicacion_base != "plaza":
+			return rutina_base
 
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 	var actividades_por_personaje: Dictionary = _obtener_opciones_ocio_npc(nombre)
@@ -1724,7 +1940,11 @@ func _aplicar_variacion_tiempo_libre(
 		return rutina_base
 
 	var tramo := 0
-	if minutos >= 840 and minutos < 1020:
+	if es_intervalo_libre:
+		# Los huecos de días laborables se vuelven a evaluar por hora, sin
+		# cambiar de actividad en cada tick de navegación.
+		tramo = 10 + int(minutos / 60)
+	elif minutos >= 840 and minutos < 1020:
 		tramo = 1
 	elif minutos >= 1020:
 		tramo = 2
@@ -1749,21 +1969,35 @@ func _aplicar_variacion_tiempo_libre(
 	if personaje_id.is_empty():
 		personaje_id = nombre
 
-	var opciones: Array = (actividades_por_personaje.get("opciones", []) as Array).duplicate(true)
-	var contexto_habito := "ocio_tramo_%s" % tramo
+	var opciones: Array = _filtrar_opciones_ocio_alcanzables(
+		npc,
+		(actividades_por_personaje.get("opciones", []) as Array)
+	)
+	if opciones.is_empty():
+		return rutina_base
+	var contexto_habito := "ocio_intervalo_laboral" if es_intervalo_libre else "ocio_tramo_%s" % tramo
 	for opcion_variant in opciones:
 		if opcion_variant is Dictionary:
 			(opcion_variant as Dictionary)["contexto_habito"] = contexto_habito
 	var elegida: Dictionary = {}
 	if is_instance_valid(mind) and mind.has_method("elegir_actividad"):
 		var perfil: Dictionary = {}
-		if is_instance_valid(_relationship_system) and _relationship_system.has_method("obtener_personalidad"):
-			var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
-			var rasgos: Dictionary = {}
-			for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
-				if personalidad.has(rasgo):
-					rasgos[rasgo] = float(personalidad[rasgo])
-			perfil["rasgos"] = rasgos
+		# No aplicar valores neutrales mientras Supabase carga ni para NPC
+		# que carecen de una fila propia en el catálogo social.
+		if (
+			is_instance_valid(_relationship_system)
+			and _relationship_system.has_method("esta_cargado")
+			and _relationship_system.esta_cargado()
+			and _relationship_system.has_method("obtener_reglas_sociales")
+		):
+			var reglas_sociales: Dictionary = _relationship_system.obtener_reglas_sociales()
+			if reglas_sociales.has(personaje_id):
+				var personalidad: Dictionary = _relationship_system.obtener_personalidad(personaje_id)
+				var rasgos: Dictionary = {}
+				for rasgo in ["sociabilidad", "curiosidad", "prudencia", "generosidad", "agresividad"]:
+					if personalidad.has(rasgo):
+						rasgos[rasgo] = float(personalidad[rasgo])
+				perfil["rasgos"] = rasgos
 		mind.call("registrar_personaje", personaje_id, perfil)
 
 		# La experiencia del tramo anterior modifica las próximas elecciones.
@@ -1795,10 +2029,16 @@ func _aplicar_variacion_tiempo_libre(
 		elegida = (opciones[indice] as Dictionary).duplicate(true)
 
 	var resultado := rutina_base.duplicate(true)
+	if es_intervalo_libre:
+		resultado = {
+			"clave": "ocio_intervalo_libre",
+			"activo": true,
+			"limite_intervalo_minutos": minutos_hasta_compromiso
+		}
 	var actividad := str(elegida.get("id", ""))
 	var ubicacion_elegida := str(elegida.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	if not POSICIONES.has(ubicacion_elegida):
-		ubicacion_elegida = "plaza"
+		return rutina_base
 	resultado["actividad_clave"] = actividad
 	resultado["ubicacion_clave"] = ubicacion_elegida
 	resultado["variacion_posicion"] = (
@@ -1826,6 +2066,37 @@ func _aplicar_variacion_tiempo_libre(
 		npc.set_meta("npc_mind_necesidad_inicio", float(necesidades_inicio.get(necesidad_principal, 0.0)))
 	npc.set_meta("npc_mind_rutina_decidida", resultado.duplicate(true))
 	return resultado
+
+
+## Devuelve el tiempo real hasta el próximo inicio de rutina del calendario.
+## Recorre el ciclo de cinco días y no confunde un hueco con un horario inexistente.
+func _obtener_minutos_hasta_siguiente_rutina(
+	rutinas_variant: Variant,
+	dia_semana: int,
+	minutos: int
+) -> int:
+	if not rutinas_variant is Array or (rutinas_variant as Array).is_empty():
+		return 0
+	var mejor := 5 * 1440
+	for desplazamiento_dia in range(5):
+		var dia_candidato := posmod(dia_semana + desplazamiento_dia, 5)
+		for rutina_variant in rutinas_variant as Array:
+			if not rutina_variant is Dictionary:
+				continue
+			var rutina := rutina_variant as Dictionary
+			if not bool(rutina.get("activo", true)):
+				continue
+			if not _coincide_dia(rutina.get("dias_semana", []), dia_candidato):
+				continue
+			var inicio := _hora_a_minutos(rutina.get("hora_inicio", ""))
+			var fin := _hora_a_minutos(rutina.get("hora_fin", ""))
+			if inicio < 0 or fin < 0 or inicio == fin:
+				continue
+			var candidato := desplazamiento_dia * 1440 + inicio
+			if candidato <= minutos:
+				continue
+			mejor = mini(mejor, candidato - minutos)
+	return mejor if mejor < 5 * 1440 else 0
 
 
 func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
@@ -2090,16 +2361,12 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 			"clave": str(asunto.get("clave", "")),
 			"descripcion": str(asunto.get("descripcion", asunto.get("asunto", "")))
 		}
-	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_compartibles_npc(personaje_id, pareja_id):
 		if not conocimiento_variant is Dictionary:
 			continue
 		var conocimiento := conocimiento_variant as Dictionary
-		var tipo_conocimiento := str(conocimiento.get("tipo", "")).to_lower()
-		var compartible := bool(conocimiento.get("compartible", false)) or tipo_conocimiento in ["noticia", "evento_publico", "conocimiento_compartible"]
 		var clave := str(conocimiento.get("clave", "")).strip_edges()
-		if not compartible or clave.is_empty():
-			continue
-		if _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+		if clave.is_empty() or _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
 			continue
 		return {
 			"tipo": "compartir_noticia",
@@ -2157,9 +2424,9 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		)
 		# Ambos perfiles cuentan: una persona muy sociable tampoco debe imponer
 		# encuentros casuales a alguien reservado con quien apenas tiene vínculo.
-		if not _puede_iniciar_encuentro_social(id_npc, relacion, motivo_concreto):
+		if not _puede_iniciar_encuentro_social(id_npc, relacion, motivo_concreto, id_candidato):
 			continue
-		if not _puede_iniciar_encuentro_social(id_candidato, relacion, motivo_concreto):
+		if not _puede_iniciar_encuentro_social(id_candidato, relacion, motivo_concreto, id_npc):
 			continue
 		var distancia := npc.global_position.distance_to(candidato.global_position)
 		var puntuacion := (
@@ -2170,7 +2437,10 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		)
 		# Las experiencias recientes pueden reforzar o enfriar un vínculo,
 		# incluso antes de que sus valores sociales cambien mucho.
-		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
+		# La evaluación es bilateral: importa tanto cómo ve el iniciador al
+		# candidato como la experiencia que el candidato conserva del iniciador.
+		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato) * 0.7
+		puntuacion += _calcular_influencia_recuerdos_sociales(id_candidato, id_npc) * 0.45
 		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
 			puntuacion -= 8.0
 		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
@@ -2202,7 +2472,8 @@ func _obtener_umbral_social(personaje_id: String) -> float:
 func _puede_iniciar_encuentro_social(
 	personaje_id: String,
 	relacion: Dictionary,
-	motivo_concreto: bool = false
+	motivo_concreto: bool = false,
+	pareja_id: String = ""
 ) -> bool:
 	if motivo_concreto:
 		return true
@@ -2211,10 +2482,21 @@ func _puede_iniciar_encuentro_social(
 		float(relacion.get("amistad", 0.0)),
 		maxf(float(relacion.get("afecto", 0.0)), float(relacion.get("confianza", 0.0)))
 	)
+	var memoria_personal := 0.0
+	if not pareja_id.strip_edges().is_empty():
+		memoria_personal = _calcular_influencia_recuerdos_sociales(personaje_id, pareja_id)
+	# Un rechazo reiterado o una experiencia muy negativa puede frenar un
+	# encuentro casual incluso en alguien sociable. Los motivos concretos
+	# (promesas, ayuda o noticias) siguen permitiendo resolver la situación.
+	if memoria_personal <= -8.0:
+		return false
+	# Una experiencia positiva repetida puede crear familiaridad antes de que
+	# los valores generales de amistad/confianza hayan subido mucho.
+	var vinculo_efectivo := maxf(vinculo, maxf(0.0, memoria_personal * 0.8))
 	if sociabilidad < 40.0:
-		return vinculo >= 12.0
+		return vinculo_efectivo >= 12.0
 	if sociabilidad < 60.0:
-		return vinculo >= 5.0
+		return vinculo_efectivo >= 5.0
 	return true
 
 
@@ -2231,10 +2513,15 @@ func _hay_motivo_social_concreto(personaje_id: String, pareja_id: String) -> boo
 ## Resume las últimas experiencias compartidas con una persona.
 ## Los recuerdos recientes pesan más; la influencia queda acotada para que
 ## una mala experiencia no borre por sí sola una relación consolidada.
-func _calcular_influencia_recuerdos_sociales(personaje_id: String, pareja_id: String) -> float:
+func _calcular_influencia_recuerdos_sociales(
+	personaje_id: String,
+	pareja_id: String,
+	fecha_actual: String = ""
+) -> float:
 	if not is_instance_valid(_relationship_system) or not _relationship_system.has_method("obtener_recuerdos"):
 		return 0.0
 	var recuerdos: Array = _relationship_system.obtener_recuerdos(personaje_id)
+	var fecha_referencia := fecha_actual if not fecha_actual.strip_edges().is_empty() else _clave_fecha_actual()
 	var influencia := 0.0
 	var consideradas := 0
 	for indice in range(recuerdos.size() - 1, -1, -1):
@@ -2248,11 +2535,49 @@ func _calcular_influencia_recuerdos_sociales(personaje_id: String, pareja_id: St
 			continue
 		var resultado := clampf(float(recuerdo.get("resultado", 0.0)), -1.0, 1.0)
 		var importancia := clampf(float(recuerdo.get("importancia", 1.0)) / 3.0, 0.25, 1.0)
-		influencia += resultado * importancia * (1.0 / (1.0 + float(consideradas) * 0.35)) * 5.0
+		var antiguedad := _calcular_antiguedad_recuerdo_dias(
+			str(recuerdo.get("momento", "")),
+			fecha_referencia
+		)
+		# Sin fecha válida conservamos el peso por orden de memoria; con fecha
+		# válida la influencia disminuye gradualmente, con semivida aproximada de 14 días.
+		var vigencia := 1.0 / (1.0 + antiguedad / 14.0)
+		influencia += (
+			resultado * importancia * vigencia
+			* pow(0.65, float(consideradas)) * 5.0
+		)
 		consideradas += 1
 		if consideradas >= 6:
 			break
 	return clampf(influencia, -15.0, 15.0)
+
+
+func _calcular_antiguedad_recuerdo_dias(momento: String, fecha_actual: String) -> float:
+	var fecha_recuerdo := _convertir_fecha_mundo_a_unix(momento)
+	var fecha_referencia := _convertir_fecha_mundo_a_unix(fecha_actual)
+	if fecha_recuerdo < 0.0 or fecha_referencia < 0.0:
+		return 0.0
+	return maxf(0.0, (fecha_referencia - fecha_recuerdo) / 86400.0)
+
+
+func _convertir_fecha_mundo_a_unix(fecha: String) -> float:
+	var partes := fecha.strip_edges().split(":")
+	if partes.size() != 3:
+		return -1.0
+	var anio := int(partes[0])
+	var mes := int(partes[1])
+	var dia := int(partes[2])
+	if anio < 1 or mes < 1 or mes > 12 or dia < 1 or dia > 31:
+		return -1.0
+	var fecha_dict := {
+		"year": anio,
+		"month": mes,
+		"day": dia,
+		"hour": 12,
+		"minute": 0,
+		"second": 0
+	}
+	return float(Time.get_unix_time_from_datetime_dict(fecha_dict))
 
 
 func _registrar_experiencia_social_npc(
@@ -2281,14 +2606,11 @@ func _registrar_experiencia_social_npc(
 func _hay_noticia_compartible(personaje_id: String, pareja_id: String) -> bool:
 	if not is_instance_valid(_relationship_system):
 		return false
-	for conocimiento_variant in _relationship_system.obtener_conocimientos_npc(personaje_id):
+	for conocimiento_variant in _relationship_system.obtener_conocimientos_compartibles_npc(personaje_id, pareja_id):
 		if not conocimiento_variant is Dictionary:
 			continue
-		var conocimiento := conocimiento_variant as Dictionary
-		var tipo := str(conocimiento.get("tipo", "")).to_lower()
-		var compartible := bool(conocimiento.get("compartible", false)) or tipo in ["noticia", "evento_publico", "conocimiento_compartible"]
-		var clave := str(conocimiento.get("clave", "")).strip_edges()
-		if compartible and not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
+		var clave := str((conocimiento_variant as Dictionary).get("clave", "")).strip_edges()
+		if not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
 			return true
 	return false
 
@@ -2592,6 +2914,37 @@ func _obtener_desplazamiento_evento(
 	return posiciones[indice]
 
 
+func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(_relationship_system):
+		return
+	if not _relationship_system.has_method("registrar_observacion_evento_npc"):
+		return
+	var clave_evento := str(evento.get("clave", "")).strip_edges()
+	# La asignación de una rutina no equivale a haber presenciado el evento.
+	# Sólo se registra cuando el NPC ya llegó a su punto de reunión.
+	if clave_evento.is_empty() or str(npc.get_meta("rutina_actual", "")) != clave_evento:
+		return
+	if bool(npc.get_meta("rutina_en_transito", true)):
+		return
+	var ancla_variant: Variant = npc.get_meta("rutina_ancla_ocio", null)
+	if not ancla_variant is Vector2:
+		return
+	if npc.global_position.distance_to(ancla_variant as Vector2) > DISTANCIA_LLEGADA:
+		return
+	var personaje_id := npc.get_personaje_game_id().strip_edges()
+	if personaje_id.is_empty():
+		return
+	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var anio := int(tiempo.get("anio", 0))
+	var dia := int(tiempo.get("dia", 0))
+	if anio <= 0 or dia <= 0:
+		return
+	var evento_con_fecha := evento.duplicate(true)
+	evento_con_fecha["evento_id"] = "%s:%d:%d" % [clave_evento, anio, dia]
+	var momento := "%d:%d" % [anio, dia]
+	_relationship_system.call("registrar_observacion_evento_npc", personaje_id, evento_con_fecha, momento)
+
+
 func _notificar_evento_comunitario(evento: Dictionary) -> void:
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
 	var firma := "%s|%s|%s" % [
@@ -2739,6 +3092,59 @@ func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
 		"clave": "regreso_nocturno_castillo",
 		"ubicacion_clave": "castillo",
 		"actividad_clave": "dormir",
+		"activo": true
+	}
+
+
+func _aplicar_turno_comercio_rotativo(
+	npc: Creature,
+	rutina_actual: Dictionary,
+	dia_semana: int,
+	minutos: int
+) -> Dictionary:
+	if not is_instance_valid(npc) or minutos < INICIO_TURNO_MERCADO or minutos >= FIN_TURNO_MERCADO:
+		return rutina_actual
+	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
+	if nombre == "saira" or not VENDEDORES_MERCADO_ROTATIVOS.has(nombre):
+		return rutina_actual
+
+	# No apartar a nadie de un oficio, guardia, investigación o compromiso.
+	var clave_actual := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
+	var actividad_actual := str(rutina_actual.get("actividad_clave", "")).strip_edges().to_lower()
+	var actividad_libre := (
+		rutina_actual.is_empty()
+		or clave_actual.begins_with("dia_libre")
+		or actividad_actual.contains("descans")
+		or actividad_actual.contains("pase")
+		or actividad_actual.contains("convers")
+		or actividad_actual.contains("visitar")
+		or actividad_actual.contains("saludar")
+		or actividad_actual.contains("volver")
+	)
+	if not actividad_libre:
+		return rutina_actual
+	if (
+		clave_actual.begins_with("evento_")
+		or clave_actual == "mercado_vecinal"
+		or clave_actual == "celebracion_estacional"
+		or clave_actual.begins_with("invitacion_")
+		or clave_actual.begins_with("encuentro_")
+	):
+		return rutina_actual
+
+	var franja := 0 if minutos < CAMBIO_TURNO_MERCADO else 1
+	var inicio := posmod(dia_semana * 2 + franja * 3, VENDEDORES_MERCADO_ROTATIVOS.size())
+	var asignados: Array[String] = [
+		VENDEDORES_MERCADO_ROTATIVOS[inicio],
+		VENDEDORES_MERCADO_ROTATIVOS[posmod(inicio + 1, VENDEDORES_MERCADO_ROTATIVOS.size())]
+	]
+	if not asignados.has(nombre):
+		return rutina_actual
+
+	return {
+		"clave": "turno_puesto_comercio",
+		"ubicacion_clave": "casa_comercio",
+		"actividad_clave": "atender_puesto_comercio",
 		"activo": true
 	}
 

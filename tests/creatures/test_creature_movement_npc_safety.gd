@@ -54,17 +54,16 @@ func _run() -> void:
 	if direccion_mismo_edificio.distance_to(Vector2.RIGHT) > 0.01:
 		errores.append("NPC que van al mismo edificio siguen desviándose entre sí.")
 
-	# El watchdog tampoco debe convertir la espera de otro NPC en un rodeo
-	# lateral cuando ambos comparten la misma entrada.
+	# Un NPC atascado conserva un desvío estable; no cambia de lado
+	# repetidamente, lo que antes hacía vibrar el sprite sin avanzar.
 	movimiento._seguro_inicializado = true
 	movimiento._ultima_posicion_seguro = npc_a.global_position
 	movimiento._tiempo_sin_progreso = 1.0
 	movimiento._direccion_base_atasco = Vector2.RIGHT
-	var direccion_mismo_destino_atascado := movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
-	if direccion_mismo_destino_atascado.distance_to(Vector2.RIGHT) > 0.01:
-		errores.append("El seguro de atasco desvía a un NPC que comparte entrada con otro.")
-	if movimiento._tiempo_sin_progreso > 0.01:
-		errores.append("El seguro de atasco no se reinicia al compartir la entrada.")
+	var desvio_atasco := movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
+	var desvio_repetido := movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
+	if desvio_atasco.length_squared() <= 0.01 or desvio_repetido.distance_to(desvio_atasco) > 0.01:
+		errores.append("El seguro de atasco no mantiene un desvío estable.")
 
 	npc_b.set_meta("rutina_edificio_objetivo", "posada")
 	var direccion_edificios_distintos := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)

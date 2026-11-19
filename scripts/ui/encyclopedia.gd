@@ -57,6 +57,13 @@ func _ready() -> void:
 		actualizar()
 
 
+func configurar_modo_biblioteca(modo: String) -> void:
+	if modo == "criaturas":
+		_mostrar_criaturas()
+	else:
+		_mostrar_biomas()
+
+
 func _crear_interfaz() -> void:
 	var margin := MarginContainer.new()
 	margin.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)

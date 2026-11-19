@@ -69,7 +69,7 @@ func registrar_personaje(personaje_id: String, perfil_inicial: Dictionary = {}) 
 	else:
 		# Un perfil recibido posteriormente puede completar rasgos aún neutros,
 		# pero nunca sobrescribe necesidades, aprendizaje ni objetivos guardados.
-		_aplicar_perfil_solo_si_neutro(id, perfil_inicial)
+		_aplicar_perfil_autoritativo(id, perfil_inicial)
 	return obtener_estado(id)
 
 
@@ -406,7 +406,9 @@ func registrar_resultado_lugar(personaje_id: String, ubicacion: String, resultad
 	var muestras := maxi(0, int(registro.get("muestras", 0))) + 1
 	var anterior := float(registro.get("resultado_medio", 0.0))
 	var nuevo := clampf(resultado, -1.0, 1.0)
-	var media := anterior + (nuevo - anterior) / float(muestras)
+	# Las experiencias recientes pesan más que una media histórica rígida:
+	# el NPC puede cambiar de opinión cuando el lugar deja de ser agradable.
+	var media := nuevo if muestras == 1 else lerpf(anterior, nuevo, 0.6)
 	registro["muestras"] = muestras
 	registro["resultado_medio"] = media
 	registro["ultimo_resultado"] = nuevo
@@ -438,7 +440,7 @@ func _calcular_afinidad_objetivos(estado: Dictionary, actividad: Dictionary, cla
 		if str(objetivo.get("estado", "activo")) != "activo":
 			continue
 		var coincide := false
-		var actividad_objetivo := str(objetivo.get("actividad", objetivo.get("actividad_clave", ""))).strip_edges().to_lower()
+		var actividad_objetivo := str(objetivo.get("actividad", objetivo.get("actividad_clave", objetivo.get("id", "")))).strip_edges().to_lower()
 		if not actividad_objetivo.is_empty() and actividad_objetivo == clave_actividad:
 			coincide = true
 		var actividades_objetivo: Variant = objetivo.get("actividades", [])
@@ -668,19 +670,25 @@ func _crear_estado_inicial(perfil: Dictionary = {}) -> Dictionary:
 	}
 
 
-func _aplicar_perfil_solo_si_neutro(personaje_id: String, perfil: Dictionary) -> void:
+## Los rasgos base recibidos desde Supabase son autoritativos.
+## Se actualizan cuando llega un perfil válido, sin tocar aprendizaje ni memoria.
+func _aplicar_perfil_autoritativo(personaje_id: String, perfil: Dictionary) -> void:
 	if perfil.is_empty():
+		return
+	var perfil_rasgos: Variant = perfil.get("rasgos", {})
+	if not perfil_rasgos is Dictionary or (perfil_rasgos as Dictionary).is_empty():
 		return
 	var estado := _obtener_estado_mutable(personaje_id)
 	var rasgos: Dictionary = estado.get("rasgos", {}).duplicate(true)
-	var perfil_rasgos: Variant = perfil.get("rasgos", {})
 	var cambiado := false
-	if perfil_rasgos is Dictionary:
-		for clave_variant in perfil_rasgos:
-			var clave := str(clave_variant).strip_edges().to_lower()
-			if rasgos.has(clave) and is_equal_approx(float(rasgos[clave]), 0.5):
-				rasgos[clave] = _normalizar_rasgo(perfil_rasgos[clave_variant])
-				cambiado = true
+	for clave_variant in perfil_rasgos:
+		var clave := str(clave_variant).strip_edges().to_lower()
+		if not rasgos.has(clave):
+			continue
+		var valor := _normalizar_rasgo(perfil_rasgos[clave_variant])
+		if not is_equal_approx(float(rasgos[clave]), valor):
+			rasgos[clave] = valor
+			cambiado = true
 	if not cambiado:
 		return
 	estado["rasgos"] = rasgos
