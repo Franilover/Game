@@ -257,3 +257,9 @@ Ahora el encuentro reúne a los tres participantes durante un único recorrido y
 La misma reducción se aplicó a `_actualizar_interaccion_panaderia()`: Ivo y Elian también se resuelven en un único recorrido, conservando el primer resultado de cada nombre y deteniendo la búsqueda cuando ambos están localizados. Esta interacción se actualiza desde el ciclo del sistema, por lo que evitar un segundo recorrido es especialmente útil.
 
 No se cambió la búsqueda general por nombre ni se creó un registro global de NPC: las optimizaciones quedan limitadas a los dos flujos que necesitan consultar varios personajes juntos.
+
+## 20. Reutilización de la lista de NPC al elegir puestos interiores
+
+`_actualizar_rutina_interior()` prueba varios puntos de descanso o actividad dentro de una habitación. Antes consultaba `get_nodes_in_group("torres_game_npc")` dentro del bucle de puntos, repitiendo la obtención de la misma lista aunque durante esa selección no se modifica el grupo.
+
+Ahora obtiene una única instantánea del grupo antes de probar los puntos y reutiliza esa lista para comprobar ocupación. Se mantienen el orden de los candidatos, el filtro por tipo e instancia, la exclusión del NPC actual, la comparación de habitación y la distancia mínima de 38 px. No se guarda un registro persistente ni se reutiliza la lista entre ciclos: sólo dentro de esta decisión local.
