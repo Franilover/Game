@@ -1898,7 +1898,7 @@ func _agregar_descripcion_mesa(padre: Node, nombre: String, texto: String, posic
 	panel.position = posicion - Vector2(76.0, 0.0)
 	panel.custom_minimum_size = Vector2(152.0, 42.0)
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var estilo := PIXEL_UI_THEME.button_surface_style()
+	var estilo: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
 	if estilo != null:
 		panel.add_theme_stylebox_override("panel", estilo)
 	var etiqueta := Label.new()
