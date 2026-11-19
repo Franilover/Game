@@ -38,49 +38,49 @@ const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat
 const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
 const HABITANTES_LOCALES: Array[Dictionary] = [
-		{
-			"clave":"mara", "nombre":"Mara", "sprite":"Mara", "hogar":"vivienda_oeste_01",
-			"personalidad":"Reservada, observadora y cautelosa. Es una refugiada política que llegó al reino para mantenerse a salvo. No rechaza la compañía, pero necesita tiempo y confianza antes de hablar de su pasado.",
-			"historia":"Refugiada política que evita llamar la atención y protege su identidad.",
-			"rutinas":[
-				{"clave":"mara_manana_casa","hora_inicio":"07:00","hora_fin":"09:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"quedarse_en_casa"},
-				{"clave":"mara_compra_pan","hora_inicio":"09:00","hora_fin":"10:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
-				{"clave":"mara_plaza","hora_inicio":"10:00","hora_fin":"12:00","ubicacion_clave":"plaza","actividad_clave":"pasear_y_observar"},
-				{"clave":"mara_refugio_mediodia","hora_inicio":"12:00","hora_fin":"14:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"descansar_en_casa"},
-				{"clave":"mara_posada","hora_inicio":"14:00","hora_fin":"15:00","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
-				{"clave":"mara_paseo_tarde","hora_inicio":"15:00","hora_fin":"17:00","ubicacion_clave":"plaza","actividad_clave":"saludar_a_conocidos"},
-				{"clave":"mara_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"volver_a_casa"}
-			]
-		},
-		{
-			"clave":"ivo", "nombre":"Ivo", "sprite":"Ivo", "hogar":"vivienda_oeste_02",
-			"personalidad":"Sociable, bromista y atento. Conoce a mucha gente y suele detenerse a conversar con cualquiera. Vive con una enfermedad que le provoca cansancio y le obliga a descansar a menudo; intenta que eso no sea lo único que los demás vean en él.",
-			"historia":"Joven del reino con una enfermedad persistente y episodios de fatiga. Sus amistades buscan maneras de ayudarlo.",
-			"rutinas":[
-				{"clave":"ivo_paseo_manana","hora_inicio":"08:00","hora_fin":"09:00","ubicacion_clave":"plaza","actividad_clave":"saludar_a_todos"},
-				{"clave":"ivo_descanso_manana","hora_inicio":"09:00","hora_fin":"10:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"descansar_por_cansancio"},
-				{"clave":"ivo_compra","hora_inicio":"10:00","hora_fin":"11:00","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
-				{"clave":"ivo_posada","hora_inicio":"11:00","hora_fin":"12:30","ubicacion_clave":"posada","actividad_clave":"conversar_y_comer"},
-				{"clave":"ivo_descanso_mediodia","hora_inicio":"12:30","hora_fin":"14:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"reposar_un_rato"},
-				{"clave":"ivo_plaza_tarde","hora_inicio":"14:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"visitar_amigos"},
-				{"clave":"ivo_compra_pan","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
-				{"clave":"ivo_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"descansar_en_casa"}
-			]
-		},
-		{
-			"clave":"nima", "nombre":"Nima", "sprite":"Nima", "hogar":"vivienda_oeste_03",
-			"personalidad":"Curiosa, independiente y entusiasta. Estudia fenómenos Oris por cuenta propia, toma notas y contrasta observaciones, pero también disfruta conversar, pasear, comer con amigos y enterarse de lo que ocurre en el reino.",
-			"historia":"Joven investigadora independiente interesada en fenómenos Oris y otros temas naturales.",
-			"rutinas":[
-				{"clave":"nima_estudio_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"casa_estudio","actividad_clave":"estudiar_fenomenos_oris"},
-				{"clave":"nima_archivo","hora_inicio":"10:00","hora_fin":"11:00","ubicacion_clave":"archivo_real","actividad_clave":"consultar_documentos"},
-				{"clave":"nima_plaza","hora_inicio":"11:00","hora_fin":"13:00","ubicacion_clave":"plaza","actividad_clave":"reunirse_con_amigos"},
-				{"clave":"nima_posada","hora_inicio":"12:30","hora_fin":"14:00","ubicacion_clave":"posada","actividad_clave":"comer_con_conocidos"},
-				{"clave":"nima_plaza_tarde","hora_inicio":"14:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"pasear_y_conversar"},
-				{"clave":"nima_estudio_tarde","hora_inicio":"16:00","hora_fin":"17:30","ubicacion_clave":"casa_estudio","actividad_clave":"ordenar_notas"},
-				{"clave":"nima_regreso","hora_inicio":"17:30","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
-			]
-		}
+	{
+		"clave":"mara", "nombre":"Mara", "sprite":"Mara", "hogar":"vivienda_oeste_01",
+		"personalidad":"Reservada, observadora y cautelosa. Es una refugiada política que llegó al reino para mantenerse a salvo. No rechaza la compañía, pero necesita tiempo y confianza antes de hablar de su pasado.",
+		"historia":"Refugiada política que evita llamar la atención y protege su identidad.",
+		"rutinas":[
+			{"clave":"mara_manana_casa","hora_inicio":"07:00","hora_fin":"09:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"quedarse_en_casa"},
+			{"clave":"mara_compra_pan","hora_inicio":"09:00","hora_fin":"10:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+			{"clave":"mara_plaza","hora_inicio":"10:00","hora_fin":"12:00","ubicacion_clave":"plaza","actividad_clave":"pasear_y_observar"},
+			{"clave":"mara_refugio_mediodia","hora_inicio":"12:00","hora_fin":"14:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"descansar_en_casa"},
+			{"clave":"mara_posada","hora_inicio":"14:00","hora_fin":"15:00","ubicacion_clave":"posada","actividad_clave":"comprar_comida"},
+			{"clave":"mara_paseo_tarde","hora_inicio":"15:00","hora_fin":"17:00","ubicacion_clave":"plaza","actividad_clave":"saludar_a_conocidos"},
+			{"clave":"mara_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_01","actividad_clave":"volver_a_casa"}
+		]
+	},
+	{
+		"clave":"ivo", "nombre":"Ivo", "sprite":"Ivo", "hogar":"vivienda_oeste_02",
+		"personalidad":"Sociable, bromista y atento. Conoce a mucha gente y suele detenerse a conversar con cualquiera. Vive con una enfermedad que le provoca cansancio y le obliga a descansar a menudo; intenta que eso no sea lo único que los demás vean en él.",
+		"historia":"Joven del reino con una enfermedad persistente y episodios de fatiga. Sus amistades buscan maneras de ayudarlo.",
+		"rutinas":[
+			{"clave":"ivo_paseo_manana","hora_inicio":"08:00","hora_fin":"09:00","ubicacion_clave":"plaza","actividad_clave":"saludar_a_todos"},
+			{"clave":"ivo_descanso_manana","hora_inicio":"09:00","hora_fin":"10:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"descansar_por_cansancio"},
+			{"clave":"ivo_compra","hora_inicio":"10:00","hora_fin":"11:00","ubicacion_clave":"casa_comercio","actividad_clave":"comprar_mercaderia"},
+			{"clave":"ivo_posada","hora_inicio":"11:00","hora_fin":"12:30","ubicacion_clave":"posada","actividad_clave":"conversar_y_comer"},
+			{"clave":"ivo_descanso_mediodia","hora_inicio":"12:30","hora_fin":"14:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"reposar_un_rato"},
+			{"clave":"ivo_plaza_tarde","hora_inicio":"14:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"visitar_amigos"},
+			{"clave":"ivo_compra_pan","hora_inicio":"16:00","hora_fin":"17:00","ubicacion_clave":"panaderia","actividad_clave":"comprar_pan"},
+			{"clave":"ivo_regreso","hora_inicio":"17:00","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_02","actividad_clave":"descansar_en_casa"}
+		]
+	},
+	{
+		"clave":"nima", "nombre":"Nima", "sprite":"Nima", "hogar":"vivienda_oeste_03",
+		"personalidad":"Curiosa, independiente y entusiasta. Estudia fenómenos Oris por cuenta propia, toma notas y contrasta observaciones, pero también disfruta conversar, pasear, comer con amigos y enterarse de lo que ocurre en el reino.",
+		"historia":"Joven investigadora independiente interesada en fenómenos Oris y otros temas naturales.",
+		"rutinas":[
+			{"clave":"nima_estudio_manana","hora_inicio":"08:00","hora_fin":"10:00","ubicacion_clave":"casa_estudio","actividad_clave":"estudiar_fenomenos_oris"},
+			{"clave":"nima_archivo","hora_inicio":"10:00","hora_fin":"11:00","ubicacion_clave":"archivo_real","actividad_clave":"consultar_documentos"},
+			{"clave":"nima_plaza","hora_inicio":"11:00","hora_fin":"13:00","ubicacion_clave":"plaza","actividad_clave":"reunirse_con_amigos"},
+			{"clave":"nima_posada","hora_inicio":"12:30","hora_fin":"14:00","ubicacion_clave":"posada","actividad_clave":"comer_con_conocidos"},
+			{"clave":"nima_plaza_tarde","hora_inicio":"14:00","hora_fin":"16:00","ubicacion_clave":"plaza","actividad_clave":"pasear_y_conversar"},
+			{"clave":"nima_estudio_tarde","hora_inicio":"16:00","hora_fin":"17:30","ubicacion_clave":"casa_estudio","actividad_clave":"ordenar_notas"},
+			{"clave":"nima_regreso","hora_inicio":"17:30","hora_fin":"23:00","ubicacion_clave":"vivienda_oeste_03","actividad_clave":"volver_a_casa"}
+		]
+	}
 ]
 const CUTSCENE_DIRECTOR_SCRIPT = preload("res://scripts/gameplay/cutscene_director.gd")
 
