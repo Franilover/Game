@@ -3152,93 +3152,10 @@ func _aplicar_turno_comercio_rotativo(
 
 
 func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
-	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
-	var hogares: Dictionary = {
-		"elian": "casa_elian",
-		"bruna": "casa_bruna",
-		"darven": "casa_darven",
-		"saira": "casa_saira",
-		"narel": "casa_narel",
-		"abel": "castillo",
-		"liam": "castillo",
-		"mara": "vivienda_oeste_01",
-		"ivo": "vivienda_oeste_02",
-		"nima": "vivienda_oeste_03"
-	}
-	var hogar := str(hogares.get(nombre, "plaza"))
-	var ubicacion := hogar
-	var actividad := "descansar"
-	var clave := "dia_libre_casa"
-
-	if minutos >= 540 and minutos < 720:
-		clave = "dia_libre_manana"
-		actividad = "pasear"
-		match nombre:
-			"darven":
-				ubicacion = "cuartel"
-				actividad = "recorrer_alrededores"
-			"narel":
-				ubicacion = "archivo_real"
-				actividad = "leer"
-			"mara":
-				ubicacion = hogar
-				actividad = "ordenar_sus_espacios"
-			"ivo":
-				ubicacion = hogar
-				actividad = "descansar"
-			"nima":
-				ubicacion = "casa_estudio"
-				actividad = "revisar_apuntes"
-			"abel", "liam":
-				ubicacion = "castillo"
-				actividad = "atender_asuntos_del_castillo"
-			_:
-				ubicacion = "plaza"
-	elif minutos >= 840 and minutos < 1020:
-		clave = "dia_libre_tarde"
-		actividad = "pasear"
-		match nombre:
-			"saira":
-				ubicacion = "casa_comercio"
-				actividad = "visitar_comerciantes"
-			"narel", "nima":
-				ubicacion = "casa_estudio"
-				actividad = "visitar_estudio"
-			"darven":
-				ubicacion = "plaza"
-				actividad = "descansar"
-			"mara":
-				ubicacion = "plaza"
-				actividad = "pasear_sin_prisa"
-			"ivo":
-				ubicacion = "plaza"
-				actividad = "descansar_y_saludar"
-			"elian":
-				ubicacion = hogar
-				actividad = "descansar_del_trabajo"
-			"bruna":
-				ubicacion = hogar
-				actividad = "revisar_sus_herramientas"
-			"abel", "liam":
-				ubicacion = "castillo"
-				actividad = "organizar_asuntos_internos"
-			_:
-				ubicacion = "plaza"
-	elif minutos >= 1020 and minutos < 1200:
-		clave = "dia_libre_encuentro"
-		ubicacion = "plaza"
-		actividad = "conversar"
-	elif minutos >= 1200:
-		clave = "dia_libre_regreso"
-		ubicacion = hogar
-		actividad = "volver_a_casa"
-
-	return {
-		"clave": clave,
-		"ubicacion_clave": ubicacion,
-		"actividad_clave": actividad,
-		"activo": true
-	}
+	return NPC_SCHEDULE_RULES.seleccionar_rutina_dia_libre(
+		npc.get_nombre_visual(),
+		minutos
+	)
 
 
 func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int, nombre_npc: String = "?") -> Dictionary:
