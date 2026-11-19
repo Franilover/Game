@@ -466,10 +466,13 @@ func crear_datos_ejemplar(ejemplar_id: String, cantidad: int = 1) -> Dictionary:
 	resultado["ejemplar_id"] = str(ejemplar.get("id", ""))
 	resultado["es_ejemplar"] = true
 	resultado["nombre"] = str(ejemplar.get("nombre", nombre_base))
-	resultado["descripcion"] = str(ejemplar.get("descripcion", "")).strip_edges()
-	if resultado["descripcion"].is_empty():
-		resultado["descripcion"] = str(item_base.get("descripcion", ""))
-	resultado["descripcion_detallada"] = str(ejemplar.get("descripcion_detallada", "")).strip_edges()
+	var descripcion_variant: Variant = ejemplar.get("descripcion", null)
+	resultado["descripcion"] = str(descripcion_variant).strip_edges() if descripcion_variant != null else ""
+	if str(resultado["descripcion"]).is_empty():
+		var descripcion_base_variant: Variant = item_base.get("descripcion", null)
+		resultado["descripcion"] = str(descripcion_base_variant) if descripcion_base_variant != null else ""
+	var descripcion_detallada_variant: Variant = ejemplar.get("descripcion_detallada", null)
+	resultado["descripcion_detallada"] = str(descripcion_detallada_variant).strip_edges() if descripcion_detallada_variant != null else ""
 	var vinculos_variant: Variant = ejemplar.get("vinculos", [])
 	resultado["vinculos"] = (vinculos_variant as Array).duplicate(true) if vinculos_variant is Array else []
 	var metadatos_variant: Variant = ejemplar.get("metadatos", {})
