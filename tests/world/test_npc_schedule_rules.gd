@@ -110,3 +110,55 @@ func _comprobar_seleccion_rutina(errores: Array[String]) -> void:
 	elegida["datos"]["valor"] = 99
 	if int(original[0]["datos"]["valor"]) != 1:
 		errores.append("La rutina devuelta debe ser una copia profunda y no mutar los datos originales.")
+
+
+func _comprobar_rutinas_dia_libre(errores: Array[String]) -> void:
+	var casos_manana: Array[Dictionary] = [
+		{"npc": "Darven", "ubicacion": "cuartel", "actividad": "recorrer_alrededores"},
+		{"npc": "Narel", "ubicacion": "archivo_real", "actividad": "leer"},
+		{"npc": "Mara", "ubicacion": "vivienda_oeste_01", "actividad": "ordenar_sus_espacios"},
+		{"npc": "Ivo", "ubicacion": "vivienda_oeste_02", "actividad": "descansar"},
+		{"npc": "Nima", "ubicacion": "casa_estudio", "actividad": "revisar_apuntes"},
+		{"npc": "Abel", "ubicacion": "castillo", "actividad": "atender_asuntos_del_castillo"},
+		{"npc": "Liam", "ubicacion": "castillo", "actividad": "atender_asuntos_del_castillo"},
+		{"npc": "Saira", "ubicacion": "plaza", "actividad": "pasear"},
+		{"npc": "Elian", "ubicacion": "plaza", "actividad": "pasear"},
+		{"npc": "Bruna", "ubicacion": "plaza", "actividad": "pasear"}
+	]
+	for caso in casos_manana:
+		var rutina: Dictionary = Rules.seleccionar_rutina_dia_libre(caso["npc"], 600)
+		if str(rutina.get("ubicacion_clave", "")) != str(caso["ubicacion"]):
+			errores.append("Destino matutino incorrecto para %s." % caso["npc"])
+		if str(rutina.get("actividad_clave", "")) != str(caso["actividad"]):
+			errores.append("Actividad matutina incorrecta para %s." % caso["npc"])
+
+	var casos_tarde: Array[Dictionary] = [
+		{"npc": "Saira", "ubicacion": "casa_comercio", "actividad": "visitar_comerciantes"},
+		{"npc": "Narel", "ubicacion": "casa_estudio", "actividad": "visitar_estudio"},
+		{"npc": "Nima", "ubicacion": "casa_estudio", "actividad": "visitar_estudio"},
+		{"npc": "Darven", "ubicacion": "plaza", "actividad": "descansar"},
+		{"npc": "Mara", "ubicacion": "plaza", "actividad": "pasear_sin_prisa"},
+		{"npc": "Ivo", "ubicacion": "plaza", "actividad": "descansar_y_saludar"},
+		{"npc": "Elian", "ubicacion": "casa_elian", "actividad": "descansar_del_trabajo"},
+		{"npc": "Bruna", "ubicacion": "casa_bruna", "actividad": "revisar_sus_herramientas"},
+		{"npc": "Abel", "ubicacion": "castillo", "actividad": "organizar_asuntos_internos"},
+		{"npc": "Liam", "ubicacion": "castillo", "actividad": "organizar_asuntos_internos"}
+	]
+	for caso in casos_tarde:
+		var rutina: Dictionary = Rules.seleccionar_rutina_dia_libre(caso["npc"], 900)
+		if str(rutina.get("ubicacion_clave", "")) != str(caso["ubicacion"]):
+			errores.append("Destino vespertino incorrecto para %s." % caso["npc"])
+		if str(rutina.get("actividad_clave", "")) != str(caso["actividad"]):
+			errores.append("Actividad vespertina incorrecta para %s." % caso["npc"])
+
+	var encuentro := Rules.seleccionar_rutina_dia_libre("Mara", 1020)
+	if str(encuentro.get("clave", "")) != "dia_libre_encuentro" or str(encuentro.get("actividad_clave", "")) != "conversar":
+		errores.append("El tramo de encuentro del día libre debe comenzar a las 17:00.")
+
+	var regreso := Rules.seleccionar_rutina_dia_libre("Mara", 1200)
+	if str(regreso.get("clave", "")) != "dia_libre_regreso" or str(regreso.get("ubicacion_clave", "")) != "vivienda_oeste_01":
+		errores.append("El regreso al hogar debe comenzar a las 20:00.")
+
+	var nombre_normalizado := Rules.seleccionar_rutina_dia_libre("  MARA  ", 600)
+	if str(nombre_normalizado.get("actividad_clave", "")) != "ordenar_sus_espacios":
+		errores.append("El nombre del NPC debe normalizar espacios y mayúsculas.")
