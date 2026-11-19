@@ -1767,11 +1767,13 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
 		"vivero":
-			_agregar_parcela_vivero(cuarto, "BancalOeste", Vector2(-155, -5), Vector2(112, 64))
-			_agregar_parcela_vivero(cuarto, "BancalCentro", Vector2(0, -5), Vector2(112, 64))
-			_agregar_parcela_vivero(cuarto, "BancalEste", Vector2(155, -5), Vector2(112, 64))
-			_agregar_parcela_vivero(cuarto, "BancalSurOeste", Vector2(-155, 92), Vector2(112, 48))
-			_agregar_parcela_vivero(cuarto, "BancalSurCentro", Vector2(0, 92), Vector2(112, 48))
+			var tilemap_tierra := _crear_tilemap_dual_tierra_vivero(cuarto)
+			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
+			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
+			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
+			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
+			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
+			tilemap_tierra.call_deferred("reconstruir_renderer_dual")
 			_agregar_deposito_agua_vivero(cuarto, Vector2(-220, -125))
 			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
 			_agregar_estacion_edificio(cuarto, "vivero", "Revisar vivero", Vector2(115, -98))
@@ -2420,51 +2422,93 @@ func _agregar_deposito_agua_vivero(padre: Node, posicion: Vector2) -> void:
 	deposito.add_child(agua)
 
 
-func _agregar_parcela_vivero(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
-	var parcela := Node2D.new()
-	parcela.name = nombre
-	parcela.position = posicion
-	parcela.z_index = -1
-	padre.add_child(parcela)
+func _crear_tilemap_dual_tierra_vivero(padre: Node) -> TileMapDual:
+	var textura := load("res://assets/tilesets/Tierra.png") as Texture2D
+	if textura == null:
+		push_error("ReinoTorres: no se pudo cargar assets/tilesets/Tierra.png")
+		return null
 
-	# Bancal de tierra oscura con borde de madera. Se construye con polígonos
-	# de pixel art sencillos para no depender de sprites inexistentes.
-	var borde := Polygon2D.new()
-	borde.name = "Borde"
-	borde.color = Color("#69452D")
-	borde.polygon = PackedVector2Array([
-		Vector2(-tamano.x / 2.0 - 3, -tamano.y / 2.0 - 3),
-		Vector2(tamano.x / 2.0 + 3, -tamano.y / 2.0 - 3),
-		Vector2(tamano.x / 2.0 + 3, tamano.y / 2.0 + 3),
-		Vector2(-tamano.x / 2.0 - 3, tamano.y / 2.0 + 3)
-	])
-	parcela.add_child(borde)
+	const SECUENCIA_ATLAS: Array[Vector2i] = [
+		Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
+		Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1),
+		Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
+		Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1)
+	]
+	const VECINOS: Array[TileSet.CellNeighbor] = [
+		TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
+		TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
+		TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
+		TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER
+	]
 
-	var tierra := Polygon2D.new()
-	tierra.name = "Tierra"
-	tierra.color = Color("#765039")
-	tierra.polygon = PackedVector2Array([
-		Vector2(-tamano.x / 2.0, -tamano.y / 2.0),
-		Vector2(tamano.x / 2.0, -tamano.y / 2.0),
-		Vector2(tamano.x / 2.0, tamano.y / 2.0),
-		Vector2(-tamano.x / 2.0, tamano.y / 2.0)
-	])
-	parcela.add_child(tierra)
+	var tileset := TileSet.new()
+	tileset.tile_size = Vector2i(32, 32)
+	tileset.add_terrain_set()
+	tileset.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
+	tileset.add_terrain(0)
+	tileset.set_terrain_name(0, 0, "<any>")
+	tileset.add_terrain(0)
+	tileset.set_terrain_name(0, 1, "Tierra de cultivo")
 
-	for x in range(-int(tamano.x / 2.0) + 8, int(tamano.x / 2.0), 16):
-		var surco := Line2D.new()
-		surco.name = "Surco%d" % x
-		surco.width = 2.0
-		surco.default_color = Color("#513722")
-		surco.points = PackedVector2Array([
-			Vector2(x, -tamano.y / 2.0 + 5),
-			Vector2(x, tamano.y / 2.0 - 5)
-		])
-		parcela.add_child(surco)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = textura
+	atlas.texture_region_size = Vector2i(32, 32)
+	for coordenada in SECUENCIA_ATLAS:
+		atlas.create_tile(coordenada)
+	for indice in range(SECUENCIA_ATLAS.size()):
+		var datos := atlas.get_tile_data(SECUENCIA_ATLAS[indice], 0)
+		datos.terrain_set = 0
+		datos.terrain = 1
+		var bits := indice
+		for vecino in VECINOS:
+			datos.set_terrain_peering_bit(vecino, 1 if (bits & 1) != 0 else 0)
+			bits >>= 1
+	tileset.add_source(atlas, 1)
 
-	# Cada bancal es un objetivo contextual: solo aparece al llevar una regadera.
-	parcela.set_script(WATERING_INTERACTABLE_SCRIPT)
-	parcela.call("configurar_parcela", nombre)
+	var tilemap := TileMapDual.new()
+	tilemap.name = "TierraCultivableDual"
+	tilemap.tile_set = tileset
+	tilemap.godot_4_3_compatibility = false
+	tilemap.z_index = -1
+	tilemap.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	padre.add_child(tilemap)
+	return tilemap
+
+
+func _agregar_parcela_vivero(
+	padre: Node,
+	tilemap: TileMapDual,
+	nombre: String,
+	posicion: Vector2,
+	dimensiones: Vector2i
+) -> void:
+	if not is_instance_valid(tilemap):
+		push_error("ReinoTorres: no se pudo crear el TileMapDual de tierra del vivero.")
+		return
+
+	var celdas: Array[Vector2i] = []
+	for y in range(dimensiones.y):
+		for x in range(dimensiones.x):
+			var desplazamiento := Vector2(
+				(float(x) - float(dimensiones.x - 1) / 2.0) * 32.0,
+				(float(y) - float(dimensiones.y - 1) / 2.0) * 32.0
+			)
+			var celda := tilemap.local_to_map(posicion + desplazamiento)
+			if celda in celdas:
+				continue
+			celdas.append(celda)
+			tilemap.draw_cell(celda, 1)
+
+			# Cada tile de tierra es una parcela independiente y persistente.
+			var parcela := Node2D.new()
+			parcela.name = "%s_%d_%d" % [nombre, celda.x, celda.y]
+			parcela.position = tilemap.map_to_local(celda)
+			parcela.z_index = 0
+			padre.add_child(parcela)
+			parcela.set_script(WATERING_INTERACTABLE_SCRIPT)
+			parcela.call("configurar_parcela", parcela.name)
+
+	tilemap.call_deferred("_update_cells", celdas, false)
 
 
 func _agregar_suelo_tilemap(padre: Node) -> void:
