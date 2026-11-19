@@ -2,6 +2,7 @@ extends CanvasLayer
 class_name BuildingServiceUI
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const MENU_LAYOUT = preload("res://scripts/ui/menu_layout.gd")
 const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
 const BARRACKS_TRAINING_SCRIPT = preload("res://scripts/gameplay/barracks_training_session.gd")
 
@@ -82,7 +83,7 @@ func _crear_interfaz() -> void:
 	_panel.add_child(margen)
 
 	var scroll_contenido := ScrollContainer.new()
-	var alto_viewport := get_viewport_rect().size.y
+	var alto_viewport: float = get_viewport().get_visible_rect().size.y
 	scroll_contenido.custom_minimum_size = Vector2(0.0, minf(440.0, maxf(180.0, alto_viewport - 72.0)))
 	scroll_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -524,7 +525,7 @@ func _construir_investigacion_herbolario() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
 	_agregar_texto("EXAMEN DE MUESTRAS")
 	_agregar_texto("Selecciona una muestra para consultar sus datos. La investigación no consume materiales.")
-	var layout := MenuLayout.crear_selector_dos_paneles(_contenido, 164.0, 220.0, 8)
+	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 164.0, 220.0, 8)
 	var lista := layout["list_content"] as GridContainer
 	var panel_lista := layout["list_panel"] as PanelContainer
 	var panel_detalle := layout["detail_panel"] as PanelContainer
@@ -557,9 +558,9 @@ func _construir_investigacion_herbolario() -> void:
 			if objeto.is_empty() or not _es_muestra_botanica(objeto):
 				continue
 			cantidad += 1
-			var boton := MenuLayout.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(objeto))
+			var boton := MENU_LAYOUT.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(objeto))
 			PIXEL_UI_THEME.apply(boton, false)
-			MenuLayout.agregar_cantidad(boton, maxi(1, int(objeto.get("cantidad", 1))))
+			MENU_LAYOUT.agregar_cantidad(boton, maxi(1, int(objeto.get("cantidad", 1))))
 			boton.pressed.connect(_seleccionar_muestra_herbolario.bind(objeto.duplicate(true), icono, nombre_label, descripcion, estado))
 			lista.add_child(boton)
 	if cantidad == 0:
@@ -595,7 +596,7 @@ func _construir_procesamiento_herbolario() -> void:
 			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
 		return
 
-	var layout := MenuLayout.crear_selector_dos_paneles(_contenido, 180.0, 260.0, 10)
+	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 180.0, 260.0, 10)
 	var lista := layout["list_content"] as GridContainer
 	var panel_lista := layout["list_panel"] as PanelContainer
 	var panel_detalle := layout["detail_panel"] as PanelContainer
@@ -623,9 +624,9 @@ func _construir_procesamiento_herbolario() -> void:
 			if seleccion_inicial.is_empty():
 				seleccion_inicial = item_catalogo
 				id_inicial = item_id
-			var boton := MenuLayout.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(item_catalogo))
+			var boton := MENU_LAYOUT.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(item_catalogo))
 			PIXEL_UI_THEME.apply(boton, false)
-			MenuLayout.agregar_cantidad(boton, _contar_item(item_id))
+			MENU_LAYOUT.agregar_cantidad(boton, _contar_item(item_id))
 			boton.pressed.connect(_mostrar_procesos_item_herbolario.bind(item_id, item_catalogo, detalle))
 			lista.add_child(boton)
 
