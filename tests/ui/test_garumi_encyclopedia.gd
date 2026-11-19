@@ -32,12 +32,12 @@ func _run() -> void:
 	await get_tree().process_frame
 
 	var tabs := inventario.get_node("Window/Margin/Column/Tabs") as TabContainer
-	var enciclopedia := inventario.get_node("Window/Margin/Column/Tabs/Enciclopedia") as Control
+	var enciclopedia := inventario.get_node_or_null("Window/Margin/Column/Tabs/Enciclopedia") as Control
 	var garumis_tab := inventario.get_node("Window/Margin/Column/Tabs/Garumis") as Control
-	var boton_enciclopedia := inventario.get_node("Window/Margin/Column/TabButtons/Enciclopedia") as Button
+	var boton_enciclopedia := inventario.get_node_or_null("Window/Margin/Column/TabButtons/Enciclopedia") as Button
 	var boton_garumis := inventario.get_node("Window/Margin/Column/TabButtons/Garumis") as Button
 	_check(garumis_tab.has_method("abrir_en_garumis"), "Garumis debe ser una pestaña independiente.")
-	_check(not boton_enciclopedia.visible and not boton_garumis.visible, "Garumis debe iniciar oculto sin descubrimientos y Enciclopedia no debe aparecer en el inventario.")
+	_check(boton_enciclopedia == null and not boton_garumis.visible, "Garumis debe iniciar oculto sin descubrimientos y Enciclopedia no debe aparecer en el inventario.")
 
 	# G no debe abrir una pestaña bloqueada.
 	var tecla_bloqueada := InputEventKey.new()
@@ -54,10 +54,10 @@ func _run() -> void:
 	Input.parse_input_event(soltar_bloqueada)
 	await get_tree().process_frame
 
-	# Descubrir un Garumi desbloquea las dos pestañas.
+	# Descubrir un Garumi desbloquea el panel de vínculos.
 	_check(GameState.registrar_garumi_descubierto("garumi-desbloqueo-test"), "Debe registrar el primer Garumi descubierto.")
 	await get_tree().process_frame
-	_check(not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
+	_check(boton_enciclopedia == null and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
 
 	# El descubrimiento de una criatura también desbloquea el panel de Garumis.
 	GameState.world_state.flags.erase("enciclopedia_garumis")
@@ -83,8 +83,7 @@ func _run() -> void:
 	Input.parse_input_event(tecla)
 	await get_tree().process_frame
 	_check(inventario.visible, "Pulsar G debe abrir la ventana del inventario.")
-	_check(tabs.current_tab == 3, "Pulsar G debe seleccionar la pestaña Garumis.")
-	_check(str(enciclopedia.get("_modo")) != "garumis", "La Enciclopedia no debe contener Garumis.")
+	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Garumis.")
 	_check(garumis_tab.has_method("abrir_en_garumis"), "El panel de Garumis debe conservar el acceso a vínculos.")
 
 	# La enciclopedia sólo debe exponer el linaje descendiente de Orumi.
