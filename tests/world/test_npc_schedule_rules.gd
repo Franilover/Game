@@ -285,3 +285,20 @@ func _comprobar_respaldo_castillo(errores: Array[String]) -> void:
 		errores.append("La salida diurna debe mantenerse hasta las 19:59.")
 	if str(despues.get("ubicacion_clave", "")) != "castillo":
 		errores.append("A las 20:00 debe volver el destino del castillo.")
+
+
+func _comprobar_desplazamiento_ocio(errores: Array[String]) -> void:
+	var primero: Vector2 = Rules.obtener_desplazamiento_ocio("Mara", "1:2:3", 1)
+	var repetido: Vector2 = Rules.obtener_desplazamiento_ocio("Mara", "1:2:3", 1)
+	if primero != repetido:
+		errores.append("El desplazamiento de ocio debe ser estable para las mismas entradas.")
+
+	var permitidos: Array[Vector2] = [
+		Vector2(-20.0, -12.0),
+		Vector2(16.0, -16.0),
+		Vector2(20.0, 12.0),
+		Vector2(-16.0, 16.0),
+		Vector2(0.0, -20.0)
+	]
+	if not permitidos.has(primero):
+		errores.append("El desplazamiento de ocio debe usar uno de los puntos locales permitidos.")
