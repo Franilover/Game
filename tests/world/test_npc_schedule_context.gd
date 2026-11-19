@@ -4,6 +4,11 @@ const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const NPCScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
 
 
+class ZonaInteriorPrueba extends Node2D:
+	var _interior_activo := true
+	var _entrada_interior_id := "panaderia"
+
+
 func _ready() -> void:
 	call_deferred("_run")
 
@@ -227,5 +232,25 @@ func _comprobar_interrupcion_cinematica(
 	if int(npc.get_meta("rutina_paseo_interior_siguiente", -1)) != 90:
 		errores.append("La interrupción cinematográfica perdió el siguiente horario del paseo.")
 
+	# La interrupción no debe consumir el próximo horario. Al terminar la
+	# cinemática, la agenda debe poder reactivar el paseo desde la habitación.
 	npc.remove_meta("cinematica_npc_activa")
+	var zona := ZonaInteriorPrueba.new()
+	zona.name = "ZonaPrueba"
+	add_child(zona)
+	var habitacion := Node2D.new()
+	habitacion.name = "Habitacion_panaderia"
+	zona.add_child(habitacion)
+	npc.reparent(habitacion, true)
+	agenda._zona = zona
+	agenda._actualizar_rutina_interior(npc, "panaderia", 90, "trabajar")
+	if not movimiento.rutina_en_ejecucion():
+		errores.append("El paseo interior pendiente no se reanudó después de terminar la cinemática.")
+	if not bool(npc.get_meta("rutina_paseo_interior_activo", false)) or not bool(npc.get_meta("rutina_en_transito", false)):
+		errores.append("La reanudación no restauró el estado activo de la rutina interior.")
+	if int(npc.get_meta("rutina_paseo_interior_siguiente", -1)) != 90:
+		errores.append("La reanudación alteró el horario pendiente del paseo.")
+	agenda._zona = null
+	npc.reparent(self, true)
+	zona.queue_free()
 	npc.remove_meta("rutina_paseo_interior_siguiente")
