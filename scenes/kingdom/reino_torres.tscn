@@ -2826,3 +2826,234 @@ material = ExtResource("2_kixsf")
 tile_set = SubResource("TileSet_5jrg2")
 script = ExtResource("4_7dy5d")
 godot_4_3_compatibility = false
+
+
+[node name="LayoutEdificios" type="Node2D" parent="."]
+
+[node name="Posicion_sprite_castillo" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(0, -850)
+
+[node name="Posicion_sprite_panaderia" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-360, -120)
+
+[node name="Posicion_sprite_posada" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(360, -120)
+
+[node name="Posicion_sprite_herbolario" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-150, 160)
+
+[node name="Posicion_sprite_vivero" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(150, 160)
+
+[node name="Posicion_sprite_casa_bruna" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-1000, -350)
+
+[node name="Posicion_sprite_casa_elian" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(700, -350)
+
+[node name="Posicion_sprite_casa_darven" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(850, -350)
+
+[node name="Posicion_sprite_casa_saira" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1000, -350)
+
+[node name="Posicion_sprite_forja" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-500, 180)
+
+[node name="Posicion_sprite_archivo_real" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-170, -280)
+
+[node name="Posicion_sprite_sala_consejo" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(170, -280)
+
+[node name="Posicion_sprite_casa_estudio" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-520, -430)
+
+[node name="Posicion_sprite_biblioteca" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(0, -540)
+
+[node name="Posicion_sprite_centro_expediciones" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1180, 300)
+
+[node name="Posicion_sprite_taberna" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(760, -540)
+
+[node name="Posicion_sprite_escuela" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-760, -540)
+
+[node name="Posicion_sprite_clinica" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(360, 430)
+
+[node name="Posicion_sprite_casa_comercio" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(500, 180)
+
+[node name="Posicion_sprite_cuartel" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(520, -430)
+
+[node name="Posicion_sprite_registro" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1480, 0)
+
+[node name="Posicion_sprite_reparaciones" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-420, 430)
+
+[node name="Posicion_sprite_carpinteria" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-160, 430)
+
+[node name="Posicion_sprite_granero" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-760, 600)
+
+[node name="Posicion_sprite_molino" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-500, 600)
+
+[node name="Posicion_sprite_corrales" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(650, 650)
+
+[node name="Posicion_sprite_casa_granjeros" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(950, 850)
+
+[node name="Posicion_sprite_casa_vacia_01" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-700, -350)
+
+[node name="Posicion_sprite_casa_vacia_02" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-1000, -100)
+
+[node name="Posicion_sprite_casa_vacia_03" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-850, -100)
+
+[node name="Posicion_sprite_casa_vacia_04" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-700, -100)
+
+[node name="Posicion_sprite_casa_vacia_05" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-1000, 150)
+
+[node name="Posicion_sprite_casa_vacia_06" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-850, 150)
+
+[node name="Posicion_sprite_casa_vacia_07" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(700, -100)
+
+[node name="Posicion_sprite_casa_vacia_08" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(850, -100)
+
+[node name="Posicion_sprite_casa_narel" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-850, -350)
+
+[node name="Posicion_sprite_casa_vacia_10" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1000, -100)
+
+[node name="Posicion_sprite_casa_vacia_11" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(850, 150)
+
+[node name="Posicion_entrada_castillo" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(0, -738)
+
+[node name="Posicion_entrada_panaderia" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-360, -58)
+
+[node name="Posicion_entrada_posada" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(360, -53)
+
+[node name="Posicion_entrada_herbolario" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-150, 222)
+
+[node name="Posicion_entrada_vivero" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(150, 222)
+
+[node name="Posicion_entrada_casa_bruna" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-1000, -296)
+
+[node name="Posicion_entrada_casa_elian" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(700, -296)
+
+[node name="Posicion_entrada_casa_darven" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(850, -296)
+
+[node name="Posicion_entrada_casa_saira" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1000, -296)
+
+[node name="Posicion_entrada_forja" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-500, 242)
+
+[node name="Posicion_entrada_archivo_real" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-170, -217)
+
+[node name="Posicion_entrada_sala_consejo" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(170, -212)
+
+[node name="Posicion_entrada_casa_estudio" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-520, -365)
+
+[node name="Posicion_entrada_biblioteca" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(0, -478)
+
+[node name="Posicion_entrada_centro_expediciones" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1180, 362)
+
+[node name="Posicion_entrada_taberna" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(760, -478)
+
+[node name="Posicion_entrada_escuela" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-760, -478)
+
+[node name="Posicion_entrada_clinica" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(360, 492)
+
+[node name="Posicion_entrada_casa_comercio" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(500, 246)
+
+[node name="Posicion_entrada_cuartel" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(520, -362)
+
+[node name="Posicion_entrada_registro" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1480, 61)
+
+[node name="Posicion_entrada_reparaciones" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-420, 494)
+
+[node name="Posicion_entrada_carpinteria" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-160, 494)
+
+[node name="Posicion_entrada_granero" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-760, 667)
+
+[node name="Posicion_entrada_molino" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-500, 664)
+
+[node name="Posicion_entrada_corrales" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(650, 716)
+
+[node name="Posicion_entrada_casa_granjeros" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(950, 898)
+
+[node name="Posicion_entrada_casa_vacia_01" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-700, -296)
+
+[node name="Posicion_entrada_casa_vacia_02" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-1000, -46)
+
+[node name="Posicion_entrada_casa_vacia_03" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-850, -46)
+
+[node name="Posicion_entrada_casa_vacia_04" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-700, -46)
+
+[node name="Posicion_entrada_casa_vacia_05" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-1000, 204)
+
+[node name="Posicion_entrada_casa_vacia_06" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-850, 204)
+
+[node name="Posicion_entrada_casa_vacia_07" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(700, -46)
+
+[node name="Posicion_entrada_casa_vacia_08" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(850, -46)
+
+[node name="Posicion_entrada_casa_narel" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(-850, -296)
+
+[node name="Posicion_entrada_casa_vacia_10" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(1000, -46)
+
+[node name="Posicion_entrada_casa_vacia_11" type="Marker2D" parent="LayoutEdificios"]
+position = Vector2(850, 204)
