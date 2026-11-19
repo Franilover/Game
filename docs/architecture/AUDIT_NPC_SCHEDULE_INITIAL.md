@@ -652,3 +652,10 @@ Se añadió cobertura a `test_npc_schedule_context` con una criatura real y una 
 
 
 La regresión se amplió para recorrer también la cancelación real de `NPCConversationSystem`: simula la pausa y reanudación que hace `DialogueSystem.cerrar()`, entrega el acercamiento activo al sistema de conversación y ejecuta `_cancelar_acercamiento()`. Se verifica que la conversación libere su estado y que la agenda detenga la ruta residual incluso sin contexto mundial.
+
+
+## 65. Restauración de rutina con contexto mundial disponible
+
+La cobertura del cierre de iniciativa ya no se limita al caso de contexto ausente. `test_npc_schedule_context` configura un `WorldAtmosphere` real con calendario cargado, un `NPCNavigationSystem` real con una malla AStar transitable y una zona activa de Torres. Después de iniciar una ruta temporal de acercamiento, ejecuta `finalizar_acercamiento_social()` y verifica que se aplique la rutina programada, que el NPC vuelva a estar en tránsito y que el extremo de la ruta coincida con el destino calculado por el resolver de rutinas.
+
+La prueba prepara el desfase de cambio de rutina para que el resultado no dependa de la espera aleatoria de distribución entre NPC. No sustituye `CreatureMovement`, `WorldAtmosphere` ni `NPCNavigationSystem`; sólo usa un `ZoneManager` mínimo para exponer el tipo de zona actual. La integración NPCScheduleContext pasó en CI para el commit de esta cobertura. La suite completa continúa ejecutándose.
