@@ -115,24 +115,44 @@ func _obtener_estilo(tipo: String, entrada_id: String) -> Dictionary:
 	match tipo:
 		"castillo":
 			estilo = _perfil("stone", "#77756f", "#4e4d4a", "#9b8453", "#c6aa70", "#536b75", false)
-		"archivo", "biblioteca":
-			estilo = _perfil("wood", "#947b5d", "#5f4b38", "#5a4636", "#c2a16e", "#637d83", true)
-		"consejo", "cuartel", "registro":
-			estilo = _perfil("stone", "#8b877b", "#5e5a52", "#5c5142", "#b39a6e", "#647b80", true)
-		"taberna", "posada", "panaderia":
-			estilo = _perfil("wood", "#a17a4f", "#65472f", "#70482e", "#c89a5c", "#657d79", true)
+		"archivo":
+			estilo = _perfil("wood", "#80694f", "#4f3d2f", "#514235", "#9f8357", "#5e777d", true)
+		"biblioteca":
+			estilo = _perfil("wood", "#a18a68", "#69543d", "#67543e", "#b79a69", "#6d8587", true)
+		"consejo":
+			estilo = _perfil("stone", "#99917f", "#6c6558", "#665b4c", "#b9a16e", "#657b82", true)
+		"cuartel":
+			estilo = _perfil("stone", "#77766f", "#4c4b46", "#55534d", "#927b56", "#5e7478", false)
+		"registro":
+			estilo = _perfil("tile", "#aaa18e", "#746c5d", "#726653", "#b69a6b", "#71888b", true)
+		"taberna":
+			estilo = _perfil("wood", "#79563c", "#4e3729", "#62402e", "#a46b3e", "#647c78", true)
+		"posada":
+			estilo = _perfil("wood", "#a17a4f", "#65472f", "#806344", "#c89a5c", "#708c8b", true)
+		"panaderia":
+			estilo = _perfil("tile", "#b68c62", "#805c3e", "#8a6248", "#d0a56e", "#75877e", true)
 		"escuela":
-			estilo = _perfil("wood", "#ad9874", "#78654d", "#66523d", "#d0b98b", "#607d86", true)
-		"forja", "taller":
+			estilo = _perfil("wood", "#b7a17d", "#7d684e", "#81745b", "#d0b98b", "#607d86", true)
+		"forja":
 			estilo = _perfil("stone", "#66645f", "#403f3c", "#4c4136", "#a46c3e", "#5a6d70", false)
-		"vivero", "herbolario":
+		"taller":
+			estilo = _perfil("wood", "#806b50", "#514431", "#62513d", "#a17d4d", "#667c78", false)
+		"vivero":
 			estilo = _perfil("garden", "#9a9a79", "#66684e", "#526044", "#c1b98a", "#6d8980", true)
+		"herbolario":
+			estilo = _perfil("tile", "#aaa17e", "#71694c", "#69704f", "#b6a879", "#6f8c7d", true)
 		"clinica":
 			estilo = _perfil("tile", "#c1b9a3", "#8b8576", "#756d5e", "#ded2b5", "#79969a", true)
-		"comercio", "carpinteria":
+		"comercio":
+			estilo = _perfil("tile", "#a78b64", "#72583e", "#786044", "#c19a67", "#66817d", true)
+		"carpinteria":
 			estilo = _perfil("wood", "#99764f", "#624a34", "#725238", "#c19a67", "#66817d", true)
-		"granero", "molino", "corrales":
+		"granero":
 			estilo = _perfil("earth", "#927c5b", "#65543e", "#6b5034", "#b39462", "#6c8065", false)
+		"molino":
+			estilo = _perfil("wood", "#a18a63", "#6b5638", "#806044", "#c19b61", "#71816b", false)
+		"corrales":
+			estilo = _perfil("earth", "#82704f", "#5a4935", "#72583c", "#a88b59", "#6d8065", false)
 		_:
 			estilo = _perfil("wood", "#927957", "#5f4c38", "#6b5038", "#b99565", "#6d8580", true)
 
@@ -141,15 +161,15 @@ func _obtener_estilo(tipo: String, entrada_id: String) -> Dictionary:
 	if tipo == "vivienda":
 		match entrada_id:
 			"casa_bruna":
-				estilo["trim"] = Color("#76513d")
+				estilo = _perfil("wood", "#8c6d4e", "#594431", "#73543c", "#76513d", "#71837c", true)
 			"casa_elian":
-				estilo["trim"] = Color("#64765a")
+				estilo = _perfil("wood", "#a18a65", "#6c563b", "#77714e", "#64765a", "#718b8a", true)
 			"casa_darven":
-				estilo["trim"] = Color("#6b647d")
+				estilo = _perfil("wood", "#8b7b65", "#5b4d3c", "#5e5662", "#6b647d", "#75888c", false)
 			"casa_saira":
-				estilo["trim"] = Color("#8a6746")
+				estilo = _perfil("tile", "#aa8d68", "#70563e", "#806348", "#8a6746", "#728a8b", true)
 			"casa_narel":
-				estilo["trim"] = Color("#647b83")
+				estilo = _perfil("wood", "#8d8b72", "#5d5b48", "#66716b", "#647b83", "#78918b", true)
 	return estilo
 
 
