@@ -202,3 +202,13 @@ La decisión de asignar a un vendedor rotativo se trasladó a `NPCScheduleRules.
 `NPCScheduleSystem` conserva la validación de instancia y la construcción de la rutina de puesto. Se mantienen el catálogo de siete vendedores rotativos, Saira como coordinadora excluida, las franjas 09:00–14:00 y 14:00–18:00, la fórmula de rotación por día/franja y la prioridad de trabajo, eventos, invitaciones y encuentros.
 
 Se añadieron casos para inicio y fin de horario, coordinadora, oficio existente, evento comunitario y NPC fuera del catálogo. La validación CI debe confirmar esta extracción junto con la corrección del orden de declaración en la prueba de desplazamientos de evento.
+
+## 16. Novena extracción: evaluación pura de invitaciones
+
+La evaluación de fecha, estado de aceptación y franja horaria se trasladó a `NPCScheduleRules.evaluar_invitacion_npc(invitacion, anio_actual, dia_actual, minutos)`. El helper devuelve si la invitación caducó o si está activa, junto con su ubicación normalizada. No modifica el diccionario recibido ni accede al reloj del mundo.
+
+`NPCScheduleSystem` conserva la lectura de `GameState.world_state.flags`, la copia profunda de los datos, la persistencia del estado `caducada`, el guardado diferido, la validación de ubicaciones contra `POSICIONES` y el metadato `invitacion_npc_activa` del NPC.
+
+Se preservan el orden de validación y los límites temporales existentes: sólo se evalúa entre 17:00 y 19:00, la hora final es exclusiva y una invitación sólo se activa en el día exacto y con estado `aceptada`. La caducidad conserva la comparación por año y día.
+
+Las pruebas cubren activación, límites horarios, fecha futura, estado no aceptado, caducidad y ausencia de mutación del diccionario original. No se cambia el formato persistido de las invitaciones.
