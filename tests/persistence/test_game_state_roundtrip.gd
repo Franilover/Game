@@ -149,6 +149,29 @@ func _run() -> void:
 			errores.append("La lectura puntual de asuntos expuso el estado interno modificable.")
 		if str((destino.obtener_promesas_npc()[0] as Dictionary).get("estado", "")) != "pendiente":
 			errores.append("La lectura puntual de promesas expuso el estado interno modificable.")
+	var relacion_actualizada := relaciones_sociales.registrar_interaccion_entre_npc(
+		"ivo", "nima", {"confianza": 2.0}, {"tipo": "interaccion_prueba"}
+	)
+	if not is_equal_approx(float(relacion_actualizada.get("confianza", 0.0)), 44.0):
+		errores.append("La escritura puntual de relación no conservó ni actualizó sus valores.")
+	if int(relacion_actualizada.get("interacciones", 0)) != 1:
+		errores.append("La escritura puntual de relación no registró la interacción.")
+	if not relaciones_sociales.registrar_conocimiento_npc("ivo", {
+		"clave": "conocimiento_nuevo_prueba", "tipo": "noticia", "titulo": "Dato nuevo"
+	}):
+		errores.append("No pudo registrar conocimiento mediante la escritura puntual.")
+	if destino.obtener_conocimiento_npc("ivo", "conocimiento_nuevo_prueba").is_empty():
+		errores.append("El conocimiento escrito puntualmente no quedó disponible.")
+	var asunto_id := relaciones_sociales.registrar_asunto_pendiente_npc("ivo", {
+		"clave": "asunto_nuevo_prueba", "descripcion": "Asunto nuevo"
+	})
+	if asunto_id.is_empty() or destino.obtener_asuntos_pendientes_npc().size() != 2:
+		errores.append("No pudo registrar un asunto con escritura puntual.")
+	var promesa_id := relaciones_sociales.registrar_promesa_entre_npc("ivo", "nima", {
+		"clave": "promesa_nueva_prueba", "descripcion": "Promesa nueva"
+	})
+	if promesa_id.is_empty() or destino.obtener_promesas_npc().size() != 2:
+		errores.append("No pudo registrar una promesa con escritura puntual.")
 	relaciones_sociales.free()
 	var inventario_guardado: Dictionary = flags.get("inventario_estado", {}) as Dictionary
 	var items_guardados: Array = inventario_guardado.get("items", []) as Array
