@@ -33,6 +33,7 @@ func _ready() -> void:
 func configurar(inventario: InventoryController, estacion_id: String = "examen") -> void:
 	_inventario = inventario
 	_estacion_id = estacion_id
+	_boton_analizar.text = "Inspeccionar" if _estacion_id == "forja_inspeccion" else "Analizar"
 	_cargar_objetos()
 
 
