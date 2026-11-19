@@ -56,7 +56,7 @@ func _run() -> void:
 		errores.append("La pila compatible no llegó al límite esperado.")
 	if (
 		str(runtime.state.items[17].get("id", "")) != "mineral"
-		or int(runtime.state.items[17].get("cantidad", 0)) != 2
+		or int(runtime.state.items[7].get("cantidad", 0)) != 2
 	):
 		errores.append("El remanente no se colocó íntegro en el slot libre.")
 
