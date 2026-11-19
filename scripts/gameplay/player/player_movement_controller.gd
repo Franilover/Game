@@ -22,6 +22,21 @@ func calcular_direccion(input_direction: Vector2) -> Vector2:
 	return input_direction.limit_length(1.0)
 
 
+## Política común de velocidad para caminar, correr y sprint de Eterium.
+## No consume recursos ni decide si el sprint puede activarse.
+func calcular_multiplicador_velocidad(
+	multiplicador_carrera: float,
+	corriendo: bool,
+	sprint_eterium: bool,
+	multiplicador_eterium: float
+) -> float:
+	if sprint_eterium:
+		return multiplicador_carrera * multiplicador_eterium
+	if corriendo:
+		return multiplicador_carrera
+	return 1.0
+
+
 func calcular_velocidad(
 	direction: Vector2,
 	move_speed: float,
