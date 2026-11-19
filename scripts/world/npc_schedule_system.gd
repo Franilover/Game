@@ -644,12 +644,6 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			}
 			npc.set_meta("evento_comunitario_actual", "")
 			npc.remove_meta("evento_comunitario_datos")
-			npc.remove_meta("grupo_social_castillo_id")
-			npc.remove_meta("grupo_social_castillo_nombres")
-			npc.remove_meta("puesto_social_castillo")
-			npc.remove_meta("reunion_castillo_fase")
-			npc.remove_meta("reunion_castillo_firma_asistentes")
-			npc.remove_meta("reunion_castillo_dia")
 
 	# Las reuniones nocturnas automáticas están desactivadas: al llegar la noche,
 	# los habitantes libres deben regresar a sus hogares para dormir.
