@@ -471,3 +471,10 @@ El log de GitHub Actions confirmó que la importación de recursos y las pruebas
 `_aplicar_rutina()` ya determina al principio si el horario está dentro del tramo nocturno. La condición que fuerza el regreso al hogar cuando no existe una actividad programada volvía a calcular exactamente el mismo límite horario. Ahora reutiliza `horario_nocturno`, conservando la condición adicional de ausencia de rutina.
 
 Es una simplificación local: no cambia los límites (21:00 inclusive y antes de 06:00), ni la prioridad de turnos esenciales, ni el destino elegido. Se mantiene la misma fuente de verdad durante toda la resolución.
+
+
+## 46. Fuente única para el tramo horario nocturno
+
+La misma regla (21:00 inclusive hasta antes de 06:00, cruzando medianoche) se calculaba en tres puntos de la simulación: ciclo de actualización NPC, resolución de rutina y postura de descanso dentro del edificio. Se centralizó en `NPCScheduleRules.es_horario_nocturno(minutos)` y los tres consumidores reutilizan esa función.
+
+La prueba unitaria de reglas ahora cubre límites y valores adyacentes: -1, 00:00, 05:59, 06:00, 20:59, 21:00, 23:59 y 24:00. Esto fija el contrato temporal en un único lugar y evita que el planificador y las animaciones diverjan con el tiempo.
