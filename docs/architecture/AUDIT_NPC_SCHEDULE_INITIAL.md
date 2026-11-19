@@ -633,3 +633,10 @@ La agenda es propietaria de las rutas de horario, paseo interior/exterior y acti
 Las cinemáticas no constituyen un segundo motor de locomoción: la elegibilidad exige que el NPC esté detenido y libre, y la marca de cinemática bloquea nuevas asignaciones. La interrupción específica de paseo interior ya cancela su ruta y conserva el próximo horario. Los NPC ocultos por un interior siguen siendo actualizados por la agenda, pero la transición de edificio conserva el control de visibilidad/colisiones en `ReinoTorres`.
 
 No se encontró una sobrescritura simultánea demostrable que justifique modificar producción en esta pasada. Tampoco se debe convertir `pausar_temporalmente()` en una dependencia de conversación: el flujo actual no llama esa API y su contrato es distinto de cancelar una ruta. Próximo límite de prueba: añadir cobertura dedicada a la precedencia pausa/ruta/dirección externa y al ciclo de acercamiento hasta la restauración de la rutina. No se cambian escenas, metadata, señales, guardados ni Supabase.
+
+
+## 63. Prueba explícita de autoridad de movimiento
+
+Se añadió `test_creature_movement_authority.tscn` para proteger la precedencia real de `CreatureMovement`: la ruta de rutina permanece propietaria frente a una dirección externa; la pausa temporal conserva la ruta y detiene el cuerpo; reanudar devuelve el control a esa ruta; `detener_por_rutina()` conserva el bloqueo con ruta vacía; `detener()` libera el modo de rutina; y `liberar_control()` limpia el modo/dirección externos.
+
+La prueba usa la escena real de criatura y su componente `CreatureMovement`, sin sustituirlos por dobles. Se incorpora al workflow headless. Validación CI pendiente.
