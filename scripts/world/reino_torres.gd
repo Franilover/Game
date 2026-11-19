@@ -2352,7 +2352,21 @@ func _cerrar_puesto_comercio(capa: CanvasLayer, fisica_previa: bool, input_previ
 func _abrir_menu_servicio_edificio(tipo: String) -> void:
 	if get_tree().get_first_node_in_group("building_service_ui") != null:
 		return
-	_abrir_menu_servicio_edificio(tipo)
+	var sistema := get_tree().get_first_node_in_group("interaction_system")
+	if not is_instance_valid(sistema):
+		Events.notification_pushed.emit("No se pudo acceder al sistema de interacción.")
+		return
+	var inventario := sistema.get("inventory") as InventoryController
+	var world_items := sistema.get("world_items") as GarliaWorldItems
+	if not is_instance_valid(inventario):
+		Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	var interfaz := BUILDING_SERVICE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.add_to_group("building_service_ui")
+	get_tree().root.add_child(interfaz)
+	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
 
 
 func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posicion: Vector2) -> void:
@@ -2389,23 +2403,7 @@ func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> vo
 	if tipo == "pasaje_exterior":
 		_mostrar_confirmacion_pasaje_exterior()
 		return
-	if get_tree().get_first_node_in_group("building_service_ui") != null:
-		return
-	var sistema := get_tree().get_first_node_in_group("interaction_system")
-	if not is_instance_valid(sistema):
-		Events.notification_pushed.emit("No se pudo acceder al sistema de interacción.")
-		return
-	var inventario := sistema.get("inventory") as InventoryController
-	var world_items := sistema.get("world_items") as GarliaWorldItems
-	if not is_instance_valid(inventario):
-		Events.notification_pushed.emit("No se pudo acceder al inventario.")
-		return
-	var interfaz := BUILDING_SERVICE_UI_SCRIPT.new() as CanvasLayer
-	if not is_instance_valid(interfaz):
-		return
-	interfaz.add_to_group("building_service_ui")
-	get_tree().root.add_child(interfaz)
-	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
+	_abrir_menu_servicio_edificio(tipo)
 
 
 func _mostrar_confirmacion_pasaje_exterior() -> void:
