@@ -1395,7 +1395,7 @@ func _enriquecer_datos_objeto(datos: Dictionary) -> Dictionary:
 	# Las partidas antiguas pueden guardar solo la identidad del objeto.
 	# Completar los campos de gameplay desde items_game permite que la UI y
 	# el consumo lean siempre las propiedades canónicas actuales.
-	for clave in ["nombre", "descripcion", "origen", "propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
+	for clave in ["nombre", "descripcion", "descripcion_detallada", "origen", "propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto", "max_stack"]:
 		if not canonico.has(clave):
 			continue
 		var valor_actual: Variant = resultado.get(clave, null)
