@@ -420,3 +420,12 @@ Se consolidó esa secuencia en `_devolver_npc_al_exterior()`. La salida individu
 Se amplió `test_npc_building_entry_collision.tscn` para cubrir ambas rutas: cambio individual de rutina y salida general del edificio. En las dos se comprueban contenedor, umbral, visibilidad, grupo `interactable` y colisiones exteriores desactivadas.
 
 La devolución general recibe ahora el snapshot de NPCs desde `_salir_del_interior()`, en lugar de consultar el SceneTree internamente. Esto hace explícita la dependencia y permite probar la ruta con un conjunto controlado. La primera ejecución del nuevo test reveló que el fixture mantenía `ReinoTorres` fuera del SceneTree; se ajustó el contrato para inyectar el snapshot, evitando forzar el `_ready()` pesado de la escena real sólo para probar esta operación.
+
+
+## 40. Restauración exacta de interacción de NPC
+
+La entrada a un interior retiraba temporalmente a los NPC del grupo `interactable`. Al salir, `_restaurar_npcs_exteriores()` volvía a añadir ese grupo a cualquier `Creature` visible. Eso cambiaba el estado original de NPC que estaban visibles pero no debían recibir interacción.
+
+Ahora `_guardar_estado_visibilidad_npc()` conserva por instancia tanto la visibilidad como la pertenencia original a `interactable`. Se usa al ocultar el exterior y al registrar NPC materializados mientras el jugador permanece dentro. La restauración devuelve ambos valores, manteniendo la protección adicional de que un NPC que sigue dentro de un edificio permanece oculto y no interactuable.
+
+El test de ciclo de interiores cubre NPC originalmente interactuables, NPC visibles sin interacción y NPC materializados durante la estancia. También comprueba que el nuevo registro no les conceda interacción por defecto.
