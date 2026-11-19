@@ -104,12 +104,14 @@ func _cargar_objetos() -> void:
 
 	if disponibles == 0:
 		if _estacion_id == "forja_inspeccion":
-			_agregar_aviso("No llevas armas ni herramientas para inspeccionar.")
+			_agregar_aviso("No llevas armas ni herramientas con información especial para inspeccionar.")
 		else:
-			_agregar_aviso("No llevas materiales ni objetos de estudio.")
+			_agregar_aviso("No llevas objetos con información especial para estudiar.")
 
 
 func _objeto_permitido_en_estacion(objeto: Dictionary) -> bool:
+	if str(objeto.get("descripcion_detallada", "")).strip_edges().is_empty():
+		return false
 	var es_equipo := _es_arma(objeto) or _es_herramienta(objeto)
 	if _estacion_id == "forja_inspeccion":
 		return es_equipo
@@ -180,20 +182,10 @@ func _analizar_objeto() -> void:
 	_resultado_label.text = _describir_analisis(objeto, nombre)
 
 
-func _describir_analisis(objeto: Dictionary, nombre: String) -> String:
+func _describir_analisis(objeto: Dictionary, _nombre: String) -> String:
 	if not _objeto_permitido_en_estacion(objeto):
-		return "Este objeto corresponde a otra mesa de trabajo."
-	var descripcion := str(objeto.get("descripcion", "")).strip_edges()
-	var categoria := _obtener_categoria(objeto)
-	if categoria.is_empty() and descripcion.is_empty():
-		return "No hay datos registrados sobre este objeto."
-	var resultado := "Analizas %s." % nombre
-	if not categoria.is_empty():
-		resultado += " Está clasificado como %s." % categoria
-	if not descripcion.is_empty():
-		resultado += " " + descripcion
-	resultado += " El análisis no modifica ni consume el objeto."
-	return resultado
+		return "Este objeto no tiene información disponible para analizar en esta mesa."
+	return str(objeto.get("descripcion_detallada", "")).strip_edges()
 
 
 func _obtener_categoria(objeto: Dictionary) -> String:
