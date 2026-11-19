@@ -14,6 +14,7 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 @onready var _panel_seleccion: PanelContainer = $Panel/Margin/Column/Body/SelectionPanel
 
 var _inventario: InventoryController = null
+var _estacion_id := "examen"
 var _indice_seleccionado := -1
 var _botones_items: Dictionary = {}
 
@@ -25,11 +26,13 @@ func _ready() -> void:
 	_boton_cerrar.pressed.connect(queue_free)
 	_boton_analizar.pressed.connect(_analizar_objeto)
 	_boton_analizar.disabled = true
+	_boton_analizar.text = "Inspeccionar" if _estacion_id == "forja_inspeccion" else "Analizar"
 	_aplicar_estilo_laboratorio()
 
 
-func configurar(inventario: InventoryController, _estacion_id: String = "examen") -> void:
+func configurar(inventario: InventoryController, estacion_id: String = "examen") -> void:
 	_inventario = inventario
+	_estacion_id = estacion_id
 	_cargar_objetos()
 
 
@@ -61,7 +64,7 @@ func _cargar_objetos() -> void:
 	var disponibles := 0
 	for indice in range(items.size()):
 		var objeto: Dictionary = items[indice]
-		if objeto.is_empty():
+		if objeto.is_empty() or not _objeto_permitido_en_estacion(objeto):
 			continue
 		disponibles += 1
 		var boton := Button.new()
@@ -78,7 +81,45 @@ func _cargar_objetos() -> void:
 		_botones_items[indice] = boton
 
 	if disponibles == 0:
-		_agregar_aviso("No llevas objetos para examinar.")
+		if _estacion_id == "forja_inspeccion":
+			_agregar_aviso("No llevas armas ni herramientas para inspeccionar.")
+		else:
+			_agregar_aviso("No llevas materiales ni objetos de estudio.")
+
+
+func _objeto_permitido_en_estacion(objeto: Dictionary) -> bool:
+	var es_equipo := _es_arma(objeto) or _es_herramienta(objeto)
+	if _estacion_id == "forja_inspeccion":
+		return es_equipo
+	return not es_equipo
+
+
+func _es_arma(objeto: Dictionary) -> bool:
+	var tipo := str(objeto.get("tipo", "")).to_lower()
+	var categoria := _texto_categoria(objeto).to_lower()
+	var nombre := str(objeto.get("nombre", "")).to_lower()
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
+	return tipo.contains("arma") or tipo.contains("weapon") or categoria.contains("arma") or categoria.contains("weapon") or bool(propiedades.get("es_arma", false)) or propiedades.has("danio_arma") or propiedades.has("ataque_arma") or nombre.contains("espada") or nombre.contains("arco") or nombre.contains("daga")
+
+
+func _es_herramienta(objeto: Dictionary) -> bool:
+	var tipo := str(objeto.get("tipo", "")).to_lower()
+	var categoria := _texto_categoria(objeto).to_lower()
+	var nombre := str(objeto.get("nombre", "")).to_lower()
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
+	var recoleccion: Variant = propiedades.get("recoleccion", {})
+	var tiene_recoleccion := recoleccion is Dictionary and not (recoleccion as Dictionary).is_empty()
+	return tipo.contains("herramienta") or tipo.contains("tool") or categoria.contains("herramienta") or categoria.contains("tool") or tiene_recoleccion or bool(propiedades.get("es_herramienta", false)) or nombre.contains("hacha") or nombre.contains("pico") or nombre.contains("pala") or nombre.contains("regadera")
+
+
+func _texto_categoria(objeto: Dictionary) -> String:
+	var categoria: Variant = objeto.get("categoria", "")
+	if categoria is Dictionary:
+		var datos := categoria as Dictionary
+		return str(datos.get("nombre", datos.get("clave", "")))
+	return str(categoria if not str(categoria).is_empty() else objeto.get("categoria_nombre", objeto.get("categoria_clave", "")))
 
 
 func _agregar_aviso(texto: String) -> void:
@@ -118,6 +159,8 @@ func _analizar_objeto() -> void:
 
 
 func _describir_analisis(objeto: Dictionary, nombre: String) -> String:
+	if not _objeto_permitido_en_estacion(objeto):
+		return "Este objeto corresponde a otra mesa de trabajo."
 	var descripcion := str(objeto.get("descripcion", "")).strip_edges()
 	var categoria := _obtener_categoria(objeto)
 	if categoria.is_empty() and descripcion.is_empty():
