@@ -470,8 +470,10 @@ func crear_datos_ejemplar(ejemplar_id: String, cantidad: int = 1) -> Dictionary:
 	if resultado["descripcion"].is_empty():
 		resultado["descripcion"] = str(item_base.get("descripcion", ""))
 	resultado["descripcion_detallada"] = str(ejemplar.get("descripcion_detallada", "")).strip_edges()
-	resultado["vinculos"] = (ejemplar.get("vinculos", []) as Array).duplicate(true) if ejemplar.get("vinculos", []) is Array else []
-	resultado["metadatos_ejemplar"] = (ejemplar.get("metadatos", {}) as Dictionary).duplicate(true) if ejemplar.get("metadatos", {}) is Dictionary else {}
+	var vinculos_variant: Variant = ejemplar.get("vinculos", [])
+	resultado["vinculos"] = (vinculos_variant as Array).duplicate(true) if vinculos_variant is Array else []
+	var metadatos_variant: Variant = ejemplar.get("metadatos", {})
+	resultado["metadatos_ejemplar"] = (metadatos_variant as Dictionary).duplicate(true) if metadatos_variant is Dictionary else {}
 	resultado["max_stack"] = 1
 	resultado["cantidad"] = maxi(1, cantidad)
 	return resultado
