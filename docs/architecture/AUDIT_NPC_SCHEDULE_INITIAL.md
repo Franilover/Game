@@ -294,4 +294,4 @@ Se añadieron dos lecturas puntuales en `GameStateService`: `obtener_relacion_np
 
 La consulta booleana de noticias reutiliza ahora una única relación y su confianza durante el recorrido, y sólo consulta la confianza cuando encuentra conocimiento privado con permiso explícito. El conocimiento público no necesita consultar la relación. Las funciones de lectura completa y guardado siguen intactas, por lo que el formato persistido no cambia.
 
-La prueba de roundtrip de GameState ahora cubre la lectura puntual, el aislamiento de copias y la conservación de otras secciones del registro de conversaciones. La validación de CI queda pendiente.
+La prueba de roundtrip de GameState ahora cubre la lectura puntual, el aislamiento de copias, la conservación de otras secciones del registro y la detección de noticias nuevas. También verifica que el conocimiento público ya conocido no vuelva a contar como novedad y que el conocimiento privado requiera permiso y confianza mínima de 30. La validación de CI queda pendiente.
