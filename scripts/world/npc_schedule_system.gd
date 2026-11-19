@@ -784,6 +784,23 @@ static func _resolver_destino_rutina_local(
 	return destino_local + posicion_plaza + variacion_posicion
 
 
+## Devuelve los sprites de mobiliario cuyo nombre coincide con los tokens dados.
+## Mantiene el orden de los hijos para conservar la prioridad visual existente.
+static func _obtener_muebles_por_tokens(contenedor: Node, tokens: Array) -> Array[Sprite2D]:
+	var encontrados: Array[Sprite2D] = []
+	if not is_instance_valid(contenedor) or tokens.is_empty():
+		return encontrados
+	for hijo in contenedor.get_children():
+		if not hijo is Sprite2D:
+			continue
+		var nombre_mueble := str(hijo.name).strip_edges().to_lower()
+		for token_variant in tokens:
+			if nombre_mueble.contains(str(token_variant)):
+				encontrados.append(hijo as Sprite2D)
+				break
+	return encontrados
+
+
 ## Devuelve al exterior un NPC cuando su siguiente rutina apunta a otro edificio.
 ## Conserva el estado de interior activo: si el jugador sigue dentro, el NPC permanece oculto.
 func _salir_de_edificio_para_cambiar_rutina(npc: Creature, edificio_actual: String) -> void:
@@ -1312,18 +1329,10 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		"dormir" if postura == "dormir" else ("sentarse" if postura == "sentado" else actividad)
 	)
 	if not preferencias.is_empty():
-		for hijo in npc.get_parent().get_children():
-			if not hijo is Sprite2D:
+		for mueble in _obtener_muebles_por_tokens(npc.get_parent(), preferencias):
+			if not is_instance_valid(mueble.texture):
 				continue
-			var mueble := hijo as Sprite2D
 			var nombre_mueble := mueble.name.strip_edges().to_lower()
-			var coincide := false
-			for preferencia in preferencias:
-				if nombre_mueble.contains(preferencia):
-					coincide = true
-					break
-			if not coincide or not is_instance_valid(mueble.texture):
-				continue
 			var semiancho := mueble.texture.get_width() * absf(mueble.scale.x) * 0.5
 			var semialto := mueble.texture.get_height() * absf(mueble.scale.y) * 0.5
 			var puesto := mueble.position + Vector2(0.0, semialto + 12.0)
@@ -1405,18 +1414,8 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	if postura == "dormir" or postura == "sentado":
 		var padre := npc.get_parent()
 		var tokens := ["cama", "litera"] if postura == "dormir" else ["silla", "asiento"]
-		var mueble_objetivo: Sprite2D = null
-		if is_instance_valid(padre):
-			for hijo in padre.get_children():
-				if not hijo is Sprite2D:
-					continue
-				var nombre_mueble := str(hijo.name).to_lower()
-				for token in tokens:
-					if nombre_mueble.contains(token):
-						mueble_objetivo = hijo as Sprite2D
-						break
-				if is_instance_valid(mueble_objetivo):
-					break
+		var muebles_objetivo := _obtener_muebles_por_tokens(padre, tokens)
+		var mueble_objetivo: Sprite2D = muebles_objetivo[0] if not muebles_objetivo.is_empty() else null
 		var destino_sprite := sprite.position
 		if is_instance_valid(mueble_objetivo):
 			destino_sprite = mueble_objetivo.position - npc.position
