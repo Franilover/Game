@@ -16,6 +16,15 @@ func _ready() -> void:
 	_comprobar_hora("12", -1, errores)
 	_comprobar_hora("12:30:45", 750, errores)
 
+	_comprobar_seleccion_rutina(errores)
+	_comprobar_rutinas_dia_libre(errores)
+	_comprobar_calendario_comunitario(errores)
+	_comprobar_siguiente_rutina(errores)
+	_comprobar_satisfaccion_y_eventos(errores)
+	_comprobar_respaldo_castillo(errores)
+	_comprobar_catalogo_ocio(errores)
+	_comprobar_desplazamiento_ocio(errores)
+
 	_comprobar_dia([], 2, true, errores)
 	_comprobar_dia(null, 2, true, errores)
 	_comprobar_dia([0, 2, 4], 2, true, errores)
