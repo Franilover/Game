@@ -262,3 +262,31 @@ static func obtener_minutos_hasta_siguiente_rutina(
 				continue
 			mejor = mini(mejor, candidato - minutos)
 	return mejor if mejor < 5 * 1440 else 0
+
+
+## Asocia actividades con necesidades que pueden satisfacer.
+## Mantiene las palabras clave y ponderaciones existentes del sistema NPC.
+static func obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
+	var texto := actividad.to_lower()
+	var satisfacciones: Dictionary = {}
+	if texto.contains("descans") or texto.contains("dorm") or texto.contains("sentarse"):
+		satisfacciones["descanso"] = 2.0
+	if texto.contains("convers") or texto.contains("salud") or texto.contains("compart") or texto.contains("historia") or texto.contains("amigos"):
+		satisfacciones["socializacion"] = 1.8
+		satisfacciones["diversion"] = 0.6
+	if texto.contains("notas") or texto.contains("observar") or texto.contains("leer") or texto.contains("investig") or texto.contains("informes"):
+		satisfacciones["curiosidad"] = 1.8
+	if texto.contains("pasear") or texto.contains("visitar") or texto.contains("recorrer"):
+		satisfacciones["autonomia"] = 1.3
+		satisfacciones["diversion"] = 1.0
+	if texto.contains("vigilar") or texto.contains("revisar"):
+		satisfacciones["seguridad"] = 0.8
+	return satisfacciones
+
+
+## Permite asistir a eventos si la rutina está vacía o corresponde a un día libre.
+static func puede_participar_en_evento(rutina: Dictionary) -> bool:
+	if rutina.is_empty():
+		return true
+	var clave := str(rutina.get("clave", "")).strip_edges().to_lower()
+	return clave.begins_with("dia_libre")
