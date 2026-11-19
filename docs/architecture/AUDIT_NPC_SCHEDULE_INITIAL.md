@@ -118,3 +118,12 @@ La resolución del evento comunitario se separó como `NPCScheduleRules.obtener_
 Se documentan y prueban las franjas de 09:00–17:00 (mercado), 17:00–20:00 (comida comunitaria) y 14:00–20:00 (celebración estacional en el primer día de estación). La celebración estacional conserva prioridad si coincide con el quinto día.
 
 La prueba también cubre los límites de inicio y fin, así como días sin evento. No se cambia el calendario ni se agregan eventos nuevos.
+
+
+## 11. Quinta extracción: tiempo hasta la siguiente rutina
+
+Se separó `NPCScheduleRules.obtener_minutos_hasta_siguiente_rutina(rutinas, dia_semana, minutos)`. El cálculo recorre el ciclo de cinco días, ignora entradas inactivas o mal formadas y devuelve los minutos hasta el próximo inicio válido.
+
+El sistema NPC conserva la llamada desde la selección de ocio; la función no necesita consultar al NPC, su estado ni servicios globales.
+
+Pruebas añadidas: siguiente inicio el mismo día, día posterior, vuelta del ciclo, rutina sin días específicos, entradas inválidas/inactivas y lista vacía. Se conserva el comportamiento anterior de devolver cero si no encuentra un inicio dentro de la ventana recorrida.
