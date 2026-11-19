@@ -1785,8 +1785,20 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 
 
 func _actualizar_interaccion_panaderia() -> void:
-	var ivo := _buscar_npc_por_nombre("ivo")
-	var elian := _buscar_npc_por_nombre("elian")
+	# Ambos personajes se necesitan juntos; resolverlos en un solo recorrido.
+	var ivo: Creature
+	var elian: Creature
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+			continue
+		var candidato := candidato_variant as Creature
+		var nombre_candidato := candidato.get_nombre_visual().strip_edges().to_lower()
+		if nombre_candidato == "ivo" and not is_instance_valid(ivo):
+			ivo = candidato
+		elif nombre_candidato == "elian" and not is_instance_valid(elian):
+			elian = candidato
+		if is_instance_valid(ivo) and is_instance_valid(elian):
+			break
 	var coinciden := (
 		is_instance_valid(ivo)
 		and is_instance_valid(elian)
