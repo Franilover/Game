@@ -466,9 +466,9 @@ func _run() -> void:
 	var memoria_negativa_mara := schedule._calcular_influencia_recuerdos_sociales("mara", "narel", "2026:11:16")
 	if memoria_negativa_mara > -8.0:
 		errores.append("Las experiencias negativas repetidas no consolidaron cautela hacia esa persona.")
-	if schedule._puede_iniciar_encuentro_social("mara", vinculo_cercano, false, "narel"):
+	if schedule._puede_iniciar_encuentro_social("mara", vinculo_cercano, false, memoria_negativa_mara):
 		errores.append("Un NPC reservado ignoró recuerdos negativos repetidos al evaluar un encuentro.")
-	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true, "narel"):
+	if not schedule._puede_iniciar_encuentro_social("mara", vinculo_desconocido, true, memoria_negativa_mara):
 		errores.append("Un motivo concreto no permitió resolver una situación con alguien que generó desconfianza.")
 	relationship.registrar_recuerdo("mara", {
 		"tipo": "experiencia_npc",
