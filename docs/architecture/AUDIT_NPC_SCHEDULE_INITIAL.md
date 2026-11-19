@@ -409,3 +409,12 @@ No se combinó la lógica de deduplicación y retirada en una sola regla: tienen
 `ReinoTorres._ubicar_npcs_del_edificio_en_interior()` reconstruía dos arreglos fijos de coordenadas en cada sincronización: 22 posiciones para el castillo y cuatro posiciones para interiores normales. Se trasladaron a constantes del script, conservando el orden y las coordenadas. El test de transición de edificios ahora protege el tamaño del catálogo del castillo y las cuatro posiciones normales.
 
 En `teletransportar_jugador_a_npc()`, la comprobación de pertenencia al grupo ahora usa `npc.is_in_group("torres_game_npc")` en vez de obtener el arreglo completo sólo para ejecutar `.has(npc)`. La condición comprueba exactamente la misma pertenencia, evitando crear una colección temporal.
+
+
+## 39. Transición única de NPC desde el interior al exterior
+
+`sacar_npc_del_interior()` y `_devolver_npcs_del_interior_al_exterior()` repetían la misma secuencia: obtener la puerta anterior, reparentar al contenedor exterior, desactivar las colisiones exteriores, ubicar al NPC en el umbral, ocultarlo y quitar su grupo de interacción.
+
+Se consolidó esa secuencia en `_devolver_npc_al_exterior()`. La salida individual conserva su validación de pertenencia a la capa interior; la salida general conserva su recorrido del grupo y delega cada NPC elegible al mismo método. La validación de nodos de contenedor/capa evita operar sobre referencias liberadas.
+
+Se amplió `test_npc_building_entry_collision.tscn` para cubrir ambas rutas: cambio individual de rutina y salida general del edificio. En las dos se comprueban contenedor, umbral, visibilidad, grupo `interactable` y colisiones exteriores desactivadas.
