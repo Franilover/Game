@@ -716,31 +716,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		rutina["actividad_clave"] = actividad
 		rutina["variacion_posicion"] = Vector2(18.0, 132.0)
 
-	# Conserva una actividad significativa del día para que las charlas
-	# nocturnas puedan comentar trabajo, paseos o investigaciones recientes.
+	# Conserva la actividad relevante para los diálogos de la reunión nocturna.
 	var tiempo_resumen: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
-	var dia_resumen := "%s:%s" % [str(tiempo_resumen.get("anio", 0)), str(tiempo_resumen.get("dia", 1))]
-	if str(npc.get_meta("resumen_dia_reunion_clave", "")) != dia_resumen:
-		npc.set_meta("resumen_dia_reunion_clave", dia_resumen)
-		npc.set_meta("resumen_dia_reunion_actividad", "")
-		npc.set_meta("resumen_dia_reunion_rutina", "")
-		npc.set_meta("resumen_dia_reunion_ubicacion", "")
-	if clave_rutina != "reunion_nocturna_castillo":
-		var actividad_resumen := actividad.strip_edges().to_lower()
-		var es_descanso := (
-			actividad_resumen.is_empty()
-			or actividad_resumen.contains("descans")
-			or actividad_resumen.contains("dorm")
-			or actividad_resumen.contains("volver")
-		)
-		if not es_descanso:
-			npc.set_meta("resumen_dia_reunion_actividad", actividad)
-			npc.set_meta("resumen_dia_reunion_rutina", clave_rutina)
-			npc.set_meta("resumen_dia_reunion_ubicacion", ubicacion)
-	elif str(npc.get_meta("resumen_dia_reunion_actividad", "")).strip_edges().is_empty():
-		npc.set_meta("resumen_dia_reunion_actividad", str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))))
-		npc.set_meta("resumen_dia_reunion_rutina", str(npc.get_meta("rutina_actual", "")))
-		npc.set_meta("resumen_dia_reunion_ubicacion", str(npc.get_meta("rutina_ubicacion", "")))
+	_actualizar_resumen_diario_reunion(npc, tiempo_resumen, clave_rutina, actividad, ubicacion)
 
 	if ubicacion.is_empty() or ubicacion == "null" or not POSICIONES.has(ubicacion):
 		ubicacion = hogar
@@ -948,6 +926,38 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		and str(rutina.get("clave", "")) == str(evento_comunitario.get("clave", ""))
 	):
 		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
+
+
+## Conserva la última actividad significativa para los recuerdos de la reunión.
+func _actualizar_resumen_diario_reunion(
+	npc: Creature,
+	tiempo: Dictionary,
+	clave_rutina: String,
+	actividad: String,
+	ubicacion: String
+) -> void:
+	var dia_resumen := "%s:%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
+	if str(npc.get_meta("resumen_dia_reunion_clave", "")) != dia_resumen:
+		npc.set_meta("resumen_dia_reunion_clave", dia_resumen)
+		npc.set_meta("resumen_dia_reunion_actividad", "")
+		npc.set_meta("resumen_dia_reunion_rutina", "")
+		npc.set_meta("resumen_dia_reunion_ubicacion", "")
+	if clave_rutina != "reunion_nocturna_castillo":
+		var actividad_resumen := actividad.strip_edges().to_lower()
+		var es_descanso := (
+			actividad_resumen.is_empty()
+			or actividad_resumen.contains("descans")
+			or actividad_resumen.contains("dorm")
+			or actividad_resumen.contains("volver")
+		)
+		if not es_descanso:
+			npc.set_meta("resumen_dia_reunion_actividad", actividad)
+			npc.set_meta("resumen_dia_reunion_rutina", clave_rutina)
+			npc.set_meta("resumen_dia_reunion_ubicacion", ubicacion)
+	elif str(npc.get_meta("resumen_dia_reunion_actividad", "")).strip_edges().is_empty():
+		npc.set_meta("resumen_dia_reunion_actividad", str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))))
+		npc.set_meta("resumen_dia_reunion_rutina", str(npc.get_meta("rutina_actual", "")))
+		npc.set_meta("resumen_dia_reunion_ubicacion", str(npc.get_meta("rutina_ubicacion", "")))
 
 
 ## Agrupa a los asistentes según sus vínculos reales y distribuye sus
