@@ -11,6 +11,15 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
+	var posiciones_castillo: Array[Vector2] = ReinoTorresScript.POSICIONES_NPC_CASTILLO_INTERIOR
+	var posiciones_normales: Array[Vector2] = ReinoTorresScript.POSICIONES_NPC_INTERIOR
+	if posiciones_castillo.size() != 22:
+		errores.append("El catálogo del castillo debe conservar sus 22 posiciones base.")
+	if posiciones_normales != [
+		Vector2(-90.0, 20.0), Vector2(85.0, 20.0),
+		Vector2(-10.0, -5.0), Vector2(135.0, 70.0)
+	]:
+		errores.append("Las posiciones normales de interiores cambiaron.")
 	var zona := ReinoTorresScript.new() as Node2D
 	var sistema := NPCScheduleScript.new() as NPCScheduleSystem
 	sistema._zona = zona
