@@ -3,6 +3,15 @@ extends Node
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const NPCScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
 const NPCConversationScript = preload("res://scripts/world/npc_conversation_system.gd")
+const WorldAtmosphereScript = preload("res://scripts/world/world_atmosphere.gd")
+const NPCNavigationScript = preload("res://scripts/world/npc_navigation_system.gd")
+
+
+class ZoneManagerPrueba extends Node:
+	var tipo_actual := "reino_torres"
+
+	func obtener_tipo_actual() -> String:
+		return tipo_actual
 
 
 class ZonaInteriorPrueba extends Node2D:
@@ -38,6 +47,7 @@ func _run() -> void:
 	_comprobar_busqueda_muebles(errores)
 	_comprobar_interrupcion_cinematica(agenda, npc_a, errores)
 	_comprobar_cancelacion_acercamiento_sin_contexto(agenda, npc_b, errores)
+	await _comprobar_retorno_a_rutina_con_contexto(agenda, npc_b, errores)
 
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
@@ -212,6 +222,98 @@ func _comprobar_cancelacion_acercamiento_sin_contexto(
 	if not (conversaciones.get("_acercamiento_activo") as Dictionary).is_empty():
 		errores.append("El sistema de conversación no liberó su estado de acercamiento.")
 	conversaciones.queue_free()
+
+
+
+func _comprobar_retorno_a_rutina_con_contexto(
+	agenda: NPCScheduleSystem,
+	npc: Creature,
+	errores: Array[String]
+) -> void:
+	var zona := Node2D.new()
+	zona.name = "ZonaPruebaRetornoRutina"
+	add_child(zona)
+	var zona_manager := ZoneManagerPrueba.new()
+	add_child(zona_manager)
+	var atmosfera := WorldAtmosphereScript.new() as WorldAtmosphere
+	var modulacion := CanvasModulate.new()
+	modulacion.name = "DayNightModulation"
+	atmosfera.add_child(modulacion)
+	atmosfera.set("_calendario_cargado", true)
+	atmosfera.hora_del_dia = 10.0
+	atmosfera.dia_del_anio = 0
+	atmosfera.anio = 2
+	atmosfera.dias_por_anio = 100
+	add_child(atmosfera)
+
+	var navegacion := NPCNavigationScript.new() as NPCNavigationSystem
+	add_child(navegacion)
+	var malla := AStarGrid2D.new()
+	malla.region = Rect2i(Vector2i.ZERO, Vector2i(104, 68))
+	malla.cell_size = Vector2(32.0, 32.0)
+	malla.offset = Vector2(-1648.0, -1072.0)
+	malla.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
+	malla.update()
+	navegacion.set("_zona", zona)
+	navegacion.set("_malla", malla)
+	navegacion.set("_malla_lista", true)
+
+	agenda.configurar(atmosfera, zona_manager, null, navegacion)
+	agenda._zona = zona
+	npc.nombre_individual = "Habitante de prueba"
+	npc.global_position = Vector2.ZERO
+	npc.datos = {
+		"rutinas": [{
+			"clave": "prueba_retomar_rutina",
+			"hora_inicio": "09:00",
+			"hora_fin": "17:00",
+			"dias_semana": [0],
+			"actividad_clave": "pasear_y_saludar",
+			"ubicacion_clave": "plaza"
+		}]
+	}
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento == null:
+		errores.append("La recuperación de rutina requiere el ejecutor CreatureMovement real.")
+		return
+
+	movimiento.establecer_ruta(PackedVector2Array([npc.global_position + Vector2(96.0, 0.0)]))
+	npc.set_meta("acercamiento_social_activo", true)
+	npc.set_meta("rutina_en_transito", true)
+	npc.set_meta("rutina_firma", "ruta_temporal_anterior")
+	agenda.finalizar_acercamiento_social(npc)
+
+	var destino_local := NPCScheduleScript._resolver_destino_rutina_local(
+		npc, {"actividad_clave": "pasear_y_saludar"}, "plaza", true, {}, Vector2.ZERO
+	)
+	var destino_global := zona.to_global(destino_local)
+	if bool(npc.get_meta("acercamiento_social_activo", false)):
+		errores.append("La recuperación de rutina conservó la marca de acercamiento.")
+	if str(npc.get_meta("rutina_actual", "")) != "prueba_retomar_rutina":
+		errores.append("Con mundo disponible, el cierre de iniciativa no recuperó la rutina programada.")
+	if str(npc.get_meta("rutina_ubicacion", "")) != "plaza":
+		errores.append("La rutina recuperada no conservó su ubicación programada.")
+	if not bool(npc.get_meta("rutina_en_transito", false)) or not movimiento.rutina_en_ejecucion():
+		errores.append("La rutina recuperada no volvió a poner en marcha la navegación.")
+	if movimiento._ruta_rutina.is_empty() or movimiento._ruta_rutina[-1].distance_to(destino_global) > 36.0:
+		errores.append("La ruta recuperada no termina en el destino canónico de la rutina.")
+	if str(npc.get_meta("rutina_firma", "")).begins_with("ruta_temporal"):
+		errores.append("La firma temporal anterior sobrevivió a la recuperación de la rutina.")
+
+	agenda._zona = null
+	npc.remove_meta("rutina_cambio_pendiente")
+	npc.remove_meta("rutina_cambio_inicio")
+	npc.remove_meta("rutina_firma")
+	npc.remove_meta("rutina_actual")
+	npc.remove_meta("rutina_ubicacion")
+	npc.remove_meta("rutina_en_transito")
+	npc.remove_meta("rutina_error_firma")
+	npc.datos = {}
+	atmosfera.queue_free()
+	navegacion.queue_free()
+	zona_manager.queue_free()
+	zona.queue_free()
+	await get_tree().process_frame
 
 
 func _fail(errores: Array[String]) -> void:
