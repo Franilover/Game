@@ -351,5 +351,5 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 
 - Corregida la salida temprana de `finalizar_acercamiento_social()`: siempre detiene la ruta temporal y limpia tránsito/firma antes de comprobar disponibilidad del mundo, zona, navegación o calendario.
 - Evita que el NPC continúe caminando hacia la antigua posición del jugador cuando el diálogo termina durante una transición o con calendario no disponible.
-- `test_npc_schedule_context` ahora comprueba la cancelación con criatura y movimiento reales, sin contexto mundial.
+- `test_npc_schedule_context` recorre la cancelación real de `NPCConversationSystem`, simula pausa/reanudación del diálogo y comprueba que agenda y movimiento liberen el acercamiento sin contexto mundial.
 - CI pendiente.
