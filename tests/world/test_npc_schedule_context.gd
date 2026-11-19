@@ -35,6 +35,7 @@ func _run() -> void:
 	_comprobar_destinos_rutina(npc_a, errores)
 	_comprobar_busqueda_muebles(errores)
 	_comprobar_interrupcion_cinematica(agenda, npc_a, errores)
+	_comprobar_cancelacion_acercamiento_sin_contexto(agenda, npc_b, errores)
 
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
@@ -168,6 +169,35 @@ func _comprobar_busqueda_muebles(errores: Array[String]) -> void:
 	if not NPCScheduleScript._obtener_muebles_por_tokens(contenedor, []).is_empty():
 		errores.append("Una búsqueda sin tokens no debe devolver mobiliario.")
 	contenedor.free()
+
+
+func _comprobar_cancelacion_acercamiento_sin_contexto(
+	agenda: NPCScheduleSystem,
+	npc: Creature,
+	errores: Array[String]
+) -> void:
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if not is_instance_valid(movimiento):
+		errores.append("La cancelación de iniciativa requiere CreatureMovement.")
+		return
+
+	movimiento.establecer_ruta(PackedVector2Array([npc.global_position + Vector2(120.0, 0.0)]))
+	npc.set_meta("acercamiento_social_activo", true)
+	npc.set_meta("rutina_en_transito", true)
+	npc.set_meta("rutina_firma", "acercamiento_anterior")
+
+	# Sin WorldAtmosphere ni ZoneManager, la recuperación de la rutina no
+	# puede continuar, pero la ruta temporal nunca debe quedar ejecutándose.
+	agenda.finalizar_acercamiento_social(npc)
+
+	if movimiento.rutina_en_ejecucion() or npc.velocity.length_squared() > 0.001:
+		errores.append("La cancelación dejó activa la ruta de acercamiento sin contexto de mundo.")
+	if bool(npc.get_meta("acercamiento_social_activo", false)):
+		errores.append("La cancelación conservó la marca de acercamiento social.")
+	if bool(npc.get_meta("rutina_en_transito", true)):
+		errores.append("La cancelación conservó el estado de tránsito sin una ruta válida.")
+	if str(npc.get_meta("rutina_firma", "x")) != "":
+		errores.append("La cancelación conservó la firma de la rutina anterior.")
 
 
 func _fail(errores: Array[String]) -> void:
