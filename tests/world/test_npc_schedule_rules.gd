@@ -189,3 +189,44 @@ func _comprobar_calendario_comunitario(errores: Array[String]) -> void:
 	evento = Rules.obtener_evento_comunitario(2, 0, 900)
 	if not evento.is_empty():
 		errores.append("No debe haber evento ordinario fuera del quinto día.")
+
+
+func _comprobar_siguiente_rutina(errores: Array[String]) -> void:
+	var rutinas: Array = [
+		{"clave": "trabajo_tarde", "hora_inicio": "15:00", "hora_fin": "18:00", "dias_semana": [0]}
+	]
+	var minutos := Rules.obtener_minutos_hasta_siguiente_rutina(rutinas, 0, 10 * 60)
+	if minutos != 300:
+		errores.append("El siguiente inicio del mismo día debe calcularse en minutos reales.")
+
+	var siguiente_dia: Array = [
+		{"clave": "trabajo_manana", "hora_inicio": "09:00", "hora_fin": "12:00", "dias_semana": [1]}
+	]
+	minutos = Rules.obtener_minutos_hasta_siguiente_rutina(siguiente_dia, 0, 10 * 60)
+	if minutos != 23 * 60:
+		errores.append("El inicio del día siguiente debe considerar el cambio de día.")
+
+	var vuelta_ciclo: Array = [
+		{"clave": "rutina_dia_cero", "hora_inicio": "06:00", "hora_fin": "08:00", "dias_semana": [0]}
+	]
+	minutos = Rules.obtener_minutos_hasta_siguiente_rutina(vuelta_ciclo, 4, 1300)
+	if minutos != 500:
+		errores.append("El cálculo debe envolver correctamente el ciclo de cinco días.")
+
+	var sin_dia: Array = [
+		{"clave": "rutina_diaria", "hora_inicio": "08:00", "hora_fin": "09:00"}
+	]
+	minutos = Rules.obtener_minutos_hasta_siguiente_rutina(sin_dia, 0, 10 * 60)
+	if minutos != 22 * 60:
+		errores.append("Una rutina sin días específicos debe considerarse diaria.")
+
+	var ignorar_invalidas: Array = [
+		{"clave": "inactiva", "hora_inicio": "11:00", "hora_fin": "12:00", "activo": false},
+		{"clave": "mal_formada", "hora_inicio": "xx", "hora_fin": "12:00"}
+	]
+	minutos = Rules.obtener_minutos_hasta_siguiente_rutina(ignorar_invalidas, 0, 10 * 60)
+	if minutos != 0:
+		errores.append("Las rutinas inactivas o inválidas no deben producir un próximo inicio.")
+
+	if Rules.obtener_minutos_hasta_siguiente_rutina([], 0, 600) != 0:
+		errores.append("Una lista de rutinas vacía debe devolver cero.")
