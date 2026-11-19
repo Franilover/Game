@@ -1776,7 +1776,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_parcela_vivero(cuarto, tilemap_tierra, capa_humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
 			if is_instance_valid(tilemap_tierra):
 				tilemap_tierra.call_deferred("reconstruir_renderer_dual")
-			_agregar_deposito_agua_vivero(cuarto, Vector2(-220, -125))
 			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
 			_agregar_estacion_edificio(cuarto, "vivero", "Revisar vivero", Vector2(115, -98))
 			_agregar_sprite_mueble(cuarto, "CofreSemillasVivero", MUEBLE_COFRE, Vector2(210, 105), Vector2(0.9, 0.9), 1)
@@ -2407,21 +2406,6 @@ func _al_confirmar_pasaje_exterior() -> void:
 	else:
 		GameState.modificar_dinero(10)
 		Events.notification_pushed.emit("No se pudo iniciar el viaje. Se devolvieron las 10 monedas.")
-
-
-func _agregar_deposito_agua_vivero(padre: Node, posicion: Vector2) -> void:
-	var deposito := Node2D.new()
-	deposito.name = "DepositoAguaVivero"
-	deposito.position = posicion
-	padre.add_child(deposito)
-	var base := Polygon2D.new()
-	base.color = Color("#69452D")
-	base.polygon = PackedVector2Array([Vector2(-25, -12), Vector2(25, -12), Vector2(25, 16), Vector2(-25, 16)])
-	deposito.add_child(base)
-	var agua := Polygon2D.new()
-	agua.color = Color("#527F91")
-	agua.polygon = PackedVector2Array([Vector2(-21, -8), Vector2(21, -8), Vector2(21, 11), Vector2(-21, 11)])
-	deposito.add_child(agua)
 
 
 func _crear_tilemap_dual_tierra_vivero(padre: Node) -> TileMapDual:
