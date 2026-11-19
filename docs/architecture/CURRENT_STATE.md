@@ -1035,7 +1035,7 @@ La auditoría actual continúa priorizando rendimiento y unificación del sistem
 - La memoria diaria de las reuniones se separó en una operación privada con entradas explícitas y metadatos existentes.
 - La prueba de integración NPCScheduleContext protege el contexto compartido y la memoria diaria; está conectada al workflow headless.
 - Validación confirmada: Godot 4.7 **46/46 pasos correctos, 0 fallos**, run [#44622633288](https://github.com/Franilover/Game/actions/runs/44622633288); GDScript Quality **success**, run [#44622597880](https://github.com/Franilover/Game/actions/runs/44622597880).
-- La geometría y el cálculo de rutas de Torres ya están separados en `NPCNavigationSystem`; `NPCScheduleSystem` conserva la coordinación de rutinas, actividades sociales e interiores. La siguiente auditoría debe revisar esas responsabilidades restantes antes de extraer más módulos.
+- La geometría y el cálculo de rutas de Torres ya están separados en `NPCNavigationSystem`; `NPCScheduleSystem` conserva la coordinación de rutinas, actividades sociales e interiores. La extracción está protegida por pruebas de construcción de malla, cálculo de ruta, invalidación, límites del mapa y seguridad de movimiento. CI Godot 4.7: **48/48 pasos, 0 fallos**; GDScript Quality: **success**. La siguiente auditoría debe revisar las responsabilidades restantes antes de extraer más módulos.
 
 
 ## Movimiento NPC — optimización en curso (2026-11-19)
