@@ -102,6 +102,8 @@ func _actualizar() -> void:
 		match _tipo:
 			"carpinteria": titulo.text = "CARPINTERÍA"
 			"vivero": titulo.text = "VIVERO"
+			"herbolario_investigacion": titulo.text = "INVESTIGACIÓN BOTÁNICA"
+			"herbolario_procesamiento": titulo.text = "PROCESAMIENTO BOTÁNICO"
 			"herbolario": titulo.text = "HERBOLARIO"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
@@ -118,7 +120,9 @@ func _actualizar() -> void:
 		"cuartel_armas": _construir_cuartel_armas()
 		"cuartel_entrenamiento": _construir_cuartel_entrenamiento()
 		"vivero": _construir_vivero()
-		"herbolario": _construir_herbolario()
+		"herbolario_investigacion": _construir_investigacion_herbolario()
+		"herbolario_procesamiento": _construir_procesamiento_herbolario()
+		"herbolario": _construir_investigacion_herbolario()
 
 	_contenido.add_child(_estado)
 	# Los textos informativos conservan contraste aunque el tema global cambie.
@@ -505,10 +509,11 @@ func _obtener_regadera_en_manos() -> Dictionary:
 	return {}
 
 
-func _construir_herbolario() -> void:
+
+func _construir_investigacion_herbolario() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
-	_agregar_texto("INVESTIGACIÓN BOTÁNICA")
-	_agregar_texto("Selecciona una muestra de tu inventario para consultar sus datos. Examinarla no consume el objeto.")
+	_agregar_texto("EXAMEN DE MUESTRAS")
+	_agregar_texto("Selecciona flores, hojas, hierbas, raíces o semillas para consultar sus datos. La investigación no consume materiales.")
 	var cuerpo := HBoxContainer.new()
 	cuerpo.add_theme_constant_override("separation", 8)
 	cuerpo.custom_minimum_size = Vector2(500, 190)
@@ -556,7 +561,7 @@ func _construir_herbolario() -> void:
 				continue
 			cantidad += 1
 			var boton := Button.new()
-			boton.text = str(objeto.get("nombre", "Muestra"))
+			boton.text = "%s  x%d" % [str(objeto.get("nombre", "Muestra")), maxi(1, int(objeto.get("cantidad", 1)))]
 			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 			boton.pressed.connect(_seleccionar_muestra_herbolario.bind(objeto.duplicate(true), icono, nombre_label, descripcion, estado))
@@ -564,11 +569,10 @@ func _construir_herbolario() -> void:
 			PIXEL_UI_THEME.apply(boton, false)
 	if cantidad == 0:
 		var vacio := Label.new()
-		vacio.text = "No llevas flores, hojas, hierbas ni semillas para estudiar."
+		vacio.text = "No llevas muestras botánicas para estudiar."
 		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lista.add_child(vacio)
-	_agregar_texto("PROCESAMIENTO")
-	_agregar_texto("La elaboración debe utilizar recetas registradas en el catálogo de Crafteo. Esta mesa separa la investigación del procesamiento y no consume materiales durante la inspección.")
+	_agregar_texto("Los descubrimientos se consultan aquí; las muestras permanecen en tu inventario.")
 
 
 func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nombre: Label, descripcion: Label, estado: Label) -> void:
@@ -581,7 +585,174 @@ func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nom
 		categoria = str((categoria_variant as Dictionary).get("nombre", categoria))
 	if not categoria.is_empty():
 		descripcion.text += "\n\nCategoría: " + categoria
-	estado.text = "Muestra seleccionada · No se ha consumido."
+	estado.text = "Muestra examinada · No se ha consumido."
+
+
+func _construir_procesamiento_herbolario() -> void:
+	_panel.custom_minimum_size = Vector2(540, 0)
+	_agregar_texto("RECETAS BOTÁNICAS")
+	_agregar_texto("Selecciona una receta para ver sus ingredientes. Solo se muestran recetas que utilizan muestras botánicas; el resultado debe existir en el catálogo.")
+	if not is_instance_valid(_world_items):
+		_agregar_texto("No se pudo acceder al catálogo compartido.")
+		return
+	if not _world_items.recetas_disponibles:
+		_agregar_texto("Las recetas todavía se están cargando. Cierra y vuelve a abrir esta mesa en unos momentos.")
+		if not _world_items.recetas_cargadas.is_connected(_al_recetas_herbolario_cargadas):
+			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
+		return
+	var recetas := _world_items.obtener_recetas()
+	var encontradas := 0
+	for receta in recetas:
+		if not _receta_es_botanica(receta):
+			continue
+		encontradas += 1
+		_agregar_tarjeta_receta_herbolario(receta)
+	if encontradas == 0:
+		_agregar_texto("No hay recetas botánicas registradas en el catálogo actualmente.")
+
+
+func _al_recetas_herbolario_cargadas(_recetas: Array) -> void:
+	if is_inside_tree() and _tipo == "herbolario_procesamiento":
+		_actualizar()
+
+
+func _receta_es_botanica(receta: Dictionary) -> bool:
+	var categoria := str(receta.get("categoria", "")).to_lower()
+	if categoria.contains("botan") or categoria.contains("herbol"):
+		return true
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+	if ingredientes_variant is Array:
+		for ingrediente_variant in ingredientes_variant as Array:
+			if not ingrediente_variant is Dictionary:
+				continue
+			var ingrediente := ingrediente_variant as Dictionary
+			var item := _world_items.buscar_item_por_id(str(ingrediente.get("item_id", "")))
+			if not item.is_empty() and _es_muestra_botanica(item):
+				return true
+	var resultado_variant: Variant = receta.get("resultado", {})
+	if resultado_variant is Dictionary:
+		var resultado := _world_items.buscar_item_por_id(str((resultado_variant as Dictionary).get("item_id", "")))
+		if not resultado.is_empty() and _es_muestra_botanica(resultado):
+			return true
+	return false
+
+
+func _agregar_tarjeta_receta_herbolario(receta: Dictionary) -> void:
+	var tarjeta := PanelContainer.new()
+	tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_contenido.add_child(tarjeta)
+	PIXEL_UI_THEME.apply(tarjeta, false)
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 4)
+	tarjeta.add_child(columna)
+	var resultado_variant: Variant = receta.get("resultado", {})
+	var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
+	var item_resultado := _world_items.buscar_item_por_id(str(resultado.get("item_id", "")))
+	var nombre_resultado := str(item_resultado.get("nombre", resultado.get("nombre", receta.get("nombre", "Producto"))))
+	var encabezado := Label.new()
+	encabezado.text = str(receta.get("nombre", nombre_resultado))
+	encabezado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	columna.add_child(encabezado)
+	var detalles := Label.new()
+	detalles.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var lineas: Array[String] = []
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+	var tiene_ingredientes := ingredientes_variant is Array and not (ingredientes_variant as Array).is_empty()
+	var tiene_iconos := tiene_ingredientes
+	var suficientes := tiene_ingredientes
+	if tiene_ingredientes:
+		for ingrediente_variant in ingredientes_variant as Array:
+			if not ingrediente_variant is Dictionary:
+				tiene_iconos = false
+				suficientes = false
+				continue
+			var ingrediente := ingrediente_variant as Dictionary
+			var item_id := str(ingrediente.get("item_id", ""))
+			var cantidad := maxi(1, int(ingrediente.get("cantidad", 1)))
+			var item := _world_items.buscar_item_por_id(item_id)
+			var disponible := _contar_item(item_id)
+			lineas.append("%s · %d/%d" % [str(item.get("nombre", "Material desconocido")), disponible, cantidad])
+			if item.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(item):
+				tiene_iconos = false
+			if disponible < cantidad:
+				suficientes = false
+	else:
+		lineas.append("Ingredientes no definidos.")
+	detalles.text = "Resultado: %s\n%s" % [nombre_resultado, "\n".join(lineas)]
+	columna.add_child(detalles)
+	var boton := Button.new()
+	boton.text = "Procesar"
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.disabled = not suficientes or not tiene_iconos or item_resultado.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(item_resultado)
+	boton.pressed.connect(_procesar_receta_herbolario.bind(receta.duplicate(true)))
+	columna.add_child(boton)
+	PIXEL_UI_THEME.apply(boton, false)
+
+
+func _procesar_receta_herbolario(receta: Dictionary) -> void:
+	if not is_instance_valid(_inventario) or not is_instance_valid(_world_items):
+		_mostrar_estado("No se pudo acceder al inventario o al catálogo.")
+		return
+	if not _receta_es_botanica(receta):
+		_mostrar_estado("Esta receta no pertenece al procesamiento botánico.")
+		_actualizar()
+		return
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+	if not ingredientes_variant is Array or (ingredientes_variant as Array).is_empty():
+		_mostrar_estado("La receta no tiene ingredientes definidos.")
+		return
+	for ingrediente_variant in ingredientes_variant as Array:
+		if not ingrediente_variant is Dictionary:
+			_mostrar_estado("La receta contiene un ingrediente inválido.")
+			return
+		var ingrediente := ingrediente_variant as Dictionary
+		var item_id := str(ingrediente.get("item_id", ""))
+		if item_id.is_empty() or _contar_item(item_id) < maxi(1, int(ingrediente.get("cantidad", 1))):
+			_mostrar_estado("Faltan materiales para procesar esta receta.")
+			return
+		var item := _world_items.buscar_item_por_id(item_id)
+		if item.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(item):
+			_mostrar_estado("Falta un objeto o sprite de ingrediente en el catálogo.")
+			return
+	var resultado_variant: Variant = receta.get("resultado", {})
+	if not resultado_variant is Dictionary:
+		_mostrar_estado("La receta no define un resultado válido.")
+		return
+	var resultado := resultado_variant as Dictionary
+	var output_id := str(resultado.get("item_id", ""))
+	var output_cantidad := maxi(1, int(resultado.get("cantidad", 1)))
+	var objeto_resultado := _world_items.buscar_item_por_id(output_id)
+	if objeto_resultado.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(objeto_resultado):
+		_mostrar_estado("El producto no está disponible o todavía no tiene sprite.")
+		return
+	objeto_resultado["cantidad"] = output_cantidad
+	objeto_resultado["max_stack"] = maxi(1, int(objeto_resultado.get("max_stack", 1)))
+	if not _inventario.agregar_objeto_desde_ui(objeto_resultado):
+		_mostrar_estado("No hay espacio para el producto. No se consumieron materiales.")
+		return
+	for ingrediente_variant in ingredientes_variant as Array:
+		var ingrediente := ingrediente_variant as Dictionary
+		var item_id := str(ingrediente.get("item_id", ""))
+		var restante := maxi(1, int(ingrediente.get("cantidad", 1)))
+		for indice in range(_inventario.runtime.state.items.size()):
+			if restante <= 0:
+				break
+			var objeto: Dictionary = _inventario.runtime.state.items[indice]
+			if objeto.is_empty() or str(objeto.get("item_id", objeto.get("id", ""))) != item_id:
+				continue
+			var disponible := maxi(1, int(objeto.get("cantidad", 1)))
+			var retirar := mini(restante, disponible)
+			if _inventario.quitar_cantidad_desde_ui(indice, retirar):
+				restante -= retirar
+		if restante > 0:
+			push_error("Herbolario: no se pudieron consumir todos los ingredientes de una receta validada.")
+			_mostrar_estado("No se pudo completar el procesamiento. Revisa el inventario.")
+			_actualizar()
+			return
+	GameState.call_deferred("_ejecutar_guardado_rapido")
+	var nombre_producto := str(objeto_resultado.get("nombre", "producto"))
+	_mostrar_estado("Procesaste la muestra y obtuviste: " + nombre_producto + ".")
+	_actualizar()
 
 
 func _es_muestra_botanica(objeto: Dictionary) -> bool:
@@ -590,7 +761,6 @@ func _es_muestra_botanica(objeto: Dictionary) -> bool:
 		if identidad.contains(termino):
 			return true
 	return false
-
 
 func _construir_cuartel_licencia() -> void:
 	var licencia := bool(GameState.world_state.flags.get("licencia_espadas", false))
