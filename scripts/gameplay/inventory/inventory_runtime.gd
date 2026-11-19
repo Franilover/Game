@@ -61,9 +61,15 @@ func agregar_objeto(datos: Dictionary) -> bool:
 		return false
 	var objeto := datos.duplicate(true)
 	var cantidad: int = maxi(1, int(objeto.get("cantidad", 1)))
-	var max_stack: int = maxi(1, int(objeto.get("max_stack", 1)))
+	var es_ejemplar := bool(objeto.get("es_ejemplar", false)) or not str(objeto.get("ejemplar_id", "")).strip_edges().is_empty()
+	if es_ejemplar and cantidad != 1:
+		_garlia_debug().call("flujo_error", "Un ejemplar único no puede insertarse con cantidad mayor que uno.", {"ejemplar_id": str(objeto.get("ejemplar_id", "")), "cantidad": cantidad})
+		return false
+	var max_stack: int = 1 if es_ejemplar else maxi(1, int(objeto.get("max_stack", 1)))
 	objeto["cantidad"] = cantidad
 	objeto["max_stack"] = max_stack
+	if es_ejemplar:
+		objeto["es_ejemplar"] = true
 	# La inserción debe ser atómica: una recogida rechazada no puede dejar
 	# unidades añadidas mientras el objeto del mundo sigue intacto.
 	var items_antes: Array[Dictionary] = []
