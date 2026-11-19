@@ -17,6 +17,8 @@ static func vigilar_panel_centrado(panel: Control, margen: float = MARGEN_PANTAL
 	var callback := Callable(MenuLayout, "_al_redimensionar_viewport").bind(weakref(panel), margen)
 	if not viewport.size_changed.is_connected(callback):
 		viewport.size_changed.connect(callback)
+	if not panel.resized.is_connected(callback):
+		panel.resized.connect(callback)
 	_ajustar_panel_centrado(weakref(panel), margen)
 
 
@@ -61,7 +63,6 @@ static func crear_selector_dos_paneles(
 	panel_lista.custom_minimum_size = Vector2(ancho_lista, 0.0)
 	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	distribucion.add_child(panel_lista)
-	PixelUITheme.apply(panel_lista, false)
 
 	var scroll_lista := ScrollContainer.new()
 	scroll_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -80,7 +81,6 @@ static func crear_selector_dos_paneles(
 	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	distribucion.add_child(panel_detalle)
-	PixelUITheme.apply(panel_detalle, false)
 
 	var scroll_detalle := ScrollContainer.new()
 	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -120,7 +120,6 @@ static func crear_boton_sprite(
 	boton.button_pressed = seleccionado
 	boton.disabled = textura == null
 	boton.focus_mode = Control.FOCUS_ALL
-	PixelUITheme.apply(boton, false)
 	return boton
 
 
