@@ -548,6 +548,6 @@ La malla AStar, la detección de cambios de colisión, la preferencia de terreno
 
 `NPCScheduleSystem` conserva la selección y aplicación de rutinas, actividades sociales, interiores y el estado de movimiento de cada NPC. Recibe el servicio por inyección, solicita su sincronización al actualizar Torres y delega el cálculo de rutas. La señal `malla_reconstruida` permite que la agenda reinicie sólo las rutas de rutina que quedaron obsoletas; no mueve esa decisión de dominio al servicio de geometría.
 
-Las pruebas de límites ahora consultan las dimensiones del servicio de navegación y la prueba de seguridad de movimiento ejercita la búsqueda de celda transitable a través de su API estática. Se conserva el catálogo de puertas en `NPCScheduleSystem`. No se modifican escenas de edificios, datos guardados ni Supabase.
+Las pruebas de límites ahora consultan las dimensiones del servicio de navegación y la prueba de seguridad de movimiento ejercita la búsqueda de celda transitable a través de su API estática. Se añadió `test_npc_navigation_system.tscn` para comprobar en integración la construcción real de la malla, el cálculo de una ruta y la invalidación del servicio. La escena de límites de Torres también quedó conectada al workflow. Se conserva el catálogo de puertas en `NPCScheduleSystem`. No se modifican escenas de edificios, datos guardados ni Supabase.
 
 Validación de esta extracción: pendiente de los workflows de Godot 4.7 y GDScript Quality de la rama actual.
