@@ -366,8 +366,10 @@ func _obtener_cantidad_item(items: Array[Dictionary], item_id: String) -> int:
 	var total := 0
 
 	for objeto in items:
-		var actual := str(objeto.get("item_id", objeto.get("id", "")))
-		if actual == item_id:
+		var actual := str(objeto.get("item_id", "")).strip_edges()
+		if actual.is_empty():
+			actual = str(objeto.get("id", "")).strip_edges()
+		if actual == item_id.strip_edges():
 			total += maxi(1, int(objeto.get("cantidad", 1)))
 
 	return total
