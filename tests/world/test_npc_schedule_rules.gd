@@ -350,13 +350,6 @@ func _comprobar_desplazamiento_ocio(errores: Array[String]) -> void:
 func _comprobar_desplazamiento_evento(errores: Array[String]) -> void:
 	var primero: Vector2 = Rules.obtener_desplazamiento_evento(" Mara ", "mercado_vecinal", "3|12|primavera")
 	var repetido: Vector2 = Rules.obtener_desplazamiento_evento(" Mara ", "mercado_vecinal", "3|12|primavera")
-	if primero != repetido:
-		errores.append("El desplazamiento de evento debe ser estable para las mismas entradas.")
-
-	var otro_npc: Vector2 = Rules.obtener_desplazamiento_evento("Ivo", "mercado_vecinal", "3|12|primavera")
-	var otra_fecha: Vector2 = Rules.obtener_desplazamiento_evento("Mara", "mercado_vecinal", "3|13|primavera")
-	if not permitidos.has(otro_npc) or not permitidos.has(otra_fecha):
-		errores.append("Cada combinación de NPC y fecha debe producir un punto permitido.")
 	var permitidos: Array[Vector2] = [
 		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
 		Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
@@ -367,5 +360,12 @@ func _comprobar_desplazamiento_evento(errores: Array[String]) -> void:
 		Vector2(16.0, -48.0), Vector2(64.0, 16.0),
 		Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
 	]
+	if primero != repetido:
+		errores.append("El desplazamiento de evento debe ser estable para las mismas entradas.")
+
+	var otro_npc: Vector2 = Rules.obtener_desplazamiento_evento("Ivo", "mercado_vecinal", "3|12|primavera")
+	var otra_fecha: Vector2 = Rules.obtener_desplazamiento_evento("Mara", "mercado_vecinal", "3|13|primavera")
+	if not permitidos.has(otro_npc) or not permitidos.has(otra_fecha):
+		errores.append("Cada combinación de NPC y fecha debe producir un punto permitido.")
 	if not permitidos.has(primero):
 		errores.append("El desplazamiento de evento debe usar uno de los 16 puntos permitidos.")
