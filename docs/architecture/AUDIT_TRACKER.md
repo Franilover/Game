@@ -239,3 +239,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Se detectó y corrigió una colisión de nombre entre el acumulador de intervalo y la instantánea temporal (`_tiempo_actualizacion` / `_tiempo_mundo_actualizacion`). Las ejecuciones anteriores a esa corrección fallaron al cargar NPCScheduleSystem; no se cuentan como validación.
 - CI Godot 4.7: **46/46 pasos correctos, 0 fallos**, run [#44622633288](https://github.com/Franilover/Game/actions/runs/44622633288). GDScript Quality: **success**, run [#44622597880](https://github.com/Franilover/Game/actions/runs/44622597880).
 - Auditoría detallada: secciones 44–51 de `AUDIT_NPC_SCHEDULE_INITIAL.md`.
+
+
+## Optimización de movimiento NPC (2026-11-19)
+
+- `CreatureMovement._direccion_evitar_superposicion_npcs()`: filtro de distancia con `length_squared()`, raíz sólo para vecinos cercanos, dirección normalizada e ID actual reutilizados por consulta.
+- Se mantienen radios, prioridades, filtros de grupo/padre, exclusión de destinos compartidos y repulsión original.
+- Regresión ampliada: NPC lejano no altera rumbo; distancia exacta de 34 px no activa separación.
+- Validación CI de este commit pendiente.
