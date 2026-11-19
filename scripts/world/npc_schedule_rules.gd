@@ -290,3 +290,20 @@ static func puede_participar_en_evento(rutina: Dictionary) -> bool:
 		return true
 	var clave := str(rutina.get("clave", "")).strip_edges().to_lower()
 	return clave.begins_with("dia_libre")
+
+
+## Selecciona el horario provisional de Abel y Liam cuando aún no hay rutina propia.
+static func seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
+	if minutos >= 480 and minutos < 1200:
+		return {
+			"clave": "salida_diurna_castillo",
+			"ubicacion_clave": "plaza",
+			"actividad_clave": "recorrer_torres",
+			"activo": true
+		}
+	return {
+		"clave": "regreso_nocturno_castillo",
+		"ubicacion_clave": "castillo",
+		"actividad_clave": "dormir",
+		"activo": true
+	}
