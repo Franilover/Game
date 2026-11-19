@@ -767,10 +767,14 @@ func obtener_relacion_entre_npc(personaje_a: String, personaje_b: String) -> Dic
 	var clave := _clave_pareja_npc(personaje_a, personaje_b)
 	if clave.is_empty():
 		return {}
-	var datos := _obtener_datos_conversaciones_npc()
-	var relaciones_variant: Variant = datos.get("_relaciones_npc", {})
-	var relaciones: Dictionary = relaciones_variant if relaciones_variant is Dictionary else {}
-	var relacion_variant: Variant = relaciones.get(clave, {})
+	var relacion_variant: Variant = {}
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("obtener_relacion_npc_entre"):
+		relacion_variant = _game_state.call("obtener_relacion_npc_entre", clave)
+	else:
+		var datos := _obtener_datos_conversaciones_npc()
+		var relaciones_variant: Variant = datos.get("_relaciones_npc", {})
+		var relaciones: Dictionary = relaciones_variant if relaciones_variant is Dictionary else {}
+		relacion_variant = relaciones.get(clave, {})
 	var resultado := {
 		"amistad": 0.0,
 		"confianza": 0.0,
@@ -896,12 +900,15 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 	var id := personaje_id.strip_edges()
 	if id.is_empty():
 		return []
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("obtener_conocimientos_npc"):
+		var lista_variant: Variant = _game_state.call("obtener_conocimientos_npc", id)
+		return lista_variant if lista_variant is Array else []
 	var datos := _obtener_datos_conversaciones_npc()
 	var todos_variant: Variant = datos.get("_conocimientos_npc", {})
 	if not todos_variant is Dictionary:
 		return []
-	var lista_variant: Variant = (todos_variant as Dictionary).get(id, [])
-	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+	var lista_fallback: Variant = (todos_variant as Dictionary).get(id, [])
+	return (lista_fallback as Array).duplicate(true) if lista_fallback is Array else []
 
 
 ## Registra un acontecimiento comunitario que el habitante presencia directamente.
@@ -1430,15 +1437,7 @@ func _firma_ruta_transmision(ruta: Array) -> String:
 ## Los testimonios públicos se pueden repetir. La información privada requiere
 ## permiso explícito y un vínculo de confianza suficiente; lo confidencial no
 ## se retransmite automáticamente aunque el receptor lo conozca.
-func puede_compartir_conocimiento_npc(
-	personaje_origen: String,
-	personaje_destino: String,
-	conocimiento: Dictionary
-) -> bool:
-	var origen := personaje_origen.strip_edges()
-	var destino := personaje_destino.strip_edges()
-	if origen.is_empty() or destino.is_empty() or origen == destino:
-		return false
+func _conocimiento_compartible_con_confianza(conocimiento: Dictionary, confianza: float) -> bool:
 	var tipo := str(conocimiento.get("tipo", "")).strip_edges().to_lower()
 	var tipo_publico := tipo in ["noticia", "evento_publico", "conocimiento_compartible", "evento_comunitario"]
 	if not bool(conocimiento.get("compartible", tipo_publico)):
@@ -1449,11 +1448,21 @@ func puede_compartir_conocimiento_npc(
 	if privacidad == "confidencial":
 		return false
 	if privacidad in ["personal", "reservada", "privada"]:
-		if not bool(conocimiento.get("permiso_transmision", false)):
-			return false
-		var relacion := obtener_relacion_entre_npc(origen, destino)
-		return float(relacion.get("confianza", 0.0)) >= 30.0
+		return bool(conocimiento.get("permiso_transmision", false)) and confianza >= 30.0
 	return false
+
+
+func puede_compartir_conocimiento_npc(
+	personaje_origen: String,
+	personaje_destino: String,
+	conocimiento: Dictionary
+) -> bool:
+	var origen := personaje_origen.strip_edges()
+	var destino := personaje_destino.strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino:
+		return false
+	var relacion := obtener_relacion_entre_npc(origen, destino)
+	return _conocimiento_compartible_con_confianza(conocimiento, float(relacion.get("confianza", 0.0)))
 
 
 ## Devuelve sólo información que este NPC puede repetir a esa persona.
@@ -1477,6 +1486,8 @@ func tiene_conocimiento_compartible_nuevo_npc(personaje_origen: String, personaj
 		return false
 	var conocimientos_origen := obtener_conocimientos_npc(origen)
 	var conocimientos_destino := obtener_conocimientos_npc(destino)
+	var relacion := obtener_relacion_entre_npc(origen, destino)
+	var confianza := float(relacion.get("confianza", 0.0))
 	var claves_destino: Dictionary = {}
 	for conocimiento_variant in conocimientos_destino:
 		if not conocimiento_variant is Dictionary:
@@ -1491,7 +1502,7 @@ func tiene_conocimiento_compartible_nuevo_npc(personaje_origen: String, personaj
 		var clave_origen := str(conocimiento.get("clave", "")).strip_edges()
 		if clave_origen.is_empty() or bool(claves_destino.get(clave_origen, false)):
 			continue
-		if puede_compartir_conocimiento_npc(origen, destino, conocimiento):
+		if _conocimiento_compartible_con_confianza(conocimiento, confianza):
 			return true
 	return false
 
