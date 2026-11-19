@@ -531,3 +531,12 @@ La mejora reduce raíces cuadradas y normalizaciones innecesarias en la comproba
 Se conserva la separación simétrica, el desplazamiento determinista para posiciones idénticas, los filtros de visibilidad/actividad y el límite de 28 px. La prueba de seguridad de movimiento ahora ejecuta la corrección con dos NPC superpuestos y verifica que recuperan la distancia mínima.
 
 **Validación de la optimización anterior:** Godot 4.7 46/46 pasos correctos, 0 fallos en [run #44623203556](https://github.com/Franilover/Game/actions/runs/44623203556); GDScript Quality success en [run #44623203373](https://github.com/Franilover/Game/actions/runs/44623203373). Validación completa: Godot 4.7 **46/46 pasos correctos, 0 fallos** en [run #44623523513](https://github.com/Franilover/Game/actions/runs/44623523513); GDScript Quality **success** en [run #44623523563](https://github.com/Franilover/Game/actions/runs/44623523563).
+
+
+## 54. Extracción de selección de rutina y prioridades sociales
+
+Se extrajo el bloque inicial de `_aplicar_rutina()` a `_resolver_rutina_base_y_eventos()`. El helper reúne la copia local del calendario especial de Elian, selección de rutina/día libre, variación de tiempo libre, invitaciones, eventos comunitarios y encuentro del trío. Devuelve un contexto acotado con `rutinas`, `rutina` y `evento_comunitario`; `_aplicar_rutina()` conserva la aplicación de turnos comerciales, prioridad nocturna, normalización de hogar/clima y ejecución del desplazamiento.
+
+La extracción no cambia las prioridades ni persiste datos. El calendario de Elian se copia superficialmente como antes y sólo se duplica profundamente el diccionario de cierre modificado. Se añadió una regresión en `test_npc_schedule_context` que comprueba que la rutina de cierre se extiende hasta las 17:00 sin alterar el array original y que no se inventan eventos si no hay calendario mundial disponible.
+
+Validación: Godot 4.7 **46/46 pasos correctos, 0 fallos** en [run #44624623124](https://github.com/Franilover/Game/actions/runs/44624623124); GDScript Quality **success** en [run #44624623318](https://github.com/Franilover/Game/actions/runs/44624623318).
