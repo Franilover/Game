@@ -673,7 +673,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Cuando termina el horario y no hay una actividad especial, cada habitante
 	# regresa a su hogar al comenzar la noche. Las reuniones, invitaciones y
 	# turnos activos conservan prioridad porque ya producen una rutina propia.
-	if not esta_en_horario and (minutos >= 21 * 60 or minutos < 6 * 60):
+	if not esta_en_horario and horario_nocturno:
 		clave_rutina = "dormir_en_hogar"
 		ubicacion = hogar
 		actividad = "dormir"
