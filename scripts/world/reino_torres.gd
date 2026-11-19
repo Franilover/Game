@@ -1851,8 +1851,8 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
 		"vivero":
-			var tilemap_tierra := TORRES_VIVERO_BUILDER.crear_tilemap_tierra(cuarto)
-			var capa_humedad := TORRES_VIVERO_BUILDER.crear_capa_tierra_mojada(cuarto)
+			var tilemap_tierra: TileMapDual = TORRES_VIVERO_BUILDER.crear_tilemap_tierra(cuarto)
+			var capa_humedad: TileMapLayer = TORRES_VIVERO_BUILDER.crear_capa_tierra_mojada(cuarto)
 			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
 			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
 			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
