@@ -2912,22 +2912,7 @@ func _notificar_evento_comunitario(evento: Dictionary) -> void:
 
 
 func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
-	# Abel y Liam residen en el castillo: salen durante el día y regresan
-	# al anochecer para dormir allí. Este respaldo sólo se usa mientras
-	# todavía no tienen horarios propios cargados desde sus datos.
-	if minutos >= 480 and minutos < 1200:
-		return {
-			"clave": "salida_diurna_castillo",
-			"ubicacion_clave": "plaza",
-			"actividad_clave": "recorrer_torres",
-			"activo": true
-		}
-	return {
-		"clave": "regreso_nocturno_castillo",
-		"ubicacion_clave": "castillo",
-		"actividad_clave": "dormir",
-		"activo": true
-	}
+	return NPC_SCHEDULE_RULES.seleccionar_rutina_respaldo_castillo(minutos)
 
 
 func _aplicar_turno_comercio_rotativo(
