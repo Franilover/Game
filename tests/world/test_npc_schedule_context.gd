@@ -26,6 +26,7 @@ func _run() -> void:
 
 	_comprobar_contexto_compartido(agenda, npc_a, npc_b, errores)
 	_comprobar_memoria_diaria(agenda, npc_a, errores)
+	_comprobar_seleccion_rutina_y_copia(agenda, npc_a, errores)
 
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
@@ -102,3 +103,35 @@ func _fail(errores: Array[String]) -> void:
 	for error in errores:
 		push_error("NPCScheduleContext: FAIL: " + error)
 	get_tree().quit(1)
+
+
+func _comprobar_seleccion_rutina_y_copia(
+	agenda: NPCScheduleSystem,
+	npc: Creature,
+	errores: Array[String]
+) -> void:
+	var rutinas_originales: Array = [
+		{
+			"clave": "cerrar_panaderia",
+			"hora_inicio": "09:00",
+			"hora_fin": "16:00",
+			"dias_semana": [0],
+			"actividad_clave": "atender_panaderia",
+			"ubicacion_clave": "panaderia"
+		}
+	]
+	npc.nombre_individual = "Elian"
+	npc.datos = {"rutinas": rutinas_originales}
+	var resultado: Dictionary = agenda._resolver_rutina_base_y_eventos(npc, 0, 16 * 60 + 30, "elian")
+	var rutinas_resueltas: Array = resultado.get("rutinas", [])
+	var rutina_elegida: Dictionary = resultado.get("rutina", {})
+	if str(rutina_elegida.get("clave", "")) != "cerrar_panaderia":
+		errores.append("La extensión del turno de Elian debe conservar la rutina de cierre.")
+	if str(rutinas_resueltas[0].get("hora_fin", "")) != "17:00":
+		errores.append("La copia local del calendario de Elian debe extender el cierre hasta las 17:00.")
+	if str(rutinas_originales[0].get("hora_fin", "")) != "16:00":
+		errores.append("La extensión local de Elian no debe mutar el calendario original.")
+	if not (resultado.get("evento_comunitario", {}) as Dictionary).is_empty():
+		errores.append("Sin calendario mundial disponible no debe inventarse un evento comunitario.")
+	if str(npc.get_meta("evento_comunitario_actual", "x")) != "":
+		errores.append("La ausencia de evento debe limpiar la metadata de evento anterior.")
