@@ -91,7 +91,7 @@ func _probar_identidad_de_apilado(errores: Array[String]) -> void:
 		errores.append("No aceptó el objeto sin ID en un slot libre.")
 	if int(runtime.state.items[6].get("cantidad", 0)) != 4:
 		errores.append("Fusionó un objeto sin ID con una pila identificada.")
-	if int(runtime.state.items[17].get("cantidad", 0)) != 2:
+	if int(runtime.state.items[7].get("cantidad", 0)) != 2:
 		errores.append("No conservó el objeto sin ID en un slot separado.")
 
 	# Dos IDs distintos nunca se fusionan aunque el nombre coincida.
