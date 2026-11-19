@@ -1412,7 +1412,10 @@ func _guardar_estado_visibilidad_npc(npc: Node) -> void:
 	if not is_instance_valid(npc) or not npc is CanvasItem:
 		return
 	var visual := npc as CanvasItem
-	_visibilidad_npcs_exterior[visual.get_instance_id()] = {
+	var instance_id := visual.get_instance_id()
+	if _visibilidad_npcs_exterior.has(instance_id):
+		return
+	_visibilidad_npcs_exterior[instance_id] = {
 		"visible": visual.visible,
 		"interactable": npc.is_in_group("interactable")
 	}
