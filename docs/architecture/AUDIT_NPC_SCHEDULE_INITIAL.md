@@ -229,3 +229,16 @@ La comprobación compartida de requisitos se concentró en `NPCScheduleRules.cum
 La regla es pura: no consulta servicios, no modifica progreso ni relaciones y no decide el día de reunión. La planificación semanal y la prioridad de rutinas siguen en `NPCScheduleSystem`, que es donde ya se coordinan.
 
 Se añadieron pruebas para historia incompleta, falta de interacciones, vínculo insuficiente, tensión alta, relaciones incompletas y ausencia de mutación. El objetivo de esta mejora es reducir duplicación y hacer verificables los requisitos existentes, no cambiar el diseño narrativo ni la frecuencia del encuentro.\n\nSe revisó también su relación con `_actualizar_objetivo_social_npc()`: ese flujo sigue siendo distinto porque selecciona parejas dinámicamente según necesidades, personalidad y motivos concretos, y después persiste objetivos y experiencias. El encuentro del trío, en cambio, es una cita narrativa fija condicionada por dos progresos y tres vínculos. No se fusionan ambos flujos por compartir la palabra «encuentro»; sólo se compartirán reglas cuando exista una condición realmente idéntica. Las invitaciones al jugador conservan asimismo su contrato y persistencia propios.
+
+
+## 18. Evaluación de invitaciones sin efectos secundarios durante la planificación
+
+La comprobación de disponibilidad del encuentro de Mara, Ivo y Nima ya no llama a `_obtener_rutina_invitacion()`. Esa función no era una consulta: además de evaluar, podía marcar invitaciones caducadas en `GameState` y programar un guardado. Consultarla para los tres participantes podía persistir cambios como efecto colateral de decidir si el encuentro era posible.
+
+Se unificó la lectura y evaluación en `_evaluar_invitacion_personaje()`, que devuelve el registro y su evaluación mediante la regla existente `NPCScheduleRules.evaluar_invitacion_npc()`. No escribe en `GameState`, no guarda y no modifica metadatos.
+
+Los dos usos ahora comparten esa evaluación:
+- El encuentro del trío sólo consulta si alguno tiene una invitación activa.
+- La rutina normal de invitación aplica los efectos que le corresponden: persistir la caducidad o activar el metadato del NPC.
+
+No se agregó un sistema nuevo ni se alteraron las prioridades de rutinas, la franja del encuentro o las reglas de caducidad. La separación evita que una comprobación de disponibilidad modifique el estado del mundo.
