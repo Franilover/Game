@@ -78,3 +78,23 @@ En la rama `work/design-and-architecture` se extrajeron dos funciones sin estado
 Se añadió `tests/world/test_npc_schedule_rules.tscn` para cubrir horas límite, entradas inválidas, arrays vacíos, números JSON decimales y cadenas numéricas. El workflow de regresión incluye el test y se habilitó para esta rama de trabajo.
 
 **Estado de validación:** cambios enviados a GitHub; falta el resultado de la ejecución de CI de esta rama. No se afirma que el test haya pasado hasta ver ese resultado.
+
+
+## 8. Segunda extracción: selección pura de rutinas
+
+Se movió el algoritmo de selección horaria a `NPCScheduleRules.seleccionar_rutina(rutinas, dia_semana, minutos)`.
+
+La función devuelve dos datos: la rutina ganadora y una lista de motivos de rechazo. No consulta nodos, metadatos, calendario global ni servicios; tampoco modifica el catálogo recibido. La capa `NPCScheduleSystem` conserva la responsabilidad de emitir el diagnóstico en consola y de guardar la firma que evita repetirlo.
+
+Contratos protegidos por pruebas:
+
+- Una rutina inactiva o con hora inválida nunca gana.
+- Gana la prioridad más alta.
+- Si la prioridad empata, gana la rutina cuyo inicio es más tardío.
+- Si también empatan los inicios, se conserva la primera de la lista.
+- Los turnos que cruzan medianoche usan el día de inicio; la franja posterior a medianoche pertenece al día anterior.
+- La rutina devuelta es una copia profunda y no permite alterar el catálogo original.
+
+No se extrajeron todavía las reglas de ocio, invitaciones, eventos comunitarios, clima ni la resolución de destinos. Esas reglas consultan estado persistente o servicios y requieren contratos independientes antes de moverlas.
+
+**Validación:** la primera extracción ya pasó la prueba dedicada y la suite completa anterior. Esta segunda extracción está pendiente de CI.
