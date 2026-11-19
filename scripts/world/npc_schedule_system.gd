@@ -1280,7 +1280,12 @@ func _detener_paseo_interior(npc: Creature, limpiar_siguiente: bool = false) -> 
 func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int, actividad: String) -> void:
 	if not is_instance_valid(npc):
 		return
-	if bool(npc.get_meta("cinematica_npc_activa", false)) or bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+	if bool(npc.get_meta("cinematica_npc_activa", false)):
+		_detener_animacion_actividad_interior(npc)
+		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+			_detener_paseo_interior(npc)
+		return
+	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
 		_detener_animacion_actividad_interior(npc)
 		return
 	if edificio_id == "castillo":
