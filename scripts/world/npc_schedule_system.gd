@@ -770,12 +770,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	if esta_dentro and edificio_id != edificio_actual:
 		_detener_animacion_actividad_interior(npc)
 		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
-			var movimiento_interior := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-			if is_instance_valid(movimiento_interior):
-				movimiento_interior.detener_por_rutina()
-			npc.remove_meta("rutina_paseo_interior_activo")
-			npc.remove_meta("rutina_paseo_interior_siguiente")
-			npc.set_meta("rutina_en_transito", false)
+			_detener_paseo_interior(npc, true)
 		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 			_zona.call("sacar_npc_del_interior", npc)
 		if (
@@ -1330,6 +1325,20 @@ static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[St
 	return []
 
 
+## Detiene un paseo interior y limpia sólo el estado que deja de ser válido.
+## Al cambiar de edificio también descarta el siguiente horario del paseo.
+func _detener_paseo_interior(npc: Creature, limpiar_siguiente: bool = false) -> void:
+	if not is_instance_valid(npc):
+		return
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if is_instance_valid(movimiento):
+		movimiento.detener_por_rutina()
+	npc.remove_meta("rutina_paseo_interior_activo")
+	if limpiar_siguiente:
+		npc.remove_meta("rutina_paseo_interior_siguiente")
+	npc.set_meta("rutina_en_transito", false)
+
+
 ## Pequeños recorridos dentro del edificio: los NPC no quedan congelados
 ## durante toda una franja horaria. Se activan sólo al abrir ese interior.
 func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int, actividad: String) -> void:
@@ -1348,10 +1357,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	if not interior_activo or interior_actual != edificio_id or not esta_en_cuarto:
 		_detener_animacion_actividad_interior(npc)
 		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
-			if is_instance_valid(movimiento):
-				movimiento.detener_por_rutina()
-			npc.remove_meta("rutina_paseo_interior_activo")
-			npc.set_meta("rutina_en_transito", false)
+			_detener_paseo_interior(npc)
 		return
 	if not is_instance_valid(movimiento):
 		return
