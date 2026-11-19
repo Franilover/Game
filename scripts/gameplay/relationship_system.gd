@@ -1106,9 +1106,7 @@ func registrar_asunto_pendiente_npc(personaje_id: String, asunto: Dictionary) ->
 	var clave := str(asunto.get("clave", "")).strip_edges()
 	if id.is_empty() or clave.is_empty():
 		return ""
-	var datos := _obtener_datos_conversaciones_npc()
-	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
-	var todos: Array = todos_variant.duplicate(true) if todos_variant is Array else []
+	var todos := _obtener_lista_conversaciones_npc("_asuntos_pendientes_npc", "obtener_asuntos_pendientes_npc")
 	var id_solicitado := str(asunto.get("id", "")).strip_edges()
 	for existente_variant in todos:
 		if not existente_variant is Dictionary:
@@ -1130,8 +1128,7 @@ func registrar_asunto_pendiente_npc(personaje_id: String, asunto: Dictionary) ->
 	todos.append(nuevo)
 	while todos.size() > 64:
 		todos.pop_front()
-	datos["_asuntos_pendientes_npc"] = todos
-	_guardar_datos_conversaciones_npc(datos)
+	_guardar_lista_conversaciones_npc("_asuntos_pendientes_npc", "guardar_asuntos_pendientes_npc", todos)
 	return str(nuevo["id"])
 
 
@@ -1166,11 +1163,7 @@ func resolver_asunto_pendiente_npc(asunto_id: String, resuelto: bool = true) -> 
 	var clave := asunto_id.strip_edges()
 	if clave.is_empty():
 		return false
-	var datos := _obtener_datos_conversaciones_npc()
-	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
-	if not todos_variant is Array:
-		return false
-	var todos: Array = todos_variant.duplicate(true)
+	var todos := _obtener_lista_conversaciones_npc("_asuntos_pendientes_npc", "obtener_asuntos_pendientes_npc")
 	for i in range(todos.size()):
 		if not todos[i] is Dictionary:
 			continue
@@ -1180,8 +1173,7 @@ func resolver_asunto_pendiente_npc(asunto_id: String, resuelto: bool = true) -> 
 		asunto["estado"] = "resuelto" if resuelto else "aplazado"
 		asunto["resuelto"] = Time.get_datetime_string_from_system(true)
 		todos[i] = asunto
-		datos["_asuntos_pendientes_npc"] = todos
-		_guardar_datos_conversaciones_npc(datos)
+		_guardar_lista_conversaciones_npc("_asuntos_pendientes_npc", "guardar_asuntos_pendientes_npc", todos)
 		return true
 	return false
 
@@ -1194,9 +1186,7 @@ func registrar_promesa_entre_npc(personaje_promitente: String, personaje_destino
 	var clave := str(promesa.get("clave", promesa.get("descripcion", ""))).strip_edges()
 	if origen.is_empty() or destino.is_empty() or origen == destino or clave.is_empty():
 		return ""
-	var datos := _obtener_datos_conversaciones_npc()
-	var todas_variant: Variant = datos.get("_promesas_npc", [])
-	var todas: Array = todas_variant.duplicate(true) if todas_variant is Array else []
+	var todas := _obtener_lista_conversaciones_npc("_promesas_npc", "obtener_promesas_npc")
 	var id_solicitado := str(promesa.get("id", "")).strip_edges()
 	for existente_variant in todas:
 		if not existente_variant is Dictionary:
@@ -1221,8 +1211,7 @@ func registrar_promesa_entre_npc(personaje_promitente: String, personaje_destino
 	todas.append(nueva)
 	while todas.size() > 64:
 		todas.pop_front()
-	datos["_promesas_npc"] = todas
-	_guardar_datos_conversaciones_npc(datos)
+	_guardar_lista_conversaciones_npc("_promesas_npc", "guardar_promesas_npc", todas)
 	return str(nueva["id"])
 
 
@@ -1256,11 +1245,7 @@ func resolver_promesa_entre_npc(promesa_id: String, cumplida: bool = true) -> bo
 	var clave := promesa_id.strip_edges()
 	if clave.is_empty():
 		return false
-	var datos := _obtener_datos_conversaciones_npc()
-	var todas_variant: Variant = datos.get("_promesas_npc", [])
-	if not todas_variant is Array:
-		return false
-	var todas: Array = todas_variant.duplicate(true)
+	var todas := _obtener_lista_conversaciones_npc("_promesas_npc", "obtener_promesas_npc")
 	for i in range(todas.size()):
 		if not todas[i] is Dictionary:
 			continue
@@ -1270,8 +1255,7 @@ func resolver_promesa_entre_npc(promesa_id: String, cumplida: bool = true) -> bo
 		promesa["estado"] = "cumplida" if cumplida else "rota"
 		promesa["resuelta"] = Time.get_datetime_string_from_system(true)
 		todas[i] = promesa
-		datos["_promesas_npc"] = todas
-		_guardar_datos_conversaciones_npc(datos)
+		_guardar_lista_conversaciones_npc("_promesas_npc", "guardar_promesas_npc", todas)
 		var promitente := str(promesa.get("promitente", ""))
 		var destinatario := str(promesa.get("destinatario", ""))
 		if cumplida:
@@ -1538,6 +1522,50 @@ func _obtener_datos_conversaciones_npc() -> Dictionary:
 func _guardar_datos_conversaciones_npc(datos: Dictionary) -> void:
 	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 		_game_state.call("guardar_conversaciones_npc", datos)
+
+
+func _guardar_relacion_npc(clave: String, relacion: Dictionary) -> void:
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("guardar_relacion_npc_entre"):
+		_game_state.call("guardar_relacion_npc_entre", clave, relacion)
+		return
+	var datos := _obtener_datos_conversaciones_npc()
+	var relaciones_variant: Variant = datos.get("_relaciones_npc", {})
+	var relaciones: Dictionary = relaciones_variant if relaciones_variant is Dictionary else {}
+	var actualizadas := relaciones.duplicate(true)
+	actualizadas[clave] = relacion.duplicate(true)
+	datos["_relaciones_npc"] = actualizadas
+	_guardar_datos_conversaciones_npc(datos)
+
+
+func _guardar_conocimientos_npc(personaje_id: String, conocimientos: Array) -> void:
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("guardar_conocimientos_npc"):
+		_game_state.call("guardar_conocimientos_npc", personaje_id, conocimientos)
+		return
+	var datos := _obtener_datos_conversaciones_npc()
+	var todos_variant: Variant = datos.get("_conocimientos_npc", {})
+	var todos: Dictionary = todos_variant if todos_variant is Dictionary else {}
+	var actualizados := todos.duplicate(true)
+	actualizados[personaje_id] = conocimientos.duplicate(true)
+	datos["_conocimientos_npc"] = actualizados
+	_guardar_datos_conversaciones_npc(datos)
+
+
+func _obtener_lista_conversaciones_npc(clave: String, metodo: String) -> Array:
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method(metodo):
+		var resultado: Variant = _game_state.call(metodo)
+		return resultado if resultado is Array else []
+	var datos := _obtener_datos_conversaciones_npc()
+	var lista_variant: Variant = datos.get(clave, [])
+	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
+func _guardar_lista_conversaciones_npc(clave: String, metodo: String, lista: Array) -> void:
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method(metodo):
+		_game_state.call(metodo, lista)
+		return
+	var datos := _obtener_datos_conversaciones_npc()
+	datos[clave] = lista.duplicate(true)
+	_guardar_datos_conversaciones_npc(datos)
 
 
 func _obtener_relaciones_guardadas() -> Dictionary:
