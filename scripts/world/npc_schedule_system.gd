@@ -697,38 +697,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 						npc.set_meta("rutina_error_firma", firma_nueva)
 		return
 
-	# Sin actividad programada, el destino siempre es su casa.
-	var destino_local: Vector2 = POSICIONES[ubicacion]
-	var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
-	if not esta_en_horario and hogar_variant is Vector2:
-		destino_local = hogar_variant
-	elif not edificio_id.is_empty():
-		# El punto de rutina debe quedar justo fuera del umbral. Usar el
-		# centro de la puerta puede caer dentro de la colisión de fachada y
-		# hacer que AStar termine varias celdas antes del edificio.
-		destino_local = edificio.get("pos", destino_local) + Vector2(0.0, 28.0)
-
-	# La plaza es un punto de encuentro, no un único punto de llegada.
-	# Cada NPC ocupa un lugar estable alrededor del centro.
-	if ubicacion == "plaza":
-		var posicion_absoluta_variant: Variant = rutina.get("posicion_absoluta_plaza", null)
-		if posicion_absoluta_variant is Vector2:
-			destino_local = posicion_absoluta_variant
-		else:
-			# Los tres habitantes locales ocupan sectores distintos del borde
-			# de la plaza; ninguno usa el punto central como destino por defecto.
-			var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
-			var posicion_plaza: Vector2
-			if POSICIONES_PLAZA.has(nombre_plaza):
-				posicion_plaza = POSICIONES_PLAZA[nombre_plaza]
-			else:
-				# Los NPC adicionales también se reparten alrededor del perímetro,
-				# en vez de acumularse en el centro de la plaza.
-				var indice_perimetro := posmod(hash(nombre_plaza), 12)
-				var angulo_perimetro := TAU * float(indice_perimetro) / 12.0
-				posicion_plaza = Vector2(cos(angulo_perimetro) * 118.0, sin(angulo_perimetro) * 118.0)
-			destino_local += posicion_plaza
-			destino_local += variacion_posicion
+	var destino_local := _resolver_destino_rutina_local(
+		npc, rutina, ubicacion, esta_en_horario, edificio
+	)
 	var destino_global := _zona.to_global(destino_local)
 	if clave_rutina.begins_with("encuentro_trio_"):
 		npc.remove_meta("rutina_paseo_exterior_activo")
@@ -775,6 +746,41 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		and str(rutina.get("clave", "")) == str(evento_comunitario.get("clave", ""))
 	):
 		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
+
+
+## Resuelve el punto local de llegada sin modificar la rutina ni al NPC.
+## Las posiciones de puerta y plaza se mantienen estables entre actualizaciones.
+static func _resolver_destino_rutina_local(
+	npc: Creature,
+	rutina: Dictionary,
+	ubicacion: String,
+	esta_en_horario: bool,
+	edificio: Dictionary
+) -> Vector2:
+	var destino_local: Vector2 = POSICIONES[ubicacion]
+	var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
+	if not esta_en_horario and hogar_variant is Vector2:
+		destino_local = hogar_variant
+	elif not str(edificio.get("id", "")).is_empty():
+		# El destino queda fuera del umbral y de la colisión de fachada.
+		destino_local = edificio.get("pos", destino_local) + Vector2(0.0, 28.0)
+
+	if ubicacion != "plaza":
+		return destino_local
+	var posicion_absoluta_variant: Variant = rutina.get("posicion_absoluta_plaza", null)
+	if posicion_absoluta_variant is Vector2:
+		return posicion_absoluta_variant
+
+	var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
+	var posicion_plaza: Vector2
+	if POSICIONES_PLAZA.has(nombre_plaza):
+		posicion_plaza = POSICIONES_PLAZA[nombre_plaza]
+	else:
+		# Los NPC adicionales se distribuyen alrededor del perímetro.
+		var indice_perimetro := posmod(hash(nombre_plaza), 12)
+		var angulo_perimetro := TAU * float(indice_perimetro) / 12.0
+		posicion_plaza = Vector2(cos(angulo_perimetro) * 118.0, sin(angulo_perimetro) * 118.0)
+	return destino_local + posicion_plaza + rutina.get("variacion_posicion", Vector2.ZERO)
 
 
 ## Devuelve al exterior un NPC cuando su siguiente rutina apunta a otro edificio.
