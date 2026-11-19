@@ -228,7 +228,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if not npc.is_alive:
 			continue
 		_actualizar_mente_npc(npc, minutos, tiempo)
-		var es_hora_de_dormir := minutos >= 21 * 60 or minutos < 6 * 60
+		var es_hora_de_dormir := NPC_SCHEDULE_RULES.es_horario_nocturno(minutos)
 		if es_hora_de_dormir:
 			# Las conversaciones ambientales también podían retener al NPC antes
 			# de que el planificador aplicara su rutina de regreso al hogar.
@@ -542,7 +542,7 @@ func _aplicar_preferencia_terreno(malla: AStarGrid2D, celda: Vector2i, posicion_
 
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
-	var horario_nocturno := minutos >= 21 * 60 or minutos < 6 * 60
+	var horario_nocturno := NPC_SCHEDULE_RULES.es_horario_nocturno(minutos)
 	if horario_nocturno and (bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false))):
 		# Cancela acercamientos y charlas iniciadas antes de la hora de dormir.
 		_finalizar_actividad_social(npc)
@@ -1380,7 +1380,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	# Primero busca un puesto junto al mueble que corresponde a la tarea.
 	# Si el edificio no tiene ese mueble, conserva los puntos de paseo generales.
 	var puntos: Array[Vector2] = []
-	var hora_de_dormir := minutos >= 21 * 60 or minutos < 6 * 60
+	var hora_de_dormir := NPC_SCHEDULE_RULES.es_horario_nocturno(minutos)
 	var postura := ""
 	if actividad.to_lower().contains("dorm") or (actividad.to_lower().contains("descans") and hora_de_dormir):
 		postura = "dormir"
