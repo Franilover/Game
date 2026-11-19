@@ -525,6 +525,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
 	var nombre_para_descanso := npc.get_nombre_visual().strip_edges().to_lower()
+	var hogar_respaldo := obtener_clave_hogar(nombre_para_descanso, "plaza")
 	# Elian mantiene la panadería abierta durante la última hora de compras.
 	# Es un ajuste local de la simulación: no modifica horarios canónicos en Supabase.
 	if nombre_para_descanso == "elian" and rutinas_variant is Array:
@@ -590,7 +591,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Los trabajos esenciales y los eventos comunitarios conservan prioridad.
 	rutina = _aplicar_turno_comercio_rotativo(npc, rutina, dia_semana, minutos)
 
-	var nombre_npc := npc.get_nombre_visual().strip_edges().to_lower()
+	var nombre_npc := nombre_para_descanso
 	if nombre_npc in ["abel", "liam"] and (not rutinas_variant is Array or (rutinas_variant as Array).is_empty()) and dia_semana != 4:
 		rutina = _seleccionar_rutina_respaldo_castillo(minutos)
 
@@ -607,9 +608,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 			or actividad_previa.contains("investig")
 		)
 		if not es_turno_esencial:
-			var hogar_nocturno := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
+			var hogar_nocturno := str(npc.datos.get("hogar_clave", hogar_respaldo)).strip_edges().to_lower()
 			if not POSICIONES.has(hogar_nocturno):
-				hogar_nocturno = obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
+				hogar_nocturno = hogar_respaldo
 			rutina = {
 				"clave": "dormir_en_hogar",
 				"ubicacion_clave": hogar_nocturno,
@@ -628,9 +629,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# los habitantes libres deben regresar a sus hogares para dormir.
 
 	var ubicacion_respaldo := str(npc.datos.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
-	var hogar := str(npc.datos.get("hogar_clave", obtener_clave_hogar(npc.get_nombre_visual(), "plaza"))).strip_edges().to_lower()
+	var hogar := str(npc.datos.get("hogar_clave", hogar_respaldo)).strip_edges().to_lower()
 	if not POSICIONES.has(hogar):
-		hogar = obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
+		hogar = hogar_respaldo
 	var esta_en_horario := not rutina.is_empty()
 	if rutinas_variant is Array and (rutinas_variant as Array).is_empty() and nombre_npc not in ["abel", "liam"] and dia_semana != 4:
 		var firma_aviso := "rutinas_vacias:" + nombre_npc
