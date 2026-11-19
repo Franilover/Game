@@ -410,7 +410,7 @@ func _actualizar_visual_planta() -> void:
 	_planta_sprite.texture = textura
 	var madura := _planta_esta_madura()
 	var riegos := clampi(int(_planta.get("riegos", 0)), 0, 2)
-	var escala := [0.35, 0.62, 0.84][riegos]
+	var escala: float = [0.35, 0.62, 0.84][riegos]
 	if madura:
 		escala = 1.0
 	_planta_sprite.visible = textura != null
