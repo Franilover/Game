@@ -605,3 +605,10 @@ Validación CI de esta ampliación pendiente.
 El paseo interior ahora registra la actividad que originó su destino. Si cambia la actividad programada y el NPC permanece en el mismo edificio, la ruta anterior se cancela y se calcula un nuevo puesto usando las preferencias de la actividad actual. La interrupción limpia la actividad asociada al paseo, conserva el estado de horario necesario y permite iniciar el nuevo recorrido en el mismo tick. Al completar el paseo también se elimina la metadata de actividad asociada.
 
 La prueba `test_npc_schedule_context` cubre: interrupción por cinemática, reanudación del paseo pendiente y sustitución de ruta cuando cambia la actividad dentro del mismo edificio. Validación CI pendiente.
+
+
+## 61. Cambio de edificio mientras el jugador permanece en otro interior
+
+Se reforzó la regresión de transición para ejecutar `_salir_de_edificio_para_cambiar_rutina()` directamente, en vez de simular por separado la extracción del NPC y limpiar manualmente su metadata. El escenario mantiene `_interior_activo` durante el cambio: el NPC vuelve al contenedor exterior, limpia `rutina_en_edificio` y `rutina_edificio_id`, permanece oculto, fuera de `interactable` y sin colisiones exteriores. Al cerrar el interior, `_restaurar_npcs_exteriores()` recupera su visibilidad, grupo de interacción y capas/máscaras originales.
+
+Este cambio fortalece la prueba del contrato existente; no modifica el comportamiento de producción. Validación CI pendiente.
