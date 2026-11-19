@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-19  
 **Rama revisada:** `feat/npc-relational-memory-decay`  
 **Commit revisado:** `bac3dffe0eeeeb965ac962d3ea217a9ba315b240`  
-**Estado:** auditoría estática; no implica que se hayan ejecutado pruebas de runtime.
+**Estado:** auditoría estática con primera extracción del constructor del vivero; la prueba de contrato quedó incorporada a CI, pendiente de ejecución.
 
 ## 1. Contrato de escena
 
