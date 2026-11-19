@@ -57,9 +57,9 @@ func _run() -> void:
 	# Descubrir un Garumi desbloquea las dos pestañas.
 	_check(GameState.registrar_garumi_descubierto("garumi-desbloqueo-test"), "Debe registrar el primer Garumi descubierto.")
 	await get_tree().process_frame
-	_check(not not not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
+	_check(not not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
 
-	# El descubrimiento de una criatura también debe desbloquearlas aunque no exista un Garumi descubierto.
+	# El descubrimiento de una criatura también desbloquea el panel de Garumis.
 	GameState.world_state.flags.erase("enciclopedia_garumis")
 	GameState.discovery_state = DiscoveryState.new()
 	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
