@@ -904,10 +904,20 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 	if not is_instance_valid(zona):
 		return
 	var plantilla: Creature = null
+	var existentes_locales: Dictionary = {}
+	var existentes_por_nombre: Dictionary = {}
 	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
-		if npc_variant is Creature and is_instance_valid(npc_variant):
-			plantilla = npc_variant as Creature
-			break
+		if not npc_variant is Creature or not is_instance_valid(npc_variant):
+			continue
+		var npc_existente := npc_variant as Creature
+		if plantilla == null:
+			plantilla = npc_existente
+		var clave_existente := str(npc_existente.get_meta("habitante_local_clave", ""))
+		if not clave_existente.is_empty():
+			existentes_locales[clave_existente] = npc_existente
+		var nombre_existente := npc_existente.get_nombre_visual().strip_edges().to_lower()
+		if not nombre_existente.is_empty() and not existentes_por_nombre.has(nombre_existente):
+			existentes_por_nombre[nombre_existente] = npc_existente
 
 	# Los habitantes locales no deben depender de que Supabase haya entregado
 	# primero otro NPC para servir de plantilla.
@@ -973,18 +983,6 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 		var nombre_canonico := str(personaje.get("nombre", "")).strip_edges().to_lower()
 		if not nombre_canonico.is_empty():
 			nombres_canonicos_globales[nombre_canonico] = true
-
-	var existentes_locales: Dictionary = {}
-	var existentes_por_nombre: Dictionary = {}
-	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
-		if npc_variant is Creature and is_instance_valid(npc_variant):
-			var npc_existente := npc_variant as Creature
-			var clave_existente := str(npc_existente.get_meta("habitante_local_clave", ""))
-			if not clave_existente.is_empty():
-				existentes_locales[clave_existente] = npc_existente
-			var nombre_existente := npc_existente.get_nombre_visual().strip_edges().to_lower()
-			if not nombre_existente.is_empty() and not existentes_por_nombre.has(nombre_existente):
-				existentes_por_nombre[nombre_existente] = npc_existente
 
 	for habitante in habitantes:
 		var clave := str(habitante.get("clave", ""))
