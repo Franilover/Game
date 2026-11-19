@@ -513,31 +513,17 @@ func _obtener_regadera_en_manos() -> Dictionary:
 func _construir_investigacion_herbolario() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
 	_agregar_texto("EXAMEN DE MUESTRAS")
-	_agregar_texto("Selecciona flores, hojas, hierbas, raíces o semillas para consultar sus datos. La investigación no consume materiales.")
-	var cuerpo := HBoxContainer.new()
-	cuerpo.add_theme_constant_override("separation", 8)
-	cuerpo.custom_minimum_size = Vector2(500, 190)
-	_contenido.add_child(cuerpo)
-	var panel_lista := PanelContainer.new()
-	panel_lista.custom_minimum_size = Vector2(190, 0)
-	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cuerpo.add_child(panel_lista)
+	_agregar_texto("Selecciona una muestra para consultar sus datos. La investigación no consume materiales.")
+	var layout := MenuLayout.crear_selector_dos_paneles(_contenido, 164.0, 220.0, 8)
+	var lista := layout["list_content"] as GridContainer
+	var panel_lista := layout["list_panel"] as PanelContainer
+	var panel_detalle := layout["detail_panel"] as PanelContainer
+	var detalle := layout["detail_content"] as VBoxContainer
 	PIXEL_UI_THEME.apply(panel_lista, false)
-	var scroll := ScrollContainer.new()
-	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel_lista.add_child(scroll)
-	var lista := VBoxContainer.new()
-	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(lista)
-	var panel_detalle := PanelContainer.new()
-	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cuerpo.add_child(panel_detalle)
 	PIXEL_UI_THEME.apply(panel_detalle, false)
-	var detalle := VBoxContainer.new()
-	panel_detalle.add_child(detalle)
+
 	var icono := TextureRect.new()
-	icono.custom_minimum_size = Vector2(0, 76)
+	icono.custom_minimum_size = Vector2(0, 88)
 	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	detalle.add_child(icono)
@@ -553,6 +539,7 @@ func _construir_investigacion_herbolario() -> void:
 	var estado := Label.new()
 	estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(estado)
+
 	var cantidad := 0
 	if is_instance_valid(_inventario):
 		for indice in range(_inventario.runtime.state.items.size()):
@@ -560,20 +547,16 @@ func _construir_investigacion_herbolario() -> void:
 			if objeto.is_empty() or not _es_muestra_botanica(objeto):
 				continue
 			cantidad += 1
-			var boton := Button.new()
-			boton.text = "%s  x%d" % [str(objeto.get("nombre", "Muestra")), maxi(1, int(objeto.get("cantidad", 1)))]
-			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var boton := MenuLayout.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(objeto))
+			MenuLayout.agregar_cantidad(boton, maxi(1, int(objeto.get("cantidad", 1))))
 			boton.pressed.connect(_seleccionar_muestra_herbolario.bind(objeto.duplicate(true), icono, nombre_label, descripcion, estado))
 			lista.add_child(boton)
-			PIXEL_UI_THEME.apply(boton, false)
 	if cantidad == 0:
 		var vacio := Label.new()
 		vacio.text = "No llevas muestras botánicas para estudiar."
 		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lista.add_child(vacio)
 	_agregar_texto("Los descubrimientos se consultan aquí; las muestras permanecen en tu inventario.")
-
 
 func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nombre: Label, descripcion: Label, estado: Label) -> void:
 	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
@@ -591,7 +574,7 @@ func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nom
 func _construir_procesamiento_herbolario() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
 	_agregar_texto("SELECCIÓN DE MATERIAL")
-	_agregar_texto("Elige un objeto botánico de tu inventario para consultar únicamente los procesos que puedes realizar con él.")
+	_agregar_texto("Elige un material para consultar sus procesos disponibles.")
 	if not is_instance_valid(_world_items):
 		_agregar_texto("No se pudo acceder al catálogo compartido.")
 		return
@@ -600,35 +583,18 @@ func _construir_procesamiento_herbolario() -> void:
 		if not _world_items.recetas_cargadas.is_connected(_al_recetas_herbolario_cargadas):
 			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
 		return
-	var cuerpo := HBoxContainer.new()
-	cuerpo.add_theme_constant_override("separation", 10)
-	cuerpo.custom_minimum_size = Vector2(510, 260)
-	_contenido.add_child(cuerpo)
-	var panel_lista := PanelContainer.new()
-	panel_lista.custom_minimum_size = Vector2(180, 0)
-	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cuerpo.add_child(panel_lista)
+
+	var layout := MenuLayout.crear_selector_dos_paneles(_contenido, 180.0, 260.0, 10)
+	var lista := layout["list_content"] as GridContainer
+	var panel_lista := layout["list_panel"] as PanelContainer
+	var panel_detalle := layout["detail_panel"] as PanelContainer
+	var detalle := layout["detail_content"] as VBoxContainer
 	PIXEL_UI_THEME.apply(panel_lista, false)
-	var scroll_lista := ScrollContainer.new()
-	scroll_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel_lista.add_child(scroll_lista)
-	var lista := VBoxContainer.new()
-	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_lista.add_child(lista)
-	var panel_detalle := PanelContainer.new()
-	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	cuerpo.add_child(panel_detalle)
 	PIXEL_UI_THEME.apply(panel_detalle, false)
-	var scroll_detalle := ScrollContainer.new()
-	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	panel_detalle.add_child(scroll_detalle)
-	var detalle := VBoxContainer.new()
-	detalle.add_theme_constant_override("separation", 6)
-	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_detalle.add_child(detalle)
+
 	var vistos: Dictionary = {}
 	var seleccion_inicial: Dictionary = {}
+	var id_inicial := ""
 	if is_instance_valid(_inventario):
 		for objeto_variant in _inventario.runtime.state.items:
 			if not objeto_variant is Dictionary:
@@ -645,30 +611,23 @@ func _construir_procesamiento_herbolario() -> void:
 			vistos[item_id] = true
 			if seleccion_inicial.is_empty():
 				seleccion_inicial = item_catalogo
-			var boton := Button.new()
-			boton.text = "%s  x%d" % [str(item_catalogo.get("nombre", objeto.get("nombre", "Material"))), _contar_item(item_id)]
-			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+				id_inicial = item_id
+			var boton := MenuLayout.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(item_catalogo))
+			MenuLayout.agregar_cantidad(boton, _contar_item(item_id))
 			boton.pressed.connect(_mostrar_procesos_item_herbolario.bind(item_id, item_catalogo, detalle))
 			lista.add_child(boton)
-			PIXEL_UI_THEME.apply(boton, false)
+
 	if vistos.is_empty():
 		var vacio := Label.new()
 		vacio.text = "No tienes materiales botánicos."
 		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lista.add_child(vacio)
 		var instruccion := Label.new()
-		instruccion.text = "Consigue flores, hojas, semillas o hierbas para ver sus procesos."
+		instruccion.text = "Consigue flores, hojas, semillas o hierbas para consultar sus procesos."
 		instruccion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		detalle.add_child(instruccion)
 	else:
-		var primer_id := str(seleccion_inicial.get("id", seleccion_inicial.get("item_id", "")))
-		if primer_id.is_empty():
-			for id in vistos.keys():
-				primer_id = str(id)
-				break
-		_mostrar_procesos_item_herbolario(primer_id, seleccion_inicial, detalle)
-
+		_mostrar_procesos_item_herbolario(id_inicial, seleccion_inicial, detalle)
 
 func _mostrar_procesos_item_herbolario(item_id: String, item: Dictionary, detalle: VBoxContainer) -> void:
 	for hijo in detalle.get_children():
