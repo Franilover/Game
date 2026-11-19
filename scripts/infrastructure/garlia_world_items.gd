@@ -10,6 +10,7 @@ const CATALOG_CACHE_PATH: String = "user://cache/items_game.json"
 const RECIPES_CACHE_PATH: String = "user://cache/recetas_game.json"
 const MAX_RECIPES_RETRIES: int = 3
 const INTERVALO_REINTENTO_OFFLINE: float = 30.0
+const INTERVALO_ACTUALIZACION_CATALOGOS: float = 300.0
 const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
 const CATALOG_RETRY_DELAY: float = 1.5
@@ -27,6 +28,7 @@ signal drops_generados(drops: Array)
 var _request: HTTPRequest
 var _request_drops: HTTPRequest
 var _request_recetas: HTTPRequest
+var _timer_actualizacion_catalogos: Timer
 
 var _cargando: bool = false
 var _intentos_catalogo: int = 0
@@ -45,6 +47,7 @@ var recetas_disponibles: bool = false
 var origen_recetas: String = ""
 var _items_por_id: Dictionary = {}
 var _items_por_nombre: Dictionary = {}
+var _items_por_prop_id: Dictionary = {}
 
 var _objetos_generados_en_escena: bool = false
 var _generacion_habilitada: bool = true
@@ -95,6 +98,12 @@ func _ready() -> void:
 	_cargar_recetas_local()
 	call_deferred("cargar_catalogo")
 	call_deferred("cargar_recetas")
+	_timer_actualizacion_catalogos = Timer.new()
+	_timer_actualizacion_catalogos.one_shot = true
+	_timer_actualizacion_catalogos.wait_time = INTERVALO_ACTUALIZACION_CATALOGOS
+	add_child(_timer_actualizacion_catalogos)
+	_timer_actualizacion_catalogos.timeout.connect(_actualizar_catalogos_periodicamente)
+	_timer_actualizacion_catalogos.start()
 
 
 func establecer_generacion_habilitada(habilitada: bool) -> void:
@@ -271,6 +280,7 @@ func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> vo
 	catalogo = catalogo_nuevo
 	_items_por_id.clear()
 	_items_por_nombre.clear()
+	_items_por_prop_id.clear()
 	for item in catalogo:
 		var id := str(item.get("item_id", item.get("id", ""))).strip_edges()
 		var nombre := str(item.get("nombre", "")).strip_edges().to_lower()
@@ -278,6 +288,11 @@ func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> vo
 			_items_por_id[id] = item
 		if not nombre.is_empty():
 			_items_por_nombre[nombre] = item
+		var propiedades_variant: Variant = item.get("propiedades_game", {})
+		if propiedades_variant is Dictionary:
+			var prop_id := str((propiedades_variant as Dictionary).get("prop_id", "")).strip_edges()
+			if not prop_id.is_empty():
+				_items_por_prop_id[prop_id] = item
 	catalogo_disponible = true
 	origen_catalogo = origen
 
@@ -428,6 +443,22 @@ func buscar_item_por_nombre(nombre: String) -> Dictionary:
 		return {}
 	var item: Variant = _items_por_nombre.get(buscado, {})
 	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
+
+
+func buscar_item_por_prop_id(prop_id: String) -> Dictionary:
+	var buscado := prop_id.strip_edges()
+	if buscado.is_empty():
+		return {}
+	var item: Variant = _items_por_prop_id.get(buscado, {})
+	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
+
+
+func _actualizar_catalogos_periodicamente() -> void:
+	if not is_inside_tree():
+		return
+	cargar_catalogo()
+	cargar_recetas()
+	_timer_actualizacion_catalogos.start()
 
 
 func _al_catalogo_disponible_para_drops(_items: Array) -> void:
