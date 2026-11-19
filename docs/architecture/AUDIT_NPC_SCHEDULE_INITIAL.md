@@ -331,6 +331,21 @@ La lectura devuelve una copia profunda de la relación solicitada. La escritura 
 Se amplió la prueba de reglas para cubrir los diez hogares, espacios en los nombres, NPC desconocidos, respaldo personalizado y respaldo inválido. No cambian destinos, identidades ni rutinas.
 
 
+
+## 29. Posiciones estables de NPC en la plaza
+
+La rutina de cada NPC reconstruía el diccionario de posiciones individuales de la plaza cada vez que recalculaba su destino. Como las diez posiciones son constantes de diseño, se movieron a `POSICIONES_PLAZA` junto a los demás catálogos estáticos.
+
+Se conservan exactamente las diez coordenadas y el reparto determinista para NPC adicionales mediante hash y perímetro. La prueba de reglas protege las coordenadas originales. El cambio reduce asignaciones repetidas sin alterar destinos ni navegación.
+
+## 30. Simplificación segura de `_aplicar_rutina()`
+
+La función calculaba dos veces la misma condición nocturna (21:00 o antes de 06:00). Ahora conserva una sola variable local, reutilizada tanto para cancelar actividades sociales como para aplicar el regreso nocturno.
+
+El ajuste especial de Elian copiaba profundamente todo el array de rutinas aunque sólo reemplazaba el diccionario correspondiente a `cerrar_panaderia`. Se usa una copia superficial del array y se mantiene la copia independiente del único diccionario que se modifica. Los demás elementos se consultan sin mutarlos.
+
+También se reutiliza el nombre normalizado y el hogar de respaldo calculado al principio de la rutina. No se altera el orden de selección de rutina, invitación, evento, encuentro de grupo, comercio, descanso nocturno, lluvia ni navegación.
+
 ## 31. Catálogo estático de paseos exteriores
 
 `_actualizar_paseo_ambiental_exterior()` reconstruía un diccionario con los desplazamientos preferidos de ocho NPC cada vez que actualizaba sus paseos. Esos puntos son constantes de diseño y no dependen del estado del mundo.
