@@ -254,4 +254,6 @@ La disponibilidad del encuentro de Mara, Ivo y Nima necesitaba localizar a cada 
 
 Ahora el encuentro reúne a los tres participantes durante un único recorrido y conserva el primer nodo `Creature` válido encontrado para cada nombre. Después valida que los tres sigan siendo instancias válidas y estén vivos. Esto mantiene el comportamiento anterior ante nombres duplicados —no sustituye al primer resultado por otro posterior— y reduce los recorridos del grupo de hasta tres a uno.
 
-No se cambió la búsqueda general por nombre ni se creó un registro global de NPC: la optimización queda limitada al flujo que necesita consultar a los tres personajes juntos.
+La misma reducción se aplicó a `_actualizar_interaccion_panaderia()`: Ivo y Elian también se resuelven en un único recorrido, conservando el primer resultado de cada nombre y deteniendo la búsqueda cuando ambos están localizados. Esta interacción se actualiza desde el ciclo del sistema, por lo que evitar un segundo recorrido es especialmente útil.
+
+No se cambió la búsqueda general por nombre ni se creó un registro global de NPC: las optimizaciones quedan limitadas a los dos flujos que necesitan consultar varios personajes juntos.
