@@ -103,7 +103,6 @@ func _inicializar_navegacion_tabs() -> void:
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
-	var boton_enciclopedia: Button = $Window/Margin/Column/TabButtons/Enciclopedia
 	var boton_garumis: Button = $Window/Margin/Column/TabButtons/Garumis
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
@@ -118,9 +117,6 @@ func _inicializar_navegacion_tabs() -> void:
 		tabs.current_tab = 1
 	)
 
-	boton_enciclopedia.pressed.connect(func() -> void:
-		tabs.current_tab = 2
-	)
 	boton_garumis.pressed.connect(func() -> void:
 		tabs.current_tab = 3
 		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
@@ -164,7 +160,7 @@ func _actualizar_visibilidad_tabs_descubrimiento(_dato = null) -> void:
 		and bool(GameState.call("ha_descubierto_criatura_o_garumi"))
 	)
 	var botones := $Window/Margin/Column/TabButtons
-	for nombre in ["Enciclopedia", "Garumis"]:
+	for nombre in ["Garumis"]:
 		var boton := botones.get_node_or_null(nombre) as Button
 		if is_instance_valid(boton):
 			boton.visible = desbloqueadas
