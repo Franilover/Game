@@ -1180,12 +1180,6 @@ func _obtener_rutina_encuentro_trio(
 		var progreso_variant: Variant = GameState.call("obtener_conversaciones_npc")
 		if progreso_variant is Dictionary:
 			progreso = progreso_variant
-	var apoyo_variant: Variant = progreso.get("mara_ivo_apoyo", {})
-	var investigacion_variant: Variant = progreso.get("nima_ivo_investigacion", {})
-	if not apoyo_variant is Dictionary or not investigacion_variant is Dictionary:
-		return {}
-	if int((apoyo_variant as Dictionary).get("etapa", 0)) < 1 or int((investigacion_variant as Dictionary).get("etapa", 0)) < 1:
-		return {}
 	var participantes: Dictionary = {}
 	for nombre in nombres:
 		var participante := _buscar_npc_por_nombre(nombre)
@@ -1193,17 +1187,15 @@ func _obtener_rutina_encuentro_trio(
 			return {}
 		participantes[nombre] = participante
 	var pares: Array[Array] = [["mara", "ivo"], ["mara", "nima"], ["ivo", "nima"]]
+	var relaciones: Array[Dictionary] = []
 	for par in pares:
 		var a := participantes[str(par[0])] as Creature
 		var b := participantes[str(par[1])] as Creature
-		var relacion := _relationship_system.obtener_relacion_entre_npc(
+		relaciones.append(_relationship_system.obtener_relacion_entre_npc(
 			a.get_personaje_game_id(), b.get_personaje_game_id()
-		)
-		if int(relacion.get("interacciones", 0)) < 1:
-			return {}
-		var cercania := float(relacion.get("amistad", 0.0)) + float(relacion.get("confianza", 0.0)) + float(relacion.get("afecto", 0.0)) + float(relacion.get("colaboracion", 0.0))
-		if cercania < 0.5 or float(relacion.get("tension", 0.0)) >= 4.0:
-			return {}
+		))
+	if not NPC_SCHEDULE_RULES.cumple_requisitos_encuentro_trio(progreso, relaciones):
+		return {}
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
 	var anio := int(tiempo.get("anio", 0))
 	var semana := int((int(tiempo.get("dia", 1)) - 1) / 5)
