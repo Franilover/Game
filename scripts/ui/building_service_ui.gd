@@ -472,7 +472,7 @@ func _construir_vivero() -> void:
 		var estado_texto := "Húmedo" if humedo else "Seco"
 		if not cultivo.is_empty():
 			estado_texto += " · %s · Riegos %d/2" % [str(cultivo.get("nombre", "Cultivo")), int(cultivo.get("riegos", 0))]
-		etiqueta.text = "%s\\n%s" % [nombre.replace("Bancal", "Bancal "), estado_texto]
+		etiqueta.text = "%s\n%s" % [nombre.replace("Bancal", "Bancal "), estado_texto]
 		fila.add_child(etiqueta)
 	var regadera := _obtener_regadera_en_manos()
 	var agua := int(regadera.get("agua", -1))
