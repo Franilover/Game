@@ -250,6 +250,17 @@ func _comprobar_interrupcion_cinematica(
 		errores.append("La reanudación no restauró el estado activo de la rutina interior.")
 	if int(npc.get_meta("rutina_paseo_interior_siguiente", -1)) != 90:
 		errores.append("La reanudación alteró el horario pendiente del paseo.")
+
+	# Si cambia la actividad pero el NPC permanece en el mismo edificio,
+	# no debe terminar el recorrido hacia el puesto de la tarea anterior.
+	agenda._actualizar_rutina_interior(npc, "panaderia", 91, "dormir")
+	if str(npc.get_meta("rutina_paseo_interior_actividad", "")) != "dormir":
+		errores.append("El cambio de actividad no reemplazó el destino del paseo interior anterior.")
+	if not movimiento.rutina_en_ejecucion() or not bool(npc.get_meta("rutina_en_transito", false)):
+		errores.append("El cambio de actividad no inició una nueva ruta interior.")
+	if int(npc.get_meta("rutina_paseo_interior_siguiente", -1)) != 91:
+		errores.append("El cambio de actividad no actualizó el próximo intento de paseo.")
+
 	agenda._zona = null
 	npc.reparent(self, true)
 	zona.queue_free()
