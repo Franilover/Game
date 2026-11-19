@@ -1067,3 +1067,6 @@ La prueba de interrupción por cinemática también cubre la reanudación del pa
 
 
 Los paseos interiores registran la actividad que generó su destino. Cuando cambia la tarea programada dentro del mismo edificio, la ruta se replantea para la nueva actividad. La prueba cubre también la interrupción cinematográfica y la reanudación. Validación CI pendiente.
+
+
+La regresión de cambio de edificio ahora ejecuta el helper real del planificador mientras el jugador permanece dentro de otro interior y verifica la restauración completa al salir. No requiere cambios en la lógica productiva; validación CI pendiente.
