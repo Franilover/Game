@@ -5,7 +5,7 @@ const NPCNavigation = preload("res://scripts/world/npc_navigation_system.gd")
 
 func _ready() -> void:
 	var errores: Array[String] = []
-	if NPCSchedule.ORIGEN_MAPA != Vector2(-1664.0, -1088.0):
+	if NPCNavigation.ORIGEN_MAPA != Vector2(-1664.0, -1088.0):
 		errores.append("El origen de navegación no coincide con el mapa ampliado de Torres.")
 	if NPCSchedule.TAMANO_MALLA != Vector2i(104, 68):
 		errores.append("La malla de navegación no cubre las 104 x 68 celdas de Torres.")
