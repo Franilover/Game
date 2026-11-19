@@ -1077,3 +1077,6 @@ La regresión de cambio de edificio ahora ejecuta el helper real del planificado
 `CreatureMovement` conserva la autoridad única sobre el desplazamiento físico. Las rutinas y actividades sociales de Torres le entregan rutas; los acercamientos a iniciativa reutilizan ese mismo mecanismo y reponen la rutina al cerrar o cancelar el diálogo. Las conversaciones ambientales sólo se inician con participantes detenidos y bloquean nuevas asignaciones durante la escena. Las cinemáticas requieren NPC libres y detenidos; no incorporan un motor alternativo.
 
 La precedencia de órdenes es pausa temporal, ruta de rutina, restricción de criatura inmóvil, dirección externa y movimiento autónomo. `detener_por_rutina()` conserva el bloqueo de rutina aunque no haya ruta, mientras que `detener()` libera ese modo. No se encontró evidencia suficiente para añadir otro controlador ni para cambiar producción; la siguiente prueba específica debe cubrir precedencia de órdenes y restauración de rutina tras una iniciativa.
+
+
+La prueba `test_creature_movement_authority.tscn` protege la prioridad entre ruta de rutina, dirección externa y pausa temporal, y diferencia detener una rutina de liberar el control. Se ejecuta con la escena real de criatura en CI; validación pendiente.
