@@ -2755,17 +2755,7 @@ func _obtener_satisfaccion_actividad(actividad: String) -> Dictionary:
 	return NPC_SCHEDULE_RULES.obtener_satisfaccion_actividad(actividad)
 
 func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
-	# Desplazamientos cortos alrededor del punto habitual de cada habitante.
-	# Se conservan dentro de la plaza y no alteran rutas de trabajo.
-	var desplazamientos: Array[Vector2] = [
-		Vector2(-20.0, -12.0),
-		Vector2(16.0, -16.0),
-		Vector2(20.0, 12.0),
-		Vector2(-16.0, 16.0),
-		Vector2(0.0, -20.0)
-	]
-	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % desplazamientos.size()
-	return desplazamientos[indice]
+	return NPC_SCHEDULE_RULES.obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
 
 
 ## Convierte una invitación aceptada en una visita breve a la plaza.
