@@ -32,11 +32,17 @@ func _run() -> void:
 		elif atlas_humedad.texture.resource_path != "res://assets/tilesets/Tierra Mojada.png":
 			errores.append("La capa de humedad no usa el atlas de tierra mojada esperado.")
 
-		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
+		BUILDER.agregar_parcela(
+			vivero, tilemap, humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2)
+		)
 		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
 		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
-		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
-		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
+		BUILDER.agregar_parcela(
+			vivero, tilemap, humedad, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1)
+		)
+		BUILDER.agregar_parcela(
+			vivero, tilemap, humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1)
+		)
 		await get_tree().process_frame
 
 		var nodos_parcela := 0
@@ -57,7 +63,10 @@ func _run() -> void:
 		if nodos_parcela != 24:
 			errores.append("Se esperaban 24 celdas de cultivo; se crearon %d." % nodos_parcela)
 		if nodos_centrales != 5:
-			errores.append("Se esperaban cinco claves centrales persistentes; se encontraron %d." % nodos_centrales)
+			errores.append(
+				"Se esperaban cinco claves centrales persistentes; se encontraron %d."
+				% nodos_centrales
+			)
 		if tilemap.get_used_cells().size() != 24:
 			errores.append("El TileMapDual no recibió las 24 celdas de cultivo.")
 
