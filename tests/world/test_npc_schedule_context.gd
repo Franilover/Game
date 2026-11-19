@@ -27,6 +27,7 @@ func _run() -> void:
 	_comprobar_contexto_compartido(agenda, npc_a, npc_b, errores)
 	_comprobar_memoria_diaria(agenda, npc_a, errores)
 	_comprobar_seleccion_rutina_y_copia(agenda, npc_a, errores)
+	_comprobar_destinos_rutina(npc_a, errores)
 
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
@@ -97,6 +98,42 @@ func _comprobar_memoria_diaria(
 		errores.append("La reunión debe recuperar la actividad actual si aún no hay resumen del día.")
 	if str(npc.get_meta("resumen_dia_reunion_ubicacion", "")) != "castillo":
 		errores.append("La reunión debe conservar la ubicación de la actividad recuperada.")
+
+
+func _comprobar_destinos_rutina(npc: Creature, errores: Array[String]) -> void:
+	npc.nombre_individual = "Elian"
+	npc.datos["posicion_hogar_local"] = Vector2(25.0, 50.0)
+	var destino_hogar: Vector2 = NPCScheduleScript._resolver_destino_rutina_local(
+		npc, {}, "casa_elian", false, {}, Vector2.ZERO
+	)
+	if destino_hogar != Vector2(25.0, 50.0):
+		errores.append("Una rutina sin actividad debe priorizar la posición local guardada del hogar.")
+
+	var destino_edificio: Vector2 = NPCScheduleScript._resolver_destino_rutina_local(
+		npc, {}, "panaderia", true, {"id": "panaderia", "pos": Vector2(-360.0, -86.0)}, Vector2.ZERO
+	)
+	if destino_edificio != Vector2(-360.0, -58.0):
+		errores.append("El destino de un edificio debe quedar 28 px fuera de la puerta.")
+
+	var rutina_plaza_absoluta := {"posicion_absoluta_plaza": Vector2(11.0, 22.0)}
+	var destino_plaza_absoluto: Vector2 = NPCScheduleScript._resolver_destino_rutina_local(
+		npc, rutina_plaza_absoluta, "plaza", true, {}, Vector2(5.0, 6.0)
+	)
+	if destino_plaza_absoluto != Vector2(11.0, 22.0):
+		errores.append("La posición absoluta de plaza debe prevalecer sobre los desplazamientos.")
+
+	var destino_plaza_elian: Vector2 = NPCScheduleScript._resolver_destino_rutina_local(
+		npc, {}, "plaza", true, {}, Vector2(5.0, 6.0)
+	)
+	if destino_plaza_elian != Vector2(-67.0, 30.0):
+		errores.append("La plaza debe conservar el punto estable de Elian y sumar su variación.")
+
+	npc.nombre_individual = "Habitante sin catálogo"
+	var destino_npc_adicional: Vector2 = NPCScheduleScript._resolver_destino_rutina_local(
+		npc, {}, "plaza", true, {}, Vector2.ZERO
+	)
+	if not is_equal_approx(destino_npc_adicional.length(), 118.0):
+		errores.append("Los NPC sin posición propia deben distribuirse en el perímetro de la plaza.")
 
 
 func _fail(errores: Array[String]) -> void:
