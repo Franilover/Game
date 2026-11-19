@@ -33,3 +33,75 @@ static func coincide_dia(dias_variant: Variant, dia: int) -> bool:
 			if dia_texto.is_valid_int() and int(dia_texto) == dia:
 				return true
 	return false
+
+
+## Selecciona la rutina activa de una lista sin modificar sus datos de origen.
+## El resultado incluye diagnósticos para que la capa de simulación decida cómo mostrarlos.
+static func seleccionar_rutina(
+	rutinas_variant: Variant,
+	dia_semana: int,
+	minutos: int
+) -> Dictionary:
+	var mejor: Dictionary = {}
+	var prioridad_mejor := -2147483648
+	var inicio_mejor := -1
+	var diagnostico_rechazos: Array[String] = []
+	if not rutinas_variant is Array:
+		return {"rutina": mejor, "rechazos": diagnostico_rechazos}
+
+	var rutinas: Array = rutinas_variant
+	for indice in range(rutinas.size()):
+		var rutina_variant: Variant = rutinas[indice]
+		if not rutina_variant is Dictionary:
+			diagnostico_rechazos.append("[%d] no_es_diccionario" % indice)
+			continue
+		var rutina: Dictionary = rutina_variant
+		var clave := str(rutina.get("clave", "sin_clave"))
+		if not bool(rutina.get("activo", true)):
+			diagnostico_rechazos.append(clave + ": inactiva")
+			continue
+
+		var inicio_raw: Variant = rutina.get("hora_inicio", "")
+		var fin_raw: Variant = rutina.get("hora_fin", "")
+		var inicio := hora_a_minutos(inicio_raw)
+		var fin := hora_a_minutos(fin_raw)
+		if inicio < 0 or fin < 0 or inicio == fin:
+			diagnostico_rechazos.append(
+				clave + ": hora_invalida inicio=" + str(inicio_raw)
+				+ " fin=" + str(fin_raw)
+				+ " parseadas=" + str(inicio) + "/" + str(fin)
+			)
+			continue
+
+		var dia_referencia := dia_semana
+		var esta_activa := false
+		if fin > inicio:
+			esta_activa = minutos >= inicio and minutos < fin
+		elif minutos >= inicio:
+			esta_activa = true
+		elif minutos < fin:
+			esta_activa = true
+			dia_referencia = posmod(dia_semana - 1, 5)
+
+		var dias_variant: Variant = rutina.get("dias_semana", [])
+		var dia_coincide := coincide_dia(dias_variant, dia_referencia)
+		if not esta_activa or not dia_coincide:
+			var motivo := "fuera_de_hora" if not esta_activa else "dia_no_coincide"
+			diagnostico_rechazos.append(
+				clave + ": " + motivo
+				+ " ahora=" + str(minutos)
+				+ " rango=" + str(inicio) + "-" + str(fin)
+				+ " dia=" + str(dia_referencia)
+				+ " dias=" + str(dias_variant)
+			)
+			continue
+
+		var prioridad := int(rutina.get("prioridad", 0))
+		if mejor.is_empty() or prioridad > prioridad_mejor or (
+			prioridad == prioridad_mejor and inicio > inicio_mejor
+		):
+			mejor = rutina.duplicate(true)
+			prioridad_mejor = prioridad
+			inicio_mejor = inicio
+
+	return {"rutina": mejor, "rechazos": diagnostico_rechazos}
