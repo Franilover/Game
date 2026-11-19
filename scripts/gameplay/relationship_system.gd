@@ -1481,15 +1481,15 @@ func tiene_conocimiento_compartible_nuevo_npc(personaje_origen: String, personaj
 	for conocimiento_variant in conocimientos_destino:
 		if not conocimiento_variant is Dictionary:
 			continue
-		var clave := str((conocimiento_variant as Dictionary).get("clave", ""))
-		if not clave.is_empty():
-			claves_destino[clave] = true
+		var clave_destino := str((conocimiento_variant as Dictionary).get("clave", ""))
+		if not clave_destino.is_empty():
+			claves_destino[clave_destino] = true
 	for conocimiento_variant in conocimientos_origen:
 		if not conocimiento_variant is Dictionary:
 			continue
 		var conocimiento := conocimiento_variant as Dictionary
-		var clave := str(conocimiento.get("clave", "")).strip_edges()
-		if clave.is_empty() or bool(claves_destino.get(clave, false)):
+		var clave_origen := str(conocimiento.get("clave", "")).strip_edges()
+		if clave_origen.is_empty() or bool(claves_destino.get(clave_origen, false)):
 			continue
 		if puede_compartir_conocimiento_npc(origen, destino, conocimiento):
 			return true
