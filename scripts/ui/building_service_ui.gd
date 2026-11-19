@@ -478,11 +478,6 @@ func _construir_vivero() -> void:
 	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
 	var regadera := _obtener_regadera_en_manos()
 	var agua := int(regadera.get("agua", -1))
-	var subtitulo_lista := Label.new()
-	subtitulo_lista.text = "BANCALES"
-	subtitulo_lista.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	panel_lista.add_child(subtitulo_lista)
-
 	var cantidad_ocupados := 0
 	for nombre in nombres:
 		var registro: Variant = estados.get(nombre, {})
@@ -541,11 +536,15 @@ func _mostrar_detalle_bancal_vivero(nombre: String, detalle: VBoxContainer) -> v
 	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if ocupado:
-		var item_id := str(cultivo.get("item_id", cultivo.get("id", "")))
-		var objeto: Dictionary = _world_items.buscar_item_por_id(item_id) if is_instance_valid(_world_items) and not item_id.is_empty() else {}
-		if objeto.is_empty():
-			objeto = {"nombre": str(cultivo.get("nombre", ""))}
-		icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
+		var ruta_sprite := str(cultivo.get("sprite", ""))
+		if not ruta_sprite.is_empty() and ResourceLoader.exists(ruta_sprite):
+			icono.texture = load(ruta_sprite) as Texture2D
+		if icono.texture == null:
+			var item_id := str(cultivo.get("item_cosecha_id", cultivo.get("semilla_item_id", "")))
+			var objeto: Dictionary = _world_items.buscar_item_por_id(item_id) if is_instance_valid(_world_items) and not item_id.is_empty() else {}
+			if objeto.is_empty():
+				objeto = {"nombre": str(cultivo.get("nombre", ""))}
+			icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
 	detalle.add_child(icono)
 
 	var titulo := Label.new()
