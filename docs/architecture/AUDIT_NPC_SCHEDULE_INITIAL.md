@@ -156,3 +156,12 @@ La clase de simulación conserva sus métodos de delegación, por lo que los pun
 No se cambiaron valores de necesidades ni criterios de diseño: sólo se aisló el algoritmo existente y se fijó mediante pruebas.
 
 **Validación:** pendiente de CI para esta extracción.
+
+
+## 11. Quinta extracción: respaldo horario del castillo
+
+El horario provisional de Abel y Liam se movió a `NPCScheduleRules.seleccionar_rutina_respaldo_castillo(minutos)`. Se mantiene el mismo intervalo: salida a la plaza desde las 08:00 (incluido) hasta las 20:00 (excluido), y regreso al castillo fuera de ese intervalo.
+
+La clase de simulación conserva el método de delegación. La prueba fija los cuatro límites: 07:59, 08:00, 19:59 y 20:00.
+
+**Validación:** pendiente de CI para el commit de esta extracción.
