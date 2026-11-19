@@ -32,15 +32,11 @@ func _run() -> void:
 		elif atlas_humedad.texture.resource_path != "res://assets/tilesets/Tierra Mojada.png":
 			errores.append("La capa de humedad no usa el atlas de tierra mojada esperado.")
 
-		var parcelas := [
-			["BancalOeste", Vector2(-155, -5), Vector2i(3, 2)],
-			["BancalCentro", Vector2(0, -5), Vector2i(3, 2)],
-			["BancalEste", Vector2(155, -5), Vector2i(3, 2)],
-			["BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1)],
-			["BancalSurCentro", Vector2(0, 92), Vector2i(3, 1)]
-		]
-		for parcela: Array in parcelas:
-			BUILDER.agregar_parcela(vivero, tilemap, humedad, parcela[0], parcela[1], parcela[2])
+		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
+		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
+		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
+		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
+		BUILDER.agregar_parcela(vivero, tilemap, humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
 		await get_tree().process_frame
 
 		var nodos_parcela := 0
