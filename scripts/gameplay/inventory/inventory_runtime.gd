@@ -222,8 +222,12 @@ func _puede_apilar_con(a: Dictionary, b: Dictionary) -> bool:
 	var max_b := maxi(1, int(b.get("max_stack", 1)))
 	if max_a <= 1 or max_b <= 1:
 		return false
-	var id_a := str(a.get("id", a.get("item_id", ""))).strip_edges()
-	var id_b := str(b.get("id", b.get("item_id", ""))).strip_edges()
+	var id_a := str(a.get("id", "")).strip_edges()
+	if id_a.is_empty():
+		id_a = str(a.get("item_id", "")).strip_edges()
+	var id_b := str(b.get("id", "")).strip_edges()
+	if id_b.is_empty():
+		id_b = str(b.get("item_id", "")).strip_edges()
 	# Si existe identidad en cualquiera de los dos objetos, ambos deben
 	# coincidir. El nombre solo sirve como compatibilidad para datos sin ID.
 	if not id_a.is_empty() or not id_b.is_empty():
