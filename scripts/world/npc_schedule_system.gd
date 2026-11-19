@@ -78,6 +78,13 @@ const POSICIONES_PLAZA: Dictionary = {
 	"nima": Vector2(132.0, -18.0)
 }
 
+const DESPLAZAMIENTOS_PASEO_EXTERIOR_DEFAULT: Array[Vector2] = [
+	Vector2(-28.0, -12.0), Vector2(24.0, -18.0),
+	Vector2(32.0, 10.0), Vector2(-18.0, 28.0),
+	Vector2(4.0, -34.0), Vector2(18.0, 32.0),
+	Vector2(-34.0, 12.0)
+]
+
 const DESPLAZAMIENTOS_PASEO_EXTERIOR: Dictionary = {
 	# Elian suele volver hacia el acceso de la panadería y detenerse a saludar.
 	"elian": [Vector2(-24.0, -8.0), Vector2(-12.0, 22.0), Vector2(18.0, 12.0), Vector2(8.0, -24.0)],
@@ -1767,12 +1774,10 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	var ancla: Vector2 = npc.get_meta("rutina_ancla_ocio", npc.global_position)
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
 
-	var desplazamientos: Array = DESPLAZAMIENTOS_PASEO_EXTERIOR.get(nombre, [
-		Vector2(-28.0, -12.0), Vector2(24.0, -18.0),
-		Vector2(32.0, 10.0), Vector2(-18.0, 28.0),
-		Vector2(4.0, -34.0), Vector2(18.0, 32.0),
-		Vector2(-34.0, 12.0)
-	])
+	var desplazamientos: Array = DESPLAZAMIENTOS_PASEO_EXTERIOR.get(
+		nombre,
+		DESPLAZAMIENTOS_PASEO_EXTERIOR_DEFAULT
+	)
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
 	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
 	var indice := posmod(hash(nombre + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
