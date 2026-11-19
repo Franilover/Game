@@ -649,3 +649,6 @@ La revisión del ciclo de iniciativa encontró que `finalizar_acercamiento_socia
 La finalización ahora aplica siempre primero el cierre físico del acercamiento: elimina su marca, detiene la ruta con `detener_por_rutina()`, limpia `rutina_en_transito` y reinicia `rutina_firma`. Sólo después intenta recuperar la rutina canónica cuando existen zona, navegación y calendario válidos. La agenda vuelve a establecer la ruta normal en el mismo flujo cuando el contexto está disponible.
 
 Se añadió cobertura a `test_npc_schedule_context` con una criatura real y una ruta real, invocando la finalización sin `WorldAtmosphere` ni `ZoneManager`. Verifica que no quede movimiento, acercamiento, tránsito ni firma anterior. La validación CI queda pendiente.
+
+
+La regresión se amplió para recorrer también la cancelación real de `NPCConversationSystem`: simula la pausa y reanudación que hace `DialogueSystem.cerrar()`, entrega el acercamiento activo al sistema de conversación y ejecuta `_cancelar_acercamiento()`. Se verifica que la conversación libere su estado y que la agenda detenga la ruta residual incluso sin contexto mundial.
