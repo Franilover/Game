@@ -16,6 +16,8 @@ var _solicitudes: Dictionary = {}
 var _vista := "personajes"
 var _personaje_seleccionado: Dictionary = {}
 var _imagen_detalle: TextureRect
+var _panel_lista: PanelContainer
+var _panel_detalle: PanelContainer
 
 
 func _ready() -> void:
@@ -40,21 +42,20 @@ func _construir_interfaz() -> void:
 	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(fondo)
 
-	var centro := CenterContainer.new()
-	centro.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	centro.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	add_child(centro)
+	var raiz := Control.new()
+	raiz.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	raiz.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	add_child(raiz)
 
 	_panel = PanelContainer.new()
-	_panel.custom_minimum_size = Vector2(0, 0)
-	_panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_panel.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel.name = "RoyalArchivePanel"
 	_panel.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	_panel.offset_left = 24
-	_panel.offset_top = 24
-	_panel.offset_right = -24
-	_panel.offset_bottom = -24
-	centro.add_child(_panel)
+	_panel.offset_left = 12
+	_panel.offset_top = 12
+	_panel.offset_right = -12
+	_panel.offset_bottom = -12
+	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	raiz.add_child(_panel)
 	PIXEL_UI_THEME.apply(_panel, false)
 
 	_contenido = VBoxContainer.new()
@@ -68,11 +69,13 @@ func _construir_interfaz() -> void:
 	encabezado.add_child(espacio)
 	var cerrar := Button.new()
 	cerrar.text = "Cerrar"
+	cerrar.custom_minimum_size = Vector2(88, 36)
 	cerrar.pressed.connect(queue_free)
 	encabezado.add_child(cerrar)
 
 	_estado = Label.new()
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_estado.add_theme_font_size_override("font_size", 14)
 	_contenido.add_child(_estado)
 
 	_cuerpo = HBoxContainer.new()
@@ -80,43 +83,51 @@ func _construir_interfaz() -> void:
 	_cuerpo.add_theme_constant_override("separation", 10)
 	_contenido.add_child(_cuerpo)
 
-	var panel_lista := PanelContainer.new()
-	panel_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_cuerpo.add_child(panel_lista)
+	_panel_lista = PanelContainer.new()
+	_panel_lista.name = "PortraitSelectorPanel"
+	_panel_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel_lista.size_flags_stretch_ratio = 0.9
+	_cuerpo.add_child(_panel_lista)
 	var margen_lista := MarginContainer.new()
-	margen_lista.add_theme_constant_override("margin_left", 8)
-	margen_lista.add_theme_constant_override("margin_top", 8)
-	margen_lista.add_theme_constant_override("margin_right", 8)
-	margen_lista.add_theme_constant_override("margin_bottom", 8)
-	panel_lista.add_child(margen_lista)
+	margen_lista.add_theme_constant_override("margin_left", 10)
+	margen_lista.add_theme_constant_override("margin_top", 10)
+	margen_lista.add_theme_constant_override("margin_right", 10)
+	margen_lista.add_theme_constant_override("margin_bottom", 10)
+	_panel_lista.add_child(margen_lista)
 	_lista = VBoxContainer.new()
 	_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	margen_lista.add_child(_lista)
 
-	var panel_detalle := PanelContainer.new()
-	panel_detalle.custom_minimum_size.x = 180
-	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_cuerpo.add_child(panel_detalle)
+	_panel_detalle = PanelContainer.new()
+	_panel_detalle.name = "ArchiveDetailPanel"
+	_panel_detalle.custom_minimum_size.x = 250
+	_panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_panel_detalle.size_flags_stretch_ratio = 1.1
+	_cuerpo.add_child(_panel_detalle)
 	var margen_detalle := MarginContainer.new()
-	margen_detalle.add_theme_constant_override("margin_left", 8)
-	margen_detalle.add_theme_constant_override("margin_top", 8)
-	margen_detalle.add_theme_constant_override("margin_right", 8)
-	margen_detalle.add_theme_constant_override("margin_bottom", 8)
-	panel_detalle.add_child(margen_detalle)
+	margen_detalle.add_theme_constant_override("margin_left", 12)
+	margen_detalle.add_theme_constant_override("margin_top", 12)
+	margen_detalle.add_theme_constant_override("margin_right", 12)
+	margen_detalle.add_theme_constant_override("margin_bottom", 12)
+	_panel_detalle.add_child(margen_detalle)
+	var scroll_detalle := ScrollContainer.new()
+	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	margen_detalle.add_child(scroll_detalle)
 	_detalle = VBoxContainer.new()
 	_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	margen_detalle.add_child(_detalle)
+	_detalle.add_theme_constant_override("separation", 10)
+	scroll_detalle.add_child(_detalle)
 
 	var fondo_button: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
 	if fondo_button != null:
-		panel_lista.add_theme_stylebox_override("panel", fondo_button.duplicate())
-		panel_detalle.add_theme_stylebox_override("panel", fondo_button.duplicate())
+		_panel_lista.add_theme_stylebox_override("panel", fondo_button.duplicate())
+		_panel_detalle.add_theme_stylebox_override("panel", fondo_button.duplicate())
 	PIXEL_UI_THEME.apply(_contenido, false)
-
 
 func _cargar_catalogos() -> void:
 	var cliente := get_node_or_null("/root/SupabaseClient")
@@ -131,7 +142,7 @@ func _cargar_catalogos() -> void:
 	)
 	var id_reinos: int = cliente.get_rest(
 		"reinos",
-		"select=id,nombre,orden&order=orden.asc"
+		"select=id,nombre&nombre=eq.Torres&limit=1"
 	)
 	_registrar_solicitud(id_personajes, "personajes")
 	_registrar_solicitud(id_reinos, "reinos")
@@ -199,44 +210,45 @@ func _limpiar(contenedor: Node) -> void:
 func _mostrar_personajes() -> void:
 	_vista = "personajes"
 	_detalle.visible = true
-	_lista.size_flags_stretch_ratio = 1.0
-	_detalle.size_flags_stretch_ratio = 1.0
+	_panel_detalle.visible = true
+	_panel_lista.size_flags_stretch_ratio = 0.9
+	_panel_detalle.size_flags_stretch_ratio = 1.1
 	_limpiar(_lista)
 	_limpiar(_detalle)
-	var encabezado := Label.new()
-	encabezado.text = "HABITANTES DE TORRES"
-	_lista.add_child(encabezado)
 	if _personajes.is_empty():
 		var vacio := Label.new()
-		vacio.text = "No hay personajes registrados para Torres."
+		vacio.text = "No hay retratos disponibles."
 		_lista.add_child(vacio)
 		return
 	var scroll := ScrollContainer.new()
 	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_lista.add_child(scroll)
-	var filas := VBoxContainer.new()
-	filas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll.add_child(filas)
+	var retratos := GridContainer.new()
+	retratos.name = "PortraitGrid"
+	retratos.columns = 3
+	retratos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	retratos.add_theme_constant_override("h_separation", 8)
+	retratos.add_theme_constant_override("v_separation", 8)
+	scroll.add_child(retratos)
 	for personaje: Dictionary in _personajes:
-		var fila := HBoxContainer.new()
-		fila.add_theme_constant_override("separation", 6)
-		filas.add_child(fila)
 		var boton := Button.new()
-		boton.custom_minimum_size = Vector2(64, 68)
+		boton.custom_minimum_size = Vector2(82, 88)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.tooltip_text = "Consultar ficha"
 		boton.expand_icon = true
 		boton.icon_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		boton.vertical_icon_alignment = VERTICAL_ALIGNMENT_CENTER
+		boton.add_theme_constant_override("icon_max_width", 64)
 		var sprite_local := _cargar_sprite_personaje(personaje)
 		if sprite_local != null:
 			boton.icon = sprite_local
 		boton.pressed.connect(_mostrar_ficha_personaje.bind(personaje))
-		fila.add_child(boton)
+		retratos.add_child(boton)
 		PIXEL_UI_THEME.apply(boton, false)
 	var ayuda := Label.new()
-	ayuda.text = "Selecciona un nombre para consultar su ficha."
+	ayuda.text = "Selecciona un retrato para consultar su ficha."
 	ayuda.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	ayuda.add_theme_font_size_override("font_size", 16)
 	_detalle.add_child(ayuda)
 
 
@@ -245,7 +257,8 @@ func _mostrar_ficha_personaje(personaje: Dictionary) -> void:
 	_limpiar(_detalle)
 	var url := str(personaje.get("img_url", "")).strip_edges()
 	_imagen_detalle = TextureRect.new()
-	_imagen_detalle.custom_minimum_size = Vector2(112, 112)
+	_imagen_detalle.custom_minimum_size = Vector2(160, 160)
+	_imagen_detalle.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_imagen_detalle.expand_mode = TextureRect.EXPAND_FIT_WIDTH_PROPORTIONAL
 	_imagen_detalle.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
 	_imagen_detalle.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
@@ -276,6 +289,8 @@ func _agregar_dato_ficha(etiqueta: String, valor: String) -> void:
 	var contenido := valor if not valor.is_empty() else "Sin registrar"
 	texto.text = etiqueta + ": " + contenido
 	texto.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	texto.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	texto.add_theme_font_size_override("font_size", 17 if etiqueta == "Historia" else 16)
 	_detalle.add_child(texto)
 
 
@@ -356,8 +371,8 @@ func _cargar_imagen_personaje(url: String, destino: TextureRect) -> void:
 
 func _mostrar_historia() -> void:
 	_vista = "historia"
-	_detalle.visible = false
-	_lista.size_flags_stretch_ratio = 1.0
+	_panel_detalle.visible = false
+	_panel_lista.size_flags_stretch_ratio = 1.0
 	_limpiar(_lista)
 	_limpiar(_detalle)
 	var scroll := ScrollContainer.new()
@@ -400,6 +415,11 @@ func _renderizar_eventos() -> void:
 		return
 	_limpiar(eventos_lista)
 	if _eventos.is_empty():
+		var vacio := Label.new()
+		vacio.text = "No hay acontecimientos registrados para Torres."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		vacio.add_theme_font_size_override("font_size", 18)
+		eventos_lista.add_child(vacio)
 		return
 	for evento: Dictionary in _eventos:
 		var tarjeta := PanelContainer.new()
@@ -423,7 +443,7 @@ func _renderizar_eventos() -> void:
 		var nombre := Label.new()
 		nombre.text = str(evento.get("titulo", "Acontecimiento"))
 		nombre.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		nombre.add_theme_font_size_override("font_size", 17)
+		nombre.add_theme_font_size_override("font_size", 20)
 		nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		fila.add_child(nombre)
 		var fecha := Label.new()
@@ -433,8 +453,9 @@ func _renderizar_eventos() -> void:
 		fecha.add_theme_font_size_override("font_size", 14)
 		fila.add_child(fecha)
 		var descripcion := Label.new()
-		descripcion.text = str(evento.get("descripcion", ""))
+		var texto_descripcion := str(evento.get("descripcion", "")).strip_edges()
+		descripcion.text = texto_descripcion if not texto_descripcion.is_empty() else "Sin descripción registrada."
 		descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		descripcion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		descripcion.add_theme_font_size_override("font_size", 15)
+		descripcion.add_theme_font_size_override("font_size", 17)
 		bloque.add_child(descripcion)
