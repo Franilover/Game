@@ -6,6 +6,8 @@
 [ext_resource type="Script" path="res://scripts/world/world_atmosphere.gd" id="33_world_atmosphere"]
 [ext_resource type="Script" path="res://scripts/world/world_climate_system.gd" id="34_world_climate"]
 [ext_resource type="Script" path="res://scripts/world/world_climate_visuals.gd" id="35_world_climate_visuals"]
+[ext_resource type="Script" path="res://scripts/world/npc_schedule_system.gd" id="36_npc_schedule"]
+[ext_resource type="Script" path="res://scripts/world/npc_conversation_system.gd" id="37_npc_conversation"]
 [ext_resource type="Script" path="res://scripts/world/zone_manager.gd" id="30_zone_manager"]
 [ext_resource type="PackedScene" path="res://scenes/ui/realm_menu.tscn" id="32_realm_menu"]
 [ext_resource type="Script" path="res://scripts/world/world_context.gd" id="31_world_context"]
@@ -106,6 +108,12 @@ script = ExtResource("23_ium_repository")
 
 [node name="IUMManager" type="Node" parent="Systems"]
 script = ExtResource("13_ium")
+
+[node name="NPCScheduleSystem" type="Node" parent="Systems"]
+script = ExtResource("36_npc_schedule")
+
+[node name="NPCConversationSystem" type="Node" parent="Systems"]
+script = ExtResource("37_npc_conversation")
 
 [node name="StoryLoadingOverlay" type="Control" parent="UI"]
 visible = false
