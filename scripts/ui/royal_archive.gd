@@ -57,7 +57,7 @@ func _construir_interfaz() -> void:
 	_panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	raiz.add_child(_panel)
 	PIXEL_UI_THEME.apply(_panel, false)
-	var superficie_archivo := PIXEL_UI_THEME.button_surface_style()
+	var superficie_archivo: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
 	if superficie_archivo != null:
 		_panel.add_theme_stylebox_override("panel", superficie_archivo)
 
