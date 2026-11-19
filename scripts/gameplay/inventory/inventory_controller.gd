@@ -286,6 +286,16 @@ func agregar_objeto(datos: Dictionary) -> bool:
 		inventario_cambio.emit()
 	return resultado
 
+
+## Fabricación transaccional: el runtime confirma ingredientes y resultado juntos.
+func fabricar(ingredientes: Array, resultado: Dictionary) -> bool:
+	if not puede_interactuar() or resultado.is_empty():
+		return false
+	if not runtime.fabricar(ingredientes, resultado):
+		return false
+	inventario_cambio.emit()
+	return true
+
 func agregar_objeto_desde_ui(datos: Dictionary) -> bool:
 	# La entrega desde la interfaz administrativa no representa una acción
 	# del personaje; conserva las mismas reglas de capacidad del runtime.
