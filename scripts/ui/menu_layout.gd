@@ -37,11 +37,9 @@ static func _ajustar_panel_centrado(referencia: WeakRef, margen: float) -> void:
 	var escala_base: Vector2 = panel.get_meta("menu_base_scale", Vector2.ONE)
 	var ancho_disponible := maxf(1.0, viewport_size.x - margen * 2.0)
 	var alto_disponible := maxf(1.0, viewport_size.y - margen * 2.0)
-	var escala_ajuste := minf(
-		1.0,
-		ancho_disponible / maxf(1.0, panel_size.x * escala_base.x),
-		alto_disponible / maxf(1.0, panel_size.y * escala_base.y)
-	)
+	var escala_ancho := ancho_disponible / maxf(1.0, panel_size.x * escala_base.x)
+	var escala_alto := alto_disponible / maxf(1.0, panel_size.y * escala_base.y)
+	var escala_ajuste := minf(1.0, minf(escala_ancho, escala_alto))
 	panel.pivot_offset = panel_size * 0.5
 	panel.scale = escala_base * escala_ajuste
 
