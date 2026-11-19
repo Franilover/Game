@@ -28,6 +28,27 @@ func _ready() -> void:
 	_boton_analizar.disabled = true
 	_boton_analizar.text = "Inspeccionar" if _estacion_id == "forja_inspeccion" else "Analizar"
 	_aplicar_estilo_laboratorio()
+	_configurar_scroll_resultado()
+
+
+func _configurar_scroll_resultado() -> void:
+	if not is_instance_valid(_resultado_label) or not is_instance_valid(_resultado_label.get_parent()):
+		return
+	var contenedor := _resultado_label.get_parent()
+	var indice := _resultado_label.get_index()
+	contenedor.remove_child(_resultado_label)
+	var scroll := ScrollContainer.new()
+	scroll.name = "ResultScroll"
+	scroll.custom_minimum_size = Vector2(0, 112)
+	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	contenedor.add_child(scroll)
+	contenedor.move_child(scroll, indice)
+	_resultado_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_resultado_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	scroll.add_child(_resultado_label)
 
 
 func configurar(inventario: InventoryController, estacion_id: String = "examen") -> void:
