@@ -56,6 +56,8 @@ func get_interaction_text() -> String:
 	_actualizar_progreso_planta()
 	if not _planta.is_empty() and _planta_esta_madura():
 		return "Recoger flor"
+	if _planta.is_empty() and not _buscar_semilla().is_empty():
+		return "Plantar semilla"
 	return "Regar bancal"
 
 
@@ -67,6 +69,8 @@ func can_interact(jugador: Node) -> bool:
 	if _tipo == "bancal":
 		_actualizar_progreso_planta()
 		if not _planta.is_empty() and _planta_esta_madura():
+			return true
+		if _planta.is_empty() and not _buscar_semilla().is_empty():
 			return true
 	var regadera := _buscar_regadera()
 	if regadera.is_empty():
@@ -84,6 +88,16 @@ func interact(jugador: Node) -> void:
 		if not _planta.is_empty() and _planta_esta_madura():
 			_cosechar_planta()
 			return
+		if _planta.is_empty():
+			var semilla := _buscar_semilla()
+			if not semilla.is_empty():
+				plantar_semilla(
+					semilla.get("objeto", {}),
+					semilla.get("inventario"),
+					int(semilla.get("indice", -1)),
+					jugador
+				)
+				return
 	var regadera := _buscar_regadera()
 	if regadera.is_empty():
 		return
@@ -112,6 +126,33 @@ func _buscar_regadera() -> Dictionary:
 			"indice": indice,
 			"objeto": objeto,
 			"agua": agua
+		}
+	return {}
+
+
+func _buscar_semilla() -> Dictionary:
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if not is_instance_valid(inventario):
+		return {}
+	for mano in ["izquierda", "derecha"]:
+		var objeto_variant: Variant = inventario.call("obtener_objeto_mano_activa", mano)
+		if not objeto_variant is Dictionary:
+			continue
+		var objeto := (objeto_variant as Dictionary).duplicate(true)
+		if objeto.is_empty():
+			continue
+		var item_id := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+		if item_id not in [
+			"b1000000-0000-4000-8000-000000000001",
+			"b1000000-0000-4000-8000-000000000002",
+			"b1000000-0000-4000-8000-000000000003"
+		]:
+			continue
+		return {
+			"inventario": inventario,
+			"mano": mano,
+			"indice": int(inventario.call("obtener_indice_mano_activa", mano)),
+			"objeto": objeto
 		}
 	return {}
 
@@ -300,7 +341,10 @@ func _actualizar_visual_planta() -> void:
 		add_child(_planta_sprite)
 	var textura := load(str(_planta.get("sprite", ""))) as Texture2D
 	_planta_sprite.texture = textura
-	_planta_sprite.visible = textura != null and _planta_esta_madura()
+	var madura := _planta_esta_madura()
+	_planta_sprite.visible = textura != null
+	_planta_sprite.scale = Vector2.ONE if madura else Vector2(0.35, 0.35)
+	_planta_sprite.modulate = Color.WHITE if madura else Color("#A6B58A")
 
 
 func _cosechar_planta() -> void:
