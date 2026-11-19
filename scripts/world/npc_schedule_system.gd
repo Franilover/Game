@@ -1441,7 +1441,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var destino_disponible := false
 	# La lista no cambia mientras se prueban los puntos: reutilizar una sola
 	# instantánea evita volver a consultar el grupo por cada mueble candidato.
-	var otros_npcs: Array = _npcs_actualizacion if _actualizacion_en_curso else _obtener_npcs_torres()
+	var otros_npcs := _obtener_npcs_torres()
 	for desplazamiento_punto in range(puntos.size()):
 		var candidato: Vector2 = puntos[posmod(indice + desplazamiento_punto, puntos.size())]
 		var ocupado := false
@@ -1774,7 +1774,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 			var pausa := pausa_base + posmod(hash(nombre_pausa + "|exterior|" + str(minutos / 5)), rango_pausa)
 			npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + pausa, 1440))
 		return
-	var jugador := _jugador_actualizacion if _actualizacion_en_curso else get_tree().get_first_node_in_group("player") as Node2D
+	var jugador: Node2D = _jugador_actualizacion if _actualizacion_en_curso else (get_tree().get_first_node_in_group("player") as Node2D)
 	if is_instance_valid(jugador) and jugador.global_position.distance_to(npc.global_position) < 58.0:
 		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + 1, 1440))
 		return
