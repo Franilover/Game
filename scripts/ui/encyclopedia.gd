@@ -58,8 +58,10 @@ func _ready() -> void:
 
 
 func configurar_modo_biblioteca(modo: String) -> void:
-	_modo = "criaturas" if modo == "criaturas" else "biomas"
-	actualizar()
+	if modo == "criaturas":
+		_mostrar_criaturas()
+	else:
+		_mostrar_biomas()
 
 
 func _crear_interfaz() -> void:
