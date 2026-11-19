@@ -582,3 +582,12 @@ Las rutinas interiores y las animaciones de postura recorrían por separado los 
 La rutina conserva la selección de todos los muebles compatibles para buscar un puesto libre y sigue descartando los que no tienen textura. La animación de postura conserva la prioridad del primer mueble coincidente. No se cambian nombres de nodos, posiciones, preferencias de actividad ni recursos visuales.
 
 `test_npc_schedule_context` comprueba coincidencias de cama/litera, silla/asiento, orden de escena y búsqueda vacía. Validación final: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44629354647](https://github.com/Franilover/Game/actions/runs/44629354647); GDScript Quality **success** en [run #44629354490](https://github.com/Franilover/Game/actions/runs/44629354490).
+
+
+## 59. Interrupción de paseos interiores por cinemáticas
+
+El ciclo de actividad interior ahora distingue dos interrupciones con contratos diferentes. Una conversación ambiental conserva la ruta de locomoción para que el sistema de conversación pueda pausarla y reanudarla. Una cinemática, en cambio, cancela el paseo interior activo mediante `_detener_paseo_interior()`, libera `rutina_en_transito` y conserva `rutina_paseo_interior_siguiente`.
+
+La animación de actividad interior también se detiene antes de ceder el control. La prueba de contexto de agenda configura una ruta real de `CreatureMovement`, activa una cinemática y comprueba que no quede locomoción activa ni se pierda el próximo horario.
+
+Validación CI pendiente para este cambio.
