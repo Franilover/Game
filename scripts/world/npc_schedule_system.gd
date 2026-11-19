@@ -563,7 +563,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	# El encuentro de tres sólo puede usar tiempo libre que no esté reservado
 	# por invitaciones ni acontecimientos comunitarios.
-	var encuentro_trio := _obtener_rutina_encuentro_trio(npc, dia_semana, minutos, rutina)
+	var encuentro_trio := _obtener_rutina_encuentro_trio(
+		npc, dia_semana, minutos, rutina, evento_comunitario
+	)
 	if not encuentro_trio.is_empty():
 		rutina = encuentro_trio
 
@@ -1166,11 +1168,12 @@ func _obtener_rutina_encuentro_trio(
 	npc_actual: Creature,
 	dia_semana: int,
 	minutos: int,
-	rutina_actual: Dictionary
+	rutina_actual: Dictionary,
+	evento_comunitario: Dictionary
 ) -> Dictionary:
 	if minutos < 1020 or minutos >= 1140 or not is_instance_valid(_relationship_system):
 		return {}
-	if not _obtener_evento_comunitario(dia_semana, minutos).is_empty():
+	if not evento_comunitario.is_empty():
 		return {}
 	var nombres: Array[String] = ["mara", "ivo", "nima"]
 	if npc_actual.get_nombre_visual().strip_edges().to_lower() not in nombres:
