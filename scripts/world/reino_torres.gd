@@ -2440,6 +2440,12 @@ func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> vo
 	if tipo == "pasaje_exterior":
 		_mostrar_confirmacion_pasaje_exterior()
 		return
+	if tipo == "centro_expediciones":
+		_actualizar_selector_viajes()
+		if is_instance_valid(_selector_viajes_layer):
+			_selector_viajes_layer.visible = true
+			_posicionar_selector_viajes()
+		return
 	_abrir_menu_servicio_edificio(tipo)
 
 
