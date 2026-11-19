@@ -107,12 +107,15 @@ func _actualizar() -> void:
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	if _tipo not in ["forja", "carpinteria", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento", "vivero", "herbolario_investigacion", "herbolario_procesamiento", "herbolario"]:
+	if _tipo not in ["forja", "carpinteria", "vivero", "herbolario_investigacion", "herbolario_procesamiento", "herbolario"]:
 		var titulo := Label.new()
 		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		titulo.add_theme_font_size_override("font_size", 18)
 		match _tipo:
 			"cuartel": titulo.text = "CUARTEL DE LA GUARDIA"
+			"cuartel_licencia": titulo.text = "LICENCIAS"
+			"cuartel_armas": titulo.text = "ARSENAL"
+			"cuartel_entrenamiento": titulo.text = "ENTRENAMIENTO"
 			"carpinteria": titulo.text = "CARPINTERÍA"
 			"vivero": titulo.text = "VIVERO"
 			"herbolario_investigacion": titulo.text = "INVESTIGACIÓN BOTÁNICA"
