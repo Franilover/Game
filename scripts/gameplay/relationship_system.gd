@@ -1461,8 +1461,15 @@ func puede_compartir_conocimiento_npc(
 	var destino := personaje_destino.strip_edges()
 	if origen.is_empty() or destino.is_empty() or origen == destino:
 		return false
-	var relacion := obtener_relacion_entre_npc(origen, destino)
-	return _conocimiento_compartible_con_confianza(conocimiento, float(relacion.get("confianza", 0.0)))
+	var privacidad := str(conocimiento.get("privacidad", "publica")).strip_edges().to_lower()
+	var confianza := 0.0
+	if (
+		privacidad in ["personal", "reservada", "privada"]
+		and bool(conocimiento.get("permiso_transmision", false))
+	):
+		var relacion := obtener_relacion_entre_npc(origen, destino)
+		confianza = float(relacion.get("confianza", 0.0))
+	return _conocimiento_compartible_con_confianza(conocimiento, confianza)
 
 
 ## Devuelve sólo información que este NPC puede repetir a esa persona.
@@ -1486,8 +1493,8 @@ func tiene_conocimiento_compartible_nuevo_npc(personaje_origen: String, personaj
 		return false
 	var conocimientos_origen := obtener_conocimientos_npc(origen)
 	var conocimientos_destino := obtener_conocimientos_npc(destino)
-	var relacion := obtener_relacion_entre_npc(origen, destino)
-	var confianza := float(relacion.get("confianza", 0.0))
+	var confianza := 0.0
+	var confianza_consultada := false
 	var claves_destino: Dictionary = {}
 	for conocimiento_variant in conocimientos_destino:
 		if not conocimiento_variant is Dictionary:
@@ -1502,6 +1509,15 @@ func tiene_conocimiento_compartible_nuevo_npc(personaje_origen: String, personaj
 		var clave_origen := str(conocimiento.get("clave", "")).strip_edges()
 		if clave_origen.is_empty() or bool(claves_destino.get(clave_origen, false)):
 			continue
+		var privacidad := str(conocimiento.get("privacidad", "publica")).strip_edges().to_lower()
+		if (
+			privacidad in ["personal", "reservada", "privada"]
+			and bool(conocimiento.get("permiso_transmision", false))
+			and not confianza_consultada
+		):
+			var relacion := obtener_relacion_entre_npc(origen, destino)
+			confianza = float(relacion.get("confianza", 0.0))
+			confianza_consultada = true
 		if _conocimiento_compartible_con_confianza(conocimiento, confianza):
 			return true
 	return false
