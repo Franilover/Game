@@ -2,21 +2,14 @@ extends Node
 class_name NPCScheduleSystem
 
 const NPC_SCHEDULE_RULES = preload("res://scripts/world/npc_schedule_rules.gd")
+const NPC_NAVIGATION_SCRIPT = preload("res://scripts/world/npc_navigation_system.gd")
 
 const INTERVALO_ACTUALIZACION := 0.5
-const TAMANO_CELDA := 32.0
-# Debe coincidir con el mapa de Torres: 104 x 68 celdas de 32 px.
-const ORIGEN_MAPA := Vector2(-1664.0, -1088.0)
-const TAMANO_MALLA := Vector2i(104, 68)
-const RADIO_COLISION_NPC := 14.0
-const DISTANCIA_LLEGADA := 7.0
-const DISTANCIA_MAXIMA_UMBRAL := 36.0
-# Coste de desplazamiento: Tierra (zona 1) conserva el coste base y los demás
-# terrenos cuestan más. Mantener el mínimo en 1 preserva la heurística AStar.
-const COSTE_CAMINO_TIERRA := 1.0
-const COSTE_OTRO_TERRENO := 1.55
-# Espera breve para agrupar varios cambios de posición/tamaño en una sola reconstrucción.
-const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
+const TAMANO_CELDA := NPC_NAVIGATION_SCRIPT.TAMANO_CELDA
+const ORIGEN_MAPA := NPC_NAVIGATION_SCRIPT.ORIGEN_MAPA
+const TAMANO_MALLA := NPC_NAVIGATION_SCRIPT.TAMANO_MALLA
+const RADIO_COLISION_NPC := NPC_NAVIGATION_SCRIPT.RADIO_COLISION_NPC
+const DISTANCIA_LLEGADA := NPC_NAVIGATION_SCRIPT.DISTANCIA_LLEGADA
 
 # Coordenadas locales relativas al origen de cada edificio. El destino real
 # se sitúa 28 px al sur de este punto, en el umbral de la entrada.
@@ -136,14 +129,9 @@ const POSICIONES: Dictionary = {
 var _world_atmosphere: WorldAtmosphere = null
 var _zone_manager: Node = null
 var _relationship_system: RelationshipSystemService = null
+var _npc_navigation_system: NPCNavigationSystem = null
 var _zona: Node2D = null
-var _terreno_visual: Node = null
-var _malla: AStarGrid2D = null
-var _malla_lista := false
-var _construyendo_malla := false
 var _tiempo_actualizacion := 0.0
-var _firma_colisiones := ""
-var _tiempo_cambio_colisiones := -1.0
 var _ultimo_aviso_evento_comunitario := ""
 # Snapshot compartido durante un tick para evitar consultar el SceneTree por cada NPC.
 var _npcs_actualizacion: Array = []
@@ -172,11 +160,16 @@ func _obtener_tiempo_actual() -> Dictionary:
 func configurar(
 	atmosfera: WorldAtmosphere,
 	zone_manager: Node,
-	relationship_system: RelationshipSystemService = null
+	relationship_system: RelationshipSystemService = null,
+	navigation_system: NPCNavigationSystem = null
 ) -> void:
 	_world_atmosphere = atmosfera
 	_zone_manager = zone_manager
 	_relationship_system = relationship_system
+	_npc_navigation_system = navigation_system
+	if is_instance_valid(_npc_navigation_system):
+		if not _npc_navigation_system.malla_reconstruida.is_connected(_reiniciar_rutas_npc_tras_reconstruccion):
+			_npc_navigation_system.malla_reconstruida.connect(_reiniciar_rutas_npc_tras_reconstruccion)
 	add_to_group("npc_schedule_system")
 
 
@@ -211,7 +204,9 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 	if not is_instance_valid(_zone_manager):
 		return
 	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
-		_invalidar_malla()
+		if is_instance_valid(_npc_navigation_system):
+			_npc_navigation_system.invalidar()
+		_zona = null
 		return
 	if not is_instance_valid(_world_atmosphere):
 		return
@@ -219,19 +214,12 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 	var zona_actual := _zone_manager.obtener_zona_actual() as Node2D
 	if not is_instance_valid(zona_actual):
 		return
-	if zona_actual != _zona:
-		_zona = zona_actual
-		_malla = null
-		_malla_lista = false
-		_construyendo_malla = false
-		call_deferred("_construir_malla", zona_actual)
+	_zona = zona_actual
+	if not is_instance_valid(_npc_navigation_system):
 		return
-	if not _malla_lista or _malla == null:
-		return
-
-	# Los edificios pueden moverse o cambiar sus colisiones durante la sesión.
-	# Comprobar cada medio segundo evita trabajo por frame y agrupa cambios.
-	if _detectar_cambios_geometria(zona_actual, delta):
+	# El servicio construye y vigila la malla; la agenda sólo continúa cuando
+	# la geometría de Torres está lista para calcular rutas.
+	if not _npc_navigation_system.actualizar(zona_actual, delta):
 		return
 
 	var tiempo := _world_atmosphere.obtener_tiempo()
@@ -293,7 +281,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 func iniciar_acercamiento_social(npc: Creature, jugador: Node2D) -> bool:
 	if not is_instance_valid(npc) or not is_instance_valid(jugador):
 		return false
-	if not _malla_lista or _malla == null:
+	if not _navegacion_lista():
 		return false
 	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("rutina_en_edificio", false)):
 		return false
@@ -330,7 +318,7 @@ func iniciar_acercamiento_social(npc: Creature, jugador: Node2D) -> bool:
 ## Envía temporalmente a un NPC a una actividad cotidiana. Al terminar,
 ## recupera su rutina desde la posición alcanzada.
 func iniciar_actividad_social(npc: Creature, destino_local: Vector2, duracion: float = 5.0) -> bool:
-	if not is_instance_valid(npc) or not _malla_lista or _malla == null or not is_instance_valid(_zona):
+	if not is_instance_valid(npc) or not _navegacion_lista() or not is_instance_valid(_zona):
 		return false
 	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("rutina_en_edificio", false)):
 		return false
@@ -390,7 +378,7 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 	npc.remove_meta("acercamiento_social_activo")
 	if not is_instance_valid(_world_atmosphere) or not is_instance_valid(_zone_manager):
 		return
-	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres" or not _malla_lista:
+	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres" or not _navegacion_lista():
 		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento != null:
 			movimiento.detener_por_rutina()
@@ -405,143 +393,16 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 	_aplicar_rutina(npc, dia_semana, minutos)
 
 
-func _invalidar_malla() -> void:
-	_zona = null
-	_terreno_visual = null
-	_malla = null
-	_malla_lista = false
-	_construyendo_malla = false
-	_firma_colisiones = ""
-	_tiempo_cambio_colisiones = -1.0
+func _navegacion_lista() -> bool:
+	return is_instance_valid(_npc_navigation_system) and _npc_navigation_system.esta_lista()
 
 
-## Detecta cambios en cuerpos y formas físicas de Torres, sin inspeccionar
-## los NPC ni al jugador. Devuelve true mientras espera o reconstruye.
-func _detectar_cambios_geometria(zona: Node2D, delta: float) -> bool:
-	if _construyendo_malla:
-		return true
-	# Al entrar a un edificio, ReinoTorres desactiva temporalmente las
-	# colisiones exteriores. No debemos interpretar ese cambio técnico como
-	# una mudanza de edificios; al salir se restauran y se retoma la vigilancia.
-	var interior := zona.get_node_or_null("InteriorActivo")
-	if interior is CanvasItem and (interior as CanvasItem).visible:
-		return false
-	var firma_actual := _obtener_firma_colisiones(zona)
-	if _firma_colisiones.is_empty():
-		_firma_colisiones = firma_actual
-		return false
-	if firma_actual != _firma_colisiones:
-		_firma_colisiones = firma_actual
-		_tiempo_cambio_colisiones = 0.0
-		return true
-	if _tiempo_cambio_colisiones < 0.0:
-		return false
-	_tiempo_cambio_colisiones += maxf(delta, INTERVALO_ACTUALIZACION)
-	if _tiempo_cambio_colisiones < ESPERA_RECONSTRUCCION_NAVEGACION:
-		return true
-	_tiempo_cambio_colisiones = -1.0
-	_malla_lista = false
-	call_deferred("_construir_malla", zona)
-	return true
+func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
+	if not _navegacion_lista():
+		return PackedVector2Array()
+	return _npc_navigation_system.crear_ruta(origen, destino)
 
 
-func _obtener_firma_colisiones(raiz: Node) -> String:
-	var partes: PackedStringArray = []
-	_agregar_firma_colisiones(raiz, partes)
-	return "|".join(partes)
-
-
-func _agregar_firma_colisiones(nodo: Node, partes: PackedStringArray) -> void:
-	if nodo is StaticBody2D or nodo is AnimatableBody2D:
-		var cuerpo := nodo as CollisionObject2D
-		partes.append("BODY:%s:%s:%d:%d" % [
-			str(cuerpo.get_path()),
-			str(cuerpo.global_transform),
-			cuerpo.collision_layer,
-			cuerpo.collision_mask
-		])
-	elif nodo is CollisionShape2D:
-		var forma := nodo as CollisionShape2D
-		var geometria := "sin_forma"
-		if forma.shape != null:
-			geometria = "%d:%s" % [forma.shape.get_instance_id(), str(forma.shape.get_rect())]
-		partes.append("SHAPE:%s:%s:%s:%s" % [
-			str(forma.get_path()),
-			str(forma.global_transform),
-			str(forma.disabled),
-			geometria
-		])
-	elif nodo is CollisionPolygon2D:
-		var poligono := nodo as CollisionPolygon2D
-		partes.append("POLYGON:%s:%s:%s:%s" % [
-			str(poligono.get_path()),
-			str(poligono.global_transform),
-			str(poligono.disabled),
-			str(poligono.polygon)
-		])
-	for hijo in nodo.get_children():
-		_agregar_firma_colisiones(hijo, partes)
-
-
-func _construir_malla(zona: Node2D) -> void:
-	if _construyendo_malla:
-		return
-	_construyendo_malla = true
-	await get_tree().physics_frame
-
-	if not is_instance_valid(zona) or zona != _zona:
-		_construyendo_malla = false
-		return
-
-	_terreno_visual = get_tree().get_first_node_in_group("world_terrain_visual")
-	var nueva_malla := AStarGrid2D.new()
-	nueva_malla.region = Rect2i(Vector2i.ZERO, TAMANO_MALLA)
-	nueva_malla.cell_size = Vector2(TAMANO_CELDA, TAMANO_CELDA)
-	nueva_malla.offset = zona.to_global(ORIGEN_MAPA + Vector2(TAMANO_CELDA * 0.5, TAMANO_CELDA * 0.5))
-	nueva_malla.diagonal_mode = AStarGrid2D.DIAGONAL_MODE_ONLY_IF_NO_OBSTACLES
-	nueva_malla.default_compute_heuristic = AStarGrid2D.HEURISTIC_OCTILE
-	nueva_malla.default_estimate_heuristic = AStarGrid2D.HEURISTIC_OCTILE
-	nueva_malla.update()
-
-	var forma := CircleShape2D.new()
-	forma.radius = RADIO_COLISION_NPC
-	var consulta := PhysicsShapeQueryParameters2D.new()
-	consulta.shape = forma
-	consulta.collision_mask = 1
-	consulta.collide_with_bodies = true
-	consulta.collide_with_areas = false
-
-	var espacio := zona.get_world_2d().direct_space_state
-	for y in range(TAMANO_MALLA.y):
-		for x in range(TAMANO_MALLA.x):
-			var id := Vector2i(x, y)
-			var centro_local := ORIGEN_MAPA + Vector2(
-				(float(x) + 0.5) * TAMANO_CELDA,
-				(float(y) + 0.5) * TAMANO_CELDA
-			)
-			# El CollisionShape2D de Creature está desplazado 12 px hacia arriba.
-			var centro_global := zona.to_global(centro_local + Vector2(0.0, -12.0))
-			consulta.transform = Transform2D(0.0, centro_global)
-			if not espacio.intersect_shape(consulta, 1).is_empty():
-				nueva_malla.set_point_solid(id, true)
-			else:
-				_aplicar_preferencia_terreno(nueva_malla, id, centro_global)
-
-	if not is_instance_valid(zona) or zona != _zona:
-		_construyendo_malla = false
-		return
-
-	_malla = nueva_malla
-	_malla_lista = true
-	_construyendo_malla = false
-	_firma_colisiones = _obtener_firma_colisiones(zona)
-	_tiempo_cambio_colisiones = -1.0
-	_reiniciar_rutas_npc_tras_reconstruccion()
-	print("NPCScheduleSystem: navegación de Torres lista (", TAMANO_MALLA.x * TAMANO_MALLA.y, " celdas).")
-
-
-## Tras mover un edificio, las rutas activas se invalidan para que el
-## siguiente ciclo de horarios las calcule sobre la nueva geometría.
 func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 	for npc_variant in _obtener_npcs_torres():
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
@@ -563,14 +424,6 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 ## Aplica un coste menor a las celdas del atlas Tierra (zona 1).
 ## Los demás terrenos conservan su coste normal y siguen disponibles como
 ## desvíos o atajos cuando el camino de tierra no resulte conveniente.
-func _aplicar_preferencia_terreno(malla: AStarGrid2D, celda: Vector2i, posicion_global: Vector2) -> void:
-	if not is_instance_valid(_terreno_visual) or not _terreno_visual.has_method("obtener_zona_en_posicion"):
-		return
-	var zona_terreno: int = int(_terreno_visual.call("obtener_zona_en_posicion", posicion_global))
-	var coste: float = COSTE_CAMINO_TIERRA if zona_terreno == 1 else COSTE_OTRO_TERRENO
-	malla.set_point_weight_scale(celda, coste)
-
-
 func _resolver_rutina_base_y_eventos(
 	npc: Creature,
 	dia_semana: int,
@@ -982,7 +835,7 @@ func _actualizar_resumen_diario_reunion(
 ## Agrupa a los asistentes según sus vínculos reales y distribuye sus
 ## desplazamientos durante la fase para que no abandonen todos la conversación.
 func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> void:
-	if not is_instance_valid(npc) or not is_instance_valid(_zona) or not _malla_lista:
+	if not is_instance_valid(npc) or not is_instance_valid(_zona) or not _navegacion_lista():
 		return
 	var fase := maxi(0, int((minutos - 1260) / 45))
 	var inicio_fase := 1260 + fase * 45
@@ -1833,7 +1686,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		return
 	if posmod(minutos - siguiente, 1440) > 720:
 		return
-	if not is_instance_valid(_zona) or not _malla_lista:
+	if not is_instance_valid(_zona) or not _navegacion_lista():
 		return
 	if not npc.has_meta("rutina_ancla_ocio"):
 		npc.set_meta("rutina_ancla_ocio", npc.global_position)
@@ -1988,7 +1841,7 @@ static func filtrar_opciones_ocio_validas(opciones: Array) -> Array:
 ## desde la posición actual cuando la malla de navegación ya está preparada.
 func _filtrar_opciones_ocio_alcanzables(npc: Creature, opciones: Array) -> Array:
 	var validas := filtrar_opciones_ocio_validas(opciones)
-	if not _malla_lista or _malla == null or not is_instance_valid(_zona):
+	if not _navegacion_lista() or not is_instance_valid(_zona):
 		return validas
 	var alcanzables: Array = []
 	for opcion_variant in validas:
@@ -3039,66 +2892,4 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 		if str(get_meta("ultimo_diagnostico_selector", "")) != firma_fallo:
 			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | npc=", nombre_npc, " dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", str(diagnostico_rechazos))
 			set_meta("ultimo_diagnostico_selector", firma_fallo)
-	return mejor
-
-
-func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
-	if _malla == null or not _malla_lista:
-		return PackedVector2Array()
-
-	var inicio_id := _posicion_a_celda(origen)
-	var destino_id := _posicion_a_celda(destino)
-	inicio_id = _buscar_celda_transitable_cercana(inicio_id)
-	destino_id = _buscar_celda_transitable_cercana(destino_id)
-	if inicio_id.x < 0 or destino_id.x < 0:
-		return PackedVector2Array()
-
-	# No aceptar una celda de llegada arbitrariamente alejada de la puerta.
-	# Una búsqueda amplia podía escoger una celda libre al otro lado del muro
-	# y el sistema ocultaba al NPC como si ya hubiera entrado.
-	var posicion_final := _malla.get_point_position(destino_id)
-	if posicion_final.distance_to(destino) > DISTANCIA_MAXIMA_UMBRAL:
-		return PackedVector2Array()
-
-	var puntos := _malla.get_point_path(inicio_id, destino_id)
-	if puntos.is_empty():
-		# AStar no devuelve puntos cuando origen y destino están en la misma
-		# celda. En ese caso aún puede faltar el pequeño tramo hasta el umbral.
-		if inicio_id == destino_id and origen.distance_to(destino) <= DISTANCIA_MAXIMA_UMBRAL:
-			return PackedVector2Array([_malla.get_point_position(destino_id)])
-		return PackedVector2Array()
-
-	var ruta := PackedVector2Array()
-	for punto in puntos:
-		if ruta.is_empty() and origen.distance_to(punto) <= DISTANCIA_LLEGADA:
-			continue
-		ruta.append(punto)
-	if ruta.is_empty() and origen.distance_to(posicion_final) > DISTANCIA_LLEGADA:
-		ruta.append(posicion_final)
-	return ruta
-
-
-func _posicion_a_celda(posicion: Vector2) -> Vector2i:
-	# AStarGrid2D.offset ya apunta al centro de la celda (0, 0).
-	# Restar otra media celda desplazaba cada consulta una celda.
-	return Vector2i(
-		roundi((posicion.x - _malla.offset.x) / TAMANO_CELDA),
-		roundi((posicion.y - _malla.offset.y) / TAMANO_CELDA)
-	)
-
-
-func _buscar_celda_transitable_cercana(celda: Vector2i) -> Vector2i:
-	if _malla == null:
-		return Vector2i(-1, -1)
-	var mejor := Vector2i(-1, -1)
-	var mejor_distancia := INF
-	for y in range(-5, 6):
-		for x in range(-5, 6):
-			var candidata := celda + Vector2i(x, y)
-			if not _malla.is_in_boundsv(candidata) or _malla.is_point_solid(candidata):
-				continue
-			var distancia := Vector2(candidata - celda).length_squared()
-			if distancia < mejor_distancia:
-				mejor = candidata
-				mejor_distancia = distancia
 	return mejor
