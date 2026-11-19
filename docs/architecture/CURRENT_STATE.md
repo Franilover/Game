@@ -1034,5 +1034,5 @@ La auditoría actual continúa priorizando rendimiento y unificación del sistem
 - La condición de horario nocturno se centralizó en NPCScheduleRules y se cubren sus límites.
 - La memoria diaria de las reuniones se separó en una operación privada con entradas explícitas y metadatos existentes.
 - La prueba de integración NPCScheduleContext protege el contexto compartido y la memoria diaria; está conectada al workflow headless.
-- La validación de la última revisión está en curso. Los fallos anteriores por colisión de nombre ya están corregidos y se espera la ejecución de la revisión posterior.
+- Validación confirmada: Godot 4.7 **46/46 pasos correctos, 0 fallos**, run [#44622633288](https://github.com/Franilover/Game/actions/runs/44622633288); GDScript Quality **success**, run [#44622597880](https://github.com/Franilover/Game/actions/runs/44622597880).
 - Sigue pendiente una separación mayor de responsabilidades dentro de NPCScheduleSystem. No se extraerán módulos hasta fijar sus dependencias y contratos para evitar crear sistemas paralelos o capas innecesarias.
