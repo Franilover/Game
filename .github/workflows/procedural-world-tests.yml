@@ -267,6 +267,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run creature movement authority contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/creatures/test_creature_movement_authority.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CreatureMovementAuthority: FAIL:' <<<"$output"; then
+            echo "Creature movement authority contract test reported errors."
+            exit 1
+          fi
+
       - name: Run expedition travel and return contract test
         shell: bash
         run: |
