@@ -25,8 +25,8 @@ var _planta: Dictionary = {}
 func configurar_parcela(clave: String) -> void:
 	_tipo = "bancal"
 	_clave = clave.strip_edges()
-	_distancia = 82.0
-	_tierra = get_node_or_null("Tierra") as Polygon2D
+	_distancia = 23.0
+	_tierra = null
 	add_to_group("interactable")
 	_cargar_estado_parcela()
 	call_deferred("_conectar_reloj_mundo")
@@ -349,7 +349,7 @@ func _actualizar_visual_planta() -> void:
 	if not is_instance_valid(_planta_sprite):
 		_planta_sprite = Sprite2D.new()
 		_planta_sprite.name = "Planta"
-		_planta_sprite.position = Vector2(0, -13)
+		_planta_sprite.position = Vector2(0, -16)
 		_planta_sprite.z_index = 3
 		_planta_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		add_child(_planta_sprite)
