@@ -791,10 +791,8 @@ func _salir_de_edificio_para_cambiar_rutina(npc: Creature, edificio_actual: Stri
 		and _zona.has_method("restaurar_colision_npc")
 	):
 		_zona.call("restaurar_colision_npc", npc)
-	var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
-	if salida_variant is Dictionary and is_instance_valid(_zona):
-		var salida: Dictionary = salida_variant
-		npc.global_position = _zona.to_global(salida.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+	# ReinoTorres ya devuelve al NPC a la posición exacta de su puerta.
+	# No recalcularla aquí: el catálogo de puertas del mundo es la fuente única.
 	npc.set_meta("rutina_en_edificio", false)
 	npc.set_meta("rutina_edificio_id", "")
 	npc.visible = not (is_instance_valid(_zona) and (_zona.get("_interior_activo") == true))
