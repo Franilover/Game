@@ -105,7 +105,6 @@ static func obtener_icono(
 
 	# Nombres canónicos de Supabase que difieren ligeramente del archivo artístico.
 	var alias_sprite := {
-		"florverde": "Flor Verdel.png",
 		"semillasdeflorazul": "Semillas Flor Azul.png",
 		"semillasdeflormorada": "Semillas Flor Morada.png",
 		"semillasdeflorverde": "Semillas Flor Verde.png",
@@ -115,6 +114,11 @@ static func obtener_icono(
 		"espadatopacio": "Espada de Topacio.png",
 		"regadera": "regadera llena.png"
 	}
+	if clave == "florverde":
+		var ruta_flor_verde := PROPS_ASSET_ROOT.path_join("Flor Verdel.png")
+		_rutas_por_nombre[clave] = ruta_flor_verde
+		return _cargar_textura(ruta_flor_verde)
+
 	if alias_sprite.has(clave):
 		var ruta_alias := ITEMS_ASSET_ROOT.path_join(str(alias_sprite[clave]))
 		_rutas_por_nombre[clave] = ruta_alias
