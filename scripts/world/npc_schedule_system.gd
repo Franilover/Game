@@ -17,11 +17,6 @@ const COSTE_CAMINO_TIERRA := 1.0
 const COSTE_OTRO_TERRENO := 1.55
 # Espera breve para agrupar varios cambios de posición/tamaño en una sola reconstrucción.
 const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
-# Saira coordina el mercado; dos de los otros vendedores se turnan por franja.
-const VENDEDORES_MERCADO_ROTATIVOS: Array[String] = ["bruna", "elian", "darven", "narel", "nima", "mara", "ivo"]
-const INICIO_TURNO_MERCADO := 9 * 60
-const CAMBIO_TURNO_MERCADO := 14 * 60
-const FIN_TURNO_MERCADO := 18 * 60
 
 # Coordenadas locales relativas al origen de cada edificio. El destino real
 # se sitúa 28 px al sur de este punto, en el umbral de la entrada.
@@ -2847,43 +2842,10 @@ func _aplicar_turno_comercio_rotativo(
 	dia_semana: int,
 	minutos: int
 ) -> Dictionary:
-	if not is_instance_valid(npc) or minutos < INICIO_TURNO_MERCADO or minutos >= FIN_TURNO_MERCADO:
+	if not is_instance_valid(npc):
 		return rutina_actual
 	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
-	if nombre == "saira" or not VENDEDORES_MERCADO_ROTATIVOS.has(nombre):
-		return rutina_actual
-
-	# No apartar a nadie de un oficio, guardia, investigación o compromiso.
-	var clave_actual := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
-	var actividad_actual := str(rutina_actual.get("actividad_clave", "")).strip_edges().to_lower()
-	var actividad_libre := (
-		rutina_actual.is_empty()
-		or clave_actual.begins_with("dia_libre")
-		or actividad_actual.contains("descans")
-		or actividad_actual.contains("pase")
-		or actividad_actual.contains("convers")
-		or actividad_actual.contains("visitar")
-		or actividad_actual.contains("saludar")
-		or actividad_actual.contains("volver")
-	)
-	if not actividad_libre:
-		return rutina_actual
-	if (
-		clave_actual.begins_with("evento_")
-		or clave_actual == "mercado_vecinal"
-		or clave_actual == "celebracion_estacional"
-		or clave_actual.begins_with("invitacion_")
-		or clave_actual.begins_with("encuentro_")
-	):
-		return rutina_actual
-
-	var franja := 0 if minutos < CAMBIO_TURNO_MERCADO else 1
-	var inicio := posmod(dia_semana * 2 + franja * 3, VENDEDORES_MERCADO_ROTATIVOS.size())
-	var asignados: Array[String] = [
-		VENDEDORES_MERCADO_ROTATIVOS[inicio],
-		VENDEDORES_MERCADO_ROTATIVOS[posmod(inicio + 1, VENDEDORES_MERCADO_ROTATIVOS.size())]
-	]
-	if not asignados.has(nombre):
+	if not NPC_SCHEDULE_RULES.debe_asignar_turno_comercio(nombre, rutina_actual, dia_semana, minutos):
 		return rutina_actual
 
 	return {
