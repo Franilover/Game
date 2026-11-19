@@ -1557,3 +1557,53 @@ func _obtener_lista_conversaciones_npc(clave: String) -> Array:
 func guardar_conversaciones_npc(progreso: Dictionary) -> void:
 	world_state.flags["conversaciones_npc"] = progreso.duplicate(true)
 	_al_cambio_guardable()
+
+
+## Actualiza una sola relación sin reconstruir el registro social completo.
+func guardar_relacion_npc_entre(clave: String, relacion: Dictionary) -> void:
+	var registro_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	var registro: Dictionary = registro_variant if registro_variant is Dictionary else {}
+	var relaciones_variant: Variant = registro.get("_relaciones_npc", {})
+	var relaciones: Dictionary = relaciones_variant if relaciones_variant is Dictionary else {}
+	var actualizadas := relaciones.duplicate()
+	actualizadas[clave] = relacion.duplicate(true)
+	var actualizado := registro.duplicate()
+	actualizado["_relaciones_npc"] = actualizadas
+	world_state.flags["conversaciones_npc"] = actualizado
+	_al_cambio_guardable()
+
+
+## Actualiza los conocimientos de un único habitante.
+func guardar_conocimientos_npc(personaje_id: String, conocimientos: Array) -> void:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return
+	var registro_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	var registro: Dictionary = registro_variant if registro_variant is Dictionary else {}
+	var todos_variant: Variant = registro.get("_conocimientos_npc", {})
+	var todos: Dictionary = todos_variant if todos_variant is Dictionary else {}
+	var actualizados := todos.duplicate()
+	actualizados[id] = conocimientos.duplicate(true)
+	var actualizado := registro.duplicate()
+	actualizado["_conocimientos_npc"] = actualizados
+	world_state.flags["conversaciones_npc"] = actualizado
+	_al_cambio_guardable()
+
+
+## Actualiza sólo la lista de asuntos pendientes.
+func guardar_asuntos_pendientes_npc(asuntos: Array) -> void:
+	_guardar_lista_conversaciones_npc("_asuntos_pendientes_npc", asuntos)
+
+
+## Actualiza sólo la lista de promesas.
+func guardar_promesas_npc(promesas: Array) -> void:
+	_guardar_lista_conversaciones_npc("_promesas_npc", promesas)
+
+
+func _guardar_lista_conversaciones_npc(clave: String, lista: Array) -> void:
+	var registro_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	var registro: Dictionary = registro_variant if registro_variant is Dictionary else {}
+	var actualizado := registro.duplicate()
+	actualizado[clave] = lista.duplicate(true)
+	world_state.flags["conversaciones_npc"] = actualizado
+	_al_cambio_guardable()
