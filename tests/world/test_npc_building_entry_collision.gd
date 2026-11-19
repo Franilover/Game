@@ -137,10 +137,14 @@ func _run() -> void:
 	npc_cambio_edificio.set_meta("rutina_en_edificio", true)
 	npc_cambio_edificio.set_meta("rutina_edificio_id", "panaderia")
 	npc_cambio_edificio.reparent(habitacion, true)
-	zona.call("sacar_npc_del_interior", npc_cambio_edificio)
-	npc_cambio_edificio.set_meta("rutina_en_edificio", false)
-	npc_cambio_edificio.set_meta("rutina_edificio_id", "")
-	if npc_cambio_edificio.visible or npc_cambio_edificio.collision_layer != 0:
+	# Ejecuta la transición real del planificador mientras el jugador sigue
+	# dentro: el NPC debe salir de la habitación, pero permanecer oculto.
+	sistema._salir_de_edificio_para_cambiar_rutina(npc_cambio_edificio, "panaderia")
+	if npc_cambio_edificio.get_parent() != contenedor_exterior:
+		errores.append("El cambio de edificio no devolvió el NPC al contenedor exterior.")
+	if bool(npc_cambio_edificio.get_meta("rutina_en_edificio", true)) or str(npc_cambio_edificio.get_meta("rutina_edificio_id", "x")) != "":
+		errores.append("El cambio de edificio no limpió el estado de su edificio anterior.")
+	if npc_cambio_edificio.visible or npc_cambio_edificio.is_in_group("interactable") or npc_cambio_edificio.collision_layer != 0:
 		errores.append("El cambio de edificio reactivó al NPC antes de salir del interior.")
 	zona.call("_restaurar_npcs_exteriores", [npc_cambio_edificio])
 	if not npc_cambio_edificio.visible or not npc_cambio_edificio.is_in_group("interactable"):
