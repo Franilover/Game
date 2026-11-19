@@ -56,6 +56,8 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"casa_estudio", "paths":["res://assets/art/places/Casa_de_Estudio_Oris.png"], "position":Vector2(-520,-430), "size":Vector2(122,98), "hide":["OrisStudy","StudyDome"]},
 	{"key":"biblioteca", "paths":["res://assets/art/places/Biblioteca.png"], "position":Vector2(0,-540), "size":Vector2(124,112), "hide":[]},
 	{"key":"centro_expediciones", "paths":["res://assets/art/places/Centro de Expediciones.png"], "position":Vector2(1180,300), "size":Vector2(136,120), "hide":[]},
+	{"key":"taberna", "paths":["res://assets/art/places/Taberna.png","res://assets/art/places/taberna.png"], "position":Vector2(760,-540), "size":Vector2(126,108), "hide":[]},
+	{"key":"escuela", "paths":["res://assets/art/places/Escuela.png","res://assets/art/places/escuela.png"], "position":Vector2(-760,-540), "size":Vector2(126,108), "hide":[]},
 	{"key":"clinica", "paths":["res://assets/art/places/Clinica.png"], "position":Vector2(360,430), "size":Vector2(116,104), "hide":[]},
 	{"key":"casa_comercio", "paths":["res://assets/art/places/Casa_de_Comercio.png"], "position":Vector2(500,180), "size":Vector2(122,100), "hide":["TradeHouse"]},
 	{"key":"cuartel", "paths":["res://assets/art/places/Cuartel_de_la_Guardia.png"], "position":Vector2(520,-430), "size":Vector2(126,104), "hide":["GuardBarracks","BarracksBed","BarracksBunk","BarracksArmor","BarracksArmory","BarracksWeaponRack","CuartelDetalle","DetalleCuartel"]},
@@ -149,6 +151,8 @@ const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
 	"casa_estudio": "casa_estudio",
 	"biblioteca": "biblioteca",
 	"centro_expediciones": "centro_expediciones",
+	"taberna": "taberna",
+	"escuela": "escuela",
 	"clinica": "clinica",
 	"reparaciones": "reparaciones",
 	"carpinteria": "carpinteria",
@@ -190,6 +194,8 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"casa_estudio","nombre":"Laboratorio de Oris","pos":Vector2(-520,-365),"tipo":"laboratorio"},
 	{"id":"biblioteca","nombre":"Biblioteca","pos":Vector2(0,-478),"tipo":"biblioteca"},
 	{"id":"centro_expediciones","nombre":"Gremio de Aventureros","pos":Vector2(1180,362),"tipo":"centro_expediciones"},
+	{"id":"taberna","nombre":"Taberna","pos":Vector2(760,-478),"tipo":"taberna"},
+	{"id":"escuela","nombre":"Escuela de Oficios","pos":Vector2(-760,-478),"tipo":"escuela"},
 	{"id":"clinica","nombre":"Clínica","pos":Vector2(360,492),"tipo":"clinica"},
 	{"id":"casa_comercio","nombre":"Casa de comercio","pos":Vector2(500,246),"tipo":"comercio"},
 	{"id":"cuartel","nombre":"Cuartel de la guardia","pos":Vector2(520,-362),"tipo":"cuartel"},
@@ -1825,6 +1831,30 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "CofreMuestrasHerbolario", MUEBLE_COFRE, Vector2(0, 115), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "SillaInvestigacionHerbolario", MUEBLE_SILLA_FRENTE, Vector2(-105, -25), Vector2.ONE, 1)
+		"taberna":
+			# Comedor amplio, con mostrador al fondo y mesas agrupadas sin cerrar el paso.
+			_agregar_sprite_mueble(cuarto, "BarraTaberna", MUEBLE_MESA_PLATOS, Vector2(0, -112), Vector2(2.0, 1.1), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteTaberna", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "HogarTaberna", MUEBLE_HORNO, Vector2(205, -112), Vector2(1.25, 1.25), 1)
+			for i in range(3):
+				var x := -145.0 + float(i) * 145.0
+				_agregar_sprite_mueble(cuarto, "MesaTaberna%d" % i, MUEBLE_MESA_PLATOS, Vector2(x, 8), Vector2(1.0, 0.95), 1)
+				_agregar_sprite_mueble(cuarto, "SillaTaberna%dA" % i, MUEBLE_SILLA_FRENTE, Vector2(x - 24, 52), Vector2.ONE, 1)
+				_agregar_sprite_mueble(cuarto, "SillaTaberna%dB" % i, MUEBLE_SILLA_FRENTE, Vector2(x + 24, -28), Vector2.ONE, 1)
+			_agregar_estacion_edificio(cuarto, "taberna", "Hablar en la taberna", Vector2(0, -70))
+		"escuela":
+			# Aula con pizarra al frente, puestos separados y estanterías laterales.
+			_agregar_sprite_mueble(cuarto, "PizarraEscuela", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -125), Vector2(1.8, 0.8), 1)
+			_agregar_sprite_mueble(cuarto, "MesaDocenteEscuela", MUEBLE_MESA, Vector2(0, -78), Vector2(1.4, 0.9), 1)
+			for fila in range(2):
+				for columna in range(3):
+					var x := -145.0 + float(columna) * 145.0
+					var y := -5.0 + float(fila) * 92.0
+					_agregar_sprite_mueble(cuarto, "PupitreEscuela_%d_%d" % [fila, columna], MUEBLE_MESA_DOCUMENTOS, Vector2(x, y), Vector2(0.8, 0.7), 1)
+					_agregar_sprite_mueble(cuarto, "AsientoEscuela_%d_%d" % [fila, columna], MUEBLE_SILLA_FRENTE, Vector2(x, y + 28), Vector2(0.8, 0.8), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteEscuelaOeste", MUEBLE_ARMARIO, Vector2(-215, 112), Vector2(0.85, 0.85), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteEscuelaEste", MUEBLE_ARMARIO, Vector2(215, 112), Vector2(0.85, 0.85), 1)
+			_agregar_estacion_edificio(cuarto, "escuela", "Consultar lecciones", Vector2(0, -42))
 		"habitacion_posada":
 			_agregar_sprite_mueble(cuarto, "CamaHabitacion", MUEBLE_CAMA, Vector2(-130, -75), Vector2(1.1, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "CofreHabitacion", MUEBLE_COFRE, Vector2(155, 78), Vector2(0.9, 0.9), 1)
