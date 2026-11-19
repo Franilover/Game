@@ -29,6 +29,20 @@ func configurar_parcela(clave: String) -> void:
 	_tierra = get_node_or_null("Tierra") as Polygon2D
 	add_to_group("interactable")
 	_cargar_estado_parcela()
+	call_deferred("_conectar_reloj_mundo")
+
+
+func _conectar_reloj_mundo() -> void:
+	var reloj := get_tree().root.get_node_or_null("Main/Systems/WorldAtmosphere")
+	if not is_instance_valid(reloj) or not reloj.has_signal("dia_cambiado"):
+		return
+	var callback := Callable(self, "_al_cambiar_dia_mundo")
+	if not reloj.is_connected("dia_cambiado", callback):
+		reloj.connect("dia_cambiado", callback)
+
+
+func _al_cambiar_dia_mundo(_dia_del_anio: int, _anio: int) -> void:
+	_actualizar_progreso_planta()
 
 
 func configurar_pozo() -> void:
@@ -342,8 +356,12 @@ func _actualizar_visual_planta() -> void:
 	var textura := load(str(_planta.get("sprite", ""))) as Texture2D
 	_planta_sprite.texture = textura
 	var madura := _planta_esta_madura()
+	var riegos := clampi(int(_planta.get("riegos", 0)), 0, 2)
+	var escala := [0.35, 0.62, 0.84][riegos]
+	if madura:
+		escala = 1.0
 	_planta_sprite.visible = textura != null
-	_planta_sprite.scale = Vector2.ONE if madura else Vector2(0.35, 0.35)
+	_planta_sprite.scale = Vector2.ONE * escala
 	_planta_sprite.modulate = Color.WHITE if madura else Color("#A6B58A")
 
 
