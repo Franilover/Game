@@ -27,6 +27,7 @@ func _ready() -> void:
 	_comprobar_desplazamiento_evento(errores)
 	_comprobar_turnos_comercio(errores)
 	_comprobar_evaluacion_invitacion(errores)
+	_comprobar_requisitos_encuentro_trio(errores)
 
 	_comprobar_dia([], 2, true, errores)
 	_comprobar_dia(null, 2, true, errores)
@@ -424,3 +425,53 @@ func _comprobar_evaluacion_invitacion(errores: Array[String]) -> void:
 
 	if str(aceptada.get("ubicacion_clave", "")) != " Plaza ":
 		errores.append("La evaluación pura no debe modificar el diccionario original.")
+
+
+func _comprobar_requisitos_encuentro_trio(errores: Array[String]) -> void:
+	var progreso := {
+		"mara_ivo_apoyo": {"etapa": 1},
+		"nima_ivo_investigacion": {"etapa": 1}
+	}
+	var relacion_valida := {
+		"interacciones": 1,
+		"amistad": 0.2,
+		"confianza": 0.2,
+		"afecto": 0.1,
+		"colaboracion": 0.0,
+		"tension": 0.0
+	}
+	var relaciones: Array[Dictionary] = [
+		relacion_valida.duplicate(true),
+		relacion_valida.duplicate(true),
+		relacion_valida.duplicate(true)
+	]
+	if not Rules.cumple_requisitos_encuentro_trio(progreso, relaciones):
+		errores.append("El encuentro debe habilitarse cuando progreso y los tres vínculos cumplen sus requisitos.")
+
+	var historia_incompleta := progreso.duplicate(true)
+	(historia_incompleta["nima_ivo_investigacion"] as Dictionary)["etapa"] = 0
+	if Rules.cumple_requisitos_encuentro_trio(historia_incompleta, relaciones):
+		errores.append("El encuentro no debe habilitarse antes de completar ambas líneas narrativas.")
+
+	var sin_interacciones := relaciones.duplicate(true)
+	(sin_interacciones[1] as Dictionary)["interacciones"] = 0
+	if Rules.cumple_requisitos_encuentro_trio(progreso, sin_interacciones):
+		errores.append("Cada pareja debe tener al menos una interacción registrada.")
+
+	var vinculo_insuficiente := relaciones.duplicate(true)
+	(vinculo_insuficiente[2] as Dictionary)["amistad"] = 0.1
+	(vinculo_insuficiente[2] as Dictionary)["confianza"] = 0.1
+	(vinculo_insuficiente[2] as Dictionary)["afecto"] = 0.1
+	if Rules.cumple_requisitos_encuentro_trio(progreso, vinculo_insuficiente):
+		errores.append("Un vínculo inferior al umbral conjunto no debe habilitar el encuentro.")
+
+	var tension_alta := relaciones.duplicate(true)
+	(tension_alta[0] as Dictionary)["tension"] = 4.0
+	if Rules.cumple_requisitos_encuentro_trio(progreso, tension_alta):
+		errores.append("Una tensión de 4.0 o superior debe impedir el encuentro.")
+
+	if Rules.cumple_requisitos_encuentro_trio(progreso, relaciones.slice(0, 2)):
+		errores.append("El encuentro requiere exactamente las tres relaciones entre participantes.")
+
+	if int((progreso["mara_ivo_apoyo"] as Dictionary).get("etapa", 0)) != 1:
+		errores.append("La evaluación del encuentro no debe modificar el progreso narrativo.")
