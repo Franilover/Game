@@ -229,8 +229,8 @@ func plantar_semilla(datos_semilla: Dictionary, inventario: Node, indice: int, j
 	}
 	if not cultivos.has(item_id):
 		return false
-	if not is_instance_valid(inventario) or not inventario.has_method("inventory_controller"):
-		pass
+	if not is_instance_valid(inventario):
+		return false
 	var controlador: Variant = inventario.get("inventory_controller")
 	if not is_instance_valid(controlador) or not controlador.has_method("quitar_cantidad_desde_ui"):
 		return false
@@ -308,7 +308,7 @@ func _cosechar_planta() -> void:
 		_notificar("No se pudo acceder al inventario.")
 		return
 	var item_id := str(_planta.get("item_cosecha_id", ""))
-	var world_items := get_tree().get_first_node_in_group("world_items")
+	var world_items := get_tree().root.get_node_or_null("Main/Systems/WorldItems")
 	var objeto: Dictionary = {}
 	if is_instance_valid(world_items) and world_items.has_method("buscar_item_por_id"):
 		objeto = world_items.call("buscar_item_por_id", item_id)
