@@ -58,30 +58,29 @@ func _probar_impacto_real_y_unico(errores: Array[String]) -> void:
 	var proyectil := _crear_proyectil(atacante, 12)
 	await get_tree().process_frame
 
-	var contactos := 0
-	var impactos := 0
+	var eventos := {"contactos": 0, "impactos": 0}
 	proyectil.contacto_detectado.connect(
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
-			contactos += 1
+			eventos["contactos"] = int(eventos["contactos"]) + 1
 	)
 	proyectil.objetivo_impactado.connect(
 		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
-			impactos += 1
+			eventos["impactos"] = int(eventos["impactos"]) + 1
 	)
 
 	var salud_inicial := objetivo.health
 	proyectil._procesar_objetivo(objetivo)
 	if objetivo.health != salud_inicial - 12:
 		errores.append("El impacto no aplicó exactamente el daño configurado.")
-	if contactos != 1:
+	if int(eventos["contactos"]) != 1:
 		errores.append("El contacto válido no se notificó exactamente una vez.")
-	if impactos != 1:
+	if int(eventos["impactos"]) != 1:
 		errores.append("El impacto efectivo no se notificó exactamente una vez.")
 
 	proyectil._procesar_objetivo(objetivo)
 	if objetivo.health != salud_inicial - 12:
 		errores.append("El mismo proyectil pudo dañar dos veces al mismo objetivo.")
-	if contactos != 1 or impactos != 1:
+	if int(eventos["contactos"]) != 1 or int(eventos["impactos"]) != 1:
 		errores.append("El proyectil repitió señales después de quedar impactado.")
 
 	proyectil.queue_free()
@@ -114,7 +113,7 @@ func _probar_contacto_con_danio_cero(errores: Array[String]) -> void:
 		errores.append("Un proyectil con daño cero modificó la salud.")
 	if contactos != 1:
 		errores.append("El proyectil de daño cero no registró el contacto.")
-	if impactos != 0:
+	if int(eventos["impactos"]) != 0:
 		errores.append("El proyectil de daño cero informó un impacto efectivo.")
 
 	proyectil.queue_free()
