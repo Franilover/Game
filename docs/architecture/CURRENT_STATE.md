@@ -1094,3 +1094,13 @@ La cancelación de una iniciativa NPC detiene ahora siempre la ruta temporal y l
 - La creación del objeto en el mundo precede a retirar la cantidad del inventario; si el mundo rechaza el drop, el inventario conserva el objeto.
 
 Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_transaction` y `test_inventory_drop_contract` protegen estos límites. La validación completa de Godot 4.7 está en curso para esta revisión.
+
+
+## Contrato de fabricación — 2026-11-19
+
+- La fabricación se ejecuta en InventoryRuntime.fabricar: trabaja sobre una copia aislada del inventario y confirma el estado sólo cuando se han consumido todos los ingredientes y cabe el resultado.
+- Los ingredientes pueden estar repartidos entre varias pilas o repetirse en la receta; se descuentan por identidad (item_id, con fallback a id).
+- El resultado se inserta después de consumir materiales, por lo que puede ocupar los slots liberados.
+- Si faltan materiales, la receta está mal formada o el resultado no cabe completo, no cambia ningún slot.
+- InventoryController.fabricar aplica el input gate y emite una sola actualización de inventario tras confirmar.
+- Regresión: tests/inventory/test_inventory_crafting_transaction.tscn.
