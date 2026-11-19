@@ -58,6 +58,11 @@ func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: Garlia
 	_world_entity_spawner = spawner
 	_inventario = inventario
 	_world_items = world_items
+	if is_instance_valid(_world_items):
+		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_objetos_disponible):
+			_world_items.catalogo_cargado.connect(_al_catalogo_objetos_disponible)
+		if _world_items.catalogo_disponible:
+			call_deferred("_al_catalogo_objetos_disponible", _world_items.obtener_catalogo())
 
 
 func configurar_aldeanos(relationship_system: Node, zone_manager: Node) -> void:
@@ -260,16 +265,19 @@ func _cargar_objetos() -> void:
 	var grupos: Dictionary = {}
 	var ordenes_grupos: Dictionary = {}
 
+	if catalogo.is_empty():
+		var aviso := Label.new()
+		aviso.text = "Cargando objetos desde Supabase..." if not _world_items.catalogo_disponible else "El catálogo no contiene objetos."
+		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_lista.add_child(aviso)
+		return
+
 	for item in catalogo:
-		# Los objetos sin arte propio permanecen en Supabase, pero todavía no
-		# se ofrecen como contenido jugable ni como objetos de prueba del admin.
-		if not ItemIconResolver.tiene_icono(item):
-			continue
 		var categoria_variant: Variant = item.get("categoria", {})
-		if not categoria_variant is Dictionary or (categoria_variant as Dictionary).is_empty():
-			continue
-		var categoria := categoria_variant as Dictionary
-		var grupo := str(categoria.get("nombre", "Sin categoría"))
+		var categoria: Dictionary = categoria_variant as Dictionary if categoria_variant is Dictionary else {}
+		var grupo := str(categoria.get("nombre", "Sin categoría")).strip_edges()
+		if grupo.is_empty():
+			grupo = "Sin categoría"
 		if not grupos.has(grupo):
 			grupos[grupo] = []
 			ordenes_grupos[grupo] = int(categoria.get("orden", 999))
@@ -298,7 +306,16 @@ func _cargar_objetos() -> void:
 		var cuadricula := _crear_cuadricula()
 		for item in objetos:
 			var nombre := str(item.get("nombre", "Objeto"))
-			_crear_celda_sprite(cuadricula, nombre, ItemIconResolver.obtener_icono(item), item)
+			var icono := ItemIconResolver.obtener_icono(item)
+			if icono != null:
+				_crear_celda_sprite(cuadricula, nombre, icono, item)
+			else:
+				_crear_fila(nombre, item)
+
+
+func _al_catalogo_objetos_disponible(_items: Array) -> void:
+	if _modo == "objetos" and visible:
+		_cargar_objetos()
 
 
 func _cargar_aldeanos() -> void:
