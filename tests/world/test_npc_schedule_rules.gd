@@ -162,3 +162,30 @@ func _comprobar_rutinas_dia_libre(errores: Array[String]) -> void:
 	var nombre_normalizado := Rules.seleccionar_rutina_dia_libre("  MARA  ", 600)
 	if str(nombre_normalizado.get("actividad_clave", "")) != "ordenar_sus_espacios":
 		errores.append("El nombre del NPC debe normalizar espacios y mayúsculas.")
+
+
+func _comprobar_calendario_comunitario(errores: Array[String]) -> void:
+	var evento := Rules.obtener_evento_comunitario(1, 0, 840)
+	if str(evento.get("clave", "")) != "celebracion_estacional":
+		errores.append("La celebración estacional debe comenzar a las 14:00 del primer día de estación.")
+	evento = Rules.obtener_evento_comunitario(1, 4, 900)
+	if str(evento.get("clave", "")) != "celebracion_estacional":
+		errores.append("La celebración estacional debe tener prioridad sobre el mercado vecinal.")
+	evento = Rules.obtener_evento_comunitario(2, 4, 540)
+	if str(evento.get("clave", "")) != "mercado_vecinal":
+		errores.append("El mercado vecinal debe comenzar a las 09:00 del quinto día.")
+	evento = Rules.obtener_evento_comunitario(2, 4, 1019)
+	if str(evento.get("clave", "")) != "mercado_vecinal":
+		errores.append("El mercado vecinal debe mantenerse hasta antes de las 17:00.")
+	evento = Rules.obtener_evento_comunitario(2, 4, 1020)
+	if str(evento.get("clave", "")) != "comida_comunitaria":
+		errores.append("La comida comunitaria debe comenzar a las 17:00.")
+	evento = Rules.obtener_evento_comunitario(2, 4, 1200)
+	if not evento.is_empty():
+		errores.append("No debe haber eventos comunitarios desde las 20:00.")
+	evento = Rules.obtener_evento_comunitario(2, 3, 900)
+	if not evento.is_empty():
+		errores.append("El mercado y la comida comunitaria sólo ocurren en el quinto día.")
+	evento = Rules.obtener_evento_comunitario(2, 0, 900)
+	if not evento.is_empty():
+		errores.append("No debe haber evento ordinario fuera del quinto día.")
