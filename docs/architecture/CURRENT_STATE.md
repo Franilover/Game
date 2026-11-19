@@ -1061,3 +1061,6 @@ Validación CI: Godot 4.7 46/46 pasos correctos, 0 fallos; GDScript Quality succ
 ## Interrupción de actividades interiores — 2026-11-19
 
 Las cinemáticas ahora detienen los paseos interiores activos, liberan el estado de tránsito y conservan el siguiente horario programado. Las conversaciones ambientales siguen utilizando la pausa temporal que conserva la ruta. La regresión correspondiente está añadida a `test_npc_schedule_context`; validación CI pendiente.
+
+
+La prueba de interrupción por cinemática también cubre la reanudación del paseo interior con `CreatureMovement` real y conserva el minuto programado. Esta ampliación está pendiente de validación CI.
