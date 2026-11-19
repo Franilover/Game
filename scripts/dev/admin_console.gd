@@ -69,6 +69,8 @@ func _conectar_catalogo_objetos() -> void:
 		return
 	if not world_items.catalogo_cargado.is_connected(_al_datos_disponibles):
 		world_items.catalogo_cargado.connect(_al_datos_disponibles)
+	if world_items.catalogo_disponible:
+		call_deferred("_al_datos_disponibles", world_items.obtener_catalogo())
 
 
 func _ready() -> void:
