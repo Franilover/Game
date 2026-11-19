@@ -320,3 +320,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Se limpia la metadata de actividad al detener o completar el paseo.
 - La regresión cubre interrupción cinematográfica, reanudación y cambio de tarea en el mismo interior.
 - CI Godot 4.7 y GDScript Quality pendientes.
+
+
+## Regresión integrada de cambio de edificio durante interior activo (2026-11-19)
+
+- La prueba ejecuta la transición del planificador `_salir_de_edificio_para_cambiar_rutina()` directamente.
+- Comprueba que el NPC se retire de la habitación, limpie la identidad del edificio anterior y permanezca oculto/no interactuable/sin colisiones mientras el jugador sigue dentro.
+- Comprueba que al salir el jugador se restauren visibilidad, interacción y colisiones originales.
+- Sin cambios de comportamiento productivo; CI Godot 4.7 y GDScript Quality pendientes.
