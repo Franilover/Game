@@ -40,6 +40,7 @@ var _herramienta_seleccionada := -1
 var _bancal_seleccionado := "BancalOeste"
 var _seccion_biblioteca := "criaturas"
 var _seccion_expedicion := "primera_expedicion"
+var _seccion_clinica := "basico"
 signal solicitar_selector_expediciones
 
 
@@ -1061,14 +1062,10 @@ func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	descripcion.text = str(descripciones.get(id, "Registros de exploración."))
 	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(descripcion)
-	var avance := ProgressBar.new()
-	avance.min_value = 0
-	avance.max_value = maxf(1.0, float(_contar_descubrimientos(id)))
-	avance.value = _contar_descubrimientos(id)
-	avance.show_percentage = false
-	avance.custom_minimum_size.y = 12
-	detalle.add_child(avance)
-	PIXEL_UI_THEME.apply(avance, false)
+	var nota := Label.new()
+	nota.text = "Los registros se amplían con cada descubrimiento."
+	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.add_child(nota)
 	_agregar_boton_detalle(detalle, "Abrir enciclopedia", _abrir_enciclopedia)
 
 
@@ -1155,12 +1152,17 @@ func _construir_clinica() -> void:
 	var layout := _crear_selector_edificio(150.0, 250.0)
 	var lista := layout["list_content"] as GridContainer
 	var detalle := layout["detail_content"] as VBoxContainer
-	_agregar_opcion_selector(lista, "Estado", true, _mostrar_detalle_clinica.bind(detalle))
-	_agregar_opcion_selector(lista, "Tratamiento", false, _mostrar_detalle_clinica.bind(detalle))
-	_mostrar_detalle_clinica(detalle)
+	_agregar_opcion_selector(lista, "Tratamiento", _seccion_clinica == "basico", _seleccionar_tratamiento_clinica.bind("basico", detalle))
+	_agregar_opcion_selector(lista, "Recuperación", _seccion_clinica == "completo", _seleccionar_tratamiento_clinica.bind("completo", detalle))
+	_mostrar_detalle_clinica(_seccion_clinica, detalle)
 
 
-func _mostrar_detalle_clinica(detalle: VBoxContainer) -> void:
+func _seleccionar_tratamiento_clinica(tipo: String, detalle: VBoxContainer) -> void:
+	_seccion_clinica = tipo
+	_mostrar_detalle_clinica(tipo, detalle)
+
+
+func _mostrar_detalle_clinica(tipo: String, detalle: VBoxContainer) -> void:
 	_limpiar_detalle(detalle)
 	_agregar_titulo_detalle(detalle, "Estado de salud")
 	if not is_instance_valid(_jugador) or not bool(_jugador.get("is_alive")):
@@ -1173,7 +1175,7 @@ func _mostrar_detalle_clinica(detalle: VBoxContainer) -> void:
 	var mana := int(_jugador.get("mana"))
 	var mana_maximo := maxi(1, int(_jugador.get("max_mana")))
 	var estado := Label.new()
-	estado.text = "Salud · %d / %d\nEterium · %d / %d" % [vida, vida_maxima, mana, mana_maximo]
+	estado.text = "Salud · %d / %d\\nEterium · %d / %d" % [vida, vida_maxima, mana, mana_maximo]
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(estado)
 	var salud := ProgressBar.new()
@@ -1190,14 +1192,19 @@ func _mostrar_detalle_clinica(detalle: VBoxContainer) -> void:
 	eterium.show_percentage = false
 	detalle.add_child(eterium)
 	PIXEL_UI_THEME.apply(eterium, false)
+	var descripcion := Label.new()
+	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	var costo := PRECIO_CLINICA_BASICA
 	var necesita_salud := vida < vida_maxima
 	var necesita_eterium := mana < mana_maximo
-	_agregar_boton_detalle(detalle, "Tratamiento · %d monedas" % PRECIO_CLINICA_BASICA, _aplicar_tratamiento_clinica.bind(false), not necesita_salud or GameState.obtener_dinero() < PRECIO_CLINICA_BASICA)
-	_agregar_boton_detalle(detalle, "Recuperación completa · %d monedas" % PRECIO_CLINICA_COMPLETA, _aplicar_tratamiento_clinica.bind(true), not (necesita_salud or necesita_eterium) or GameState.obtener_dinero() < PRECIO_CLINICA_COMPLETA)
-
-
-func _aplicar_tratamiento_clinica_completo() -> void:
-	_aplicar_tratamiento_clinica(true)
+	if tipo == "completo":
+		costo = PRECIO_CLINICA_COMPLETA
+		descripcion.text = "Una recuperación integral que restaura toda tu salud y tu reserva de Eterium."
+		_agregar_boton_detalle(detalle, "Recuperación completa · %d monedas" % costo, _aplicar_tratamiento_clinica.bind(true), not (necesita_salud or necesita_eterium) or GameState.obtener_dinero() < costo)
+	else:
+		descripcion.text = "Atención básica para cerrar parte de tus heridas. No consume Eterium."
+		_agregar_boton_detalle(detalle, "Recibir tratamiento · %d monedas" % costo, _aplicar_tratamiento_clinica.bind(false), not necesita_salud or GameState.obtener_dinero() < costo)
+	detalle.add_child(descripcion)
 
 
 func _aplicar_tratamiento_clinica(completo: bool) -> void:
@@ -1217,11 +1224,8 @@ func _aplicar_tratamiento_clinica(completo: bool) -> void:
 		return
 	if vida < vida_maxima and _jugador.has_method("heal"):
 		_jugador.call("heal", vida_maxima if completo else maxi(1, ceili(float(vida_maxima - vida) * 0.5)))
-	if completo and mana < mana_maximo:
-		if _jugador.has_method("restaurar_eterium"):
-			_jugador.call("restaurar_eterium", mana_maximo - mana)
-		elif _jugador.has_method("restaurar_estado_vital"):
-			_jugador.call("restaurar_estado_vital", int(_jugador.get("health")), true, mana_maximo)
+	if completo and mana < mana_maximo and _jugador.has_method("restaurar_eterium"):
+		_jugador.call("restaurar_eterium", mana_maximo - mana)
 	GameState.call_deferred("_ejecutar_guardado_rapido")
 	_mostrar_estado("Tratamiento completado. Ya puedes volver a la aventura.")
 	_actualizar()
