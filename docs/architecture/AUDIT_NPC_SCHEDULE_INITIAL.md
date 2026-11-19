@@ -185,3 +185,12 @@ Se añadieron comprobaciones para los diez habitantes, tres opciones por persona
 **Hallazgo importante del harness:** al revisar el test se detectó que varias funciones de comprobación estaban declaradas, pero `_ready()` no las invocaba. Por eso, las ejecuciones anteriores del test no cubrían realmente todas las reglas añadidas. Se corrigió el ejecutor para llamar explícitamente a cada bloque de regresión antes de cerrar el proceso. Las validaciones previas de CI sólo confirman los casos que el ejecutor sí ejecutaba; la suite ampliada debe considerarse pendiente hasta completar la nueva ejecución.
 
 Esta corrección es parte del trabajo de calidad: no basta con que el archivo de pruebas compile, también debe ejecutar los casos que pretende proteger.
+
+
+## 14. Séptima extracción: distribución determinista en eventos
+
+Se movió la selección del punto local de reunión a `NPCScheduleRules.obtener_desplazamiento_evento(nombre_npc, clave_evento, fecha)`. La capa `NPCScheduleSystem` conserva la consulta a `WorldAtmosphere` y construye la firma de fecha con año, día y estación; el helper sólo calcula el índice y devuelve una de las 16 posiciones existentes.
+
+Se conserva la normalización del nombre, el texto de la clave del evento, el formato de fecha y el uso de `posmod(hash(...), 16)`. No se alteran los puntos de reunión ni el calendario.
+
+La prueba comprueba estabilidad para entradas iguales, variación posible al cambiar NPC/fecha y pertenencia al catálogo exacto de 16 posiciones. No se trasladan lecturas del mundo ni estado de NPC al helper.
