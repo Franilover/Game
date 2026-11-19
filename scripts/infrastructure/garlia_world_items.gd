@@ -394,8 +394,8 @@ func _procesar_recetas(datos: Array, origen: String, guardar_cache: bool) -> voi
 	for fila in datos:
 		if fila is Dictionary:
 			nuevas.append((fila as Dictionary).duplicate(true))
-	if nuevas.is_empty():
-		print("GarliaWorldItems: no hay recetas interpretables desde ", origen, ".")
+	if nuevas.is_empty() and not datos.is_empty():
+		print("GarliaWorldItems: la respuesta de ", origen, " no contiene recetas interpretables.")
 		return
 	recetas = nuevas
 	recetas_disponibles = true
