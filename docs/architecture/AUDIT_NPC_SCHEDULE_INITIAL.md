@@ -551,3 +551,14 @@ La malla AStar, la detección de cambios de colisión, la preferencia de terreno
 Las pruebas de límites ahora consultan las dimensiones del servicio de navegación y la prueba de seguridad de movimiento ejercita la búsqueda de celda transitable a través de su API estática. Se añadió `test_npc_navigation_system.tscn` para comprobar en integración la construcción real de la malla, el cálculo de una ruta y la invalidación del servicio. La escena de límites de Torres también quedó conectada al workflow. Se conserva el catálogo de puertas en `NPCScheduleSystem`. No se modifican escenas de edificios, datos guardados ni Supabase.
 
 Validación: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44626438272](https://github.com/Franilover/Game/actions/runs/44626438272); GDScript Quality **success** en [run #44626236415](https://github.com/Franilover/Game/actions/runs/44626236415).
+
+
+## 56. Transición de salida al cambiar de edificio
+
+El bloque de salida de `_aplicar_rutina()` se extrajo a `_salir_de_edificio_para_cambiar_rutina()`. La operación cancela las animaciones y paseos interiores activos, devuelve la misma instancia al contenedor exterior, restaura las colisiones cuando el jugador ya no está dentro y limpia los metadatos del edificio anterior. La agenda conserva la decisión de cuándo ejecutar la transición y qué destino tendrá el NPC.
+
+La posición de salida ahora tiene una sola fuente: `ReinoTorres.sacar_npc_del_interior()` y su catálogo de puertas. Se eliminó el segundo cálculo desde `NPCScheduleSystem.ENTRADAS_INTERIORES`, que podía sobrescribir la posición correcta con coordenadas divergentes. Si el jugador continúa dentro, el NPC permanece oculto y sin interacción hasta la restauración exterior.
+
+La regresión `test_npc_building_entry_collision` ahora ejercita directamente la transición extraída y verifica reparentado, umbral, metadatos, visibilidad, interacción y colisiones. La primera ejecución detectó la discrepancia de coordenadas; se corrigió usando la posición autoritativa de `ReinoTorres` antes de validar.
+
+Validación final: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44628441771](https://github.com/Franilover/Game/actions/runs/44628441771); GDScript Quality **success** en [run #44628441413](https://github.com/Franilover/Game/actions/runs/44628441413).
