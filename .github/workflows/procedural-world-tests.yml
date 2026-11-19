@@ -157,6 +157,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run NPC schedule context integration test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_npc_schedule_context.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NPCScheduleContext: FAIL:' <<<"$output"; then
+            echo "NPC schedule context integration test reported errors."
+            exit 1
+          fi
+
       - name: Run local NPC catalog contract test
         shell: bash
         run: |
