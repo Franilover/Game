@@ -1509,6 +1509,33 @@ func obtener_conversaciones_npc() -> Dictionary:
 	return {}
 
 
+## Lee una sola relación entre habitantes sin copiar el registro completo de conversaciones.
+func obtener_relacion_npc_entre(clave: String) -> Dictionary:
+	var progreso_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	if not progreso_variant is Dictionary:
+		return {}
+	var relaciones_variant: Variant = (progreso_variant as Dictionary).get("_relaciones_npc", {})
+	if not relaciones_variant is Dictionary:
+		return {}
+	var relacion_variant: Variant = (relaciones_variant as Dictionary).get(clave, {})
+	return (relacion_variant as Dictionary).duplicate(true) if relacion_variant is Dictionary else {}
+
+
+## Lee los conocimientos de un habitante sin copiar los datos de los demás.
+func obtener_conocimientos_npc(personaje_id: String) -> Array:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return []
+	var progreso_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	if not progreso_variant is Dictionary:
+		return []
+	var conocimientos_variant: Variant = (progreso_variant as Dictionary).get("_conocimientos_npc", {})
+	if not conocimientos_variant is Dictionary:
+		return []
+	var lista_variant: Variant = (conocimientos_variant as Dictionary).get(id, [])
+	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
 func guardar_conversaciones_npc(progreso: Dictionary) -> void:
 	world_state.flags["conversaciones_npc"] = progreso.duplicate(true)
 	_al_cambio_guardable()
