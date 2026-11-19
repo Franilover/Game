@@ -59,16 +59,19 @@ func _run() -> void:
 	# previo antes de ser ocultado y retirado del grupo interactuable.
 	var npc_nuevo := CreatureScript.new() as Creature
 	npc_nuevo.add_to_group("torres_game_npc")
+	npc_nuevo.add_to_group("interactable")
 	add_child(npc_nuevo)
 	await get_tree().process_frame
-	npc_nuevo.remove_from_group("interactable")
 	zona.set("_interior_activo", true)
 	zona.call("registrar_npc_materializado", npc_nuevo)
 	if npc_nuevo.visible or npc_nuevo.is_in_group("interactable"):
 		errores.append("El NPC materializado durante el interior no quedó oculto.")
+	# Una segunda notificación no debe sustituir el estado original por
+	# el estado temporal (oculto y no interactuable).
+	zona.call("registrar_npc_materializado", npc_nuevo)
 	zona.call("_restaurar_npcs_exteriores", [npc_nuevo])
-	if not npc_nuevo.visible or npc_nuevo.is_in_group("interactable"):
-		errores.append("El NPC materializado recuperó un grupo interactuable que no tenía.")
+	if not npc_nuevo.visible or not npc_nuevo.is_in_group("interactable"):
+		errores.append("El registro repetido perdió la interacción original del NPC.")
 
 	# La captura original debe sobrevivir a llamadas repetidas y restaurarse
 	# al abandonar el edificio.
