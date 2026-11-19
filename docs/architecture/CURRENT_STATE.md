@@ -1040,4 +1040,9 @@ La auditoría actual continúa priorizando rendimiento y unificación del sistem
 
 ## Movimiento NPC — optimización en curso (2026-11-19)
 
-Se optimizó el descarte de NPC lejanos en la separación física: primero se compara distancia al cuadrado y sólo se calcula la raíz para candidatos dentro del radio de 34 px. Se reutilizan la dirección normalizada y el ID del NPC actual. Las pruebas ahora protegen el caso de un vecino lejano y el límite exacto del radio. Esperando CI antes de declarar el cambio validado.
+Se optimizó el descarte de NPC lejanos en la separación física: primero se compara distancia al cuadrado y sólo se calcula la raíz para candidatos dentro del radio de 34 px. Se reutilizan la dirección normalizada y el ID del NPC actual. Las pruebas ahora protegen el caso de un vecino lejano y el límite exacto del radio. Primera optimización validada: Godot 4.7 46/46 y GDScript Quality success. Segunda optimización añadida y pendiente de CI.
+
+
+## Movimiento NPC — segunda optimización (2026-11-19)
+
+La comprobación de solapamiento final ahora descarta parejas separadas usando distancia al cuadrado y sólo calcula la raíz para las que realmente necesitan corrección. Se conserva la distancia mínima de 28 px y el ajuste determinista cuando dos NPC ocupan la misma posición. Se amplió la prueba de seguridad de movimiento; CI de esta segunda modificación pendiente.
