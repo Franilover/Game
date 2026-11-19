@@ -18,6 +18,8 @@ var _clave := ""
 var _distancia := 76.0
 var _tierra: Polygon2D = null
 var _humedo := false
+var _planta_sprite: Sprite2D = null
+var _planta: Dictionary = {}
 
 
 func configurar_parcela(clave: String) -> void:
@@ -51,6 +53,9 @@ func get_interaction_priority() -> int:
 func get_interaction_text() -> String:
 	if _tipo == "pozo":
 		return "Rellenar regadera"
+	_actualizar_progreso_planta()
+	if not _planta.is_empty() and _planta_esta_madura():
+		return "Recoger flor"
 	return "Regar bancal"
 
 
@@ -59,17 +64,26 @@ func can_interact(jugador: Node) -> bool:
 		return false
 	if (jugador as Node2D).global_position.distance_to(global_position) > _distancia:
 		return false
+	if _tipo == "bancal":
+		_actualizar_progreso_planta()
+		if not _planta.is_empty() and _planta_esta_madura():
+			return true
 	var regadera := _buscar_regadera()
 	if regadera.is_empty():
 		return false
 	if _tipo == "pozo":
 		return int(regadera.get("agua", AGUA_MAXIMA)) < AGUA_MAXIMA
-	return not _humedo and int(regadera.get("agua", AGUA_MAXIMA)) > 0
+	return not _planta.is_empty() and not _humedo and int(regadera.get("agua", AGUA_MAXIMA)) > 0
 
 
 func interact(jugador: Node) -> void:
 	if not can_interact(jugador):
 		return
+	if _tipo == "bancal":
+		_actualizar_progreso_planta()
+		if not _planta.is_empty() and _planta_esta_madura():
+			_cosechar_planta()
+			return
 	var regadera := _buscar_regadera()
 	if regadera.is_empty():
 		return
@@ -150,6 +164,13 @@ func _rellenar_regadera(regadera: Dictionary) -> void:
 
 
 func _regar_bancal(regadera: Dictionary) -> void:
+	if _planta.is_empty():
+		_notificar("Primero planta una semilla en este bancal.")
+		return
+	_actualizar_progreso_planta()
+	if _humedo:
+		_notificar("La tierra todavía está húmeda.")
+		return
 	var agua := int(regadera.get("agua", 0))
 	if agua <= 0:
 		_notificar("La regadera está vacía. Busca un pozo.")
@@ -158,25 +179,152 @@ func _regar_bancal(regadera: Dictionary) -> void:
 		_notificar("No se pudo usar la regadera.")
 		return
 	_humedo = true
+	_planta["riegos"] = int(_planta.get("riegos", 0)) + 1
+	_planta["ultimo_riego_dia"] = _dia_mundo_actual()
 	_actualizar_visual()
 	_guardar_estado_parcela()
-	_notificar("Bancal regado. Agua restante: " + str(agua - 1) + "/4.")
+	_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). Agua restante: " + str(agua - 1) + "/4.")
 
 
 func _cargar_estado_parcela() -> void:
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	if estados_variant is Dictionary:
-		_humedo = bool((estados_variant as Dictionary).get(_clave, false))
+		var estado: Variant = (estados_variant as Dictionary).get(_clave, {})
+		if estado is Dictionary:
+			_planta = (estado as Dictionary).duplicate(true)
+			_humedo = bool(_planta.get("humedo", false))
+		else:
+			# Compatibilidad con partidas anteriores que guardaban solo humedad.
+			_humedo = bool(estado)
 	_actualizar_visual()
+	_actualizar_visual_planta()
 
 
 func _guardar_estado_parcela() -> void:
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	var estados: Dictionary = (estados_variant as Dictionary).duplicate(true) if estados_variant is Dictionary else {}
-	estados[_clave] = _humedo
+	if not _planta.is_empty():
+		_planta["humedo"] = _humedo
+		estados[_clave] = _planta.duplicate(true)
+	else:
+		estados.erase(_clave)
 	GameState.world_state.flags["vivero_bancales"] = estados
 	if not GameState.active_save_id.is_empty():
 		GameState.call_deferred("guardar_partida")
+
+
+
+func plantar_semilla(datos_semilla: Dictionary, inventario: Node, indice: int, jugador: Node) -> bool:
+	if _tipo != "bancal" or not is_instance_valid(jugador) or not jugador is Node2D:
+		return false
+	if (jugador as Node2D).global_position.distance_to(global_position) > _distancia:
+		return false
+	if not _planta.is_empty():
+		return false
+	var item_id := str(datos_semilla.get("item_id", datos_semilla.get("id", ""))).strip_edges()
+	var cultivos := {
+		"b1000000-0000-4000-8000-000000000001": {"flor_id":"6791be24-76b2-415e-8726-5838cc4343e8","sprite":"res://assets/art/props/Flor Azul.png","nombre":"Flor Azul"},
+		"b1000000-0000-4000-8000-000000000002": {"flor_id":"222f21a0-21f6-4a35-8239-862c6e072f2e","sprite":"res://assets/art/props/Flor Morada.png","nombre":"Flor Morada"},
+		"b1000000-0000-4000-8000-000000000003": {"flor_id":"1906b182-d6b4-44ec-ba6e-cb36f5f81a3d","sprite":"res://assets/art/props/Flor Verdel.png","nombre":"Flor Verde"}
+	}
+	if not cultivos.has(item_id):
+		return false
+	if not is_instance_valid(inventario) or not inventario.has_method("inventory_controller"):
+		pass
+	var controlador: Variant = inventario.get("inventory_controller")
+	if not is_instance_valid(controlador) or not controlador.has_method("quitar_cantidad_desde_ui"):
+		return false
+	if not bool(controlador.call("quitar_cantidad_desde_ui", indice, 1)):
+		return false
+	var cultivo: Dictionary = cultivos[item_id]
+	_planta = {
+		"semilla_item_id": item_id,
+		"item_cosecha_id": str(cultivo["flor_id"]),
+		"sprite": str(cultivo["sprite"]),
+		"nombre": str(cultivo["nombre"]),
+		"dia_plantado": _dia_mundo_actual(),
+		"ultimo_riego_dia": -1,
+		"riegos": 0,
+		"humedo": false
+	}
+	_humedo = false
+	_actualizar_visual_planta()
+	_guardar_estado_parcela()
+	_notificar("Plantaste " + str(cultivo["nombre"]) + ". Riégala durante dos días para que crezca.")
+	return true
+
+
+func _dia_mundo_actual() -> int:
+	var contexto := get_tree().root.get_node_or_null("Main/Systems/WorldContext")
+	if is_instance_valid(contexto) and contexto.has_method("obtener_tiempo"):
+		var tiempo: Variant = contexto.call("obtener_tiempo")
+		if tiempo is Dictionary:
+			return int((tiempo as Dictionary).get("anio", 0)) * 1000 + int((tiempo as Dictionary).get("dia", 1))
+	return int(GameState.world_state.elapsed_time / 720.0)
+
+
+func _actualizar_progreso_planta() -> void:
+	if _planta.is_empty():
+		return
+	var dia := _dia_mundo_actual()
+	var ultimo_riego := int(_planta.get("ultimo_riego_dia", -1))
+	if _humedo and dia > ultimo_riego:
+		_humedo = false
+		_planta["humedo"] = false
+		_guardar_estado_parcela()
+		_actualizar_visual()
+
+
+func _planta_esta_madura() -> bool:
+	if _planta.is_empty():
+		return false
+	var dias := _dia_mundo_actual() - int(_planta.get("dia_plantado", 0))
+	return dias >= 2 and int(_planta.get("riegos", 0)) >= 2
+
+
+func _actualizar_visual_planta() -> void:
+	if not is_instance_valid(_planta_sprite):
+		_planta_sprite = get_node_or_null("Planta") as Sprite2D
+	if _planta.is_empty():
+		if is_instance_valid(_planta_sprite):
+			_planta_sprite.queue_free()
+			_planta_sprite = null
+		return
+	if not is_instance_valid(_planta_sprite):
+		_planta_sprite = Sprite2D.new()
+		_planta_sprite.name = "Planta"
+		_planta_sprite.position = Vector2(0, -13)
+		_planta_sprite.z_index = 3
+		_planta_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		add_child(_planta_sprite)
+	var textura := load(str(_planta.get("sprite", ""))) as Texture2D
+	_planta_sprite.texture = textura
+	_planta_sprite.visible = textura != null
+
+
+func _cosechar_planta() -> void:
+	var inventario := get_tree().get_first_node_in_group("inventory")
+	if not is_instance_valid(inventario) or not inventario.has_method("agregar_objeto_desde_ui"):
+		_notificar("No se pudo acceder al inventario.")
+		return
+	var item_id := str(_planta.get("item_cosecha_id", ""))
+	var world_items := get_tree().get_first_node_in_group("world_items")
+	var objeto: Dictionary = {}
+	if is_instance_valid(world_items) and world_items.has_method("buscar_item_por_id"):
+		objeto = world_items.call("buscar_item_por_id", item_id)
+	if objeto.is_empty():
+		_notificar("No se encontró la flor en el catálogo de objetos.")
+		return
+	if not bool(inventario.call("agregar_objeto_desde_ui", objeto)):
+		_notificar("No tienes espacio para recoger la flor.")
+		return
+	var nombre := str(_planta.get("nombre", "flor"))
+	_planta.clear()
+	_humedo = false
+	_actualizar_visual_planta()
+	_actualizar_visual()
+	_guardar_estado_parcela()
+	_notificar("Recogiste " + nombre + ".")
 
 
 func _actualizar_visual() -> void:
