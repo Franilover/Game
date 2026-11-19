@@ -165,6 +165,52 @@ func agregar_objeto(datos: Dictionary) -> bool:
 	_debug_call("flujo_ok", ["Objeto insertado en inventario.", {"restante": 0}])
 	return true
 
+
+## Ejecuta una receta sobre una copia aislada y confirma todos los cambios juntos.
+## Los ingredientes se consumen antes de insertar el resultado para permitir
+## reutilizar los slots liberados; cualquier fallo descarta la propuesta completa.
+func fabricar(ingredientes: Array, resultado: Dictionary) -> bool:
+	if ingredientes.is_empty() or resultado.is_empty():
+		return false
+
+	var propuesta := InventoryRuntime.new()
+	propuesta.establecer_items(state.items)
+
+	for ingrediente_variant in ingredientes:
+		if not ingrediente_variant is Dictionary:
+			return false
+		var ingrediente := ingrediente_variant as Dictionary
+		var item_id := str(ingrediente.get("item_id", "")).strip_edges()
+		var cantidad := int(ingrediente.get("cantidad", 0))
+		if item_id.is_empty() or cantidad <= 0:
+			return false
+
+		var restante := cantidad
+		for indice in range(propuesta.state.items.size()):
+			if restante <= 0:
+				break
+			var objeto := propuesta.obtener_item(indice)
+			if objeto.is_empty():
+				continue
+			var identidad := str(objeto.get("item_id", "")).strip_edges()
+			if identidad.is_empty():
+				identidad = str(objeto.get("id", "")).strip_edges()
+			if identidad != item_id:
+				continue
+			var disponible := maxi(1, int(objeto.get("cantidad", 1)))
+			var retirar := mini(restante, disponible)
+			if not propuesta.quitar_cantidad(indice, retirar):
+				return false
+			restante -= retirar
+		if restante > 0:
+			return false
+
+	if not propuesta.agregar_objeto(resultado):
+		return false
+
+	state.items = propuesta.state.items
+	return true
+
 func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
 	if indice < 0 or indice >= state.items.size() or state.items[indice].is_empty():
 		return false
