@@ -5,6 +5,7 @@ const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const MENU_LAYOUT = preload("res://scripts/ui/menu_layout.gd")
 const ITEM_ICON_RESOLVER = preload("res://scripts/ui/item_icon_resolver.gd")
 const BARRACKS_TRAINING_SCRIPT = preload("res://scripts/gameplay/barracks_training_session.gd")
+const ENCYCLOPEDIA_UI_SCRIPT = preload("res://scripts/ui/encyclopedia.gd")
 
 const ITEM_MADERA := "768a51e5-e34b-4f11-92e7-a6e7dd3bf55c"
 const ITEM_PIEDRA_MEDIANA := "0117d138-51ff-4b1b-a317-f8318bf161fa"
@@ -15,6 +16,8 @@ const PRECIO_REPARACION_BRUNA := 15
 const PRECIO_LICENCIA_ESPADA := 50
 const PRECIO_ESPADA_MADERA := 30
 const PRECIO_ESPADA_PIEDRA := 60
+const PRECIO_CLINICA_BASICA := 12
+const PRECIO_CLINICA_COMPLETA := 25
 
 const CATALOGO_CARPINTERIA: Array[Dictionary] = [
 	{"id":"silla", "nombre":"Silla", "madera":2, "precio":8},
@@ -35,6 +38,9 @@ var _jugador_input_previo := true
 var _jugador_unhandled_previo := true
 var _herramienta_seleccionada := -1
 var _bancal_seleccionado := "BancalOeste"
+var _seccion_biblioteca := "criaturas"
+var _seccion_expedicion := "primera_expedicion"
+signal solicitar_selector_expediciones
 
 
 func configurar(tipo: String, inventario: InventoryController, world_items: GarliaWorldItems, jugador: Node = null) -> void:
@@ -121,6 +127,9 @@ func _actualizar() -> void:
 			"herbolario_investigacion": titulo.text = "INVESTIGACIÓN BOTÁNICA"
 			"herbolario_procesamiento": titulo.text = "PROCESAMIENTO BOTÁNICO"
 			"herbolario": titulo.text = "HERBOLARIO"
+			"biblioteca": titulo.text = "BIBLIOTECA"
+			"centro_expediciones": titulo.text = "CENTRO DE EXPEDICIONES"
+			"clinica": titulo.text = "CLÍNICA"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
 
@@ -140,6 +149,9 @@ func _actualizar() -> void:
 		"herbolario_investigacion": _construir_investigacion_herbolario()
 		"herbolario_procesamiento": _construir_procesamiento_herbolario()
 		"herbolario": _construir_investigacion_herbolario()
+		"biblioteca": _construir_biblioteca()
+		"centro_expediciones": _construir_centro_expediciones()
+		"clinica": _construir_clinica()
 
 	if _tipo in ["cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
 		var volver := Button.new()
@@ -947,6 +959,280 @@ func _es_muestra_botanica(objeto: Dictionary) -> bool:
 		if identidad.contains(termino):
 			return true
 	return false
+
+func _crear_selector_edificio(ancho_lista: float = 148.0, alto: float = 250.0) -> Dictionary:
+	_panel.custom_minimum_size = Vector2(610.0, 0.0)
+	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, ancho_lista, alto, 8)
+	_aplicar_fondo_seccion_boton(layout["list_panel"] as PanelContainer)
+	_aplicar_fondo_seccion_boton(layout["detail_panel"] as PanelContainer)
+	return layout
+
+
+func _agregar_opcion_selector(lista: GridContainer, texto: String, seleccionado: bool, accion: Callable) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(0.0, 48.0)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.toggle_mode = true
+	boton.button_pressed = seleccionado
+	boton.pressed.connect(accion)
+	lista.add_child(boton)
+	PIXEL_UI_THEME.apply(boton, false)
+	return boton
+
+
+func _limpiar_detalle(detalle: VBoxContainer) -> void:
+	for hijo in detalle.get_children():
+		detalle.remove_child(hijo)
+		hijo.queue_free()
+
+
+func _agregar_titulo_detalle(detalle: VBoxContainer, texto: String) -> void:
+	var titulo := Label.new()
+	titulo.text = texto
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	titulo.add_theme_font_size_override("font_size", 16)
+	detalle.add_child(titulo)
+
+
+func _agregar_boton_detalle(detalle: VBoxContainer, texto: String, accion: Callable, deshabilitado: bool = false) -> Button:
+	var boton := Button.new()
+	boton.text = texto
+	boton.custom_minimum_size = Vector2(0.0, 38.0)
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.disabled = deshabilitado
+	boton.pressed.connect(accion)
+	detalle.add_child(boton)
+	PIXEL_UI_THEME.apply(boton, false)
+	return boton
+
+
+func _construir_biblioteca() -> void:
+	_agregar_texto("Consulta los registros que has reunido durante tus viajes. Cada descubrimiento amplía el archivo de Torres.")
+	var layout := _crear_selector_edificio(142.0, 270.0)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	var categorias := [
+		{"id":"criaturas", "nombre":"Criaturas", "descripcion":"Especies y seres que has encontrado."},
+		{"id":"biomas", "nombre":"Biomas", "descripcion":"Regiones naturales registradas."},
+		{"id":"ecosistemas", "nombre":"Ecosistemas", "descripcion":"Comunidades y relaciones ambientales."},
+		{"id":"habitats", "nombre":"Hábitats", "descripcion":"Lugares donde viven las criaturas."}
+	]
+	for categoria in categorias:
+		var id := str(categoria.get("id", ""))
+		var cantidad := _contar_descubrimientos(id)
+		var boton := _agregar_opcion_selector(lista, "%s\n%d" % [str(categoria.get("nombre", id)), cantidad], id == _seccion_biblioteca, _seleccionar_seccion_biblioteca.bind(id, detalle))
+		boton.custom_minimum_size = Vector2(0.0, 58.0)
+	_mostrar_detalle_biblioteca(_seccion_biblioteca, detalle)
+	_agregar_texto("Los registros se actualizan automáticamente cuando descubres algo nuevo.")
+
+
+func _contar_descubrimientos(categoria: String) -> int:
+	var registros: Dictionary = GameState.obtener_descubrimientos_mundo()
+	var valor: Variant = registros.get(categoria, {})
+	if valor is Dictionary:
+		return (valor as Dictionary).size()
+	if valor is Array:
+		return (valor as Array).size()
+	return 0
+
+
+func _seleccionar_seccion_biblioteca(id: String, detalle: VBoxContainer) -> void:
+	_seccion_biblioteca = id
+	_mostrar_detalle_biblioteca(id, detalle)
+
+
+func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	var nombres := {"criaturas":"Criaturas", "biomas":"Biomas", "ecosistemas":"Ecosistemas", "habitats":"Hábitats"}
+	var descripciones := {
+		"criaturas":"Consulta las criaturas que has conocido y sus fichas disponibles.",
+		"biomas":"Revisa las regiones naturales que ya forman parte de tus mapas.",
+		"ecosistemas":"Estudia las comunidades que has encontrado y sus relaciones.",
+		"habitats":"Consulta los hábitats registrados durante la exploración."
+	}
+	_agregar_titulo_detalle(detalle, str(nombres.get(id, "Archivo")))
+	var cantidad := Label.new()
+	cantidad.text = "%d registros descubiertos" % _contar_descubrimientos(id)
+	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalle.add_child(cantidad)
+	var descripcion := Label.new()
+	descripcion.text = str(descripciones.get(id, "Registros de exploración."))
+	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.add_child(descripcion)
+	var avance := ProgressBar.new()
+	avance.min_value = 0
+	avance.max_value = maxf(1.0, float(_contar_descubrimientos(id)))
+	avance.value = _contar_descubrimientos(id)
+	avance.show_percentage = false
+	avance.custom_minimum_size.y = 12
+	detalle.add_child(avance)
+	PIXEL_UI_THEME.apply(avance, false)
+	_agregar_boton_detalle(detalle, "Abrir enciclopedia", _abrir_enciclopedia)
+
+
+func _abrir_enciclopedia() -> void:
+	if get_tree().get_first_node_in_group("encyclopedia_modal") != null:
+		return
+	var capa := CanvasLayer.new()
+	capa.name = "BibliotecaEnciclopedia"
+	capa.layer = 90
+	capa.add_to_group("encyclopedia_modal")
+	var fondo := ColorRect.new()
+	fondo.color = Color(0.025, 0.02, 0.015, 0.88)
+	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	capa.add_child(fondo)
+	var margen := MarginContainer.new()
+	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	margen.add_theme_constant_override("margin_left", 18)
+	margen.add_theme_constant_override("margin_top", 18)
+	margen.add_theme_constant_override("margin_right", 18)
+	margen.add_theme_constant_override("margin_bottom", 18)
+	fondo.add_child(margen)
+	var columna := VBoxContainer.new()
+	margen.add_child(columna)
+	var cerrar := Button.new()
+	cerrar.text = "Volver a la Biblioteca"
+	cerrar.custom_minimum_size.y = 34
+	cerrar.pressed.connect(capa.queue_free)
+	columna.add_child(cerrar)
+	PIXEL_UI_THEME.apply(cerrar, false)
+	var enciclopedia := ENCYCLOPEDIA_UI_SCRIPT.new() as Control
+	enciclopedia.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	enciclopedia.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columna.add_child(enciclopedia)
+	get_tree().root.add_child(capa)
+
+
+func _construir_centro_expediciones() -> void:
+	_agregar_texto("Prepara tus salidas, revisa lo que has descubierto y elige tu próximo destino.")
+	var layout := _crear_selector_edificio(160.0, 260.0)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	_agregar_opcion_selector(lista, "Primera\nexpedición", _seccion_expedicion == "primera_expedicion", _seleccionar_seccion_expedicion.bind("primera_expedicion", detalle))
+	_agregar_opcion_selector(lista, "Rutas\ny destinos", _seccion_expedicion == "rutas", _seleccionar_seccion_expedicion.bind("rutas", detalle))
+	_agregar_opcion_selector(lista, "Bitácora", _seccion_expedicion == "bitacora", _seleccionar_seccion_expedicion.bind("bitacora", detalle))
+	_mostrar_detalle_expedicion(_seccion_expedicion, detalle)
+
+
+func _seleccionar_seccion_expedicion(id: String, detalle: VBoxContainer) -> void:
+	_seccion_expedicion = id
+	_mostrar_detalle_expedicion(id, detalle)
+
+
+func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	match id:
+		"primera_expedicion":
+			_agregar_titulo_detalle(detalle, "Primera expedición")
+			var finalizada := _primera_expedicion_finalizada()
+			var estado := Label.new()
+			estado.text = "Esta salida ya fue completada." if finalizada else "Hay una ruta de iniciación disponible. Prepara tus Garumis y lleva espacio para los materiales que encuentres."
+			estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			detalle.add_child(estado)
+			_agregar_boton_detalle(detalle, "Ver destinos y salir", _solicitar_selector_expediciones, finalizada)
+		"rutas":
+			_agregar_titulo_detalle(detalle, "Rutas y destinos")
+			var destinos := Label.new()
+			destinos.text = "Desde aquí puedes volver a Torres, salir al Mundo Abierto o iniciar la Primera Expedición cuando esté disponible."
+			destinos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			detalle.add_child(destinos)
+			_agregar_boton_detalle(detalle, "Abrir selector de viajes", _solicitar_selector_expediciones)
+		"bitacora":
+			_agregar_titulo_detalle(detalle, "Bitácora de campo")
+			var resumen := Label.new()
+			resumen.text = "Criaturas: %d\nBiomas: %d\nEcosistemas: %d\nHábitats: %d" % [
+				_contar_descubrimientos("criaturas"), _contar_descubrimientos("biomas"),
+				_contar_descubrimientos("ecosistemas"), _contar_descubrimientos("habitats")
+			]
+			detalle.add_child(resumen)
+			_agregar_boton_detalle(detalle, "Consultar registros", _abrir_enciclopedia)
+
+
+func _construir_clinica() -> void:
+	_agregar_texto("Atención para viajeros y sus compañeros. Recupera fuerzas antes de volver a explorar.")
+	var layout := _crear_selector_edificio(150.0, 250.0)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	_agregar_opcion_selector(lista, "Estado", true, _mostrar_detalle_clinica.bind(detalle))
+	_agregar_opcion_selector(lista, "Tratamiento", false, _mostrar_detalle_clinica.bind(detalle))
+	_mostrar_detalle_clinica(detalle)
+
+
+func _mostrar_detalle_clinica(detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	_agregar_titulo_detalle(detalle, "Estado de salud")
+	if not is_instance_valid(_jugador) or not bool(_jugador.get("is_alive")):
+		var sin_jugador := Label.new()
+		sin_jugador.text = "No se encontró un paciente disponible."
+		detalle.add_child(sin_jugador)
+		return
+	var vida := int(_jugador.get("health"))
+	var vida_maxima := maxi(1, int(_jugador.get("max_health")))
+	var mana := int(_jugador.get("mana"))
+	var mana_maximo := maxi(1, int(_jugador.get("max_mana")))
+	var estado := Label.new()
+	estado.text = "Salud · %d / %d\nEterium · %d / %d" % [vida, vida_maxima, mana, mana_maximo]
+	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalle.add_child(estado)
+	var salud := ProgressBar.new()
+	salud.min_value = 0
+	salud.max_value = vida_maxima
+	salud.value = vida
+	salud.show_percentage = false
+	detalle.add_child(salud)
+	PIXEL_UI_THEME.apply(salud, false)
+	var eterium := ProgressBar.new()
+	eterium.min_value = 0
+	eterium.max_value = mana_maximo
+	eterium.value = mana
+	eterium.show_percentage = false
+	detalle.add_child(eterium)
+	PIXEL_UI_THEME.apply(eterium, false)
+	var necesita_salud := vida < vida_maxima
+	var necesita_eterium := mana < mana_maximo
+	_agregar_boton_detalle(detalle, "Tratamiento · %d monedas" % PRECIO_CLINICA_BASICA, _aplicar_tratamiento_clinica.bind(false), not necesita_salud or GameState.obtener_dinero() < PRECIO_CLINICA_BASICA)
+	_agregar_boton_detalle(detalle, "Recuperación completa · %d monedas" % PRECIO_CLINICA_COMPLETA, _aplicar_tratamiento_clinica.bind(true), not (necesita_salud or necesita_eterium) or GameState.obtener_dinero() < PRECIO_CLINICA_COMPLETA)
+
+
+func _aplicar_tratamiento_clinica_completo() -> void:
+	_aplicar_tratamiento_clinica(true)
+
+
+func _aplicar_tratamiento_clinica(completo: bool) -> void:
+	if not is_instance_valid(_jugador) or not bool(_jugador.get("is_alive")):
+		_mostrar_estado("No hay un paciente disponible.")
+		return
+	var vida := int(_jugador.get("health"))
+	var vida_maxima := maxi(1, int(_jugador.get("max_health")))
+	var mana := int(_jugador.get("mana"))
+	var mana_maximo := maxi(1, int(_jugador.get("max_mana")))
+	var costo := PRECIO_CLINICA_COMPLETA if completo else PRECIO_CLINICA_BASICA
+	if vida >= vida_maxima and (not completo or mana >= mana_maximo):
+		_mostrar_estado("No necesitas tratamiento.")
+		return
+	if GameState.obtener_dinero() < costo or not GameState.modificar_dinero(-costo):
+		_mostrar_estado("No tienes suficientes monedas.")
+		return
+	if vida < vida_maxima and _jugador.has_method("heal"):
+		_jugador.call("heal", vida_maxima if completo else maxi(1, ceili(float(vida_maxima - vida) * 0.5)))
+	if completo and mana < mana_maximo:
+		if _jugador.has_method("restaurar_eterium"):
+			_jugador.call("restaurar_eterium", mana_maximo - mana)
+		elif _jugador.has_method("restaurar_estado_vital"):
+			_jugador.call("restaurar_estado_vital", int(_jugador.get("health")), true, mana_maximo)
+	GameState.call_deferred("_ejecutar_guardado_rapido")
+	_mostrar_estado("Tratamiento completado. Ya puedes volver a la aventura.")
+	_actualizar()
+
+
+func _primera_expedicion_finalizada() -> bool:
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("_primera_expedicion_finalizada"):
+		return false
+	return bool(zone_manager.call("_primera_expedicion_finalizada"))
+
 
 func _construir_menu_cuartel() -> void:
 	_agregar_opcion_menu_cuartel(
