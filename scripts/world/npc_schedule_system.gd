@@ -1183,12 +1183,21 @@ func _obtener_rutina_encuentro_trio(
 		var progreso_variant: Variant = GameState.call("obtener_conversaciones_npc")
 		if progreso_variant is Dictionary:
 			progreso = progreso_variant
+	# Resuelve los tres participantes en un solo recorrido del grupo.
+	# Se conserva el primer NPC válido encontrado para cada nombre, igual que
+	# _buscar_npc_por_nombre(), y después se valida su estado de vida.
 	var participantes: Dictionary = {}
+	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+			continue
+		var candidato := candidato_variant as Creature
+		var nombre_candidato := candidato.get_nombre_visual().strip_edges().to_lower()
+		if nombre_candidato in nombres and not participantes.has(nombre_candidato):
+			participantes[nombre_candidato] = candidato
 	for nombre in nombres:
-		var participante := _buscar_npc_por_nombre(nombre)
+		var participante: Creature = participantes.get(nombre) as Creature
 		if not is_instance_valid(participante) or not participante.is_alive:
 			return {}
-		participantes[nombre] = participante
 	var pares: Array[Array] = [["mara", "ivo"], ["mara", "nima"], ["ivo", "nima"]]
 	var relaciones: Array[Dictionary] = []
 	for par in pares:
