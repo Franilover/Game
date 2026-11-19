@@ -24,9 +24,9 @@ signal objeto_recogido(datos: Dictionary)
 signal drops_generados(drops: Array)
 
 
-var _request: HTTPRequest
-var _request_drops: HTTPRequest
-var _request_recetas: HTTPRequest
+var _request_id_catalogo: int = -1
+var _request_id_recetas: int = -1
+var _request_id_drops: int = -1
 var _timer_actualizacion_catalogos: Timer
 
 var _cargando: bool = false
@@ -79,21 +79,9 @@ func configurar_dependencias(jugador: Player, inventario: GarliaInventory, entit
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 
-	_request = HTTPRequest.new()
-	_request.timeout = HTTP_TIMEOUT
-	add_child(_request)
-	_request.request_completed.connect(_al_recibir_catalogo)
+	if not SupabaseClient.request_completed.is_connected(_al_respuesta_catalogos):
+		SupabaseClient.request_completed.connect(_al_respuesta_catalogos)
 	catalogo_cargado.connect(_al_catalogo_disponible_para_drops)
-
-	_request_drops = HTTPRequest.new()
-	_request_drops.timeout = HTTP_TIMEOUT
-	add_child(_request_drops)
-	_request_drops.request_completed.connect(_al_recibir_drops)
-
-	_request_recetas = HTTPRequest.new()
-	_request_recetas.timeout = HTTP_TIMEOUT
-	add_child(_request_recetas)
-	_request_recetas.request_completed.connect(_al_recibir_recetas)
 
 	_cargar_catalogo_local()
 	_cargar_recetas_local()
@@ -152,24 +140,12 @@ func cargar_catalogo() -> void:
 		+ ")"
 	)
 
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-
-	print("GarliaWorldItems: cargando catálogo público...")
-
-	var resultado := _request.request(
-		url,
-		headers,
-		HTTPClient.METHOD_GET
-	)
-
-	if resultado != OK:
+	var consulta := url.substr(url.find("?") + 1)
+	print("GarliaWorldItems: cargando catálogo público mediante SupabaseClient...")
+	_request_id_catalogo = SupabaseClient.get_rest("items_game", consulta)
+	if _request_id_catalogo < 0:
 		_cargando = false
-		var mensaje := "Error iniciando consulta de items_game: " + str(resultado)
-		print("GarliaWorldItems: ", mensaje)
-		_cargar_catalogo_reintentando(mensaje)
+		_cargar_catalogo_reintentando("SupabaseClient no pudo iniciar la consulta de items_game.")
 
 
 func _cargar_catalogo_reintentando(mensaje: String) -> void:
@@ -186,6 +162,24 @@ func _cargar_catalogo_reintentando(mensaje: String) -> void:
 	await get_tree().create_timer(CATALOG_RETRY_DELAY).timeout
 	if is_inside_tree() and not _cargando:
 		cargar_catalogo()
+
+
+func _al_respuesta_catalogos(
+	request_id: int,
+	resultado: int,
+	response_code: int,
+	headers: PackedStringArray,
+	body: PackedByteArray
+) -> void:
+	if request_id == _request_id_catalogo:
+		_request_id_catalogo = -1
+		_al_recibir_catalogo(resultado, response_code, headers, body)
+	elif request_id == _request_id_recetas:
+		_request_id_recetas = -1
+		_al_recibir_recetas(resultado, response_code, headers, body)
+	elif request_id == _request_id_drops:
+		_request_id_drops = -1
+		_al_recibir_drops(resultado, response_code, headers, body)
 
 
 func _al_recibir_catalogo(
@@ -350,18 +344,11 @@ func cargar_recetas() -> void:
 		return
 	_cargando_recetas = true
 	_intentos_recetas += 1
-	var url := str(GarliaAuth.SUPABASE_URL) + "/rest/v1/recetas_game?select=id,nombre,descripcion,categoria,ingredientes,resultado,propiedades&order=nombre.asc"
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-	var access_token: String = GarliaAuth.access_token
-	if not access_token.is_empty():
-		headers.append("Authorization: Bearer " + access_token)
-	var resultado := _request_recetas.request(url, headers, HTTPClient.METHOD_GET)
-	if resultado != OK:
+	var consulta := "select=id,nombre,descripcion,categoria,ingredientes,resultado,propiedades&order=nombre.asc"
+	_request_id_recetas = SupabaseClient.get_rest("recetas_game", consulta)
+	if _request_id_recetas < 0:
 		_cargando_recetas = false
-		_reintentar_recetas("no se pudo iniciar solicitud: " + str(resultado))
+		_reintentar_recetas("SupabaseClient no pudo iniciar la consulta de recetas.")
 
 
 func _cargar_recetas_local() -> void:
@@ -498,15 +485,10 @@ func cargar_drops() -> void:
 		return
 	_cargando_drops = true
 	_intentos_catalogo_drops += 1
-	var url := str(GarliaAuth.SUPABASE_URL) + "/rest/v1/criatura_drops?select=criatura_id,item_id,probabilidad"
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-	var resultado := _request_drops.request(url, headers, HTTPClient.METHOD_GET)
-	if resultado != OK:
+	_request_id_drops = SupabaseClient.get_rest("criatura_drops", "select=criatura_id,item_id,probabilidad")
+	if _request_id_drops < 0:
 		_cargando_drops = false
-		_reintentar_catalogo_drops("no se pudo iniciar la consulta: " + str(resultado))
+		_reintentar_catalogo_drops("SupabaseClient no pudo iniciar la consulta de drops.")
 
 
 func _cargar_drops_local() -> void:
