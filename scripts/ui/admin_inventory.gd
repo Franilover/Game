@@ -323,7 +323,7 @@ func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
 		if clave.contains("/") or clave.contains("\\"):
 			continue
 		for extension in [".png", ".PNG"]:
-			var ruta := "res://assets/art/characters/" + clave + extension
+			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
 			if not ResourceLoader.exists(ruta):
 				continue
 			var textura := load(ruta) as Texture2D
