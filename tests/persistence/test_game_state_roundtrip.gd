@@ -108,10 +108,22 @@ func _run() -> void:
 	var conocimientos_nima: Array = conocimientos_guardados.get("nima", [])
 	conocimientos_nima.append({"clave": "noticia_prueba", "tipo": "noticia", "compartible": true, "privacidad": "publica"})
 	conocimientos_guardados["nima"] = conocimientos_nima
+	var conocimientos_ivo_guardados: Array = conocimientos_guardados.get("ivo", [])
+	if conocimientos_ivo_guardados.size() > 1:
+		(conocimientos_ivo_guardados[1] as Dictionary)["permiso_transmision"] = false
+	conocimientos_guardados["ivo"] = conocimientos_ivo_guardados
 	conversaciones["_conocimientos_npc"] = conocimientos_guardados
 	destino.guardar_conversaciones_npc(conversaciones)
 	if relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
-		errores.append("Consideró nueva una noticia que el destinatario ya conoce.")
+		errores.append("Consideró nueva una noticia que el destinatario ya conoce sin otro dato transmisible.")
+	conocimientos_ivo_guardados = destino.obtener_conversaciones_npc().get("_conocimientos_npc", {}).get("ivo", [])
+	if conocimientos_ivo_guardados.size() > 1:
+		(conocimientos_ivo_guardados[1] as Dictionary)["permiso_transmision"] = true
+	conversaciones = destino.obtener_conversaciones_npc()
+	conocimientos_guardados = conversaciones.get("_conocimientos_npc", {})
+	conocimientos_guardados["ivo"] = conocimientos_ivo_guardados
+	conversaciones["_conocimientos_npc"] = conocimientos_guardados
+	destino.guardar_conversaciones_npc(conversaciones)
 	if not relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
 		errores.append("No reconoció el conocimiento privado autorizado con confianza suficiente.")
 	conversaciones = destino.obtener_conversaciones_npc()
