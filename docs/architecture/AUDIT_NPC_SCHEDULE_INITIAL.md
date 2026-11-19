@@ -271,3 +271,9 @@ Ahora obtiene una única instantánea del grupo antes de probar los puntos y reu
 Ahora cada influencia direccional se calcula una vez y se pasa a `_puede_iniciar_encuentro_social()`; el valor calculado también alimenta la puntuación final (pesos 0.7 para quien inicia y 0.45 para el candidato). Se conserva el orden de evaluación y el cortocircuito: si el iniciador no cumple el requisito, no se consulta la memoria del candidato; con un motivo concreto, la memoria se consulta sólo después de que ambos superan la validación, igual que antes para la puntuación.
 
 No se cachean recuerdos entre candidatos ni entre ciclos. Cada decisión usa el estado actual del sistema de relaciones.
+
+## 22. Reutilización diferida de motivos sociales
+
+En la selección de compañeros, la dirección del NPC que inicia el encuentro ahora conserva los resultados de sus consultas de promesas, asuntos pendientes y noticias compartibles. Si una promesa ya constituye un motivo concreto, se mantiene el cortocircuito original y no se consultan todavía los otros dos indicadores. Si el candidato supera los requisitos bilaterales, se completan únicamente los indicadores que faltan y se reutilizan para la puntuación (+16 promesa, +12 asunto, +8 noticia). Si el candidato se descarta, no se realizan consultas que antes sólo ocurrían durante la puntuación.
+
+La dirección inversa sigue usando la comprobación original de motivo concreto y su orden de prioridad. No se guardan resultados entre candidatos ni entre ciclos. El cambio evita repetir consultas de la dirección principal y mantiene la evaluación diferida de datos que sólo afectan a la puntuación.
