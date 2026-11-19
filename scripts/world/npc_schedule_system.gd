@@ -2721,27 +2721,22 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
 	var anio_actual := int(tiempo.get("anio", 0))
 	var dia_actual := int(tiempo.get("dia", 1))
-	var anio_objetivo := int(invitacion.get("anio", -1))
-	var dia_objetivo := int(invitacion.get("dia", -1))
-	if anio_actual > anio_objetivo or (anio_actual == anio_objetivo and dia_actual > dia_objetivo):
+	var evaluacion := NPC_SCHEDULE_RULES.evaluar_invitacion_npc(
+		invitacion,
+		anio_actual,
+		dia_actual,
+		minutos
+	)
+	if bool(evaluacion.get("caducada", false)):
 		invitacion["estado"] = "caducada"
 		invitaciones[personaje_id] = invitacion
 		GameState.world_state.flags["invitaciones_npc"] = invitaciones
 		if GameState.has_method("guardar_partida"):
 			GameState.call_deferred("guardar_partida")
 		return {}
-	if (
-		anio_objetivo != anio_actual
-		or dia_objetivo != dia_actual
-		or str(invitacion.get("estado", "")) != "aceptada"
-	):
+	if not bool(evaluacion.get("activa", false)):
 		return {}
-	var hora_inicio := float(invitacion.get("hora_inicio", 17.0))
-	var hora_fin := float(invitacion.get("hora_fin", 19.0))
-	var hora_actual := float(minutos) / 60.0
-	if hora_actual < hora_inicio or hora_actual >= hora_fin:
-		return {}
-	var ubicacion := str(invitacion.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
+	var ubicacion := str(evaluacion.get("ubicacion_clave", "plaza"))
 	if not POSICIONES.has(ubicacion):
 		ubicacion = "plaza"
 	npc.set_meta("invitacion_npc_activa", true)
