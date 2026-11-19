@@ -1019,6 +1019,7 @@ func _construir_biblioteca() -> void:
 	var detalle := layout["detail_content"] as VBoxContainer
 	var categorias := [
 		{"id":"criaturas", "nombre":"Criaturas", "descripcion":"Especies y seres que has encontrado."},
+		{"id":"garumis", "nombre":"Garumis", "descripcion":"Linajes, especies y registros del Garudex."},
 		{"id":"biomas", "nombre":"Biomas", "descripcion":"Regiones naturales registradas."},
 		{"id":"ecosistemas", "nombre":"Ecosistemas", "descripcion":"Comunidades y relaciones ambientales."},
 		{"id":"habitats", "nombre":"Hábitats", "descripcion":"Lugares donde viven las criaturas."}
@@ -1049,9 +1050,10 @@ func _seleccionar_seccion_biblioteca(id: String, detalle: VBoxContainer) -> void
 
 func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	_limpiar_detalle(detalle)
-	var nombres := {"criaturas":"Criaturas", "biomas":"Biomas", "ecosistemas":"Ecosistemas", "habitats":"Hábitats"}
+	var nombres := {"criaturas":"Criaturas", "garumis":"Garumis", "biomas":"Biomas", "ecosistemas":"Ecosistemas", "habitats":"Hábitats"}
 	var descripciones := {
 		"criaturas":"Consulta las criaturas que has conocido y sus fichas disponibles.",
+		"garumis":"Consulta los linajes y especies de Garumis registrados en el Garudex.",
 		"biomas":"Revisa las regiones naturales que ya forman parte de tus mapas.",
 		"ecosistemas":"Estudia las comunidades que has encontrado y sus relaciones.",
 		"habitats":"Consulta los hábitats registrados durante la exploración."
@@ -1069,7 +1071,7 @@ func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	nota.text = "Los registros se amplían con cada descubrimiento."
 	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(nota)
-	_agregar_boton_detalle(detalle, "Abrir enciclopedia", _abrir_enciclopedia.bind(id))
+	_agregar_boton_detalle(detalle, "Abrir Garudex" if id == "garumis" else "Abrir enciclopedia", _abrir_enciclopedia.bind(id))
 
 
 func _abrir_enciclopedia(modo: String = "criaturas") -> void:
@@ -1103,7 +1105,10 @@ func _abrir_enciclopedia(modo: String = "criaturas") -> void:
 	enciclopedia.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	columna.add_child(enciclopedia)
 	get_tree().root.add_child(capa)
-	enciclopedia.call("configurar_modo_biblioteca", modo)
+	if modo == "garumis":
+		enciclopedia.call("configurar_como_garudex")
+	else:
+		enciclopedia.call("configurar_modo_biblioteca", modo)
 
 
 func _construir_centro_expediciones() -> void:
