@@ -36,6 +36,7 @@ func _run() -> void:
 	var garumis_tab := inventario.get_node("Window/Margin/Column/Tabs/Garumis") as Control
 	var boton_enciclopedia := inventario.get_node_or_null("Window/Margin/Column/TabButtons/Enciclopedia") as Button
 	var boton_garumis := inventario.get_node("Window/Margin/Column/TabButtons/Garumis") as Button
+	_check(enciclopedia == null, "La página de Enciclopedia ya no debe instanciarse dentro del inventario.")
 	_check(garumis_tab.has_method("abrir_en_garumis"), "Garumis debe ser una pestaña independiente.")
 	_check(boton_enciclopedia == null and not boton_garumis.visible, "Garumis debe iniciar oculto sin descubrimientos y Enciclopedia no debe aparecer en el inventario.")
 
@@ -63,17 +64,17 @@ func _run() -> void:
 	GameState.world_state.flags.erase("enciclopedia_garumis")
 	GameState.discovery_state = DiscoveryState.new()
 	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
-	_check(not boton_enciclopedia.visible and not boton_garumis.visible, "Sin descubrimientos de criaturas ni Garumis, la pestaña Garumis vuelve a ocultarse.")
+	_check(boton_enciclopedia == null and not boton_garumis.visible, "Sin descubrimientos de criaturas ni Garumis, la pestaña Garumis vuelve a ocultarse.")
 	_check(GameState.registrar_descubrimiento_mundo({"id": "bioma-test"}, {"id": "ecosistema-test"}, [], [{"id": "criatura-desbloqueo-test"}]), "Debe registrar el descubrimiento de una criatura.")
 	await get_tree().process_frame
-	_check(not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir una criatura debe mostrar Garumis sin devolver Enciclopedia al inventario.")
+	_check(boton_enciclopedia == null and boton_garumis.visible, "Descubrir una criatura debe mostrar Garumis sin devolver Enciclopedia al inventario.")
 
 	# El desbloqueo debe sobrevivir a la serialización y carga de la partida.
 	var estado_guardado: Dictionary = GameState.call("_serializar_estado")
 	GameState.discovery_state = DiscoveryState.new()
 	GameState.call("_aplicar_estado_memoria", estado_guardado)
 	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
-	_check(not boton_enciclopedia.visible and boton_garumis.visible, "El descubrimiento debe mantenerse tras guardar y cargar la partida.")
+	_check(boton_enciclopedia == null and boton_garumis.visible, "El descubrimiento debe mantenerse tras guardar y cargar la partida.")
 
 	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
 	var tecla := InputEventKey.new()
