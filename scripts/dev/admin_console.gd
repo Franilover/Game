@@ -61,6 +61,15 @@ func configurar(
 	entity_manager = nuevo_entity_manager
 	admin_player_editor = nuevo_admin_player_editor
 	world_items = nuevo_world_items
+	_conectar_catalogo_objetos()
+
+
+func _conectar_catalogo_objetos() -> void:
+	if world_items == null or not is_instance_valid(world_items):
+		return
+	if not world_items.catalogo_cargado.is_connected(_al_datos_disponibles):
+		world_items.catalogo_cargado.connect(_al_datos_disponibles)
+
 
 func _ready() -> void:
 	layer = 100
@@ -78,8 +87,7 @@ func _ready() -> void:
 			_al_datos_disponibles
 		)
 
-	if world_items != null:
-		world_items.catalogo_cargado.connect(_al_datos_disponibles)
+	_conectar_catalogo_objetos()
 
 
 func _input(event: InputEvent) -> void:
