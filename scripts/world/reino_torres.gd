@@ -355,7 +355,7 @@ func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
 func _crear_grupos_edificios_nuevos() -> void:
 	# Estos tres edificios no tenían nodos de fachada en la escena original.
 	# Los grupos mantienen una referencia estable para sprites, entradas y rutinas NPC.
-	for grupo_nombre in [
+	for grupo_nombre: String in [
 		"Grupo_edificio_biblioteca",
 		"Grupo_edificio_centro_expediciones",
 		"Grupo_edificio_clinica"
