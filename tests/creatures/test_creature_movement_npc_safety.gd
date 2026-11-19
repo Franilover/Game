@@ -65,6 +65,27 @@ func _run() -> void:
 	if desvio_atasco.length_squared() <= 0.01 or desvio_repetido.distance_to(desvio_atasco) > 0.01:
 		errores.append("El seguro de atasco no mantiene un desvío estable.")
 
+	# El planificador debe detener paseos interiores desde una única transición.
+	# Un cambio de edificio invalida también el siguiente horario del paseo.
+	movimiento.establecer_ruta(PackedVector2Array([npc_a.global_position + Vector2(100.0, 0.0)]))
+	npc_a.set_meta("rutina_paseo_interior_activo", true)
+	npc_a.set_meta("rutina_paseo_interior_siguiente", 75)
+	npc_a.set_meta("rutina_en_transito", true)
+	agenda._detener_paseo_interior(npc_a, true)
+	if movimiento.rutina_en_ejecucion() or npc_a.velocity.length_squared() > 0.001:
+		errores.append("La limpieza del paseo interior no detuvo el movimiento.")
+	if npc_a.has_meta("rutina_paseo_interior_activo") or npc_a.has_meta("rutina_paseo_interior_siguiente") or bool(npc_a.get_meta("rutina_en_transito", true)):
+		errores.append("El cambio de edificio dejó metadatos del paseo interior activos.")
+
+	# Una pausa del interior no debe perder el próximo horario ya calculado.
+	movimiento.establecer_ruta(PackedVector2Array([npc_a.global_position + Vector2(100.0, 0.0)]))
+	npc_a.set_meta("rutina_paseo_interior_activo", true)
+	npc_a.set_meta("rutina_paseo_interior_siguiente", 90)
+	npc_a.set_meta("rutina_en_transito", true)
+	agenda._detener_paseo_interior(npc_a)
+	if int(npc_a.get_meta("rutina_paseo_interior_siguiente", -1)) != 90:
+		errores.append("La pausa temporal eliminó el siguiente horario del paseo interior.")
+
 	npc_b.set_meta("rutina_edificio_objetivo", "posada")
 	var direccion_edificios_distintos := movimiento._direccion_evitar_superposicion_npcs(Vector2.RIGHT)
 	if absf(direccion_edificios_distintos.y) < 0.2:
