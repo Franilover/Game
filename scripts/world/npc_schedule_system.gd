@@ -50,6 +50,20 @@ const ENTRADAS_INTERIORES: Dictionary = {
 	"casa_granjeros": {"id": "casa_granjeros", "pos": Vector2(950.0, 870.0)}
 }
 
+# Catálogo estático: evita reconstruir el mismo diccionario en cada consulta de hogar.
+const HOGARES_NPC: Dictionary = {
+	"elian": "casa_elian",
+	"bruna": "casa_bruna",
+	"darven": "casa_darven",
+	"saira": "casa_saira",
+	"narel": "casa_narel",
+	"abel": "castillo",
+	"liam": "castillo",
+	"mara": "vivienda_oeste_01",
+	"ivo": "vivienda_oeste_02",
+	"nima": "vivienda_oeste_03"
+}
+
 const POSICIONES: Dictionary = {
 	"plaza": Vector2(0.0, 0.0),
 	"panaderia": Vector2(-360.0, -86.0),
@@ -118,19 +132,7 @@ static func obtener_posicion_inicial(clave: String) -> Vector2:
 
 static func obtener_clave_hogar(nombre_npc: String, ubicacion_respaldo: String = "plaza") -> String:
 	var clave := nombre_npc.strip_edges().to_lower()
-	var hogares: Dictionary = {
-		"elian": "casa_elian",
-		"bruna": "casa_bruna",
-		"darven": "casa_darven",
-		"saira": "casa_saira",
-		"narel": "casa_narel",
-		"abel": "castillo",
-		"liam": "castillo",
-		"mara": "vivienda_oeste_01",
-		"ivo": "vivienda_oeste_02",
-		"nima": "vivienda_oeste_03",
-	}
-	var ubicacion := str(hogares.get(clave, ubicacion_respaldo)).strip_edges().to_lower()
+	var ubicacion := str(HOGARES_NPC.get(clave, ubicacion_respaldo)).strip_edges().to_lower()
 	return ubicacion if POSICIONES.has(ubicacion) else "plaza"
 
 
