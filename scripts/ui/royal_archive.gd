@@ -141,7 +141,7 @@ func _cargar_catalogos() -> void:
 		cliente.request_completed.connect(_al_request_completed)
 	var id_personajes: int = cliente.get_rest(
 		"personajes",
-		"select=id,nombre,img_url,sobre,reino,especie,caracteristicas,don,fecha_nacimiento,genero&reino=eq.Torres&order=nombre.asc"
+		"select=id,nombre,img_url,sobre,reino,fecha_nacimiento,genero&reino=eq.Torres&order=nombre.asc"
 	)
 	var id_reinos: int = cliente.get_rest(
 		"reinos",
@@ -272,19 +272,12 @@ func _mostrar_ficha_personaje(personaje: Dictionary) -> void:
 	elif not url.is_empty():
 		_cargar_imagen_personaje(url, _imagen_detalle)
 
+	_agregar_dato_ficha("Nombre", str(personaje.get("nombre", "")).strip_edges())
 	var nacimiento_variant: Variant = personaje.get("fecha_nacimiento", null)
 	var nacimiento := int(nacimiento_variant) if nacimiento_variant != null else -1
-	var edad := _calcular_edad(nacimiento)
-	_agregar_dato_ficha("Edad", edad)
+	_agregar_dato_ficha("Edad", _calcular_edad(nacimiento))
 	_agregar_dato_ficha("Género", str(personaje.get("genero", "")).strip_edges())
-	_agregar_dato_ficha("Especie", str(personaje.get("especie", "")).strip_edges())
 	_agregar_dato_ficha("Historia", str(personaje.get("sobre", "")).strip_edges())
-	var caracteristicas := str(personaje.get("caracteristicas", "")).strip_edges()
-	if not caracteristicas.is_empty():
-		_agregar_dato_ficha("Características", caracteristicas)
-	var don := str(personaje.get("don", "")).strip_edges()
-	if not don.is_empty():
-		_agregar_dato_ficha("Don", don)
 
 
 func _agregar_dato_ficha(etiqueta: String, valor: String) -> void:
