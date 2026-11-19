@@ -61,6 +61,6 @@ No se ha confirmado código muerto en Main. Los métodos privados pueden recibir
 
 ## 6. Validación
 
-La composición de los dos sistemas NPC se cambió en `main.gd` y `main.tscn`. La importación headless de Godot 4.7 pasó y la prueba del constructor del vivero también pasó en la misma suite. La suite completa detectó además un fallo independiente en `NPCMindCore`: el test indica que el descanso interior no reconoce camas ni literas. Ese contrato no pertenece a los sistemas NPC movidos a la escena y debe investigarse por separado.
+La composición de los dos sistemas NPC se cambió en `main.gd` y `main.tscn`. La importación headless de Godot 4.7 pasó y la prueba del constructor del vivero también pasó en la misma suite. En la ejecución completa anterior de la suite se detectó además un fallo independiente en `NPCMindCore`: el test indica que el descanso interior no reconoce camas ni literas. Ese contrato no pertenece a los sistemas NPC movidos a la escena y debe investigarse por separado.
 
 No se modificaron autoloads ni datos de Supabase.
