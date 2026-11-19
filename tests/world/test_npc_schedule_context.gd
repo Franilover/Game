@@ -29,6 +29,7 @@ func _run() -> void:
 	_comprobar_seleccion_rutina_y_copia(agenda, npc_a, errores)
 	_comprobar_destinos_rutina(npc_a, errores)
 	_comprobar_busqueda_muebles(errores)
+	_comprobar_interrupcion_cinematica(agenda, npc_a, errores)
 
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
@@ -200,3 +201,31 @@ func _comprobar_seleccion_rutina_y_copia(
 		errores.append("Sin calendario mundial disponible no debe inventarse un evento comunitario.")
 	if str(npc.get_meta("evento_comunitario_actual", "x")) != "":
 		errores.append("La ausencia de evento debe limpiar la metadata de evento anterior.")
+
+
+func _comprobar_interrupcion_cinematica(
+	agenda: NPCScheduleSystem,
+	npc: Creature,
+	errores: Array[String]
+) -> void:
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if not is_instance_valid(movimiento):
+		errores.append("La prueba de interrupción requiere CreatureMovement.")
+		return
+
+	movimiento.establecer_ruta(PackedVector2Array([npc.global_position + Vector2(100.0, 0.0)]))
+	npc.set_meta("rutina_paseo_interior_activo", true)
+	npc.set_meta("rutina_paseo_interior_siguiente", 90)
+	npc.set_meta("rutina_en_transito", true)
+	npc.set_meta("cinematica_npc_activa", true)
+	agenda._actualizar_rutina_interior(npc, "panaderia", 60, "trabajar")
+
+	if movimiento.rutina_en_ejecucion() or npc.velocity.length_squared() > 0.001:
+		errores.append("Una cinemática dejó activo el desplazamiento de la rutina interior.")
+	if npc.has_meta("rutina_paseo_interior_activo") or bool(npc.get_meta("rutina_en_transito", true)):
+		errores.append("La interrupción cinematográfica no liberó el control de locomoción.")
+	if int(npc.get_meta("rutina_paseo_interior_siguiente", -1)) != 90:
+		errores.append("La interrupción cinematográfica perdió el siguiente horario del paseo.")
+
+	npc.remove_meta("cinematica_npc_activa")
+	npc.remove_meta("rutina_paseo_interior_siguiente")
