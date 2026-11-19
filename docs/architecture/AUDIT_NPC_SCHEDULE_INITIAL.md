@@ -540,3 +540,14 @@ Se extrajo el bloque inicial de `_aplicar_rutina()` a `_resolver_rutina_base_y_e
 La extracción no cambia las prioridades ni persiste datos. El calendario de Elian se copia superficialmente como antes y sólo se duplica profundamente el diccionario de cierre modificado. Se añadió una regresión en `test_npc_schedule_context` que comprueba que la rutina de cierre se extiende hasta las 17:00 sin alterar el array original y que no se inventan eventos si no hay calendario mundial disponible.
 
 Validación: Godot 4.7 **46/46 pasos correctos, 0 fallos** en [run #44624623124](https://github.com/Franilover/Game/actions/runs/44624623124); GDScript Quality **success** en [run #44624623318](https://github.com/Franilover/Game/actions/runs/44624623318).
+
+
+## 55. Extracción de navegación de Torres
+
+La malla AStar, la detección de cambios de colisión, la preferencia de terreno, la conversión de posición a celda y la búsqueda de celdas transitables se trasladaron a `NPCNavigationSystem`, declarado como nodo editable bajo `Main/Systems`. El servicio conserva el tamaño y origen del mapa, el radio de colisión, el coste de terreno y los límites de llegada que ya utilizaba la agenda.
+
+`NPCScheduleSystem` conserva la selección y aplicación de rutinas, actividades sociales, interiores y el estado de movimiento de cada NPC. Recibe el servicio por inyección, solicita su sincronización al actualizar Torres y delega el cálculo de rutas. La señal `malla_reconstruida` permite que la agenda reinicie sólo las rutas de rutina que quedaron obsoletas; no mueve esa decisión de dominio al servicio de geometría.
+
+Las pruebas de límites ahora consultan las dimensiones del servicio de navegación y la prueba de seguridad de movimiento ejercita la búsqueda de celda transitable a través de su API estática. Se conserva el catálogo de puertas en `NPCScheduleSystem`. No se modifican escenas de edificios, datos guardados ni Supabase.
+
+Validación de esta extracción: pendiente de los workflows de Godot 4.7 y GDScript Quality de la rama actual.
