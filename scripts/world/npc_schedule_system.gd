@@ -148,6 +148,7 @@ var _ultimo_aviso_evento_comunitario := ""
 # Snapshot compartido durante un tick para evitar consultar el SceneTree por cada NPC.
 var _npcs_actualizacion: Array = []
 var _actualizacion_en_curso := false
+var _jugador_actualizacion: Node2D = null
 
 
 ## Devuelve la instantánea estable del tick actual o consulta el grupo fuera de él.
@@ -232,6 +233,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 
 	_npcs_actualizacion = get_tree().get_nodes_in_group("torres_game_npc")
 	_actualizacion_en_curso = true
+	_jugador_actualizacion = get_tree().get_first_node_in_group("player") as Node2D
 	for npc_variant in _npcs_actualizacion:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
@@ -264,6 +266,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		_actualizar_paseo_ambiental_exterior(npc, minutos)
 	_actualizacion_en_curso = false
 	_npcs_actualizacion.clear()
+	_jugador_actualizacion = null
 	_separar_npcs_superpuestos()
 	# Si el jugador cargó una partida dentro de un edificio, algunos NPC
 	# pueden materializarse después de reconstruir la habitación. Una vez que
@@ -1771,7 +1774,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 			var pausa := pausa_base + posmod(hash(nombre_pausa + "|exterior|" + str(minutos / 5)), rango_pausa)
 			npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + pausa, 1440))
 		return
-	var jugador := get_tree().get_first_node_in_group("player") as Node2D
+	var jugador := _jugador_actualizacion if _actualizacion_en_curso else get_tree().get_first_node_in_group("player") as Node2D
 	if is_instance_valid(jugador) and jugador.global_position.distance_to(npc.global_position) < 58.0:
 		npc.set_meta("rutina_paseo_exterior_siguiente", posmod(minutos + 1, 1440))
 		return
