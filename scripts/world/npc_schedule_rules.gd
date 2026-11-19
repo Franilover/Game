@@ -307,3 +307,17 @@ static func seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
 		"actividad_clave": "dormir",
 		"activo": true
 	}
+
+
+## Obtiene un desplazamiento corto y estable para las actividades de ocio en la plaza.
+## El mismo NPC, fecha y tramo siempre producen la misma posición.
+static func obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
+	var desplazamientos: Array[Vector2] = [
+		Vector2(-20.0, -12.0),
+		Vector2(16.0, -16.0),
+		Vector2(20.0, 12.0),
+		Vector2(-16.0, 16.0),
+		Vector2(0.0, -20.0)
+	]
+	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % desplazamientos.size()
+	return desplazamientos[indice]
