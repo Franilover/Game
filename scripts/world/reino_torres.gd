@@ -31,6 +31,7 @@ const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_se
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
+const TORRES_VIVERO_BUILDER: Script = preload("res://scripts/world/torres_vivero_builder.gd")
 
 # Dimensión base. Los edificios grandes usan perfiles ampliados en _obtener_dimensiones_interior().
 const INTERIOR_ANCHO := 512.0
@@ -1850,13 +1851,13 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 				_agregar_sprite_mueble(cuarto, "SillaMesa%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 32), Vector2.ONE, 1)
 				_agregar_sprite_mueble(cuarto, "SillaExtra%d" % i, MUEBLE_SILLA_FRENTE, Vector2(x, 72), Vector2.ONE, 1)
 		"vivero":
-			var tilemap_tierra := _crear_tilemap_dual_tierra_vivero(cuarto)
-			var capa_humedad := _crear_capa_tierra_mojada_vivero(cuarto)
-			_agregar_parcela_vivero(cuarto, tilemap_tierra, capa_humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
-			_agregar_parcela_vivero(cuarto, tilemap_tierra, capa_humedad, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
-			_agregar_parcela_vivero(cuarto, tilemap_tierra, capa_humedad, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
-			_agregar_parcela_vivero(cuarto, tilemap_tierra, capa_humedad, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
-			_agregar_parcela_vivero(cuarto, tilemap_tierra, capa_humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
+			var tilemap_tierra := TORRES_VIVERO_BUILDER.crear_tilemap_tierra(cuarto)
+			var capa_humedad := TORRES_VIVERO_BUILDER.crear_capa_tierra_mojada(cuarto)
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalOeste", Vector2(-155, -5), Vector2i(3, 2))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalCentro", Vector2(0, -5), Vector2i(3, 2))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
+			TORRES_VIVERO_BUILDER.agregar_parcela(cuarto, tilemap_tierra, capa_humedad, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
 			if is_instance_valid(tilemap_tierra):
 				tilemap_tierra.call_deferred("reconstruir_renderer_dual")
 			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
@@ -2580,127 +2581,6 @@ func _al_confirmar_pasaje_exterior() -> void:
 	else:
 		GameState.modificar_dinero(10)
 		Events.notification_pushed.emit("No se pudo iniciar el viaje. Se devolvieron las 10 monedas.")
-
-
-func _crear_tilemap_dual_tierra_vivero(padre: Node) -> TileMapDual:
-	var textura := load("res://assets/tilesets/Tierra.png") as Texture2D
-	if textura == null:
-		push_error("ReinoTorres: no se pudo cargar assets/tilesets/Tierra.png")
-		return null
-
-	const SECUENCIA_ATLAS: Array[Vector2i] = [
-		Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
-		Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1),
-		Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
-		Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1)
-	]
-	const VECINOS: Array[TileSet.CellNeighbor] = [
-		TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
-		TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
-		TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
-		TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER
-	]
-
-	var tileset := TileSet.new()
-	tileset.tile_size = Vector2i(32, 32)
-	tileset.add_terrain_set()
-	tileset.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
-	tileset.add_terrain(0)
-	tileset.set_terrain_name(0, 0, "<any>")
-	tileset.add_terrain(0)
-	tileset.set_terrain_name(0, 1, "Tierra de cultivo")
-
-	var atlas := TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(32, 32)
-	for coordenada in SECUENCIA_ATLAS:
-		atlas.create_tile(coordenada)
-	for indice in range(SECUENCIA_ATLAS.size()):
-		var datos := atlas.get_tile_data(SECUENCIA_ATLAS[indice], 0)
-		datos.terrain_set = 0
-		datos.terrain = 1
-		var bits := indice
-		for vecino in VECINOS:
-			datos.set_terrain_peering_bit(vecino, 1 if (bits & 1) != 0 else 0)
-			bits >>= 1
-	tileset.add_source(atlas, 1)
-
-	var tilemap := TileMapDual.new()
-	tilemap.name = "TierraCultivableDual"
-	tilemap.tile_set = tileset
-	tilemap.godot_4_3_compatibility = false
-	tilemap.z_index = -1
-	tilemap.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	padre.add_child(tilemap)
-	return tilemap
-
-
-func _crear_capa_tierra_mojada_vivero(padre: Node) -> TileMapLayer:
-	var textura := load("res://assets/tilesets/Tierra Mojada.png") as Texture2D
-	if textura == null:
-		push_error("ReinoTorres: no se pudo cargar assets/tilesets/Tierra Mojada.png")
-		return null
-
-	const COORDENADAS_ATLAS: Array[Vector2i] = [
-		Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
-		Vector2i(0, 0), Vector2i(3, 2), Vector2i(2, 3), Vector2i(3, 1),
-		Vector2i(1, 3), Vector2i(0, 1), Vector2i(1, 0), Vector2i(2, 2),
-		Vector2i(3, 0), Vector2i(2, 0), Vector2i(1, 1), Vector2i(2, 1)
-	]
-	var tileset := TileSet.new()
-	tileset.tile_size = Vector2i(32, 32)
-	var atlas := TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(32, 32)
-	for coordenada in COORDENADAS_ATLAS:
-		atlas.create_tile(coordenada)
-	tileset.add_source(atlas, 0)
-
-	var capa := TileMapLayer.new()
-	capa.name = "TierraMojadaVivero"
-	capa.tile_set = tileset
-	capa.z_index = 0
-	capa.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	padre.add_child(capa)
-	return capa
-
-
-func _agregar_parcela_vivero(
-	padre: Node,
-	tilemap: TileMapDual,
-	capa_humedad: TileMapLayer,
-	nombre: String,
-	posicion: Vector2,
-	dimensiones: Vector2i
-) -> void:
-	if not is_instance_valid(tilemap):
-		push_error("ReinoTorres: no se pudo crear el TileMapDual de tierra del vivero.")
-		return
-
-	var celdas: Array[Vector2i] = []
-	for y in range(dimensiones.y):
-		for x in range(dimensiones.x):
-			var desplazamiento := Vector2(
-				(float(x) - float(dimensiones.x - 1) / 2.0) * 32.0,
-				(float(y) - float(dimensiones.y - 1) / 2.0) * 32.0
-			)
-			var celda := tilemap.local_to_map(posicion + desplazamiento)
-			if celda in celdas:
-				continue
-			celdas.append(celda)
-			tilemap.draw_cell(celda, 1)
-
-			# Cada tile de tierra es una parcela independiente y persistente.
-			var parcela := Node2D.new()
-			parcela.name = "%s_%d_%d" % [nombre, celda.x, celda.y]
-			parcela.position = tilemap.map_to_local(celda)
-			parcela.z_index = 0
-			padre.add_child(parcela)
-			parcela.set_script(WATERING_INTERACTABLE_SCRIPT)
-			var celda_central := x == int(dimensiones.x / 2) and y == int(dimensiones.y / 2)
-			parcela.call("configurar_parcela", parcela.name, nombre if celda_central else "", capa_humedad, celda)
-
-	tilemap.call_deferred("_update_cells", celdas, false)
 
 
 func _agregar_colision_muro(padre: Node, nombre: String, posicion: Vector2, tamano: Vector2) -> void:
