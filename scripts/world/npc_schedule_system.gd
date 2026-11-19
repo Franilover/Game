@@ -1040,6 +1040,8 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 	else:
 		movimiento.detener_por_rutina()
 		npc.set_meta("rutina_en_transito", false)
+	var tiempo_actual := _obtener_tiempo_actual()
+	var fecha_reunion := "%s:%s" % [str(tiempo_actual.get("anio", 0)), str(tiempo_actual.get("dia", 1))]
 	var nombres_grupo: Array[String] = []
 	for integrante_variant in grupos[grupo_npc]:
 		if integrante_variant is Creature and is_instance_valid(integrante_variant):
@@ -1050,7 +1052,7 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 			integrante.set_meta("grupo_social_castillo_id", grupo_npc)
 			integrante.set_meta("grupo_social_castillo_nombres", nombres_grupo.duplicate())
 			integrante.set_meta("puesto_social_castillo", grupos[grupo_npc].find(integrante))
-			integrante.set_meta("reunion_castillo_dia", str(_obtener_tiempo_actual().get("anio", 0)) + ":" + str(_obtener_tiempo_actual().get("dia", 1)))
+			integrante.set_meta("reunion_castillo_dia", fecha_reunion)
 	npc.set_meta("reunion_castillo_fase", fase)
 	npc.set_meta("reunion_castillo_firma_asistentes", firma_asistentes)
 
