@@ -160,7 +160,7 @@ func _run() -> void:
 		"clave": "conocimiento_nuevo_prueba", "tipo": "noticia", "titulo": "Dato nuevo"
 	}):
 		errores.append("No pudo registrar conocimiento mediante la escritura puntual.")
-	if destino.obtener_conocimiento_npc("ivo", "conocimiento_nuevo_prueba").is_empty():
+	if relaciones_sociales.obtener_conocimiento_npc("ivo", "conocimiento_nuevo_prueba").is_empty():
 		errores.append("El conocimiento escrito puntualmente no quedó disponible.")
 	var asunto_id := relaciones_sociales.registrar_asunto_pendiente_npc("ivo", {
 		"clave": "asunto_nuevo_prueba", "descripcion": "Asunto nuevo"
