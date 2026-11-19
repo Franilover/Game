@@ -46,6 +46,16 @@ func _run() -> void:
 		"proceso_ium_equipado": {"id": "ium_test", "cantidad": 2},
 		"tiempo_mundo": {"dia": 4, "minuto": 510}
 	}
+	origen.world_state.flags["conversaciones_npc"] = {
+		"_relaciones_npc": {
+			"ivo|nima": {"confianza": 42.0, "historial": [{"evento": "prueba"}]}
+		},
+		"_conocimientos_npc": {
+			"ivo": [{"clave": "noticia_prueba", "titulo": "Noticia de prueba"}],
+			"nima": [{"clave": "otra_noticia", "titulo": "Otra noticia"}]
+		},
+		"_promesas_npc": [{"id": "promesa_prueba", "estado": "pendiente"}]
+	}
 	misiones._estado = {"mision_recompensa_test": "completada"}
 	misiones._progreso = {"mision_recompensa_test": 3}
 	misiones._recompensas_reclamadas = {"mision_recompensa_test": true}
@@ -71,6 +81,20 @@ func _run() -> void:
 		errores.append("El tiempo de mundo no sobrevivió al roundtrip.")
 
 	var flags := destino.world_state.flags
+	var relacion_npc := destino.obtener_relacion_npc_entre("ivo|nima")
+	if not is_equal_approx(float(relacion_npc.get("confianza", 0.0)), 42.0):
+		errores.append("La consulta puntual de relación entre NPC no devolvió su valor.")
+	relacion_npc["confianza"] = 0.0
+	if not is_equal_approx(float(destino.obtener_relacion_npc_entre("ivo|nima").get("confianza", 0.0)), 42.0):
+		errores.append("La consulta puntual de relación expuso el estado interno modificable.")
+	var conocimientos_ivo := destino.obtener_conocimientos_npc("ivo")
+	if conocimientos_ivo.size() != 1 or str((conocimientos_ivo[0] as Dictionary).get("clave", "")) != "noticia_prueba":
+		errores.append("La consulta puntual de conocimientos no devolvió los datos del NPC.")
+	(conocimientos_ivo[0] as Dictionary)["titulo"] = "Modificado desde la copia"
+	if str((destino.obtener_conocimientos_npc("ivo")[0] as Dictionary).get("titulo", "")) != "Noticia de prueba":
+		errores.append("La consulta puntual de conocimientos expuso el estado interno modificable.")
+	if not destino.obtener_conversaciones_npc().get("_promesas_npc", []) is Array:
+		errores.append("La lectura completa de conversaciones dejó de conservar las demás secciones.")
 	var inventario_guardado: Dictionary = flags.get("inventario_estado", {}) as Dictionary
 	var items_guardados: Array = inventario_guardado.get("items", []) as Array
 	if items_guardados.is_empty():
