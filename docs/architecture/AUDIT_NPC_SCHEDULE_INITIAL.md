@@ -174,3 +174,14 @@ El cálculo del pequeño desplazamiento local de ocio se movió a `NPCScheduleRu
 La prueba verifica que las mismas entradas producen el mismo desplazamiento y que el resultado pertenece a las posiciones locales permitidas. La capa de simulación sigue decidiendo cuándo aplicar el desplazamiento y sólo lo usa para actividades ubicadas en la plaza.
 
 **Validación:** pendiente de CI para el commit de esta extracción.
+
+
+## 13. Catálogo de ocio y corrección del ejecutor de pruebas
+
+El catálogo estático de actividades por habitante se movió a `NPCScheduleRules.obtener_opciones_ocio_npc(nombre)`. Se conservaron sus identificadores, destinos, necesidades, afinidades y costes; el sistema de simulación sigue normalizando el nombre y resolviendo disponibilidad, navegación y elección con NPCMind.
+
+Se añadieron comprobaciones para los diez habitantes, tres opciones por personaje, estructura de cada opción y respuesta vacía para identificadores desconocidos.
+
+**Hallazgo importante del harness:** al revisar el test se detectó que varias funciones de comprobación estaban declaradas, pero `_ready()` no las invocaba. Por eso, las ejecuciones anteriores del test no cubrían realmente todas las reglas añadidas. Se corrigió el ejecutor para llamar explícitamente a cada bloque de regresión antes de cerrar el proceso. Las validaciones previas de CI sólo confirman los casos que el ejecutor sí ejecutaba; la suite ampliada debe considerarse pendiente hasta completar la nueva ejecución.
+
+Esta corrección es parte del trabajo de calidad: no basta con que el archivo de pruebas compile, también debe ejecutar los casos que pretende proteger.
