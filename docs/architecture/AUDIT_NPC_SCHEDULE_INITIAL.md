@@ -506,3 +506,10 @@ La fecha de la reunión del castillo también se calcula una vez por actualizaci
 `_aplicar_rutina()` acumulaba la selección del horario y la escritura de la memoria diaria que usan los diálogos nocturnos. La actualización de esa memoria se movió a `_actualizar_resumen_diario_reunion()`, con entradas explícitas para fecha, rutina, actividad y ubicación. El planificador conserva el orden de la llamada después de resolver el destino de la rutina.
 
 La extracción mantiene las reglas existentes: reiniciar al cambiar la fecha, conservar la última actividad significativa, ignorar descanso/regreso y usar el estado previo cuando el NPC ya está en la reunión. No introduce almacenamiento nuevo ni modifica el formato de metadatos.
+
+
+## 51. Contrato de contexto y memoria NPC automatizado
+
+Se añadió `tests/world/test_npc_schedule_context.tscn` para proteger tres comportamientos conectados: uso de la instantánea de NPC durante el tick y consulta del grupo fuera de él; reutilización del calendario compartido y respaldo vacío cuando no hay WorldAtmosphere; y memoria diaria de la reunión (guardar actividad significativa, no reemplazarla por descanso y recuperar el estado actual al cambiar de fecha durante la reunión).
+
+La escena se incorpora al workflow de regresión headless. Esta prueba cubre el contrato del contexto y la memoria extraída; no pretende sustituir una prueba de recorrido completo de la vida diaria, que seguirá siendo una etapa de cobertura distinta.
