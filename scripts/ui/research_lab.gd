@@ -101,7 +101,7 @@ func _es_arma(objeto: Dictionary) -> bool:
 	var nombre := str(objeto.get("nombre", "")).to_lower()
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
-	return tipo.contains("arma") or tipo.contains("weapon") or categoria.contains("arma") or categoria.contains("weapon") or bool(propiedades.get("es_arma", false)) or propiedades.has("danio_arma") or propiedades.has("ataque_arma") or nombre.contains("espada") or nombre.contains("arco") or nombre.contains("daga")
+	return tipo.contains("arma") or tipo.contains("weapon") or categoria.contains("arma") or categoria.contains("weapon") or bool(propiedades.get("es_arma", false)) or propiedades.has("danio_arma") or propiedades.has("ataque_arma") or nombre.contains("espada") or nombre.contains("arco") or nombre.contains("daga") or nombre.contains("lanza") or nombre.contains("ballesta") or nombre.contains("honda")
 
 
 func _es_herramienta(objeto: Dictionary) -> bool:
@@ -112,7 +112,7 @@ func _es_herramienta(objeto: Dictionary) -> bool:
 	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
 	var recoleccion: Variant = propiedades.get("recoleccion", {})
 	var tiene_recoleccion := recoleccion is Dictionary and not (recoleccion as Dictionary).is_empty()
-	return tipo.contains("herramienta") or tipo.contains("tool") or categoria.contains("herramienta") or categoria.contains("tool") or tiene_recoleccion or bool(propiedades.get("es_herramienta", false)) or nombre.contains("hacha") or nombre.contains("pico") or nombre.contains("pala") or nombre.contains("regadera")
+	return tipo.contains("herramienta") or tipo.contains("tool") or categoria.contains("herramienta") or categoria.contains("tool") or tiene_recoleccion or bool(propiedades.get("es_herramienta", false)) or nombre.contains("hacha") or nombre.contains("pico") or nombre.contains("pala") or nombre.contains("martillo") or nombre.contains("azada") or nombre.contains("guadaña") or nombre.contains("cincel") or nombre.contains("regadera")
 
 
 func _texto_categoria(objeto: Dictionary) -> String:
