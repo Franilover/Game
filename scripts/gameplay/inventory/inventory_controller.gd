@@ -127,7 +127,7 @@ func _usar_objeto_en_indice(
 ) -> bool:
 	if validar_input and not puede_interactuar():
 		return false
-	if indice < 0:
+	if indice < 0 or indice >= runtime.state.items.size():
 		return false
 
 	var objeto := objeto_override.duplicate(true) if not objeto_override.is_empty() else runtime.obtener_item(indice)
@@ -142,10 +142,9 @@ func _usar_objeto_en_indice(
 		return false
 
 	var es_alimento := _es_categoria_alimento(objeto)
-	var efectos_aplicados := _aplicar_efectos_uso(uso, usuario)
-	# Comer consume el alimento aunque la vida, el Eterium o la stamina
-	# ya estén al máximo. Los efectos se aplican solo cuando hay margen.
-	if efectos_aplicados <= 0 and not es_alimento:
+	# Validar primero que un consumible no alimenticio pueda producir algún
+	# efecto. La mutación de recursos ocurre sólo después de retirar el objeto.
+	if not es_alimento and not _uso_tiene_efecto_aplicable(uso, usuario):
 		return false
 
 	var retirado := false
@@ -161,6 +160,7 @@ func _usar_objeto_en_indice(
 	if not retirado:
 		return false
 
+	_aplicar_efectos_uso(uso, usuario)
 	Events.notification_pushed.emit(
 		("Comiste " if es_alimento else "Usaste ") + str(objeto.get("nombre", "Objeto"))
 	)
@@ -210,6 +210,32 @@ func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
 	if str(uso.get("tipo", "")).strip_edges().is_empty():
 		return {}
 	return uso.duplicate(true)
+
+
+
+func _uso_tiene_efecto_aplicable(uso: Dictionary, actor: Player) -> bool:
+	var efectos_variant: Variant = uso.get("efectos", null)
+	if efectos_variant is Array:
+		for efecto_variant in efectos_variant as Array:
+			if efecto_variant is Dictionary and _efecto_recurso_es_aplicable(efecto_variant as Dictionary, actor):
+				return true
+		return false
+	return _efecto_recurso_es_aplicable(uso, actor)
+
+
+func _efecto_recurso_es_aplicable(efecto: Dictionary, actor: Player) -> bool:
+	var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).strip_edges().to_lower()
+	var magnitud: Variant = efecto.get("magnitud", efecto.get("cantidad", 0))
+	if not (magnitud is int or magnitud is float) or float(magnitud) <= 0.0:
+		return false
+	match recurso:
+		"vida", "salud", "health":
+			return actor.is_alive and actor.health < actor.max_health
+		"stamina":
+			return actor.stamina < actor.max_stamina
+		"eterium", "mana":
+			return actor.mana < actor.max_mana
+	return false
 
 
 func _aplicar_efectos_uso(uso: Dictionary, actor: Player) -> int:
