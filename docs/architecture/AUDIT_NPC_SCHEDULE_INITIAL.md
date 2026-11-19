@@ -550,4 +550,4 @@ La malla AStar, la detección de cambios de colisión, la preferencia de terreno
 
 Las pruebas de límites ahora consultan las dimensiones del servicio de navegación y la prueba de seguridad de movimiento ejercita la búsqueda de celda transitable a través de su API estática. Se añadió `test_npc_navigation_system.tscn` para comprobar en integración la construcción real de la malla, el cálculo de una ruta y la invalidación del servicio. La escena de límites de Torres también quedó conectada al workflow. Se conserva el catálogo de puertas en `NPCScheduleSystem`. No se modifican escenas de edificios, datos guardados ni Supabase.
 
-Validación de esta extracción: pendiente de los workflows de Godot 4.7 y GDScript Quality de la rama actual.
+Validación: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44626438272](https://github.com/Franilover/Game/actions/runs/44626438272); GDScript Quality **success** en [run #44626236415](https://github.com/Franilover/Game/actions/runs/44626236415).
