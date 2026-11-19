@@ -3242,62 +3242,14 @@ func _seleccionar_rutina_dia_libre(npc: Creature, minutos: int) -> Dictionary:
 
 
 func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int, nombre_npc: String = "?") -> Dictionary:
-	if not rutinas_variant is Array:
-		return {}
-
-	var mejor: Dictionary = {}
-	var prioridad_mejor := -2147483648
-	var inicio_mejor := -1
-	var diagnostico_rechazos: Array[String] = []
-
-	for indice in range((rutinas_variant as Array).size()):
-		var rutina_variant: Variant = (rutinas_variant as Array)[indice]
-		if not rutina_variant is Dictionary:
-			diagnostico_rechazos.append("[" + str(indice) + "] no_es_diccionario")
-			continue
-		var rutina := rutina_variant as Dictionary
-		var clave := str(rutina.get("clave", "sin_clave"))
-		var activo := bool(rutina.get("activo", true))
-		if not activo:
-			diagnostico_rechazos.append(clave + ": inactiva")
-			continue
-
-		var inicio_raw: Variant = rutina.get("hora_inicio", "")
-		var fin_raw: Variant = rutina.get("hora_fin", "")
-		var inicio := NPC_SCHEDULE_RULES.hora_a_minutos(inicio_raw)
-		var fin := NPC_SCHEDULE_RULES.hora_a_minutos(fin_raw)
-		if inicio < 0 or fin < 0 or inicio == fin:
-			diagnostico_rechazos.append(clave + ": hora_invalida inicio=" + str(inicio_raw) + " fin=" + str(fin_raw) + " parseadas=" + str(inicio) + "/" + str(fin))
-			continue
-
-		var dia_referencia := dia_semana
-		var esta_activa := false
-		if fin > inicio:
-			esta_activa = minutos >= inicio and minutos < fin
-		elif minutos >= inicio:
-			esta_activa = true
-		elif minutos < fin:
-			esta_activa = true
-			dia_referencia = posmod(dia_semana - 1, 5)
-
-		var dias_variant: Variant = rutina.get("dias_semana", [])
-		var coincide_dia := NPC_SCHEDULE_RULES.coincide_dia(dias_variant, dia_referencia)
-		if not esta_activa or not coincide_dia:
-			diagnostico_rechazos.append(clave + ": " + ("fuera_de_hora" if not esta_activa else "dia_no_coincide") + " ahora=" + str(minutos) + " rango=" + str(inicio) + "-" + str(fin) + " dia=" + str(dia_referencia) + " dias=" + str(dias_variant))
-			continue
-
-		var prioridad := int(rutina.get("prioridad", 0))
-		if mejor.is_empty() or prioridad > prioridad_mejor or (prioridad == prioridad_mejor and inicio > inicio_mejor):
-			mejor = rutina.duplicate(true)
-			prioridad_mejor = prioridad
-			inicio_mejor = inicio
-
-	if mejor.is_empty():
+	var resultado := NPC_SCHEDULE_RULES.seleccionar_rutina(rutinas_variant, dia_semana, minutos)
+	var mejor: Dictionary = resultado.get("rutina", {})
+	if mejor.is_empty() and rutinas_variant is Array:
+		var diagnostico_rechazos: Array[String] = resultado.get("rechazos", [])
 		var firma_fallo := "%s|%d|%d|%s" % [nombre_npc, dia_semana, minutos, str(diagnostico_rechazos)]
 		if str(get_meta("ultimo_diagnostico_selector", "")) != firma_fallo:
 			print("NPCScheduleSystem: SELECTOR SIN COINCIDENCIA | npc=", nombre_npc, " dia=", dia_semana, " minuto=", minutos, " total=", (rutinas_variant as Array).size(), " | ", str(diagnostico_rechazos))
 			set_meta("ultimo_diagnostico_selector", firma_fallo)
-
 	return mejor
 
 
