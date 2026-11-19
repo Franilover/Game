@@ -197,3 +197,36 @@ static func seleccionar_rutina_dia_libre(nombre_npc: String, minutos: int) -> Di
 		"actividad_clave": actividad,
 		"activo": true
 	}
+
+
+## Resuelve el evento comunitario para un día del ciclo y una fecha estacional.
+## El evento estacional tiene prioridad sobre los eventos del quinto día.
+static func obtener_evento_comunitario(
+	dia_estacion: int,
+	dia_semana: int,
+	minutos: int
+) -> Dictionary:
+	if dia_estacion == 1 and minutos >= 840 and minutos < 1200:
+		return {
+			"clave": "celebracion_estacional",
+			"nombre": "Celebración de temporada",
+			"actividad": "celebrar_el_cambio_de_estacion",
+			"aviso": "Hoy los vecinos celebran el comienzo de una nueva estación en la plaza."
+		}
+	if dia_semana != 4:
+		return {}
+	if minutos >= 540 and minutos < 1020:
+		return {
+			"clave": "mercado_vecinal",
+			"nombre": "Mercado vecinal",
+			"actividad": "visitar_el_mercado",
+			"aviso": "Hoy hay mercado vecinal en la plaza de Torres."
+		}
+	if minutos >= 1020 and minutos < 1200:
+		return {
+			"clave": "comida_comunitaria",
+			"nombre": "Comida comunitaria",
+			"actividad": "compartir_comida_con_vecinos",
+			"aviso": "Los vecinos se reúnen en la plaza para compartir comida."
+		}
+	return {}
