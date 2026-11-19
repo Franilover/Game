@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/world/test_npc_schedule_torres_navigation_bounds.gd" id="1_test"]
+
+[node name="NPCScheduleTorresNavigationBounds" type="Node"]
+script = ExtResource("1_test")
