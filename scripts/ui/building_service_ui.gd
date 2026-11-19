@@ -969,12 +969,13 @@ func _crear_selector_edificio(ancho_lista: float = 148.0, alto: float = 250.0) -
 	return layout
 
 
-func _agregar_opcion_selector(lista: GridContainer, texto: String, seleccionado: bool, accion: Callable) -> Button:
+func _agregar_opcion_selector(lista: GridContainer, texto: String, seleccionado: bool, accion: Callable, grupo: ButtonGroup = null) -> Button:
 	var boton := Button.new()
 	boton.text = texto
 	boton.custom_minimum_size = Vector2(0.0, 48.0)
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton.toggle_mode = true
+	boton.button_group = grupo
 	boton.button_pressed = seleccionado
 	boton.pressed.connect(accion)
 	lista.add_child(boton)
@@ -1013,6 +1014,8 @@ func _construir_biblioteca() -> void:
 	_agregar_texto("Consulta los registros que has reunido durante tus viajes. Cada descubrimiento amplía el archivo de Torres.")
 	var layout := _crear_selector_edificio(142.0, 270.0)
 	var lista := layout["list_content"] as GridContainer
+	lista.columns = 1
+	var grupo_selector := ButtonGroup.new()
 	var detalle := layout["detail_content"] as VBoxContainer
 	var categorias := [
 		{"id":"criaturas", "nombre":"Criaturas", "descripcion":"Especies y seres que has encontrado."},
@@ -1023,7 +1026,7 @@ func _construir_biblioteca() -> void:
 	for categoria in categorias:
 		var id := str(categoria.get("id", ""))
 		var cantidad := _contar_descubrimientos(id)
-		var boton := _agregar_opcion_selector(lista, "%s\n%d" % [str(categoria.get("nombre", id)), cantidad], id == _seccion_biblioteca, _seleccionar_seccion_biblioteca.bind(id, detalle))
+		var boton := _agregar_opcion_selector(lista, "%s\n%d" % [str(categoria.get("nombre", id)), cantidad], id == _seccion_biblioteca, _seleccionar_seccion_biblioteca.bind(id, detalle), grupo_selector)
 		boton.custom_minimum_size = Vector2(0.0, 58.0)
 	_mostrar_detalle_biblioteca(_seccion_biblioteca, detalle)
 	_agregar_texto("Los registros se actualizan automáticamente cuando descubres algo nuevo.")
@@ -1106,10 +1109,12 @@ func _construir_centro_expediciones() -> void:
 	_agregar_texto("Prepara tus salidas, revisa lo que has descubierto y elige tu próximo destino.")
 	var layout := _crear_selector_edificio(160.0, 260.0)
 	var lista := layout["list_content"] as GridContainer
+	lista.columns = 1
+	var grupo_selector := ButtonGroup.new()
 	var detalle := layout["detail_content"] as VBoxContainer
-	_agregar_opcion_selector(lista, "Primera\nexpedición", _seccion_expedicion == "primera_expedicion", _seleccionar_seccion_expedicion.bind("primera_expedicion", detalle))
-	_agregar_opcion_selector(lista, "Rutas\ny destinos", _seccion_expedicion == "rutas", _seleccionar_seccion_expedicion.bind("rutas", detalle))
-	_agregar_opcion_selector(lista, "Bitácora", _seccion_expedicion == "bitacora", _seleccionar_seccion_expedicion.bind("bitacora", detalle))
+	_agregar_opcion_selector(lista, "Primera\nexpedición", _seccion_expedicion == "primera_expedicion", _seleccionar_seccion_expedicion.bind("primera_expedicion", detalle), grupo_selector)
+	_agregar_opcion_selector(lista, "Rutas\ny destinos", _seccion_expedicion == "rutas", _seleccionar_seccion_expedicion.bind("rutas", detalle), grupo_selector)
+	_agregar_opcion_selector(lista, "Bitácora", _seccion_expedicion == "bitacora", _seleccionar_seccion_expedicion.bind("bitacora", detalle), grupo_selector)
 	_mostrar_detalle_expedicion(_seccion_expedicion, detalle)
 
 
@@ -1151,9 +1156,11 @@ func _construir_clinica() -> void:
 	_agregar_texto("Atención para viajeros y sus compañeros. Recupera fuerzas antes de volver a explorar.")
 	var layout := _crear_selector_edificio(150.0, 250.0)
 	var lista := layout["list_content"] as GridContainer
+	lista.columns = 1
+	var grupo_selector := ButtonGroup.new()
 	var detalle := layout["detail_content"] as VBoxContainer
-	_agregar_opcion_selector(lista, "Tratamiento", _seccion_clinica == "basico", _seleccionar_tratamiento_clinica.bind("basico", detalle))
-	_agregar_opcion_selector(lista, "Recuperación", _seccion_clinica == "completo", _seleccionar_tratamiento_clinica.bind("completo", detalle))
+	_agregar_opcion_selector(lista, "Tratamiento", _seccion_clinica == "basico", _seleccionar_tratamiento_clinica.bind("basico", detalle), grupo_selector)
+	_agregar_opcion_selector(lista, "Recuperación", _seccion_clinica == "completo", _seleccionar_tratamiento_clinica.bind("completo", detalle), grupo_selector)
 	_mostrar_detalle_clinica(_seccion_clinica, detalle)
 
 
@@ -1175,7 +1182,7 @@ func _mostrar_detalle_clinica(tipo: String, detalle: VBoxContainer) -> void:
 	var mana := int(_jugador.get("mana"))
 	var mana_maximo := maxi(1, int(_jugador.get("max_mana")))
 	var estado := Label.new()
-	estado.text = "Salud · %d / %d\\nEterium · %d / %d" % [vida, vida_maxima, mana, mana_maximo]
+	estado.text = "Salud · %d / %d\nEterium · %d / %d" % [vida, vida_maxima, mana, mana_maximo]
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(estado)
 	var salud := ProgressBar.new()
