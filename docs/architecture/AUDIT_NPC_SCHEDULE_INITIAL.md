@@ -127,3 +127,18 @@ Se separó `NPCScheduleRules.obtener_minutos_hasta_siguiente_rutina(rutinas, dia
 El sistema NPC conserva la llamada desde la selección de ocio; la función no necesita consultar al NPC, su estado ni servicios globales.
 
 Pruebas añadidas: siguiente inicio el mismo día, día posterior, vuelta del ciclo, rutina sin días específicos, entradas inválidas/inactivas y lista vacía. Se conserva el comportamiento anterior de devolver cero si no encuentra un inicio dentro de la ventana recorrida.
+
+
+## 12. Auditoría de referencias y limpieza de código inaccesible
+
+Se revisaron las referencias internas y los puntos de integración de los métodos de `NPCScheduleSystem`. Se eliminaron:
+
+- `_obtener_rutina_reunion_castillo()`: método privado sin llamadas ni referencias dinámicas.
+- `_debe_asistir_grupo_reunion_castillo()`: sólo era invocado por el método anterior.
+- `_fecha_asistencia_reunion_cache` y `_asistencia_reunion_cache`: estado usado exclusivamente por esa cadena inaccesible.
+
+Se conservaron `_actualizar_movimiento_reunion_castillo()` y sus reglas de agrupación: tienen un punto de llamada activo cuando una rutina tiene la clave de reunión, por lo que no corresponde borrarlos sólo porque la asignación automática de reuniones esté desactivada.
+
+También se conservó `_iniciar_idle_postura_npc()`. Aunque no tenía llamadas directas, una animación lo invoca mediante `Callable(self, "_iniciar_idle_postura_npc")`; el análisis estático inicial no detectó esa referencia indirecta. La función fue restaurada antes de validar el estado final.
+
+Esta revisión deja una regla de auditoría explícita: antes de eliminar un método hay que revisar llamadas directas, `Callable`, `call/call_deferred`, señales, grupos y contratos externos; el conteo textual por sí solo no basta.
