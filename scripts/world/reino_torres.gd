@@ -1599,10 +1599,10 @@ func _devolver_npc_al_exterior(npc: Node) -> void:
 	npc.remove_from_group("interactable")
 
 
-func _devolver_npcs_del_interior_al_exterior() -> void:
+func _devolver_npcs_del_interior_al_exterior(npcs: Array) -> void:
 	if not is_instance_valid(_contenedor_npcs_exterior) or not is_instance_valid(_capa_interior):
 		return
-	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+	for npc in npcs:
 		if not is_instance_valid(npc) or not _capa_interior.is_ancestor_of(npc):
 			continue
 		_devolver_npc_al_exterior(npc)
@@ -1620,7 +1620,7 @@ func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
 	_cerrar_menu_posada()
-	_devolver_npcs_del_interior_al_exterior()
+	_devolver_npcs_del_interior_al_exterior(get_tree().get_nodes_in_group("torres_game_npc"))
 	_restaurar_npcs_exteriores()
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
