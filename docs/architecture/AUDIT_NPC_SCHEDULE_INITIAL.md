@@ -247,3 +247,11 @@ No se agregó un sistema nuevo ni se alteraron las prioridades de rutinas, la fr
 
 
 La evaluación del evento comunitario también se reutiliza ahora: el planificador calcula el evento una vez y pasa ese resultado al selector del encuentro privado. Se evita repetir la misma consulta de calendario en cada participante sin alterar la prioridad del evento ni sus condiciones.
+
+## 19. Búsqueda única de participantes del encuentro
+
+La disponibilidad del encuentro de Mara, Ivo y Nima necesitaba localizar a cada participante mediante `_buscar_npc_por_nombre()`. Como esa función recorre el grupo `torres_game_npc`, la comprobación podía recorrer el mismo grupo hasta tres veces por evaluación.
+
+Ahora el encuentro reúne a los tres participantes durante un único recorrido y conserva el primer nodo `Creature` válido encontrado para cada nombre. Después valida que los tres sigan siendo instancias válidas y estén vivos. Esto mantiene el comportamiento anterior ante nombres duplicados —no sustituye al primer resultado por otro posterior— y reduce los recorridos del grupo de hasta tres a uno.
+
+No se cambió la búsqueda general por nombre ni se creó un registro global de NPC: la optimización queda limitada al flujo que necesita consultar a los tres personajes juntos.
