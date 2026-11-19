@@ -149,7 +149,7 @@ var _ultimo_aviso_evento_comunitario := ""
 var _npcs_actualizacion: Array = []
 var _actualizacion_en_curso := false
 var _jugador_actualizacion: Node2D = null
-var _tiempo_actualizacion: Dictionary = {}
+var _tiempo_mundo_actualizacion: Dictionary = {}
 
 
 ## Devuelve la instantánea estable del tick actual o consulta el grupo fuera de él.
@@ -163,7 +163,7 @@ func _obtener_npcs_torres() -> Array:
 ## Comparte el estado temporal del tick; fuera de él consulta la fuente de tiempo.
 func _obtener_tiempo_actual() -> Dictionary:
 	if _actualizacion_en_curso:
-		return _tiempo_actualizacion
+		return _tiempo_mundo_actualizacion
 	if is_instance_valid(_world_atmosphere):
 		return _world_atmosphere.obtener_tiempo()
 	return {}
@@ -243,7 +243,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 
 	_npcs_actualizacion = get_tree().get_nodes_in_group("torres_game_npc")
 	_actualizacion_en_curso = true
-	_tiempo_actualizacion = tiempo
+	_tiempo_mundo_actualizacion = tiempo
 	_jugador_actualizacion = get_tree().get_first_node_in_group("player") as Node2D
 	for npc_variant in _npcs_actualizacion:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
@@ -278,7 +278,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 	_actualizacion_en_curso = false
 	_npcs_actualizacion.clear()
 	_jugador_actualizacion = null
-	_tiempo_actualizacion.clear()
+	_tiempo_mundo_actualizacion.clear()
 	_separar_npcs_superpuestos()
 	# Si el jugador cargó una partida dentro de un edificio, algunos NPC
 	# pueden materializarse después de reconstruir la habitación. Una vez que
