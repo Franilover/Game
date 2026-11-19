@@ -348,6 +348,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run inventory equipment transaction contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/inventory/test_inventory_equipment_transaction.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryEquipmentTransaction: FAIL:' <<<"$output"; then
+            echo "Inventory equipment transaction test reported errors."
+            exit 1
+          fi
+
       - name: Run inventory drop transaction contract test
         shell: bash
         run: |
