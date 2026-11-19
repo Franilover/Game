@@ -480,6 +480,21 @@ func _comprobar_requisitos_encuentro_trio(errores: Array[String]) -> void:
 
 
 func _comprobar_ubicaciones_hogar(errores: Array[String]) -> void:
+	var posiciones_esperadas := {
+		"elian": Vector2(-72.0, 24.0),
+		"bruna": Vector2(64.0, 32.0),
+		"darven": Vector2(-24.0, -64.0),
+		"saira": Vector2(76.0, -52.0),
+		"narel": Vector2(-88.0, -48.0),
+		"abel": Vector2(12.0, 76.0),
+		"liam": Vector2(104.0, 20.0),
+		"mara": Vector2(-132.0, -28.0),
+		"ivo": Vector2(18.0, 132.0),
+		"nima": Vector2(132.0, -18.0)
+	}
+	for nombre in posiciones_esperadas:
+		if ScheduleSystem.POSICIONES_PLAZA.get(nombre) != posiciones_esperadas[nombre]:
+			errores.append("Cambió la posición estable de %s en la plaza." % nombre)
 	var casos := {
 		"Elian": "casa_elian",
 		"Bruna": "casa_bruna",
