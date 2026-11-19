@@ -1284,6 +1284,8 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	_limitar_camara_a_interior()
 	_interterior_colisiones(true)
 	_interior_activo = true
+	if _entrada_interior_id == "cuartel":
+		_abrir_menu_servicio_edificio("cuartel")
 	print("ReinoTorres: entrando a ", entrada["id"])
 
 
@@ -1856,12 +1858,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaArsenal", MUEBLE_MESA, Vector2(105, 65), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaEntrenamiento", MUEBLE_MESA, Vector2(0, -5), Vector2(1.45, 1.15), 1)
-			_agregar_descripcion_mesa(cuarto, "DescripcionLicencias", "Aquí puedes consultar y solicitar licencias para ejercer distintas técnicas.", Vector2(-105, 119))
-			_agregar_descripcion_mesa(cuarto, "DescripcionArsenal", "Echa un vistazo a las armas disponibles y compra lo que necesites.", Vector2(105, 119))
-			_agregar_descripcion_mesa(cuarto, "DescripcionEntrenamiento", "Practica un rato y mejora tus habilidades de combate.", Vector2(0, 52))
-			_agregar_estacion_edificio(cuarto, "cuartel_licencia", "Solicitar licencia", Vector2(-105, 32))
-			_agregar_estacion_edificio(cuarto, "cuartel_armas", "Comprar armas", Vector2(105, 32))
-			_agregar_estacion_edificio(cuarto, "cuartel_entrenamiento", "Entrenar", Vector2(0, -38))
 		"taller", "carpinteria":
 			_agregar_sprite_mueble(cuarto, "BancoTrabajo", MUEBLE_MESA_DOCUMENTOS, Vector2(-25, 5), Vector2(1.6, 1.1), 1)
 			_agregar_sprite_mueble(cuarto, "Materiales", MUEBLE_COFRE, Vector2(180, 72), Vector2(0.9, 0.9), 1)
@@ -2351,6 +2347,12 @@ func _cerrar_puesto_comercio(capa: CanvasLayer, fisica_previa: bool, input_previ
 		_jugador.set_process_unhandled_input(unhandled_previo)
 	if is_instance_valid(capa):
 		capa.queue_free()
+
+
+func _abrir_menu_servicio_edificio(tipo: String) -> void:
+	if get_tree().get_first_node_in_group("building_service_ui") != null:
+		return
+	_abrir_menu_servicio_edificio(tipo)
 
 
 func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posicion: Vector2) -> void:
