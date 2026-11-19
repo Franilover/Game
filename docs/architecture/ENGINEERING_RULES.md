@@ -89,6 +89,8 @@ Optimizar primero los problemas medidos o los costes evidentes.
 - Evitar instanciar nodos temporales en exceso.
 - No reemplazar soluciones simples por sistemas complejos de caché sin evidencia de necesidad.
 - Mantener el renderizado, colisiones y lógica de simulación separados cuando sus frecuencias o responsabilidades difieran.
+- En comprobaciones de proximidad, filtrar primero con `length_squared()` y el radio al cuadrado; calcular la distancia real sólo si la pareja necesita una corrección. Conservar exactamente los límites inclusivos/exclusivos de la regla original.
+- Antes de introducir cachés espaciales, particiones o coordinadores globales para bucles de entidades, medir el coste y el volumen real. No sustituir una comparación sencilla por infraestructura más compleja sin beneficio demostrado.
 - Probar el impacto real en el hardware objetivo antes de aceptar una optimización como mejora.
 
 ## 9. Limpieza segura de código y recursos
@@ -166,6 +168,7 @@ Una refactorización está lista cuando:
 ## Historial
 
 - **2026-11-19:** creación de las reglas iniciales para la auditoría y refactorización de arquitectura.
+- **2026-11-19:** se añade la regla de descarte temprano por distancia al cuadrado para proximidad y el criterio de medir antes de introducir índices/cachés espaciales.
 
 
 ## 14. Límites y composición de sistemas
