@@ -1856,6 +1856,9 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaLicencias", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, 65), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaArsenal", MUEBLE_MESA, Vector2(105, 65), Vector2(1.2, 1), 1)
 			_agregar_sprite_mueble(cuarto, "MesaEntrenamiento", MUEBLE_MESA, Vector2(0, -5), Vector2(1.45, 1.15), 1)
+			_agregar_descripcion_mesa(cuarto, "DescripcionLicencias", "Aquí puedes consultar y solicitar licencias para ejercer distintas técnicas.", Vector2(-105, 119))
+			_agregar_descripcion_mesa(cuarto, "DescripcionArsenal", "Echa un vistazo a las armas disponibles y compra lo que necesites.", Vector2(105, 119))
+			_agregar_descripcion_mesa(cuarto, "DescripcionEntrenamiento", "Practica un rato y mejora tus habilidades de combate.", Vector2(0, 52))
 			_agregar_estacion_edificio(cuarto, "cuartel_licencia", "Solicitar licencia", Vector2(-105, 32))
 			_agregar_estacion_edificio(cuarto, "cuartel_armas", "Comprar armas", Vector2(105, 32))
 			_agregar_estacion_edificio(cuarto, "cuartel_entrenamiento", "Entrenar", Vector2(0, -38))
@@ -1887,6 +1890,29 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "Silla", MUEBLE_SILLA_FRENTE, Vector2(65, 65), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "Fogon", MUEBLE_HORNO, Vector2(165, -75), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 78), Vector2(0.9, 0.9), 1)
+
+
+func _agregar_descripcion_mesa(padre: Node, nombre: String, texto: String, posicion: Vector2) -> void:
+	var panel := PanelContainer.new()
+	panel.name = nombre
+	panel.position = posicion - Vector2(76.0, 0.0)
+	panel.custom_minimum_size = Vector2(152.0, 42.0)
+	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var estilo := PIXEL_UI_THEME.button_surface_style()
+	if estilo != null:
+		panel.add_theme_stylebox_override("panel", estilo)
+	var etiqueta := Label.new()
+	etiqueta.name = "Descripcion"
+	etiqueta.text = texto
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	etiqueta.add_theme_font_size_override("font_size", 10)
+	etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+	etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
+	etiqueta.add_theme_constant_override("outline_size", 2)
+	panel.add_child(etiqueta)
+	padre.add_child(panel)
 
 
 func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1, flip_h: bool = false) -> void:
