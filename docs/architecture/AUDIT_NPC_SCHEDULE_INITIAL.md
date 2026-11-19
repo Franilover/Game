@@ -429,3 +429,5 @@ La entrada a un interior retiraba temporalmente a los NPC del grupo `interactabl
 Ahora `_guardar_estado_visibilidad_npc()` conserva por instancia tanto la visibilidad como la pertenencia original a `interactable`. Se usa al ocultar el exterior y al registrar NPC materializados mientras el jugador permanece dentro. La restauración devuelve ambos valores, manteniendo la protección adicional de que un NPC que sigue dentro de un edificio permanece oculto y no interactuable.
 
 El test de ciclo de interiores cubre NPC originalmente interactuables, NPC visibles sin interacción y NPC materializados durante la estancia. También comprueba que el nuevo registro no les conceda interacción por defecto.
+
+La captura de NPC también se pasa explícitamente a los métodos de ocultación y restauración. Al salir, `_salir_del_interior()` obtiene un único snapshot y lo reutiliza para devolver NPCs de habitaciones y restaurar su estado exterior, evitando nuevas consultas al grupo en mitad de la transición.
