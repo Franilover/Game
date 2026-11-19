@@ -464,3 +464,10 @@ No cambia la selección de muebles, destinos, pausas ni la frecuencia de los pas
 La primera ejecución del paso nuevo de CI para `test_creature_movement_npc_safety.gd` falló antes de iniciar la prueba: el workflow apuntaba a `res://tests/creatures/test_creature_movement_npc_safety.tscn`, pero sólo existía el script GDScript. Se añadió la escena mínima que instancia ese script, siguiendo el patrón de las pruebas de contrato de IA ya existentes.
 
 El log de GitHub Actions confirmó que la importación de recursos y las pruebas anteriores terminaban correctamente; el error fue exclusivamente `Cannot open file` para la escena ausente. La prueba ya tiene una escena de entrada verificable y el siguiente run de CI debe confirmar su ejecución real. No se considera validada hasta que ese run termine correctamente.
+
+
+## 45. Reutilización del estado nocturno durante la resolución de rutina
+
+`_aplicar_rutina()` ya determina al principio si el horario está dentro del tramo nocturno. La condición que fuerza el regreso al hogar cuando no existe una actividad programada volvía a calcular exactamente el mismo límite horario. Ahora reutiliza `horario_nocturno`, conservando la condición adicional de ausencia de rutina.
+
+Es una simplificación local: no cambia los límites (21:00 inclusive y antes de 06:00), ni la prioridad de turnos esenciales, ni el destino elegido. Se mantiene la misma fuente de verdad durante toda la resolución.
