@@ -590,8 +590,8 @@ func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nom
 
 func _construir_procesamiento_herbolario() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
-	_agregar_texto("RECETAS BOTÁNICAS")
-	_agregar_texto("Selecciona una receta para ver sus ingredientes. Solo se muestran recetas que utilizan muestras botánicas; el resultado debe existir en el catálogo.")
+	_agregar_texto("SELECCIÓN DE MATERIAL")
+	_agregar_texto("Elige un objeto botánico de tu inventario para consultar únicamente los procesos que puedes realizar con él.")
 	if not is_instance_valid(_world_items):
 		_agregar_texto("No se pudo acceder al catálogo compartido.")
 		return
@@ -600,21 +600,122 @@ func _construir_procesamiento_herbolario() -> void:
 		if not _world_items.recetas_cargadas.is_connected(_al_recetas_herbolario_cargadas):
 			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
 		return
-	var recetas := _world_items.obtener_recetas()
-	var encontradas := 0
-	for receta in recetas:
-		if not _receta_es_botanica(receta):
+	var cuerpo := HBoxContainer.new()
+	cuerpo.add_theme_constant_override("separation", 10)
+	cuerpo.custom_minimum_size = Vector2(510, 260)
+	_contenido.add_child(cuerpo)
+	var panel_lista := PanelContainer.new()
+	panel_lista.custom_minimum_size = Vector2(180, 0)
+	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cuerpo.add_child(panel_lista)
+	PIXEL_UI_THEME.apply(panel_lista, false)
+	var scroll_lista := ScrollContainer.new()
+	scroll_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel_lista.add_child(scroll_lista)
+	var lista := VBoxContainer.new()
+	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_lista.add_child(lista)
+	var panel_detalle := PanelContainer.new()
+	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	cuerpo.add_child(panel_detalle)
+	PIXEL_UI_THEME.apply(panel_detalle, false)
+	var detalle := VBoxContainer.new()
+	detalle.add_theme_constant_override("separation", 6)
+	panel_detalle.add_child(detalle)
+	var vistos: Dictionary = {}
+	var seleccion_inicial: Dictionary = {}
+	if is_instance_valid(_inventario):
+		for objeto_variant in _inventario.runtime.state.items:
+			if not objeto_variant is Dictionary:
+				continue
+			var objeto := objeto_variant as Dictionary
+			if objeto.is_empty() or not _es_muestra_botanica(objeto):
+				continue
+			var item_id := str(objeto.get("item_id", objeto.get("id", "")))
+			if item_id.is_empty() or vistos.has(item_id):
+				continue
+			var item_catalogo := _world_items.buscar_item_por_id(item_id)
+			if item_catalogo.is_empty():
+				continue
+			vistos[item_id] = true
+			if seleccion_inicial.is_empty():
+				seleccion_inicial = item_catalogo
+			var boton := Button.new()
+			boton.text = "%s  x%d" % [str(item_catalogo.get("nombre", objeto.get("nombre", "Material"))), _contar_item(item_id)]
+			boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			boton.pressed.connect(_mostrar_procesos_item_herbolario.bind(item_id, item_catalogo, detalle))
+			lista.add_child(boton)
+			PIXEL_UI_THEME.apply(boton, false)
+	if vistos.is_empty():
+		var vacio := Label.new()
+		vacio.text = "No tienes materiales botánicos."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lista.add_child(vacio)
+		var instruccion := Label.new()
+		instruccion.text = "Consigue flores, hojas, semillas o hierbas para ver sus procesos."
+		instruccion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detalle.add_child(instruccion)
+	else:
+		var primer_id := str(seleccion_inicial.get("id", seleccion_inicial.get("item_id", "")))
+		if primer_id.is_empty():
+			for id in vistos.keys():
+				primer_id = str(id)
+				break
+		_mostrar_procesos_item_herbolario(primer_id, seleccion_inicial, detalle)
+
+
+func _mostrar_procesos_item_herbolario(item_id: String, item: Dictionary, detalle: VBoxContainer) -> void:
+	for hijo in detalle.get_children():
+		hijo.queue_free()
+	var icono := TextureRect.new()
+	icono.custom_minimum_size = Vector2(0, 88)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(item)
+	detalle.add_child(icono)
+	var nombre := Label.new()
+	nombre.text = str(item.get("nombre", "Material"))
+	nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	nombre.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.add_child(nombre)
+	var descripcion := Label.new()
+	descripcion.text = str(item.get("descripcion", ""))
+	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.add_child(descripcion)
+	var cantidad := Label.new()
+	cantidad.text = "En inventario: %d" % _contar_item(item_id)
+	detalle.add_child(cantidad)
+	var titulo_procesos := Label.new()
+	titulo_procesos.text = "PROCESOS DISPONIBLES"
+	detalle.add_child(titulo_procesos)
+	var procesos := 0
+	for receta in _world_items.obtener_recetas():
+		if not _receta_es_botanica(receta) or not _receta_usa_item(receta, item_id):
 			continue
-		encontradas += 1
+		procesos += 1
 		_agregar_tarjeta_receta_herbolario(receta)
-	if encontradas == 0:
-		_agregar_texto("No hay recetas botánicas registradas en el catálogo actualmente.")
+	if procesos == 0:
+		var sin_procesos := Label.new()
+		sin_procesos.text = "No hay procesos registrados para este material."
+		sin_procesos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detalle.add_child(sin_procesos)
+
+
+func _receta_usa_item(receta: Dictionary, item_id: String) -> bool:
+	var ingredientes_variant: Variant = receta.get("ingredientes", [])
+	if not ingredientes_variant is Array:
+		return false
+	for ingrediente_variant in ingredientes_variant as Array:
+		if ingrediente_variant is Dictionary and str((ingrediente_variant as Dictionary).get("item_id", "")) == item_id:
+			return true
+	return false
 
 
 func _al_recetas_herbolario_cargadas(_recetas: Array) -> void:
 	if is_inside_tree() and _tipo == "herbolario_procesamiento":
 		_actualizar()
-
 
 func _receta_es_botanica(receta: Dictionary) -> bool:
 	var categoria := str(receta.get("categoria", "")).to_lower()
@@ -657,24 +758,23 @@ func _agregar_tarjeta_receta_herbolario(receta: Dictionary) -> void:
 	detalles.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var lineas: Array[String] = []
 	var ingredientes_variant: Variant = receta.get("ingredientes", [])
-	var tiene_ingredientes := ingredientes_variant is Array and not (ingredientes_variant as Array).is_empty()
-	var tiene_iconos := tiene_ingredientes
-	var suficientes := tiene_ingredientes
-	if tiene_ingredientes:
+	var suficientes := ingredientes_variant is Array and not (ingredientes_variant as Array).is_empty()
+	var tiene_iconos := suficientes
+	if suficientes:
 		for ingrediente_variant in ingredientes_variant as Array:
 			if not ingrediente_variant is Dictionary:
 				tiene_iconos = false
 				suficientes = false
 				continue
 			var ingrediente := ingrediente_variant as Dictionary
-			var item_id := str(ingrediente.get("item_id", ""))
-			var cantidad := maxi(1, int(ingrediente.get("cantidad", 1)))
-			var item := _world_items.buscar_item_por_id(item_id)
-			var disponible := _contar_item(item_id)
-			lineas.append("%s · %d/%d" % [str(item.get("nombre", "Material desconocido")), disponible, cantidad])
-			if item.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(item):
+			var ingrediente_id := str(ingrediente.get("item_id", ""))
+			var requerido := maxi(1, int(ingrediente.get("cantidad", 1)))
+			var item_ingrediente := _world_items.buscar_item_por_id(ingrediente_id)
+			var disponible := _contar_item(ingrediente_id)
+			lineas.append("%s · %d/%d" % [str(item_ingrediente.get("nombre", "Material desconocido")), disponible, requerido])
+			if item_ingrediente.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(item_ingrediente):
 				tiene_iconos = false
-			if disponible < cantidad:
+			if disponible < requerido:
 				suficientes = false
 	else:
 		lineas.append("Ingredientes no definidos.")
