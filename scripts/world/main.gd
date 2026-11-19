@@ -748,9 +748,9 @@ func _retirar_npcs_reino_torres() -> void:
 		npc.queue_free()
 
 
-func _deduplicar_npcs_reino_torres() -> void:
+func _deduplicar_npcs_reino_torres(npcs: Array) -> void:
 	var identidades_vistas: Dictionary = {}
-	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for npc_variant in npcs:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
@@ -773,7 +773,7 @@ func _deduplicar_npcs_reino_torres() -> void:
 		npc.queue_free()
 
 
-func _retirar_npcs_canonicos_ausentes() -> void:
+func _retirar_npcs_canonicos_ausentes(npcs: Array) -> void:
 	# El campo es opcional en snapshots antiguos. Su ausencia no demuestra que
 	# todos los personajes hayan sido eliminados; sólo una lista explícita
 	# puede actuar como catálogo autoritativo para retirar instancias.
@@ -790,10 +790,12 @@ func _retirar_npcs_canonicos_ausentes() -> void:
 		if not personaje_id.is_empty():
 			identidades_canonicas[personaje_id] = true
 
-	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for npc_variant in npcs:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
+		if not npc.is_in_group("torres_game_npc"):
+			continue
 		var personaje_id := npc.get_personaje_game_id().strip_edges()
 		if personaje_id.is_empty() or identidades_canonicas.has(personaje_id):
 			continue
@@ -814,11 +816,18 @@ func _materializar_npcs_reino_torres() -> void:
 	if not is_instance_valid(zona):
 		return
 
-	_deduplicar_npcs_reino_torres()
-	_retirar_npcs_canonicos_ausentes()
+	# Reutilizar una captura estable del grupo durante toda la reconciliación.
+	# Las funciones retiran del grupo inmediatamente a los nodos descartados.
+	var npcs_actuales := get_tree().get_nodes_in_group("torres_game_npc")
+	_deduplicar_npcs_reino_torres(npcs_actuales)
+	_retirar_npcs_canonicos_ausentes(npcs_actuales)
 	var existentes: Dictionary = {}
-	for npc_existente in get_tree().get_nodes_in_group("torres_game_npc"):
-		if npc_existente is Creature and is_instance_valid(npc_existente):
+	for npc_existente in npcs_actuales:
+		if (
+			npc_existente is Creature
+			and is_instance_valid(npc_existente)
+			and npc_existente.is_in_group("torres_game_npc")
+		):
 			existentes[(npc_existente as Creature).get_personaje_game_id()] = npc_existente
 
 	var creados := 0
