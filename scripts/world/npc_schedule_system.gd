@@ -1494,6 +1494,22 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 
 
 
+func _iniciar_idle_postura_npc(npc: Creature, sprite: Sprite2D, postura: String, destino: Vector2) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(sprite):
+		return
+	var tween := npc.create_tween()
+	tween.set_loops()
+	tween.set_trans(Tween.TRANS_SINE)
+	tween.set_ease(Tween.EASE_IN_OUT)
+	if postura == "dormir":
+		tween.tween_property(sprite, "scale:y", sprite.scale.y * 1.025, 1.1)
+		tween.tween_property(sprite, "scale:y", sprite.scale.y / 1.025, 1.1)
+	else:
+		tween.tween_property(sprite, "position:y", destino.y - 0.8, 0.65)
+		tween.tween_property(sprite, "position:y", destino.y, 0.65)
+	npc.set_meta("animacion_actividad_interior_tween", tween)
+
+
 func _detener_animacion_actividad_interior(npc: Creature) -> void:
 	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_actividad_interior_activa", false)):
 		return
