@@ -111,6 +111,17 @@ func _run() -> void:
 	destino.guardar_conversaciones_npc(conversaciones)
 	if relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
 		errores.append("Consideró nueva una noticia que el destinatario ya conoce.")
+	if not relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
+		errores.append("No reconoció el conocimiento privado autorizado con confianza suficiente.")
+	conversaciones = destino.obtener_conversaciones_npc()
+	var relaciones_guardadas: Dictionary = conversaciones.get("_relaciones_npc", {})
+	var relacion_guardada: Dictionary = relaciones_guardadas.get("ivo|nima", {})
+	relacion_guardada["confianza"] = 29.0
+	relaciones_guardadas["ivo|nima"] = relacion_guardada
+	conversaciones["_relaciones_npc"] = relaciones_guardadas
+	destino.guardar_conversaciones_npc(conversaciones)
+	if relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
+		errores.append("Permitió compartir conocimiento privado por debajo del umbral de confianza.")
 	if not destino.obtener_conversaciones_npc().get("_promesas_npc", []) is Array:
 		errores.append("La lectura completa de conversaciones dejó de conservar las demás secciones.")
 	relaciones_sociales.free()
