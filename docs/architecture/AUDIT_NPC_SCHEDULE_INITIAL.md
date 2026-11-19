@@ -439,3 +439,11 @@ La captura de NPC también se pasa explícitamente a los métodos de ocultación
 `registrar_npc_materializado()` registra el estado visible/interactuable antes de ocultar un NPC creado mientras el jugador permanece dentro. La captura ahora es idempotente por `instance_id`: si el mismo NPC vuelve a registrarse durante esa estancia, conserva el primer estado y no sustituye los valores originales por el estado temporal oculto/no interactuable.
 
 La prueba de transición repite el registro del mismo NPC y comprueba que al salir se restaure su visibilidad e interacción originales. La cobertura de NPC originalmente no interactuables se mantiene por separado. No se añade caché persistente ni se cambia el ciclo de materialización.
+
+
+
+## 42. Cambio de edificio durante una estancia interior
+
+Se añadió una regresión para el caso en que un NPC abandona su edificio de rutina mientras el jugador permanece dentro de otro. El NPC vuelve al contenedor exterior, mantiene temporalmente desactivadas sus colisiones y permanece oculto/no interactuable. Al salir el jugador, recupera la visibilidad, pertenencia a `interactable` y capas/máscaras originales capturadas al entrar.
+
+La prueba verifica explícitamente que el cambio de rutina no reactive al NPC antes de la salida del jugador. No se modifica la prioridad de horarios ni el mecanismo de navegación.
