@@ -11,7 +11,6 @@ var _lista_vinculados: GridContainer
 var _lista_amigos: GridContainer
 var _estado: Label
 var _detalle: VBoxContainer
-var _boton_vinculos: Button
 
 
 func _ready() -> void:
@@ -36,14 +35,6 @@ func _crear_interfaz() -> void:
 	columna.add_theme_constant_override("separation", 0)
 	margen.add_child(columna)
 
-	var barra_subtabs := HBoxContainer.new()
-	barra_subtabs.add_theme_constant_override("separation", 4)
-	columna.add_child(barra_subtabs)
-	_boton_vinculos = Button.new()
-	_boton_vinculos.text = "Vínculos"
-	_boton_vinculos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_boton_vinculos.pressed.connect(_mostrar_vinculos)
-	barra_subtabs.add_child(_boton_vinculos)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 5)
@@ -97,14 +88,7 @@ func _crear_interfaz() -> void:
 
 
 func abrir_en_garumis() -> void:
-	_mostrar_vinculos()
-
-
-func _mostrar_vinculos() -> void:
-	_pagina_garumis.visible = true
-	_estado.visible = true
 	actualizar()
-
 
 func actualizar() -> void:
 	if not is_instance_valid(_lista_vinculados):
