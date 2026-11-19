@@ -328,3 +328,13 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Comprueba que el NPC se retire de la habitación, limpie la identidad del edificio anterior y permanezca oculto/no interactuable/sin colisiones mientras el jugador sigue dentro.
 - Comprueba que al salir el jugador se restauren visibilidad, interacción y colisiones originales.
 - Sin cambios de comportamiento productivo; CI Godot 4.7 y GDScript Quality pendientes.
+
+
+## Contrato de autoridad de movimiento NPC (2026-11-19)
+
+- Se verificó que `CreatureMovement` es el ejecutor único; agenda, conversaciones, acercamientos e historias sólo coordinan estados y rutas.
+- Prioridad documentada: pausa temporal, ruta de rutina, restricción de criatura inmóvil, dirección externa y movimiento autónomo.
+- Se aclaró la diferencia crítica entre `detener_por_rutina()` (mantiene el bloqueo de control con ruta vacía) y `detener()` (libera el modo de rutina).
+- El acercamiento a iniciativa restaura la rutina al finalizar/cancelar; las actividades y objetivos sociales se procesan con prioridad excluyente en el tick.
+- No se detectó una colisión de órdenes que justifique añadir un controlador o modificar producción. La siguiente cobertura útil es probar precedencia de órdenes y ciclo completo de iniciativa.
+- CI de los cambios de regresión previos continúa en ejecución; no se declara validación hasta su resultado.
