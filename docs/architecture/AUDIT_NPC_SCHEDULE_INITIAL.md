@@ -212,3 +212,20 @@ La evaluación de fecha, estado de aceptación y franja horaria se trasladó a `
 Se preservan el orden de validación y los límites temporales existentes: sólo se evalúa entre 17:00 y 19:00, la hora final es exclusiva y una invitación sólo se activa en el día exacto y con estado `aceptada`. La caducidad conserva la comparación por año y día.
 
 Las pruebas cubren activación, límites horarios, fecha futura, estado no aceptado, caducidad y ausencia de mutación del diccionario original. No se cambia el formato persistido de las invitaciones.
+
+
+## 17. Unificación de requisitos del encuentro de Mara, Ivo y Nima
+
+Se mantuvo el encuentro dentro de `NPCScheduleSystem`; no se creó un gestor ni un subsistema paralelo. La clase conserva la consulta de participantes vivos, el progreso narrativo desde `GameState`, las relaciones desde `RelationshipSystemService`, la disponibilidad horaria, las invitaciones aceptadas y la aplicación de la rutina en la plaza.
+
+La comprobación compartida de requisitos se concentró en `NPCScheduleRules.cumple_requisitos_encuentro_trio()`. Recibe los datos ya consultados y valida, en un único lugar:
+
+- Etapa mínima de `mara_ivo_apoyo` y `nima_ivo_investigacion`.
+- Existencia de las tres relaciones entre Mara, Ivo y Nima.
+- Al menos una interacción por pareja.
+- Cercanía conjunta mínima de 0.5 (amistad + confianza + afecto + colaboración).
+- Tensión inferior a 4.0 en cada vínculo.
+
+La regla es pura: no consulta servicios, no modifica progreso ni relaciones y no decide el día de reunión. La planificación semanal y la prioridad de rutinas siguen en `NPCScheduleSystem`, que es donde ya se coordinan.
+
+Se añadieron pruebas para historia incompleta, falta de interacciones, vínculo insuficiente, tensión alta, relaciones incompletas y ausencia de mutación. El objetivo de esta mejora es reducir duplicación y hacer verificables los requisitos existentes, no cambiar el diseño narrativo ni la frecuencia del encuentro.
