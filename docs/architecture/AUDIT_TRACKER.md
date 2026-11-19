@@ -261,3 +261,12 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - El helper devuelve un contexto con calendario, rutina y evento; la fase de turnos, prioridad nocturna, clima y movimiento permanece en `_aplicar_rutina()`.
 - Añadida regresión para la extensión local de Elian y la no mutación del calendario original.
 - CI: [Godot 4.7 46/46](https://github.com/Franilover/Game/actions/runs/44624623124); [GDScript Quality](https://github.com/Franilover/Game/actions/runs/44624623318), ambos success.
+
+
+## Extracción NPCNavigationSystem — navegación de Torres (2026-11-19)
+
+- La malla AStar, su construcción e invalidación, la detección de cambios de colisión, los costes de terreno y el cálculo de rutas ahora pertenecen a `NPCNavigationSystem`, como nodo de `Main/Systems`.
+- `NPCScheduleSystem` conserva rutinas, actividades, interiores y estado de movimiento; recibe navegación por inyección y delega las rutas.
+- La señal `malla_reconstruida` permite invalidar rutas de rutina desde el propietario de las decisiones NPC, sin transferir esa responsabilidad al servicio geométrico.
+- Se adaptaron las regresiones de límites del mapa y búsqueda de celda transitable. No se cambian puertas, escenas de edificios, datos guardados ni Supabase.
+- CI Godot 4.7 y GDScript Quality: pendiente para este commit.
