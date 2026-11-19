@@ -2,6 +2,7 @@ extends Node
 
 const RuntimeScript = preload("res://scripts/gameplay/inventory/inventory_runtime.gd")
 const WorldItemsScript = preload("res://scripts/infrastructure/garlia_world_items.gd")
+const IconResolver = preload("res://scripts/ui/item_icon_resolver.gd")
 
 
 func _ready() -> void:
@@ -88,6 +89,12 @@ func _run() -> void:
 		errores.append("El ejemplar no quedó marcado como no apilable.")
 	if (resuelto.get("propiedades_game", {}) as Dictionary).get("peso", 0) != 1:
 		errores.append("El ejemplar no heredó las propiedades del objeto base.")
+	var icono_base := IconResolver.obtener_icono({"nombre": "Carta Aoris"})
+	var icono_ejemplar := IconResolver.obtener_icono(resuelto)
+	if icono_base == null or icono_ejemplar == null:
+		errores.append("No se pudo resolver el sprite compartido de la carta.")
+	elif icono_base.resource_path != icono_ejemplar.resource_path:
+		errores.append("El ejemplar no usa exactamente el sprite del objeto base.")
 
 	world_items.free()
 	runtime.free()
