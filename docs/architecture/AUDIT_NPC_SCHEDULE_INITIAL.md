@@ -313,3 +313,12 @@ Se añadieron `GameStateService.obtener_recuerdos_sociales_npc()` y `guardar_rec
 `RelationshipSystemService` usa estas operaciones en registro, consulta y marcado de recuerdos. Si un GameState antiguo no expone los métodos puntuales, conserva un fallback mediante las operaciones completas anteriores. Se mantienen las reglas de consolidación de `tema_conversacion`, contador, primer momento, importancia máxima, prioridad del recuerdo pendiente, identificador estable, límite de 32 entradas y emisión de `recuerdo_registrado`.
 
 La prueba de roundtrip comprueba aislamiento de copias, actualización de un tema recurrente sin duplicarlo, conservación de primer momento e importancia, actualización del último momento, selección y marcado del recuerdo pendiente y aislamiento del historial de otro NPC. La validación de CI queda pendiente.
+
+
+## 27. Acceso puntual a relaciones jugador-NPC
+
+La relación del jugador con cada habitante se almacena en `world_state.flags["relaciones_sociales"]`, separada de las relaciones entre NPC guardadas dentro de `conversaciones_npc`. La revisión detectó que `RelationshipSystemService` todavía copiaba el diccionario completo de relaciones jugador-NPC para consultar o modificar a una sola persona.
+
+Se añadieron `GameStateService.obtener_relacion_social_jugador_npc()` y `guardar_relacion_social_jugador_npc()`. El servicio social ahora usa estas operaciones en la consulta inicial, modificación de valores, registro de eventos, registro de diálogos y variantes de diálogo. Los métodos completos permanecen como fallback para implementaciones antiguas de GameState.
+
+La lectura devuelve una copia profunda de la relación solicitada. La escritura duplica el contenedor exterior y sólo la relación modificada, conservando los demás habitantes y el formato persistido. La prueba de roundtrip verifica aislamiento de la copia, modificación de la amistad y conservación de la relación de otro NPC. No se modifican valores sociales ni reglas de evolución.
