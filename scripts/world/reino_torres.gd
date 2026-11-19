@@ -272,6 +272,12 @@ func _registrar_pozos_agua() -> void:
 func _process(_delta: float) -> void:
 	_actualizar_luces_faroles()
 	_actualizar_ambiente_torres(_delta)
+	# Mientras el diálogo de viaje está abierto, ocultamos el aviso contextual
+	# para que no quede superpuesto el botón «Solicitar».
+	if get_tree().get_first_node_in_group("travel_ticket_dialog") != null:
+		var hud := get_tree().get_first_node_in_group("hud")
+		if is_instance_valid(hud) and hud.has_method("ocultar_interaccion"):
+			hud.call("ocultar_interaccion")
 	if _interior_activo and _entrada_interior_id == "posada_habitacion" and not _posada_tiene_acceso():
 		_salir_del_interior()
 		Events.notification_pushed.emit("Tu estancia terminó. Tus pertenencias siguen guardadas.")
@@ -2389,14 +2395,17 @@ func _mostrar_confirmacion_pasaje_exterior() -> void:
 	var dialogo := ConfirmationDialog.new()
 	dialogo.name = "PasajeMundoExterior"
 	dialogo.add_to_group("travel_ticket_dialog")
-	dialogo.title = "Pasaje al mundo exterior"
-	dialogo.dialog_text = "El pasaje al mundo exterior cuesta 10 monedas.\nDeberás regresar antes de las 22:00; a esa hora volverás automáticamente a Torres.\n\n¿Comprar el pasaje?"
-	dialogo.ok_button_text = "Solicitar pasaje"
+	dialogo.title = "Viaje al mundo exterior"
+	dialogo.dialog_text = "Viajar cuesta 10 monedas.\nDeberás regresar antes de las 22:00; a esa hora volverás automáticamente a Torres.\n\n¿Deseas viajar?"
+	dialogo.ok_button_text = "Viajar"
 	dialogo.cancel_button_text = "Cancelar"
 	dialogo.confirmed.connect(_al_confirmar_pasaje_exterior)
 	dialogo.confirmed.connect(dialogo.queue_free)
 	dialogo.canceled.connect(dialogo.queue_free)
 	get_tree().root.add_child(dialogo)
+	PIXEL_UI_THEME.apply(dialogo, false)
+	PIXEL_UI_THEME.apply(dialogo.get_ok_button(), false)
+	PIXEL_UI_THEME.apply(dialogo.get_cancel_button(), false)
 	dialogo.popup_centered()
 
 
