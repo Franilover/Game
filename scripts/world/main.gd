@@ -97,6 +97,7 @@ const PLAYER_INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/pl
 var _reino_descubrimiento_elapsed: float = 0.0
 var _torres_rutina_elapsed: float = 0.0
 @onready var _npc_schedule_system: Node = $Systems/NPCScheduleSystem
+@onready var _npc_navigation_system: NPCNavigationSystem = $Systems/NPCNavigationSystem
 @onready var _npc_conversation_system: Node = $Systems/NPCConversationSystem
 var _datos_mundo_servidor_listos := false
 var _reinos_game_servidor_listos := false
