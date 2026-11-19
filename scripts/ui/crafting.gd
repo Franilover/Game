@@ -432,6 +432,7 @@ func _craftear(receta: Dictionary) -> void:
 
 	objeto_resultado["cantidad"] = output_cantidad
 	objeto_resultado["max_stack"] = maxi(1, int(objeto_resultado.get("max_stack", 1)))
+	var ingredientes: Array = receta.get("ingredientes", []) as Array
 
 	# La fabricación se confirma en una única transacción del runtime.
 	# Si faltan ingredientes o no cabe el resultado, no se modifica ningún slot.
