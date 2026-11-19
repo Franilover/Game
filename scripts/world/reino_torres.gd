@@ -31,12 +31,14 @@ const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_se
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
+const BUILDING_LAYOUT_SCENE: PackedScene = preload("res://scenes/kingdom/layout_edificios_torres.tscn")
 
 # Dimensión base. Los edificios grandes usan perfiles ampliados en _obtener_dimensiones_interior().
 const INTERIOR_ANCHO := 512.0
 const INTERIOR_ALTO := 320.0
 var _interior_ancho_actual: float = INTERIOR_ANCHO
 var _interior_alto_actual: float = INTERIOR_ALTO
+var _layout_edificios: Node2D = null
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Los recursos ausentes conservan únicamente su estructura pixel-art disponible.
@@ -240,6 +242,9 @@ func _ready() -> void:
 		_expedition_entrance.collision_layer = 0
 		_expedition_entrance.collision_mask = 0
 	_crear_selector_viajes()
+	_layout_edificios = BUILDING_LAYOUT_SCENE.instantiate() as Node2D
+	_layout_edificios.name = "LayoutEdificiosTorres"
+	add_child(_layout_edificios)
 	_jugador = get_tree().get_first_node_in_group("player") as Node2D
 	_capa_interior = Node2D.new()
 	_capa_interior.name = "InteriorActivo"
@@ -376,6 +381,11 @@ func _crear_grupos_edificios_nuevos() -> void:
 
 
 func _obtener_marcador_entrada(entrada: Dictionary) -> Marker2D:
+	var id := str(entrada.get("id", ""))
+	if is_instance_valid(_layout_edificios):
+		var marcador_layout := _layout_edificios.get_node_or_null("Entrada_" + id) as Marker2D
+		if is_instance_valid(marcador_layout):
+			return marcador_layout
 	var grupo := _obtener_grupo_entrada(entrada)
 	if not is_instance_valid(grupo):
 		return null
@@ -424,7 +434,10 @@ func _crear_objetivos_entrada() -> void:
 		if not is_instance_valid(objetivo):
 			continue
 		objetivo.name = "ObjetivoEntrada_" + str(entrada.get("id", "edificio"))
-		objetivo.position = marcador.position if is_instance_valid(marcador) else entrada.get("pos", Vector2.ZERO)
+		if is_instance_valid(marcador):
+			objetivo.position = grupo.to_local(marcador.global_position) if is_instance_valid(grupo) else to_local(marcador.global_position)
+		else:
+			objetivo.position = entrada.get("pos", Vector2.ZERO)
 		var nombre_lugar := str(entrada.get("nombre", "este lugar")).strip_edges()
 		objetivo.call(
 			"configurar",
@@ -1256,8 +1269,11 @@ func _cargar_sprites_de_torres() -> void:
 		_ocultar_placeholder(building["hide"])
 		var grupo_edificio := _obtener_grupo_entrada({"id": clave})
 		var contenedor_sprite: Node = grupo_edificio if is_instance_valid(grupo_edificio) else self
+		var marcador_sprite := _layout_edificios.get_node_or_null("Sprite_" + clave) as Marker2D if is_instance_valid(_layout_edificios) else null
 		var sprite_existente := contenedor_sprite.get_node_or_null(NodePath(String(building.get("sprite_node", "Sprite_" + clave)))) as Sprite2D
 		if is_instance_valid(sprite_existente):
+			if is_instance_valid(marcador_sprite):
+				sprite_existente.position = contenedor_sprite.to_local(marcador_sprite.global_position)
 			print("ReinoTorres: sprite oficial de escena activo para ", clave)
 			continue
 
@@ -1271,7 +1287,10 @@ func _cargar_sprites_de_torres() -> void:
 		var sprite := Sprite2D.new()
 		sprite.name = String(building.get("sprite_node", "Sprite_" + clave.capitalize()))
 		sprite.texture = texture
-		sprite.position = building["position"]
+		if is_instance_valid(marcador_sprite):
+			sprite.position = contenedor_sprite.to_local(marcador_sprite.global_position)
+		else:
+			sprite.position = building["position"]
 		sprite.centered = true
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var target_size: Vector2 = building["size"]
