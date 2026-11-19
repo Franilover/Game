@@ -653,6 +653,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		_finalizar_actividad_social(npc)
 	elif bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
 		return
+	var nombre_para_descanso := npc.get_nombre_visual().strip_edges().to_lower()
+	var hogar_respaldo := obtener_clave_hogar(nombre_para_descanso, "plaza")
 	var seleccion_rutina := _resolver_rutina_base_y_eventos(
 		npc, dia_semana, minutos, nombre_para_descanso
 	)
