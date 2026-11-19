@@ -9,6 +9,7 @@ const MAX_OBJECTOS_EN_MUNDO: int = 3
 const CATALOG_CACHE_PATH: String = "user://cache/items_game.json"
 const RECIPES_CACHE_PATH: String = "user://cache/recetas_game.json"
 const MAX_RECIPES_RETRIES: int = 3
+const INTERVALO_REINTENTO_OFFLINE: float = 30.0
 const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
 const CATALOG_RETRY_DELAY: float = 1.5
@@ -42,6 +43,8 @@ var origen_catalogo: String = ""
 var recetas: Array[Dictionary] = []
 var recetas_disponibles: bool = false
 var origen_recetas: String = ""
+var _items_por_id: Dictionary = {}
+var _items_por_nombre: Dictionary = {}
 
 var _objetos_generados_en_escena: bool = false
 var _generacion_habilitada: bool = true
@@ -76,6 +79,7 @@ func _ready() -> void:
 	_request.timeout = HTTP_TIMEOUT
 	add_child(_request)
 	_request.request_completed.connect(_al_recibir_catalogo)
+	catalogo_cargado.connect(_al_catalogo_disponible_para_drops)
 
 	_request_drops = HTTPRequest.new()
 	_request_drops.timeout = HTTP_TIMEOUT
@@ -159,11 +163,16 @@ func cargar_catalogo() -> void:
 func _cargar_catalogo_reintentando(mensaje: String) -> void:
 	if _intentos_catalogo >= MAX_CATALOG_RETRIES:
 		carga_fallida.emit(mensaje)
+		print("GarliaWorldItems: sincronización de objetos pausada; nuevo intento en ", INTERVALO_REINTENTO_OFFLINE, "s.")
+		await get_tree().create_timer(INTERVALO_REINTENTO_OFFLINE).timeout
+		if is_inside_tree() and not _cargando:
+			_intentos_catalogo = 0
+			cargar_catalogo()
 		return
 
 	print("GarliaWorldItems: reintentando catálogo → intento ", str(_intentos_catalogo + 1), "/", str(MAX_CATALOG_RETRIES), " en ", str(CATALOG_RETRY_DELAY), "s")
 	await get_tree().create_timer(CATALOG_RETRY_DELAY).timeout
-	if not _cargando:
+	if is_inside_tree() and not _cargando:
 		cargar_catalogo()
 
 
@@ -213,23 +222,11 @@ func _al_recibir_catalogo(
 
 
 func _cargar_catalogo_local() -> void:
-	if not FileAccess.file_exists(CATALOG_CACHE_PATH):
-		print("GarliaWorldItems: no existe caché local de objetos.")
+	var datos := _leer_cache_catalogo(CATALOG_CACHE_PATH)
+	if datos.is_empty():
+		print("GarliaWorldItems: no existe caché local válida de objetos.")
 		return
-
-	var archivo := FileAccess.open(CATALOG_CACHE_PATH, FileAccess.READ)
-	if archivo == null:
-		print("GarliaWorldItems: no se pudo abrir la caché local de objetos.")
-		return
-
-	var texto := archivo.get_as_text()
-	archivo.close()
-	var datos: Variant = JSON.parse_string(texto)
-	if not datos is Array or (datos as Array).is_empty():
-		print("GarliaWorldItems: caché local inválida o vacía.")
-		return
-
-	_procesar_catalogo(datos as Array, "caché local", false)
+	_procesar_catalogo(datos, "caché local", false)
 
 
 func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> void:
@@ -272,6 +269,15 @@ func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> vo
 		return
 
 	catalogo = catalogo_nuevo
+	_items_por_id.clear()
+	_items_por_nombre.clear()
+	for item in catalogo:
+		var id := str(item.get("item_id", item.get("id", ""))).strip_edges()
+		var nombre := str(item.get("nombre", "")).strip_edges().to_lower()
+		if not id.is_empty():
+			_items_por_id[id] = item
+		if not nombre.is_empty():
+			_items_por_nombre[nombre] = item
 	catalogo_disponible = true
 	origen_catalogo = origen
 
@@ -389,7 +395,11 @@ func _procesar_recetas(datos: Array, origen: String, guardar_cache: bool) -> voi
 func _reintentar_recetas(mensaje: String) -> void:
 	print("GarliaWorldItems: ", mensaje)
 	if _intentos_recetas >= MAX_RECIPES_RETRIES:
-		print("GarliaWorldItems: se agotaron los reintentos iniciales de recetas; se conserva la copia local.")
+		print("GarliaWorldItems: se conserva la caché de recetas; nuevo intento en ", INTERVALO_REINTENTO_OFFLINE, "s.")
+		await get_tree().create_timer(INTERVALO_REINTENTO_OFFLINE).timeout
+		if is_inside_tree() and not _cargando_recetas:
+			_intentos_recetas = 0
+			cargar_recetas()
 		return
 	await get_tree().create_timer(CATALOG_RETRY_DELAY * float(_intentos_recetas)).timeout
 	if is_inside_tree() and not _cargando_recetas:
@@ -404,48 +414,26 @@ func obtener_catalogo() -> Array[Dictionary]:
 	return catalogo.duplicate(true)
 
 
-func buscar_item_por_id(
-	item_id: String
-) -> Dictionary:
-	var buscado: String = item_id.strip_edges()
-
+func buscar_item_por_id(item_id: String) -> Dictionary:
+	var buscado := item_id.strip_edges()
 	if buscado.is_empty():
 		return {}
-
-	for item in catalogo:
-		var actual_id: String = str(
-			item.get(
-				"item_id",
-				item.get("id", "")
-			)
-		).strip_edges()
-
-		if actual_id == buscado:
-			return item.duplicate(true)
-
-	return {}
+	var item: Variant = _items_por_id.get(buscado, {})
+	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
 
 
-func buscar_item_por_nombre(
-	nombre: String
-) -> Dictionary:
-	var buscado: String = nombre.strip_edges().to_lower()
-
+func buscar_item_por_nombre(nombre: String) -> Dictionary:
+	var buscado := nombre.strip_edges().to_lower()
 	if buscado.is_empty():
 		return {}
+	var item: Variant = _items_por_nombre.get(buscado, {})
+	return (item as Dictionary).duplicate(true) if item is Dictionary else {}
 
-	for item in catalogo:
-		var nombre_item: String = str(
-			item.get(
-				"nombre",
-				""
-			)
-		).strip_edges()
 
-		if nombre_item.to_lower() == buscado:
-			return item.duplicate(true)
+func _al_catalogo_disponible_para_drops(_items: Array) -> void:
+	_procesar_siguiente_drop()
 
-	return {}
+
 
 
 func generar_drops_criatura(
@@ -475,6 +463,9 @@ func _procesar_siguiente_drop() -> void:
 		return
 
 	if _cola_drops.is_empty():
+		return
+	# No consumir la cola hasta disponer de los metadatos canónicos del item.
+	if not catalogo_disponible:
 		return
 
 	var solicitud_variant: Variant = _cola_drops.pop_front()
