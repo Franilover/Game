@@ -499,3 +499,10 @@ También se obtiene una sola vez el nodo del jugador al comenzar el tick y se re
 El ciclo de Torres obtiene el calendario del mundo una vez para decidir el día y el minuto. Varias rutinas sociales, eventos, ocio y resúmenes diarios volvían a solicitar el mismo diccionario de tiempo durante el recorrido de NPC. Se añadió `_obtener_tiempo_actual()`: durante el tick devuelve la instantánea compartida y fuera de él conserva la consulta a `WorldAtmosphere` como respaldo. La instantánea se libera junto con el resto del contexto temporal al terminar el tick.
 
 La fecha de la reunión del castillo también se calcula una vez por actualización del grupo y se reutiliza para todos sus integrantes, en vez de consultar dos veces el calendario por cada integrante. No se cambia el reloj del mundo ni se guarda una copia persistente.
+
+
+## 50. Separación de la memoria diaria de reuniones
+
+`_aplicar_rutina()` acumulaba la selección del horario y la escritura de la memoria diaria que usan los diálogos nocturnos. La actualización de esa memoria se movió a `_actualizar_resumen_diario_reunion()`, con entradas explícitas para fecha, rutina, actividad y ubicación. El planificador conserva el orden de la llamada después de resolver el destino de la rutina.
+
+La extracción mantiene las reglas existentes: reiniciar al cambiar la fecha, conservar la última actividad significativa, ignorar descanso/regreso y usar el estado previo cuando el NPC ya está en la reunión. No introduce almacenamiento nuevo ni modifica el formato de metadatos.
