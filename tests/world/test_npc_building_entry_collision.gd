@@ -80,7 +80,30 @@ func _run() -> void:
 	if npc.collision_layer != 0 or npc.collision_mask != 0:
 		errores.append("El NPC recuperó colisiones exteriores antes de salir del interior.")
 
+	# La salida completa del edificio debe reutilizar la misma transición
+	# para todos los NPCs que siguen dentro de habitaciones.
+	var npc_colectivo := CreatureScript.new() as Creature
+	npc_colectivo.collision_layer = 8
+	npc_colectivo.collision_mask = 10
+	npc_colectivo.set_meta("rutina_edificio_id", "panaderia")
+	npc_colectivo.set_meta("rutina_en_edificio", true)
+	npc_colectivo.visible = true
+	npc_colectivo.add_to_group("torres_game_npc")
+	npc_colectivo.add_to_group("interactable")
+	habitacion.add_child(npc_colectivo)
+	await get_tree().process_frame
+	zona.call("_devolver_npcs_del_interior_al_exterior")
+	if npc_colectivo.get_parent() != contenedor_exterior:
+		errores.append("La salida completa no devolvió el NPC al contenedor exterior.")
+	if npc_colectivo.visible or npc_colectivo.is_in_group("interactable"):
+		errores.append("La salida completa dejó visible o interactuable al NPC.")
+	if npc_colectivo.collision_layer != 0 or npc_colectivo.collision_mask != 0:
+		errores.append("La salida completa reactivó prematuramente las colisiones exteriores.")
+	if npc_colectivo.global_position.distance_to(posicion_puerta_esperada) > 0.1:
+		errores.append("La salida completa no devolvió al NPC al umbral de su edificio.")
+
 	npc.queue_free()
+	npc_colectivo.queue_free()
 	contenedor_exterior.queue_free()
 	capa_interior.queue_free()
 	zona.free()
