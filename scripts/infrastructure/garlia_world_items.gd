@@ -12,7 +12,6 @@ const DROPS_CACHE_PATH: String = "user://cache/criatura_drops.json"
 const MAX_RECIPES_RETRIES: int = 3
 const INTERVALO_REINTENTO_OFFLINE: float = 30.0
 const INTERVALO_ACTUALIZACION_CATALOGOS: float = 300.0
-const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
 const CATALOG_RETRY_DELAY: float = 1.5
 
@@ -124,10 +123,8 @@ func cargar_catalogo() -> void:
 	_cargando = true
 	_intentos_catalogo += 1
 
-	var url := (
-		str(GarliaAuth.SUPABASE_URL)
-		+ "/rest/v1/items_game"
-		+ "?select=item_id,tipo,max_stack,propiedades,"
+	var consulta := (
+		"select=item_id,tipo,max_stack,propiedades,"
 		+ "categoria:categorias_items_game!items_game_categoria_clave_fkey(clave,nombre,descripcion,orden),"
 		+ "item:items!inner("
 		+ "id,nombre,descripcion,origen,"
@@ -139,8 +136,6 @@ func cargar_catalogo() -> void:
 		+ ")"
 		+ ")"
 	)
-
-	var consulta := url.substr(url.find("?") + 1)
 	print("GarliaWorldItems: cargando catálogo público mediante SupabaseClient...")
 	_request_id_catalogo = SupabaseClient.get_rest("items_game", consulta)
 	if _request_id_catalogo < 0:
