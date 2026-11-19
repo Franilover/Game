@@ -2391,6 +2391,9 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		if motivo_concreto:
 			memoria_npc = _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
 			memoria_candidato = _calcular_influencia_recuerdos_sociales(id_candidato, id_npc)
+		motivos_npc = _completar_motivos_sociales_concretos(
+			id_npc, id_candidato, motivos_npc
+		)
 		var distancia := npc.global_position.distance_to(candidato.global_position)
 		var puntuacion := (
 			amistad * 0.22 + afecto * 0.18 + confianza * 0.08
@@ -2461,13 +2464,41 @@ func _puede_iniciar_encuentro_social(
 
 
 func _obtener_motivos_sociales_concretos(personaje_id: String, pareja_id: String) -> Dictionary:
-	if not is_instance_valid(_relationship_system):
-		return {"promesa": false, "asunto": false, "noticia": false}
-	return {
-		"promesa": not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty(),
-		"asunto": not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty(),
-		"noticia": _hay_noticia_compartible(personaje_id, pareja_id)
+	var resultado := {
+		"promesa": false,
+		"asunto": false,
+		"noticia": false,
+		"promesa_consultada": false,
+		"asunto_consultado": false,
+		"noticia_consultada": false
 	}
+	if not is_instance_valid(_relationship_system):
+		return resultado
+	resultado["promesa_consultada"] = true
+	resultado["promesa"] = not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty()
+	if bool(resultado["promesa"]):
+		return resultado
+	resultado["asunto_consultado"] = true
+	resultado["asunto"] = not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty()
+	if bool(resultado["asunto"]):
+		return resultado
+	resultado["noticia_consultada"] = true
+	resultado["noticia"] = _hay_noticia_compartible(personaje_id, pareja_id)
+	return resultado
+
+
+func _completar_motivos_sociales_concretos(
+	personaje_id: String, pareja_id: String, resultado: Dictionary
+) -> Dictionary:
+	if not is_instance_valid(_relationship_system):
+		return resultado
+	if not bool(resultado.get("promesa_consultada", false)):
+		resultado["promesa"] = not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty()
+	if not bool(resultado.get("asunto_consultado", false)):
+		resultado["asunto"] = not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty()
+	if not bool(resultado.get("noticia_consultada", false)):
+		resultado["noticia"] = _hay_noticia_compartible(personaje_id, pareja_id)
+	return resultado
 
 
 func _hay_motivo_social_concreto(personaje_id: String, pareja_id: String) -> bool:
