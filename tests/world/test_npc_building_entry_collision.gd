@@ -44,6 +44,27 @@ func _run() -> void:
 	if forma.disabled:
 		errores.append("El NPC no recuperó su forma de colisión al entrar al interior.")
 
+	# Simula el traslado del NPC desde una habitación al contenedor exterior
+	# cuando su horario cambia de edificio.
+	var contenedor_exterior := Node2D.new()
+	var capa_interior := Node2D.new()
+	var habitacion := Node2D.new()
+	zona.add_child(contenedor_exterior)
+	zona.add_child(capa_interior)
+	capa_interior.add_child(habitacion)
+	zona.set("_contenedor_npcs_exterior", contenedor_exterior)
+	zona.set("_capa_interior", capa_interior)
+	npc.set_meta("rutina_edificio_id", "panaderia")
+	npc.reparent(habitacion, true)
+	npc.add_to_group("interactable")
+	zona.call("sacar_npc_del_interior", npc)
+	if npc.get_parent() != contenedor_exterior:
+		errores.append("El NPC no regresó al contenedor exterior al cambiar de edificio.")
+	if npc.visible or npc.is_in_group("interactable"):
+		errores.append("El NPC quedó visible o interactuable antes de reanudar su ruta.")
+	if npc.collision_layer != 0 or npc.collision_mask != 0:
+		errores.append("El NPC recuperó colisiones exteriores antes de salir del interior.")
+
 	npc.queue_free()
 	zona.free()
 	sistema.free()
