@@ -1408,9 +1408,20 @@ func _restaurar_formas_colision_npc(npc: Node) -> void:
 		poligono.set_deferred("disabled", deshabilitado)
 
 
+func _guardar_estado_visibilidad_npc(npc: Node) -> void:
+	if not is_instance_valid(npc) or not npc is CanvasItem:
+		return
+	var visual := npc as CanvasItem
+	_visibilidad_npcs_exterior[visual.get_instance_id()] = {
+		"visible": visual.visible,
+		"interactable": npc.is_in_group("interactable")
+	}
+
+
 func registrar_npc_materializado(npc: Node) -> void:
 	if not _interior_activo or not is_instance_valid(npc):
 		return
+	_guardar_estado_visibilidad_npc(npc)
 	if _contenedor_npcs_exterior == null:
 		_contenedor_npcs_exterior = npc.get_parent()
 	if is_instance_valid(_contenedor_npcs_exterior) and npc.get_parent() != _contenedor_npcs_exterior:
@@ -1428,9 +1439,8 @@ func _ocultar_npcs_exteriores() -> void:
 			continue
 		if _contenedor_npcs_exterior == null:
 			_contenedor_npcs_exterior = npc.get_parent()
-		var visual := npc as CanvasItem
-		_visibilidad_npcs_exterior[visual.get_instance_id()] = visual.visible
-		visual.visible = false
+		_guardar_estado_visibilidad_npc(npc)
+		(npc as CanvasItem).visible = false
 		# Ocultarlo no basta: el sistema de clics sigue encontrándolo
 		# mientras pertenezca al grupo interactable.
 		npc.remove_from_group("interactable")
@@ -1442,13 +1452,19 @@ func _restaurar_npcs_exteriores() -> void:
 			continue
 		var visual := npc as CanvasItem
 		var sigue_dentro := bool(npc.get_meta("rutina_en_edificio", false))
-		var visible_antes := bool(_visibilidad_npcs_exterior.get(visual.get_instance_id(), not sigue_dentro))
+		var estado_variant: Variant = _visibilidad_npcs_exterior.get(visual.get_instance_id(), {})
+		var visible_antes := not sigue_dentro
+		var interactuable_antes := npc is Creature
+		if estado_variant is Dictionary:
+			var estado := estado_variant as Dictionary
+			visible_antes = bool(estado.get("visible", visible_antes))
+			interactuable_antes = bool(estado.get("interactable", interactuable_antes))
 		if sigue_dentro:
 			desactivar_colision_npc_exterior(npc)
 		else:
 			restaurar_colision_npc(npc)
 		visual.visible = not sigue_dentro and visible_antes
-		if visual.visible and npc is Creature:
+		if visual.visible and interactuable_antes:
 			npc.add_to_group("interactable")
 		else:
 			npc.remove_from_group("interactable")
