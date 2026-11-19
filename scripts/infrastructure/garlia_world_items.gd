@@ -6,6 +6,7 @@ const WORLD_ITEM_SCENE: PackedScene = preload("res://scenes/world/world_item.tsc
 
 
 const MAX_OBJECTOS_EN_MUNDO: int = 3
+const CATALOG_CACHE_PATH: String = "user://cache/items_game.json"
 const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
 const CATALOG_RETRY_DELAY: float = 1.5
@@ -30,6 +31,8 @@ var _reintentos_drop_actual: int = 0
 var _cola_drops: Array[Dictionary] = []
 
 var catalogo: Array[Dictionary] = []
+var catalogo_disponible: bool = false
+var origen_catalogo: String = ""
 
 var _objetos_generados_en_escena: bool = false
 var _generacion_habilitada: bool = true
@@ -70,6 +73,7 @@ func _ready() -> void:
 	add_child(_request_drops)
 	_request_drops.request_completed.connect(_al_recibir_drops)
 
+	_cargar_catalogo_local()
 	call_deferred("cargar_catalogo")
 
 
@@ -183,8 +187,37 @@ func _al_recibir_catalogo(
 		_cargar_catalogo_reintentando(mensaje)
 		return
 
+	if datos.is_empty() and not catalogo.is_empty():
+		_intentos_catalogo = 0
+		print("GarliaWorldItems: Supabase devolvió un catálogo vacío; se conserva la copia local.")
+		return
+
 	_intentos_catalogo = 0
-	catalogo.clear()
+	_procesar_catalogo(datos, "Supabase", true)
+
+
+func _cargar_catalogo_local() -> void:
+	if not FileAccess.file_exists(CATALOG_CACHE_PATH):
+		print("GarliaWorldItems: no existe caché local de objetos.")
+		return
+
+	var archivo := FileAccess.open(CATALOG_CACHE_PATH, FileAccess.READ)
+	if archivo == null:
+		print("GarliaWorldItems: no se pudo abrir la caché local de objetos.")
+		return
+
+	var texto := archivo.get_as_text()
+	archivo.close()
+	var datos: Variant = JSON.parse_string(texto)
+	if not datos is Array or (datos as Array).is_empty():
+		print("GarliaWorldItems: caché local inválida o vacía.")
+		return
+
+	_procesar_catalogo(datos as Array, "caché local", false)
+
+
+func _procesar_catalogo(datos: Array, origen: String, guardar_cache: bool) -> void:
+	var catalogo_nuevo: Array[Dictionary] = []
 
 	for fila in datos:
 		if not fila is Dictionary:
@@ -192,19 +225,12 @@ func _al_recibir_catalogo(
 
 		var fila_game := fila as Dictionary
 		var item_variant: Variant = fila_game.get("item", null)
-
 		if not item_variant is Dictionary:
 			continue
 
 		var item := (item_variant as Dictionary).duplicate(true)
-
 		item["item_id"] = str(fila_game.get("item_id", item.get("id", "")))
-		# tipo_objeto se selecciona como campo hermano de item en la consulta
-		# PostgREST; no necesariamente viene dentro de la fila items anidada.
-		var tipo_objeto_variant: Variant = fila_game.get(
-			"tipo_objeto",
-			item.get("tipo_objeto", null)
-		)
+		var tipo_objeto_variant: Variant = fila_game.get("tipo_objeto", item.get("tipo_objeto", null))
 		if tipo_objeto_variant is Dictionary:
 			item["tipo_objeto"] = (tipo_objeto_variant as Dictionary).duplicate(true)
 		else:
@@ -213,10 +239,7 @@ func _al_recibir_catalogo(
 		item["max_stack"] = maxi(1, int(fila_game.get("max_stack", 1)))
 
 		var propiedades: Variant = fila_game.get("propiedades", {})
-		if propiedades is Dictionary:
-			item["propiedades_game"] = (propiedades as Dictionary).duplicate(true)
-		else:
-			item["propiedades_game"] = {}
+		item["propiedades_game"] = (propiedades as Dictionary).duplicate(true) if propiedades is Dictionary else {}
 
 		var categoria_variant: Variant = fila_game.get("categoria", null)
 		if categoria_variant is Dictionary:
@@ -226,9 +249,26 @@ func _al_recibir_catalogo(
 			item["categoria"] = {}
 			item["categoria_clave"] = ""
 
-		catalogo.append(item)
+		catalogo_nuevo.append(item)
 
-	print("GarliaWorldItems: catálogo público cargado → ", catalogo.size(), " items.")
+	if catalogo_nuevo.is_empty():
+		print("GarliaWorldItems: ", origen, " no contiene objetos interpretables; se conserva el catálogo anterior.")
+		return
+
+	catalogo = catalogo_nuevo
+	catalogo_disponible = true
+	origen_catalogo = origen
+
+	if guardar_cache:
+		var directorio := ProjectSettings.globalize_path("user://cache")
+		DirAccess.make_dir_recursive_absolute(directorio)
+		var archivo := FileAccess.open(CATALOG_CACHE_PATH, FileAccess.WRITE)
+		if archivo != null:
+			archivo.store_string(JSON.stringify(datos))
+			archivo.close()
+			print("GarliaWorldItems: caché de objetos actualizada.")
+
+	print("GarliaWorldItems: catálogo cargado desde ", origen, " → ", catalogo.size(), " items.")
 	catalogo_cargado.emit(catalogo.duplicate(true))
 
 
