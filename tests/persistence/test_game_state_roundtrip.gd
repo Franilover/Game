@@ -47,6 +47,15 @@ func _run() -> void:
 		"proceso_ium_equipado": {"id": "ium_test", "cantidad": 2},
 		"tiempo_mundo": {"dia": 4, "minuto": 510}
 	}
+	origen.world_state.flags["recuerdos_sociales"] = {
+		"ivo": [{
+			"tipo": "tema_conversacion", "clave": "viaje_garlia", "importancia": 3.5,
+			"momento": "momento_inicial", "primer_momento": "primer_momento",
+			"veces_conversado": 1, "mencionado_en_dialogo": false,
+			"frase_jugador": "Hablemos del viaje", "recuerdo_uid": "ivo:viaje_garlia"
+		}],
+		"nima": [{"tipo": "evento_social", "clave": "festival", "importancia": 4.0}]
+	}
 	origen.world_state.flags["conversaciones_npc"] = {
 		"_relaciones_npc": {
 			"ivo|nima": {"confianza": 42.0, "historial": [{"evento": "prueba"}]}
@@ -101,6 +110,39 @@ func _run() -> void:
 		errores.append("La consulta puntual de conocimientos expuso el estado interno modificable.")
 	var relaciones_sociales := RelationshipSystemScript.new() as RelationshipSystemService
 	relaciones_sociales._game_state = destino
+	var recuerdos_ivo := destino.obtener_recuerdos_sociales_npc("ivo")
+	if recuerdos_ivo.size() != 1 or str((recuerdos_ivo[0] as Dictionary).get("clave", "")) != "viaje_garlia":
+		errores.append("La lectura puntual de recuerdos no devolvió el historial del NPC.")
+	if not recuerdos_ivo.is_empty():
+		(recuerdos_ivo[0] as Dictionary)["clave"] = "alterado"
+	if str((destino.obtener_recuerdos_sociales_npc("ivo")[0] as Dictionary).get("clave", "")) != "viaje_garlia":
+		errores.append("La lectura puntual de recuerdos expuso el estado interno modificable.")
+	relaciones_sociales.registrar_recuerdo("ivo", {
+		"tipo": "tema_conversacion", "clave": "viaje_garlia", "importancia": 1.0,
+		"momento": "momento_actual", "frase_jugador": "Hablemos del viaje otra vez"
+	})
+	var recuerdos_actualizados := destino.obtener_recuerdos_sociales_npc("ivo")
+	if recuerdos_actualizados.size() != 1:
+		errores.append("La actualización de un tema recurrente duplicó el recuerdo.")
+	else:
+		var recuerdo_actualizado := recuerdos_actualizados[0] as Dictionary
+		if int(recuerdo_actualizado.get("veces_conversado", 0)) != 2:
+			errores.append("El tema recurrente no incrementó su contador.")
+		if str(recuerdo_actualizado.get("primer_momento", "")) != "primer_momento":
+			errores.append("El tema recurrente perdió su primer momento.")
+		if str(recuerdo_actualizado.get("momento", "")) != "momento_actual":
+			errores.append("El tema recurrente no actualizó su último momento.")
+		if not is_equal_approx(float(recuerdo_actualizado.get("importancia", 0.0)), 3.5):
+			errores.append("El tema recurrente redujo su importancia acumulada.")
+	var pendiente := relaciones_sociales.obtener_recuerdo_pendiente_mencionar("ivo")
+	if str(pendiente.get("recuerdo_uid", "")) != "ivo:viaje_garlia":
+		errores.append("No encontró el recuerdo social pendiente de mencionar.")
+	elif not relaciones_sociales.marcar_recuerdo_mencionado("ivo", -1, str(pendiente.get("recuerdo_uid", ""))):
+		errores.append("No pudo marcar el recuerdo por su identificador estable.")
+	if not relaciones_sociales.obtener_recuerdo_pendiente_mencionar("ivo").is_empty():
+		errores.append("Un recuerdo ya mencionado volvió a aparecer como pendiente.")
+	if destino.obtener_recuerdos_sociales_npc("nima").size() != 1:
+		errores.append("La escritura de recuerdos de Ivo alteró los recuerdos de Nima.")
 	if not relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
 		errores.append("No detectó una noticia pública nueva que puede compartirse.")
 	var conversaciones := destino.obtener_conversaciones_npc()
