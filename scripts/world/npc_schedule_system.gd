@@ -149,6 +149,7 @@ var _ultimo_aviso_evento_comunitario := ""
 var _npcs_actualizacion: Array = []
 var _actualizacion_en_curso := false
 var _jugador_actualizacion: Node2D = null
+var _tiempo_actualizacion: Dictionary = {}
 
 
 ## Devuelve la instantánea estable del tick actual o consulta el grupo fuera de él.
@@ -157,6 +158,15 @@ func _obtener_npcs_torres() -> Array:
 	if _actualizacion_en_curso:
 		return _npcs_actualizacion
 	return get_tree().get_nodes_in_group("torres_game_npc")
+
+
+## Comparte el estado temporal del tick; fuera de él consulta la fuente de tiempo.
+func _obtener_tiempo_actual() -> Dictionary:
+	if _actualizacion_en_curso:
+		return _tiempo_actualizacion
+	if is_instance_valid(_world_atmosphere):
+		return _world_atmosphere.obtener_tiempo()
+	return {}
 
 
 func configurar(
@@ -233,6 +243,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 
 	_npcs_actualizacion = get_tree().get_nodes_in_group("torres_game_npc")
 	_actualizacion_en_curso = true
+	_tiempo_actualizacion = tiempo
 	_jugador_actualizacion = get_tree().get_first_node_in_group("player") as Node2D
 	for npc_variant in _npcs_actualizacion:
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
@@ -267,6 +278,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 	_actualizacion_en_curso = false
 	_npcs_actualizacion.clear()
 	_jugador_actualizacion = null
+	_tiempo_actualizacion.clear()
 	_separar_npcs_superpuestos()
 	# Si el jugador cargó una partida dentro de un edificio, algunos NPC
 	# pueden materializarse después de reconstruir la habitación. Una vez que
@@ -384,7 +396,7 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 			movimiento.detener_por_rutina()
 		npc.set_meta("rutina_firma", "")
 		return
-	var tiempo := _world_atmosphere.obtener_tiempo()
+	var tiempo := _obtener_tiempo_actual()
 	if not bool(tiempo.get("calendario_cargado", false)):
 		return
 	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 5)
@@ -706,7 +718,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	# Conserva una actividad significativa del día para que las charlas
 	# nocturnas puedan comentar trabajo, paseos o investigaciones recientes.
-	var tiempo_resumen: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo_resumen: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var dia_resumen := "%s:%s" % [str(tiempo_resumen.get("anio", 0)), str(tiempo_resumen.get("dia", 1))]
 	if str(npc.get_meta("resumen_dia_reunion_clave", "")) != dia_resumen:
 		npc.set_meta("resumen_dia_reunion_clave", dia_resumen)
@@ -1038,7 +1050,7 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 			integrante.set_meta("grupo_social_castillo_id", grupo_npc)
 			integrante.set_meta("grupo_social_castillo_nombres", nombres_grupo.duplicate())
 			integrante.set_meta("puesto_social_castillo", grupos[grupo_npc].find(integrante))
-			integrante.set_meta("reunion_castillo_dia", str(_world_atmosphere.obtener_tiempo().get("anio", 0)) + ":" + str(_world_atmosphere.obtener_tiempo().get("dia", 1)))
+			integrante.set_meta("reunion_castillo_dia", str(_obtener_tiempo_actual().get("anio", 0)) + ":" + str(_obtener_tiempo_actual().get("dia", 1)))
 	npc.set_meta("reunion_castillo_fase", fase)
 	npc.set_meta("reunion_castillo_firma_asistentes", firma_asistentes)
 
@@ -1146,7 +1158,7 @@ func _registrar_compra_habitante(npc: Creature, edificio_id: String) -> void:
 		return
 	if not is_instance_valid(_world_atmosphere):
 		return
-	var tiempo := _world_atmosphere.obtener_tiempo()
+	var tiempo := _obtener_tiempo_actual()
 	var clave_dia := "%s-%s-%s" % [
 		str(tiempo.get("anio", 0)),
 		str(tiempo.get("mes", 0)),
@@ -1246,7 +1258,7 @@ func _obtener_rutina_encuentro_trio(
 		))
 	if not NPC_SCHEDULE_RULES.cumple_requisitos_encuentro_trio(progreso, relaciones):
 		return {}
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
+	var tiempo: Dictionary = _obtener_tiempo_actual()
 	var anio := int(tiempo.get("anio", 0))
 	var semana := int((int(tiempo.get("dia", 1)) - 1) / 5)
 	# Busca primero los días en que los tres tienen tiempo libre real. Luego
@@ -1304,7 +1316,7 @@ func _obtener_rutina_encuentro_trio(
 
 ## Escalona los cambios de horario para que los habitantes no salgan todos a la vez.
 func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var dias_por_anio := maxi(1, int(_world_atmosphere.dias_por_anio)) if is_instance_valid(_world_atmosphere) else 365
 	var dia_global := int(tiempo.get("anio", 0)) * dias_por_anio + int(tiempo.get("dia", 1))
 	var minuto_global := dia_global * 1440 + int(tiempo.get("hora_del_dia", 0.0) * 60.0)
@@ -1728,7 +1740,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	# Sus desplazamientos sólo proceden de la rutina laboral (por ejemplo,
 	# la ronda de Darven); el día 5 sí puede disfrutar de su descanso.
 	if not bool(npc.get_meta("habitante_sin_oficio", false)):
-		var tiempo_trabajo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+		var tiempo_trabajo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 		var dia_trabajo := posmod(int(tiempo_trabajo.get("dia", 1)) - 1, 5)
 		if dia_trabajo != 4:
 			_detener_animacion_ocio_exterior(npc)
@@ -1796,7 +1808,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		nombre,
 		DESPLAZAMIENTOS_PASEO_EXTERIOR_DEFAULT
 	)
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
+	var tiempo: Dictionary = _obtener_tiempo_actual()
 	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
 	var indice := posmod(hash(nombre + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
 	var desplazamiento: Vector2 = desplazamientos[indice]
@@ -1998,7 +2010,7 @@ func _aplicar_variacion_tiempo_libre(
 	elif minutos >= 1020:
 		tramo = 2
 
-	var tiempo := _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo := _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var clave_dia := "%s:%s:%s" % [
 		str(tiempo.get("anio", 0)),
 		str(tiempo.get("mes", 0)),
@@ -2783,7 +2795,7 @@ func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: Stri
 func _clave_fecha_actual() -> String:
 	if not is_instance_valid(_world_atmosphere):
 		return ""
-	var tiempo := _world_atmosphere.obtener_tiempo()
+	var tiempo := _obtener_tiempo_actual()
 	return "%s:%s:%s" % [
 		str(tiempo.get("anio", 0)),
 		str(tiempo.get("mes", 0)),
@@ -2836,7 +2848,7 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 	var personaje_id := npc.get_personaje_game_id().strip_edges()
 	if personaje_id.is_empty():
 		return {}
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var resultado_invitacion := _evaluar_invitacion_personaje(
 		personaje_id,
 		int(tiempo.get("anio", 0)),
@@ -2877,7 +2889,7 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 func _obtener_evento_comunitario(dia_semana: int, minutos: int) -> Dictionary:
 	if not is_instance_valid(_world_atmosphere):
 		return {}
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
+	var tiempo: Dictionary = _obtener_tiempo_actual()
 	return NPC_SCHEDULE_RULES.obtener_evento_comunitario(
 		int(tiempo.get("dia_de_estacion", 0)),
 		dia_semana,
@@ -2893,7 +2905,7 @@ func _obtener_desplazamiento_evento(
 	nombre_npc: String,
 	clave_evento: String
 ) -> Vector2:
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var fecha := "%s|%s|%s" % [
 		str(tiempo.get("anio", 0)),
 		str(tiempo.get("dia", 0)),
@@ -2922,7 +2934,7 @@ func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary
 	var personaje_id := npc.get_personaje_game_id().strip_edges()
 	if personaje_id.is_empty():
 		return
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var anio := int(tiempo.get("anio", 0))
 	var dia := int(tiempo.get("dia", 0))
 	if anio <= 0 or dia <= 0:
@@ -2934,7 +2946,7 @@ func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary
 
 
 func _notificar_evento_comunitario(evento: Dictionary) -> void:
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
+	var tiempo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 	var firma := "%s|%s|%s" % [
 		str(tiempo.get("anio", 0)),
 		str(tiempo.get("dia", 0)),
