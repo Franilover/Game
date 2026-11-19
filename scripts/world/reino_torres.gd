@@ -189,7 +189,7 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"sala_consejo","nombre":"Sala del consejo","pos":Vector2(170,-212),"tipo":"consejo"},
 	{"id":"casa_estudio","nombre":"Laboratorio de Oris","pos":Vector2(-520,-365),"tipo":"laboratorio"},
 	{"id":"biblioteca","nombre":"Biblioteca","pos":Vector2(0,-478),"tipo":"biblioteca"},
-	{"id":"centro_expediciones","nombre":"Centro de Expediciones","pos":Vector2(1180,362),"tipo":"centro_expediciones"},
+	{"id":"centro_expediciones","nombre":"Gremio de Aventureros","pos":Vector2(1180,362),"tipo":"centro_expediciones"},
 	{"id":"clinica","nombre":"Clínica","pos":Vector2(360,492),"tipo":"clinica"},
 	{"id":"casa_comercio","nombre":"Casa de comercio","pos":Vector2(500,246),"tipo":"comercio"},
 	{"id":"cuartel","nombre":"Cuartel de la guardia","pos":Vector2(520,-362),"tipo":"cuartel"},
@@ -1863,13 +1863,13 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 		"centro_expediciones":
 			# La mesa central sirve como punto de planificación; los laterales
 			# reúnen equipo y provisiones sin bloquear la puerta.
-			_agregar_sprite_mueble(cuarto, "MesaMapasExpediciones", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.8, 1.25), 1)
+			_agregar_sprite_mueble(cuarto, "MesaPlanificacionGremio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.8, 1.25), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesOeste", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.95, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesEste", MUEBLE_ARMARIO, Vector2(205, -112), Vector2(0.95, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesOeste", MUEBLE_COFRE, Vector2(-185, 92), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesEste", MUEBLE_COFRE, Vector2(185, 92), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "BancoPreparacionExpediciones", MUEBLE_MESA, Vector2(0, 105), Vector2(1.35, 0.95), 1)
-			_agregar_estacion_edificio(cuarto, "centro_expediciones", "Planificar expedición", Vector2(0, 12))
+			_agregar_estacion_edificio(cuarto, "centro_expediciones", "Mesa de expediciones", Vector2(0, 12))
 		"clinica":
 			# La recepción queda al fondo; las camas se mantienen como decoración
 			# clínica y no heredan la acción de dormir de las camas domésticas.
