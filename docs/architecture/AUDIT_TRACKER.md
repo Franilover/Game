@@ -345,3 +345,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Nueva regresión `test_creature_movement_authority`: precedencia ruta/dirección externa, pausa y reanudación, diferencia entre detener por rutina y liberar el control, limpieza de dirección externa.
 - Usa la escena real `Creature` y el componente `CreatureMovement`; añadida al workflow headless.
 - CI pendiente.
+
+
+### Recuperación segura tras cancelar iniciativa NPC
+
+- Corregida la salida temprana de `finalizar_acercamiento_social()`: siempre detiene la ruta temporal y limpia tránsito/firma antes de comprobar disponibilidad del mundo, zona, navegación o calendario.
+- Evita que el NPC continúe caminando hacia la antigua posición del jugador cuando el diálogo termina durante una transición o con calendario no disponible.
+- `test_npc_schedule_context` ahora comprueba la cancelación con criatura y movimiento reales, sin contexto mundial.
+- CI pendiente.
