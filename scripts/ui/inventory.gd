@@ -377,7 +377,7 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _modo_historia and event is InputEventKey:
 		var tecla_historia := event as InputEventKey
-		if tecla_historia.pressed and not tecla_historia.echo and (tecla_historia.keycode == KEY_G or tecla_historia.physical_keycode == KEY_G or event.is_action_pressed("garumi_encyclopedia")):
+		if tecla_historia.pressed and not tecla_historia.echo and (tecla_historia.keycode == KEY_G or tecla_historia.physical_keycode == KEY_G or event.is_action_pressed("garumi_hub")):
 			get_viewport().set_input_as_handled()
 			return
 	if event is InputEventKey:
