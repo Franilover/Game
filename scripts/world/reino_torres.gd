@@ -1888,29 +1888,6 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "Arcon", MUEBLE_COFRE, Vector2(-55, 78), Vector2(0.9, 0.9), 1)
 
 
-func _agregar_descripcion_mesa(padre: Node, nombre: String, texto: String, posicion: Vector2) -> void:
-	var panel := PanelContainer.new()
-	panel.name = nombre
-	panel.position = posicion - Vector2(76.0, 0.0)
-	panel.custom_minimum_size = Vector2(152.0, 42.0)
-	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	var estilo: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
-	if estilo != null:
-		panel.add_theme_stylebox_override("panel", estilo)
-	var etiqueta := Label.new()
-	etiqueta.name = "Descripcion"
-	etiqueta.text = texto
-	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	etiqueta.add_theme_font_size_override("font_size", 10)
-	etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
-	etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
-	etiqueta.add_theme_constant_override("outline_size", 2)
-	panel.add_child(etiqueta)
-	padre.add_child(panel)
-
-
 func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1, flip_h: bool = false) -> void:
 	if textura == null:
 		push_warning("ReinoTorres: no se pudo cargar el sprite del mueble: " + nombre)
