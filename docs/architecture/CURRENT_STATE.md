@@ -1056,3 +1056,8 @@ La comprobación de solapamiento final ahora descarta parejas separadas usando d
 La selección de calendario y las prioridades de ocio, invitaciones, eventos comunitarios y encuentro del trío se movieron a `_resolver_rutina_base_y_eventos()`. La ejecución de destino, navegación, interior, clima y metadatos de movimiento sigue en `_aplicar_rutina()`. Se conserva el calendario original de Elian y se prueba que el ajuste local de cierre no lo muta.
 
 Validación CI: Godot 4.7 46/46 pasos correctos, 0 fallos; GDScript Quality success.
+
+
+## Interrupción de actividades interiores — 2026-11-19
+
+Las cinemáticas ahora detienen los paseos interiores activos, liberan el estado de tránsito y conservan el siguiente horario programado. Las conversaciones ambientales siguen utilizando la pausa temporal que conserva la ruta. La regresión correspondiente está añadida a `test_npc_schedule_context`; validación CI pendiente.
