@@ -393,3 +393,12 @@ La función conserva el mismo recorrido y las mismas reglas de reconciliación c
 La prueba también hizo que Godot compilara directamente `Main` y reveló que el script utilizaba `NPC_SCHEDULE_SYSTEM_SCRIPT` sin declarar su `preload`. Se restauró explícitamente la dependencia a `npc_schedule_system.gd`; ahora el test de catálogo valida el script real y no sólo los datos copiados.
 
 Se añadió `test_local_npc_catalog.tscn` para proteger que existan exactamente Mara, Ivo y Nima y que cada entrada conserve hogar, rutinas, personalidad e historia. El test se ejecuta en la suite de regresión de Godot.
+
+
+## 37. Captura única del grupo durante la reconciliación de Torres
+
+`_materializar_npcs_reino_torres()` consultaba el grupo `torres_game_npc` por separado para deduplicar, retirar personajes canónicos ausentes y construir el índice de instancias existentes. Ahora captura el grupo una sola vez y entrega ese mismo conjunto a las dos operaciones de limpieza y al indexado final.
+
+El orden de las decisiones se conserva: primero se deduplican identidades; después se retiran personajes canónicos ausentes si el snapshot contiene explícitamente el catálogo; finalmente se indexan sólo instancias que siguen perteneciendo al grupo. Esto último es importante porque `queue_free()` difiere la destrucción física, mientras que retirar del grupo ocurre inmediatamente.
+
+No se combinó la lógica de deduplicación y retirada en una sola regla: tienen criterios distintos y deben conservar su prioridad. La optimización reduce consultas al SceneTree sin cambiar esas reglas.
