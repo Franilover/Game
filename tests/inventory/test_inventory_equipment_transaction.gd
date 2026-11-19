@@ -60,7 +60,6 @@ func _run() -> void:
 	if str(runtime.state.items[17].get("id", "")) != "axe_c":
 		errors.append("No conservó el objeto devuelto al inventario.")
 
-	runtime.free()
 	if not errors.is_empty():
 		for error in errors:
 			push_error("InventoryEquipmentTransaction: FAIL: " + error)
