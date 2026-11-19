@@ -1,6 +1,25 @@
 extends RefCounted
 class_name NPCScheduleRules
 
+const DESPLAZAMIENTOS_OCIO: Array[Vector2] = [
+	Vector2(-20.0, -12.0),
+	Vector2(16.0, -16.0),
+	Vector2(20.0, 12.0),
+	Vector2(-16.0, 16.0),
+	Vector2(0.0, -20.0)
+]
+
+const POSICIONES_EVENTO: Array[Vector2] = [
+	Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
+	Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
+	Vector2(88.0, -80.0), Vector2(112.0, -24.0),
+	Vector2(96.0, 48.0), Vector2(48.0, 96.0),
+	Vector2(-16.0, 112.0), Vector2(-80.0, 88.0),
+	Vector2(-120.0, 32.0), Vector2(-48.0, -40.0),
+	Vector2(16.0, -48.0), Vector2(64.0, 16.0),
+	Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
+]
+
 ## Convierte una hora HH:MM a minutos desde medianoche.
 ## Devuelve -1 cuando el formato o sus componentes no son válidos.
 static func hora_a_minutos(valor: Variant) -> int:
@@ -312,15 +331,8 @@ static func seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
 ## Obtiene un desplazamiento corto y estable para las actividades de ocio en la plaza.
 ## El mismo NPC, fecha y tramo siempre producen la misma posición.
 static func obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int) -> Vector2:
-	var desplazamientos: Array[Vector2] = [
-		Vector2(-20.0, -12.0),
-		Vector2(16.0, -16.0),
-		Vector2(20.0, 12.0),
-		Vector2(-16.0, 16.0),
-		Vector2(0.0, -20.0)
-	]
-	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % desplazamientos.size()
-	return desplazamientos[indice]
+	var indice := absi(hash(nombre + "|" + clave_dia + "|" + str(tramo) + "|pos")) % DESPLAZAMIENTOS_OCIO.size()
+	return DESPLAZAMIENTOS_OCIO[indice]
 
 
 ## Catálogo estático de actividades de ocio disponibles por habitante.
@@ -387,19 +399,9 @@ static func obtener_desplazamiento_evento(
 	clave_evento: String,
 	fecha: String
 ) -> Vector2:
-	var posiciones: Array[Vector2] = [
-		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
-		Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
-		Vector2(88.0, -80.0), Vector2(112.0, -24.0),
-		Vector2(96.0, 48.0), Vector2(48.0, 96.0),
-		Vector2(-16.0, 112.0), Vector2(-80.0, 88.0),
-		Vector2(-120.0, 32.0), Vector2(-48.0, -40.0),
-		Vector2(16.0, -48.0), Vector2(64.0, 16.0),
-		Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
-	]
 	var firma := nombre_npc.strip_edges().to_lower() + "|" + clave_evento + "|" + fecha
-	var indice := posmod(hash(firma), posiciones.size())
-	return posiciones[indice]
+	var indice := posmod(hash(firma), POSICIONES_EVENTO.size())
+	return POSICIONES_EVENTO[indice]
 
 ## Decide si un NPC disponible cubre el puesto del mercado en esta franja.
 ## No consulta nodos ni modifica la rutina: sólo evalúa las entradas recibidas.
