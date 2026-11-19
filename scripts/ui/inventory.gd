@@ -478,7 +478,7 @@ func toggle_mapa() -> void:
 		visible = true
 		_notificar_estado_inventario_a_hogar(true)
 		_actualizar_admin_tab()
-	tabs.current_tab = 4
+	tabs.current_tab = 3
 	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
 	actualizar()
 
