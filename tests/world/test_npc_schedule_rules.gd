@@ -1,6 +1,7 @@
 extends Node
 
 const Rules = preload("res://scripts/world/npc_schedule_rules.gd")
+const ScheduleSystem = preload("res://scripts/world/npc_schedule_system.gd")
 
 
 func _ready() -> void:
@@ -28,6 +29,7 @@ func _ready() -> void:
 	_comprobar_turnos_comercio(errores)
 	_comprobar_evaluacion_invitacion(errores)
 	_comprobar_requisitos_encuentro_trio(errores)
+	_comprobar_ubicaciones_hogar(errores)
 
 	_comprobar_dia([], 2, true, errores)
 	_comprobar_dia(null, 2, true, errores)
@@ -475,3 +477,28 @@ func _comprobar_requisitos_encuentro_trio(errores: Array[String]) -> void:
 
 	if int((progreso["mara_ivo_apoyo"] as Dictionary).get("etapa", 0)) != 1:
 		errores.append("La evaluación del encuentro no debe modificar el progreso narrativo.")
+
+
+func _comprobar_ubicaciones_hogar(errores: Array[String]) -> void:
+	var casos := {
+		"Elian": "casa_elian",
+		"Bruna": "casa_bruna",
+		"Darven": "casa_darven",
+		"Saira": "casa_saira",
+		"Narel": "casa_narel",
+		"Abel": "castillo",
+		"Liam": "castillo",
+		"Mara": "vivienda_oeste_01",
+		"Ivo": "vivienda_oeste_02",
+		"Nima": "vivienda_oeste_03"
+	}
+	for nombre in casos:
+		var obtenido := ScheduleSystem.obtener_clave_hogar("  %s  " % nombre)
+		if obtenido != casos[nombre]:
+			errores.append("El hogar de %s cambió: esperado %s, obtenido %s." % [nombre, casos[nombre], obtenido])
+	if ScheduleSystem.obtener_clave_hogar("NPC desconocido") != "plaza":
+		errores.append("Un NPC desconocido debe conservar el hogar de respaldo por defecto.")
+	if ScheduleSystem.obtener_clave_hogar("NPC desconocido", "casa_bruna") != "casa_bruna":
+		errores.append("Un NPC desconocido debe respetar una ubicación de respaldo válida.")
+	if ScheduleSystem.obtener_clave_hogar("NPC desconocido", "ubicacion_invalida") != "plaza":
+		errores.append("Una ubicación de respaldo inválida debe volver a la plaza.")
