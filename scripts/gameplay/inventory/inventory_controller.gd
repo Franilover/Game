@@ -130,9 +130,18 @@ func _usar_objeto_en_indice(
 	if indice < 0 or indice >= runtime.state.items.size():
 		return false
 
-	var objeto := objeto_override.duplicate(true) if not objeto_override.is_empty() else runtime.obtener_item(indice)
-	if objeto.is_empty():
+	var objeto_actual := runtime.obtener_item(indice)
+	if objeto_actual.is_empty():
 		return false
+	var objeto := objeto_override.duplicate(true) if not objeto_override.is_empty() else objeto_actual
+	if not objeto_override.is_empty():
+		var identidad_actual := str(objeto_actual.get("item_id", objeto_actual.get("id", ""))).strip_edges()
+		var identidad_override := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+		if not identidad_actual.is_empty() and not identidad_override.is_empty():
+			if identidad_actual != identidad_override:
+				return false
+		elif str(objeto_actual.get("nombre", "")) != str(objeto.get("nombre", "")):
+			return false
 
 	var uso := _obtener_definicion_uso(objeto)
 	if uso.is_empty():
