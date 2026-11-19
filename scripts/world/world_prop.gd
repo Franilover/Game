@@ -417,14 +417,6 @@ func _obtener_item_id_recoleccion() -> String:
 		if not is_instance_valid(_world_items):
 			return ""
 		var madera: Dictionary = _world_items.buscar_item_por_nombre("Madera")
-		if madera.is_empty() and _world_items.has_method("obtener_catalogo"):
-			for item_variant in _world_items.obtener_catalogo():
-				if not item_variant is Dictionary:
-					continue
-				var item_catalogo := item_variant as Dictionary
-				if str(item_catalogo.get("nombre", "")).strip_edges().to_lower() == "madera":
-					madera = item_catalogo
-					break
 		return str(madera.get("item_id", madera.get("id", ""))).strip_edges()
 
 	# El snapshot de props_game puede conservar el vínculo en
@@ -454,19 +446,8 @@ func _obtener_item_id_recoleccion() -> String:
 
 	if not is_instance_valid(_world_items):
 		return ""
-	for item_variant in _world_items.obtener_catalogo():
-		if not item_variant is Dictionary:
-			continue
-		var item := item_variant as Dictionary
-		var propiedades_item_variant: Variant = item.get("propiedades_game", {})
-		if not propiedades_item_variant is Dictionary:
-			continue
-		var propiedades_item := propiedades_item_variant as Dictionary
-		if str(propiedades_item.get("prop_id", "")).strip_edges() != prop_id:
-			continue
-		return str(item.get("item_id", item.get("id", ""))).strip_edges()
-
-	return ""
+	var item_vinculado: Dictionary = _world_items.buscar_item_por_prop_id(prop_id)
+	return str(item_vinculado.get("item_id", item_vinculado.get("id", ""))).strip_edges()
 
 
 func _obtener_cantidad_recoleccion() -> int:
