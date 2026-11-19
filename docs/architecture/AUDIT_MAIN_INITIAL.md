@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-19  
 **Rama:** `feat/npc-relational-memory-decay`  
 **Archivo:** `scripts/world/main.gd`  
-**Estado:** análisis estático; sin cambios funcionales en Main.
+**Estado:** auditoría estática con primera simplificación de composición aplicada; validación headless en CI en curso.
 
 ## 1. Tamaño y responsabilidad
 
@@ -43,7 +43,9 @@ La escena `scenes/world/main.tscn` ya declara explícitamente jugador, cámara, 
 **Riesgo bajo.** `_diagnostico_ventana_diferido()` y `_registrar_diagnostico_ventana()` solo consultan DisplayServer y escriben logs. Se puede convertir en diagnóstico opt-in o restringirlo a builds de depuración. Antes hay que confirmar que los logs no forman parte de una herramienta de soporte activa.
 
 ### Candidato B: sistemas NPC creados dinámicamente
-**Riesgo medio.** Main instancia dos nodos con scripts conocidos y les inyecta dependencias. Podrían declararse en `main.tscn` para que su composición sea visible/editable, pero antes hay que verificar si dependen de ser hijos directos de Main y conservar el orden de configuración.
+**Aplicado.** `NPCScheduleSystem` y `NPCConversationSystem` ahora están declarados en `main.tscn`, dentro de `Systems`. Main obtiene las referencias con `@onready` y conserva la inyección explícita de dependencias en `_ready()`. Se eliminaron los dos `preload().new()` y los `add_child()` redundantes.
+
+Se comprobó en los scripts que ambos sistemas no dependen de ser hijos directos de Main ni implementan callbacks `_ready`, `_process` o `_exit_tree`; sus dependencias se establecen mediante `configurar()`. La importación headless de Godot 4.7 ya pasó en CI después del cambio. La suite completa sigue en ejecución.
 
 ### Candidato C: cola de cinemáticas de proximidad
 **Riesgo alto.** Es una unidad funcional diferenciable, pero depende de métodos de Main, del ZoneManager, del estado interior de Torres, de metadatos de NPC y del CutsceneDirector. No extraerla hasta definir una interfaz de callbacks y pruebas para prioridad, deduplicación, caducidad, participantes y cancelación.
@@ -59,4 +61,6 @@ No se ha confirmado código muerto en Main. Los métodos privados pueden recibir
 
 ## 6. Validación
 
-Esta auditoría se basa en el script y la escena del repositorio. No se ha ejecutado un refactor de Main ni se han cambiado escenas, autoloads o datos de Supabase.
+La composición de los dos sistemas NPC se cambió en `main.gd` y `main.tscn`. La importación headless de Godot 4.7 pasó y la prueba del constructor del vivero también pasó en la misma suite. La suite completa detectó además un fallo independiente en `NPCMindCore`: el test indica que el descanso interior no reconoce camas ni literas. Ese contrato no pertenece a los sistemas NPC movidos a la escena y debe investigarse por separado.
+
+No se modificaron autoloads ni datos de Supabase.
