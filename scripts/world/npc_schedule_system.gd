@@ -2379,15 +2379,11 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var memoria_candidato := 0.0
 		if not motivo_concreto:
 			memoria_npc = _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
-		if not _puede_iniciar_encuentro_social(
-			id_npc, relacion, motivo_concreto, memoria_npc
-		):
+		if not _puede_iniciar_encuentro_social(relacion, motivo_concreto, memoria_npc):
 			continue
 		if not motivo_concreto:
 			memoria_candidato = _calcular_influencia_recuerdos_sociales(id_candidato, id_npc)
-		if not _puede_iniciar_encuentro_social(
-			id_candidato, relacion, motivo_concreto, memoria_candidato
-		):
+		if not _puede_iniciar_encuentro_social(relacion, motivo_concreto, memoria_candidato):
 			continue
 		if motivo_concreto:
 			memoria_npc = _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
@@ -2434,7 +2430,6 @@ func _obtener_umbral_social(personaje_id: String) -> float:
 
 
 func _puede_iniciar_encuentro_social(
-	personaje_id: String,
 	relacion: Dictionary,
 	motivo_concreto: bool = false,
 	memoria_personal: float = 0.0
