@@ -57,7 +57,7 @@ func _run() -> void:
 	# Descubrir un Garumi desbloquea las dos pestañas.
 	_check(GameState.registrar_garumi_descubierto("garumi-desbloqueo-test"), "Debe registrar el primer Garumi descubierto.")
 	await get_tree().process_frame
-	_check(not not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
+	_check(not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
 
 	# El descubrimiento de una criatura también desbloquea el panel de Garumis.
 	GameState.world_state.flags.erase("enciclopedia_garumis")
@@ -66,14 +66,14 @@ func _run() -> void:
 	_check(not boton_enciclopedia.visible and not boton_garumis.visible, "Sin descubrimientos de criaturas ni Garumis, la pestaña Garumis vuelve a ocultarse.")
 	_check(GameState.registrar_descubrimiento_mundo({"id": "bioma-test"}, {"id": "ecosistema-test"}, [], [{"id": "criatura-desbloqueo-test"}]), "Debe registrar el descubrimiento de una criatura.")
 	await get_tree().process_frame
-	_check(boton_enciclopedia.visible and boton_garumis.visible, "Descubrir una criatura debe mostrar Garumis sin devolver Enciclopedia al inventario.")
+	_check(not boton_enciclopedia.visible and boton_garumis.visible, "Descubrir una criatura debe mostrar Garumis sin devolver Enciclopedia al inventario.")
 
 	# El desbloqueo debe sobrevivir a la serialización y carga de la partida.
 	var estado_guardado: Dictionary = GameState.call("_serializar_estado")
 	GameState.discovery_state = DiscoveryState.new()
 	GameState.call("_aplicar_estado_memoria", estado_guardado)
 	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
-	_check(boton_enciclopedia.visible and boton_garumis.visible, "El descubrimiento debe mantenerse tras guardar y cargar la partida.")
+	_check(not boton_enciclopedia.visible and boton_garumis.visible, "El descubrimiento debe mantenerse tras guardar y cargar la partida.")
 
 	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
 	var tecla := InputEventKey.new()
