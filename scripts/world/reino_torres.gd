@@ -2506,7 +2506,8 @@ func _agregar_parcela_vivero(
 			parcela.z_index = 0
 			padre.add_child(parcela)
 			parcela.set_script(WATERING_INTERACTABLE_SCRIPT)
-			parcela.call("configurar_parcela", parcela.name)
+			var celda_central := x == int(dimensiones.x / 2) and y == int(dimensiones.y / 2)
+			parcela.call("configurar_parcela", parcela.name, nombre if celda_central else "")
 
 	tilemap.call_deferred("_update_cells", celdas, false)
 
