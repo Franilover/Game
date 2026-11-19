@@ -379,3 +379,24 @@ static func obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
 		]
 	}
 	return {"opciones": opciones_por_personaje.get(nombre, [])}
+
+## Distribuye a los NPC en puntos fijos alrededor de un evento.
+## La fecha se recibe ya resuelta para mantener la lectura del mundo fuera de esta regla.
+static func obtener_desplazamiento_evento(
+	nombre_npc: String,
+	clave_evento: String,
+	fecha: String
+) -> Vector2:
+	var posiciones: Array[Vector2] = [
+		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
+		Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
+		Vector2(88.0, -80.0), Vector2(112.0, -24.0),
+		Vector2(96.0, 48.0), Vector2(48.0, 96.0),
+		Vector2(-16.0, 112.0), Vector2(-80.0, 88.0),
+		Vector2(-120.0, 32.0), Vector2(-48.0, -40.0),
+		Vector2(16.0, -48.0), Vector2(64.0, 16.0),
+		Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
+	]
+	var firma := nombre_npc.strip_edges().to_lower() + "|" + clave_evento + "|" + fecha
+	var indice := posmod(hash(firma), posiciones.size())
+	return posiciones[indice]
