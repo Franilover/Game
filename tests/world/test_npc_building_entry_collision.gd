@@ -104,7 +104,7 @@ func _run() -> void:
 	npc.set_meta("rutina_edificio_id", "panaderia")
 	npc.reparent(habitacion, true)
 	npc.add_to_group("interactable")
-	zona.call("sacar_npc_del_interior", npc)
+	sistema._salir_de_edificio_para_cambiar_rutina(npc, "panaderia")
 	if npc.get_parent() != contenedor_exterior:
 		errores.append("El NPC no regresó al contenedor exterior al cambiar de edificio.")
 	var entrada_panaderia: Dictionary = zona.call("_obtener_entrada_por_id", "panaderia")
@@ -113,6 +113,8 @@ func _run() -> void:
 	) + Vector2(0.0, 28.0)
 	if npc.global_position.distance_to(posicion_puerta_esperada) > 0.1:
 		errores.append("El NPC no reapareció en el umbral exterior de su edificio anterior.")
+	if bool(npc.get_meta("rutina_en_edificio", true)) or str(npc.get_meta("rutina_edificio_id", "x")) != "":
+		errores.append("La transición no limpió el estado del edificio anterior.")
 	if npc.visible or npc.is_in_group("interactable"):
 		errores.append("El NPC quedó visible o interactuable antes de reanudar su ruta.")
 	if npc.collision_layer != 0 or npc.collision_mask != 0:
