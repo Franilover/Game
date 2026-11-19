@@ -239,6 +239,7 @@ func _ready() -> void:
 	_capa_interior.name = "InteriorActivo"
 	_capa_interior.visible = false
 	add_child(_capa_interior)
+	_crear_grupos_edificios_nuevos()
 	_crear_objetivos_entrada()
 	# Preparar primero todos los elementos que sustituyen polígonos vectoriales.
 	# Esta fase es síncrona: no debe quedar un frame donde Torres muestre sus
@@ -333,6 +334,9 @@ func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
 		"archivo_real": "Grupo_edificio_archivo_real",
 		"sala_consejo": "Grupo_edificio_sala_consejo",
 		"casa_estudio": "Grupo_edificio_casa_estudio",
+		"biblioteca": "Grupo_edificio_biblioteca",
+		"centro_expediciones": "Grupo_edificio_centro_expediciones",
+		"clinica": "Grupo_edificio_clinica",
 		"casa_comercio": "Grupo_edificio_casa_comercio",
 		"cuartel": "Grupo_edificio_cuartel",
 		"registro": "Grupo_edificio_registro",
@@ -346,6 +350,21 @@ func _obtener_grupo_entrada(entrada: Dictionary) -> Node2D:
 	if grupo_nombre.is_empty():
 		return null
 	return get_node_or_null(grupo_nombre) as Node2D
+
+
+func _crear_grupos_edificios_nuevos() -> void:
+	# Estos tres edificios no tenían nodos de fachada en la escena original.
+	# Los grupos mantienen una referencia estable para sprites, entradas y rutinas NPC.
+	for grupo_nombre in [
+		"Grupo_edificio_biblioteca",
+		"Grupo_edificio_centro_expediciones",
+		"Grupo_edificio_clinica"
+	]:
+		if is_instance_valid(get_node_or_null(grupo_nombre)):
+			continue
+		var grupo := Node2D.new()
+		grupo.name = grupo_nombre
+		add_child(grupo)
 
 
 func _obtener_marcador_entrada(entrada: Dictionary) -> Marker2D:
