@@ -2,7 +2,9 @@ extends RefCounted
 ## Construye las capas y parcelas del vivero de Torres.
 ## La escena y los interiores siguen siendo responsabilidad de ReinoTorres.
 
-const WATERING_INTERACTABLE_SCRIPT: Script = preload("res://scripts/gameplay/watering_interactable.gd")
+const WATERING_INTERACTABLE_SCRIPT: Script = preload(
+	"res://scripts/gameplay/watering_interactable.gd"
+)
 const TILE_SIZE := 32
 const ATLAS_COORDINATES: Array[Vector2i] = [
 	Vector2i(0, 3), Vector2i(3, 3), Vector2i(0, 2), Vector2i(1, 2),
@@ -114,6 +116,12 @@ static func agregar_parcela(
 			parcela.set_script(WATERING_INTERACTABLE_SCRIPT)
 			padre.add_child(parcela)
 			var es_celda_central := x == int(dimensiones.x / 2) and y == int(dimensiones.y / 2)
-			parcela.call("configurar_parcela", parcela.name, nombre if es_celda_central else "", capa_humedad, celda)
+			parcela.call(
+				"configurar_parcela",
+				parcela.name,
+				nombre if es_celda_central else "",
+				capa_humedad,
+				celda
+			)
 
 	tilemap.call_deferred("_update_cells", celdas, false)
