@@ -405,7 +405,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
 	var botones := $Window/Margin/Column/TabButtons
-	for nombre in ["Crafteo", "Enciclopedia", "Garumis", "Mapa", "Relaciones", "Admin"]:
+	for nombre in ["Crafteo", "Garumis", "Mapa", "Relaciones", "Admin"]:
 		var boton := botones.get_node_or_null(nombre) as Button
 		if is_instance_valid(boton):
 			boton.visible = not activo
