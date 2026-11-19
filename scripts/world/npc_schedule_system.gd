@@ -571,17 +571,14 @@ func _aplicar_preferencia_terreno(malla: AStarGrid2D, celda: Vector2i, posicion_
 	malla.set_point_weight_scale(celda, coste)
 
 
-func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
-	var horario_nocturno := NPC_SCHEDULE_RULES.es_horario_nocturno(minutos)
-	if horario_nocturno and (bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false))):
-		# Cancela acercamientos y charlas iniciadas antes de la hora de dormir.
-		_finalizar_actividad_social(npc)
-	elif bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
-		return
+func _resolver_rutina_base_y_eventos(
+	npc: Creature,
+	dia_semana: int,
+	minutos: int,
+	nombre_para_descanso: String
+) -> Dictionary:
 	var rutinas_variant: Variant = npc.datos.get("rutinas", [])
 	var rutina: Dictionary
-	var nombre_para_descanso := npc.get_nombre_visual().strip_edges().to_lower()
-	var hogar_respaldo := obtener_clave_hogar(nombre_para_descanso, "plaza")
 	# Elian mantiene la panadería abierta durante la última hora de compras.
 	# Es un ajuste local de la simulación: no modifica horarios canónicos en Supabase.
 	if nombre_para_descanso == "elian" and rutinas_variant is Array:
@@ -603,7 +600,6 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 
 	# La reunión nocturna se añade después como actividad social opcional
 	# para grupos disponibles; trabajo, invitaciones y eventos conservan prioridad.
-
 	# Las rutinas de trabajo y los horarios canónicos permanecen intactos.
 	# Sólo se matizan los momentos libres con actividades propias.
 	rutina = _aplicar_variacion_tiempo_libre(npc, rutina, dia_semana, minutos)
@@ -642,6 +638,27 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	)
 	if not encuentro_trio.is_empty():
 		rutina = encuentro_trio
+
+	return {
+		"rutinas": rutinas_variant,
+		"rutina": rutina,
+		"evento_comunitario": evento_comunitario
+	}
+
+
+func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
+	var horario_nocturno := NPC_SCHEDULE_RULES.es_horario_nocturno(minutos)
+	if horario_nocturno and (bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false))):
+		# Cancela acercamientos y charlas iniciadas antes de la hora de dormir.
+		_finalizar_actividad_social(npc)
+	elif bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
+		return
+	var seleccion_rutina := _resolver_rutina_base_y_eventos(
+		npc, dia_semana, minutos, nombre_para_descanso
+	)
+	var rutinas_variant: Variant = seleccion_rutina.get("rutinas", [])
+	var rutina: Dictionary = seleccion_rutina.get("rutina", {})
+	var evento_comunitario: Dictionary = seleccion_rutina.get("evento_comunitario", {})
 
 	# En horario comercial, algunos vecinos cubren puestos por turnos.
 	# Los trabajos esenciales y los eventos comunitarios conservan prioridad.
