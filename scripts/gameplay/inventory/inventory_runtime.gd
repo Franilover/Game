@@ -276,10 +276,9 @@ func establecer_hotbar_slot(indice_hotbar: int, indice_inventario: int) -> bool:
 	hotbar.indices[indice_hotbar] = indice_inventario
 	return true
 
-func consumir_durabilidad(indice: int) -> bool:
-	if indice < 0 or indice >= state.items.size() or state.items[indice].is_empty():
+func _consumir_durabilidad_objeto(objeto: Dictionary) -> bool:
+	if objeto.is_empty():
 		return false
-	var objeto: Dictionary = state.items[indice]
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	if not propiedades_variant is Dictionary:
 		return false
@@ -287,12 +286,24 @@ func consumir_durabilidad(indice: int) -> bool:
 	var maxima_variant: Variant = propiedades.get("durabilidad", null)
 	if not (maxima_variant is int or maxima_variant is float):
 		return false
+
 	var maxima := maxi(1, int(maxima_variant))
 	var actual := maxi(0, int(objeto.get("durabilidad_actual", maxima))) - 1
 	if actual <= 0:
-		state.items[indice] = {}
+		objeto.clear()
 	else:
-		state.items[indice]["durabilidad_actual"] = actual
+		objeto["durabilidad_actual"] = actual
+	return true
+
+
+func consumir_durabilidad(indice: int) -> bool:
+	if indice < 0 or indice >= state.items.size() or state.items[indice].is_empty():
+		return false
+	var objeto: Dictionary = state.items[indice]
+	if not _consumir_durabilidad_objeto(objeto):
+		return false
+	if objeto.is_empty():
+		state.items[indice] = {}
 	return true
 
 func robar_equipamiento(slot: String) -> Dictionary:
@@ -301,20 +312,10 @@ func robar_equipamiento(slot: String) -> Dictionary:
 
 func consumir_durabilidad_equipo(slot: String) -> bool:
 	var objeto := equipment.obtener(slot)
+	if not _consumir_durabilidad_objeto(objeto):
+		return false
 	if objeto.is_empty():
-		return false
-	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
-	if not propiedades_variant is Dictionary:
-		return false
-	var propiedades := propiedades_variant as Dictionary
-	var maxima_variant: Variant = propiedades.get("durabilidad", null)
-	if not (maxima_variant is int or maxima_variant is float):
-		return false
-	var maxima := maxi(1, int(maxima_variant))
-	var actual := maxi(0, int(objeto.get("durabilidad_actual", maxima))) - 1
-	if actual <= 0:
 		equipment.desequipar(slot)
 	else:
-		objeto["durabilidad_actual"] = actual
 		equipment.equipar(slot, objeto)
 	return true
