@@ -353,3 +353,10 @@ También se reutiliza el nombre normalizado y el hogar de respaldo calculado al 
 El catálogo se trasladó a `DESPLAZAMIENTOS_PASEO_EXTERIOR`, junto a los demás datos estáticos del planificador. Se conservaron los puntos, su orden y el algoritmo que elige el desplazamiento según NPC, fecha y tramo horario. El conjunto de siete posiciones de respaldo también quedó en `DESPLAZAMIENTOS_PASEO_EXTERIOR_DEFAULT`, evitando reconstruirlo para NPC fuera del catálogo.
 
 La prueba de reglas compara los ocho recorridos y el conjunto de respaldo con sus coordenadas originales. El cambio elimina reconstrucciones repetidas de datos sin modificar la selección ni la navegación.
+
+
+## 32. Catálogos estáticos de posiciones en reglas NPC
+
+Las reglas puras también reconstruían dos listas de posiciones en cada llamada: los cinco desplazamientos de ocio y los dieciséis puntos de distribución de eventos comunitarios. Se trasladaron a las constantes `DESPLAZAMIENTOS_OCIO` y `POSICIONES_EVENTO` de `NPCScheduleRules`.
+
+Se mantienen los mismos puntos y el mismo cálculo hash/modular que selecciona cada uno. Las pruebas ahora verifican tanto la estabilidad del resultado como la composición exacta de ambos catálogos. No se cambia el comportamiento de ocio ni la distribución de asistentes.
