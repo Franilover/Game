@@ -30,6 +30,7 @@ func _ready() -> void:
 	_comprobar_evaluacion_invitacion(errores)
 	_comprobar_requisitos_encuentro_trio(errores)
 	_comprobar_ubicaciones_hogar(errores)
+	_comprobar_patrones_paseo_exterior(errores)
 
 	_comprobar_dia([], 2, true, errores)
 	_comprobar_dia(null, 2, true, errores)
@@ -477,6 +478,22 @@ func _comprobar_requisitos_encuentro_trio(errores: Array[String]) -> void:
 
 	if int((progreso["mara_ivo_apoyo"] as Dictionary).get("etapa", 0)) != 1:
 		errores.append("La evaluación del encuentro no debe modificar el progreso narrativo.")
+
+
+func _comprobar_patrones_paseo_exterior(errores: Array[String]) -> void:
+	var esperados: Dictionary = {
+		"elian": [Vector2(-24.0, -8.0), Vector2(-12.0, 22.0), Vector2(18.0, 12.0), Vector2(8.0, -24.0)],
+		"bruna": [Vector2(-14.0, 8.0), Vector2(12.0, -10.0), Vector2(18.0, 18.0)],
+		"darven": [Vector2(-30.0, -18.0), Vector2(28.0, -16.0), Vector2(30.0, 20.0), Vector2(-26.0, 24.0)],
+		"saira": [Vector2(26.0, -22.0), Vector2(34.0, 8.0), Vector2(-18.0, 26.0), Vector2(-30.0, -8.0)],
+		"narel": [Vector2(-22.0, -26.0), Vector2(8.0, -34.0), Vector2(24.0, 6.0)],
+		"mara": [Vector2(-34.0, -12.0), Vector2(-26.0, 22.0), Vector2(12.0, 32.0)],
+		"ivo": [Vector2(-12.0, 8.0), Vector2(12.0, -8.0), Vector2(18.0, 12.0)],
+		"nima": [Vector2(0.0, -30.0), Vector2(24.0, -18.0), Vector2(-18.0, -20.0), Vector2(12.0, 24.0)]
+	}
+	for nombre in esperados:
+		if ScheduleSystem.DESPLAZAMIENTOS_PASEO_EXTERIOR.get(nombre, []) != esperados[nombre]:
+			errores.append("Cambió el recorrido exterior estable de %s." % nombre)
 
 
 func _comprobar_ubicaciones_hogar(errores: Array[String]) -> void:
