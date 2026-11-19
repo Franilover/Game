@@ -496,6 +496,16 @@ func _comprobar_patrones_paseo_exterior(errores: Array[String]) -> void:
 			errores.append("Cambió el recorrido exterior estable de %s." % nombre)
 
 
+	var respaldo_esperado: Array[Vector2] = [
+		Vector2(-28.0, -12.0), Vector2(24.0, -18.0),
+		Vector2(32.0, 10.0), Vector2(-18.0, 28.0),
+		Vector2(4.0, -34.0), Vector2(18.0, 32.0),
+		Vector2(-34.0, 12.0)
+	]
+	if ScheduleSystem.DESPLAZAMIENTOS_PASEO_EXTERIOR_DEFAULT != respaldo_esperado:
+		errores.append("Cambió el recorrido exterior de respaldo para NPC adicionales.")
+
+
 func _comprobar_ubicaciones_hogar(errores: Array[String]) -> void:
 	var posiciones_esperadas := {
 		"elian": Vector2(-72.0, 24.0),
