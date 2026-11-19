@@ -1151,8 +1151,12 @@ func obtener_asuntos_pendientes_npc(personaje_id: String, con_personaje: String 
 	var otro := con_personaje.strip_edges()
 	if id.is_empty():
 		return []
-	var datos := _obtener_datos_conversaciones_npc()
-	var todos_variant: Variant = datos.get("_asuntos_pendientes_npc", [])
+	var todos_variant: Variant = []
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("obtener_asuntos_pendientes_npc"):
+		todos_variant = _game_state.call("obtener_asuntos_pendientes_npc")
+	else:
+		var datos := _obtener_datos_conversaciones_npc()
+		todos_variant = datos.get("_asuntos_pendientes_npc", [])
 	if not todos_variant is Array:
 		return []
 	var resultado: Array = []
@@ -1238,8 +1242,12 @@ func obtener_promesas_pendientes_npc(personaje_id: String, con_personaje: String
 	var otro := con_personaje.strip_edges()
 	if id.is_empty():
 		return []
-	var datos := _obtener_datos_conversaciones_npc()
-	var todas_variant: Variant = datos.get("_promesas_npc", [])
+	var todas_variant: Variant = []
+	if _game_state != null and is_instance_valid(_game_state) and _game_state.has_method("obtener_promesas_npc"):
+		todas_variant = _game_state.call("obtener_promesas_npc")
+	else:
+		var datos := _obtener_datos_conversaciones_npc()
+		todas_variant = datos.get("_promesas_npc", [])
 	if not todas_variant is Array:
 		return []
 	var resultado: Array = []
