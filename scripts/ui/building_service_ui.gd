@@ -1060,7 +1060,7 @@ func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	}
 	_agregar_titulo_detalle(detalle, str(nombres.get(id, "Archivo")))
 	var cantidad := Label.new()
-	cantidad.text = "%d registros descubiertos" % _contar_descubrimientos(id)
+	cantidad.text = "Catálogo de linajes y especies" if id == "garumis" else "%d registros descubiertos" % _contar_descubrimientos(id)
 	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(cantidad)
 	var descripcion := Label.new()
@@ -1068,7 +1068,7 @@ func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(descripcion)
 	var nota := Label.new()
-	nota.text = "Los registros se amplían con cada descubrimiento."
+	nota.text = "El catálogo reúne los linajes registrados." if id == "garumis" else "Los registros se amplían con cada descubrimiento."
 	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(nota)
 	_agregar_boton_detalle(detalle, "Abrir Garudex" if id == "garumis" else "Abrir enciclopedia", _abrir_enciclopedia.bind(id))
