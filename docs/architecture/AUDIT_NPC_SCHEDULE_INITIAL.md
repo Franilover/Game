@@ -513,3 +513,12 @@ La extracción mantiene las reglas existentes: reiniciar al cambiar la fecha, co
 Se añadió `tests/world/test_npc_schedule_context.tscn` para proteger tres comportamientos conectados: uso de la instantánea de NPC durante el tick y consulta del grupo fuera de él; reutilización del calendario compartido y respaldo vacío cuando no hay WorldAtmosphere; y memoria diaria de la reunión (guardar actividad significativa, no reemplazarla por descanso y recuperar el estado actual al cambiar de fecha durante la reunión).
 
 La escena se incorpora al workflow de regresión headless. Esta prueba cubre el contrato del contexto y la memoria extraída; no pretende sustituir una prueba de recorrido completo de la vida diaria, que seguirá siendo una etapa de cobertura distinta.
+
+
+## 52. Separación NPC: descarte por distancia al cuadrado
+
+`CreatureMovement._direccion_evitar_superposicion_npcs()` recorría los NPC del grupo y calculaba `Vector2.length()` para cada candidato, incluso si estaba muy lejos. Ahora compara primero `length_squared()` con el radio de separación al cuadrado y calcula la raíz sólo para vecinos dentro del radio. La dirección normalizada y el ID del NPC actual también se calculan una vez por consulta y se reutilizan en la decisión lateral.
+
+Se conservan los contratos: mismo grupo y padre, sólo criaturas vivas, exclusión de NPC con el mismo edificio objetivo, radio de separación de 34 px, cesión de paso a 27 px y prioridad lateral estable por ID. La prueba `test_creature_movement_npc_safety` ahora comprueba además que un NPC lejano no altere el rumbo y que a 34 px exactos no se active la separación.
+
+La mejora reduce raíces cuadradas y normalizaciones innecesarias en la comprobación de cada pareja; no cambia el algoritmo de vecinos ni elimina la búsqueda de grupo. Validación CI pendiente para este cambio.
