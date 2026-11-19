@@ -54,6 +54,9 @@ const SPRITE_BUILDINGS: Array[Dictionary] = [
 	{"key":"archivo_real", "paths":["res://assets/art/places/Archivo_Real.png"], "position":Vector2(-170,-280), "size":Vector2(116,94), "hide":["RoyalArchive"]},
 	{"key":"sala_consejo", "paths":["res://assets/art/places/Sala_del_Consejo.png"], "position":Vector2(170,-280), "size":Vector2(132,104), "hide":["CouncilHall"]},
 	{"key":"casa_estudio", "paths":["res://assets/art/places/Casa_de_Estudio_Oris.png"], "position":Vector2(-520,-430), "size":Vector2(122,98), "hide":["OrisStudy","StudyDome"]},
+	{"key":"biblioteca", "paths":["res://assets/art/places/Biblioteca.png"], "position":Vector2(0,-540), "size":Vector2(124,112), "hide":[]},
+	{"key":"centro_expediciones", "paths":["res://assets/art/places/Centro de Expediciones.png"], "position":Vector2(1180,300), "size":Vector2(136,120), "hide":[]},
+	{"key":"clinica", "paths":["res://assets/art/places/Clinica.png"], "position":Vector2(360,430), "size":Vector2(116,104), "hide":[]},
 	{"key":"casa_comercio", "paths":["res://assets/art/places/Casa_de_Comercio.png"], "position":Vector2(500,180), "size":Vector2(122,100), "hide":["TradeHouse"]},
 	{"key":"cuartel", "paths":["res://assets/art/places/Cuartel_de_la_Guardia.png"], "position":Vector2(520,-430), "size":Vector2(126,104), "hide":["GuardBarracks","BarracksBed","BarracksBunk","BarracksArmor","BarracksArmory","BarracksWeaponRack","CuartelDetalle","DetalleCuartel"]},
 	{"key":"registro", "paths":["res://assets/art/places/Registro_de_la_Puerta.png"], "position":Vector2(1480,0), "size":Vector2(108,90), "hide":["GateOffice"]},
@@ -144,6 +147,9 @@ const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
 	"archivo_real": "archivo_real",
 	"sala_consejo": "sala_consejo",
 	"casa_estudio": "casa_estudio",
+	"biblioteca": "biblioteca",
+	"centro_expediciones": "centro_expediciones",
+	"clinica": "clinica",
 	"reparaciones": "reparaciones",
 	"carpinteria": "carpinteria",
 	"granero": "granero",
@@ -182,6 +188,9 @@ const ENTRADAS: Array[Dictionary] = [
 	{"id":"archivo_real","nombre":"Archivo real","pos":Vector2(-170,-217),"tipo":"archivo"},
 	{"id":"sala_consejo","nombre":"Sala del consejo","pos":Vector2(170,-212),"tipo":"consejo"},
 	{"id":"casa_estudio","nombre":"Laboratorio de Oris","pos":Vector2(-520,-365),"tipo":"laboratorio"},
+	{"id":"biblioteca","nombre":"Biblioteca","pos":Vector2(0,-478),"tipo":"biblioteca"},
+	{"id":"centro_expediciones","nombre":"Centro de Expediciones","pos":Vector2(1180,362),"tipo":"centro_expediciones"},
+	{"id":"clinica","nombre":"Clínica","pos":Vector2(360,492),"tipo":"clinica"},
 	{"id":"casa_comercio","nombre":"Casa de comercio","pos":Vector2(500,246),"tipo":"comercio"},
 	{"id":"cuartel","nombre":"Cuartel de la guardia","pos":Vector2(520,-362),"tipo":"cuartel"},
 	{"id":"registro","nombre":"Registro de la puerta","pos":Vector2(1480,61),"tipo":"registro"},
@@ -1822,6 +1831,36 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "MesaHistoriaTorres", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 38), Vector2(1.35, 1.0), 1)
 			_agregar_sprite_mueble(cuarto, "AsientoHistoria", MUEBLE_SILLA_FRENTE, Vector2(105, 88), Vector2.ONE, 1)
 			_agregar_estacion_archivo(cuarto, "historia_torres", "Consultar historia de Torres", Vector2(105, 8))
+		"biblioteca":
+			# Estanterías al fondo y dos puestos de lectura separados para
+			# mantener despejada la circulación desde la entrada.
+			_agregar_sprite_mueble(cuarto, "EstanteriaBibliotecaOeste", MUEBLE_ARMARIO, Vector2(-190, -122), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteriaBibliotecaCentro", MUEBLE_ARMARIO, Vector2(0, -122), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "EstanteriaBibliotecaEste", MUEBLE_ARMARIO, Vector2(190, -122), Vector2(1.0, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MesaConsultaBiblioteca", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.45, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "MostradorBiblioteca", MUEBLE_MESA, Vector2(0, 82), Vector2(1.5, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "SillaBibliotecaOeste", MUEBLE_SILLA_FRENTE, Vector2(-105, 55), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "SillaBibliotecaEste", MUEBLE_SILLA_FRENTE, Vector2(105, 55), Vector2.ONE, 1)
+		"centro_expediciones":
+			# La mesa central sirve como punto de planificación; los laterales
+			# reúnen equipo y provisiones sin bloquear la puerta.
+			_agregar_sprite_mueble(cuarto, "MesaMapasExpediciones", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.8, 1.25), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesOeste", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesEste", MUEBLE_ARMARIO, Vector2(205, -112), Vector2(0.95, 0.95), 1)
+			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesOeste", MUEBLE_COFRE, Vector2(-185, 92), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesEste", MUEBLE_COFRE, Vector2(185, 92), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "BancoPreparacionExpediciones", MUEBLE_MESA, Vector2(0, 105), Vector2(1.35, 0.95), 1)
+			_agregar_estacion_edificio(cuarto, "centro_expediciones", "Planificar expedición", Vector2(0, 12))
+		"clinica":
+			# La recepción queda al fondo; las camas se mantienen como decoración
+			# clínica y no heredan la acción de dormir de las camas domésticas.
+			_agregar_sprite_mueble(cuarto, "MostradorClinica", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -118), Vector2(1.45, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMedicinasClinicaOeste", MUEBLE_ARMARIO, Vector2(-205, -112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_mueble(cuarto, "ArmarioMedicinasClinicaEste", MUEBLE_ARMARIO, Vector2(205, -112), Vector2(0.9, 0.9), 1)
+			_agregar_sprite_decorativo(cuarto, "CamaAtencionClinicaOeste", MUEBLE_CAMA, Vector2(-125, 8), Vector2(1.05, 1.05), 1)
+			_agregar_sprite_decorativo(cuarto, "CamaAtencionClinicaEste", MUEBLE_CAMA, Vector2(125, 8), Vector2(1.05, 1.05), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoClinicaOeste", MUEBLE_SILLA_FRENTE, Vector2(-125, 72), Vector2.ONE, 1)
+			_agregar_sprite_mueble(cuarto, "AsientoClinicaEste", MUEBLE_SILLA_FRENTE, Vector2(125, 72), Vector2.ONE, 1)
 		"consejo":
 			_agregar_sprite_mueble(cuarto, "MesaConsejo", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -5), Vector2(2.0, 1.25), 1)
 			for i in range(6):
@@ -1921,6 +1960,21 @@ func _agregar_sprite_mueble(padre: Node, nombre: String, textura: Texture2D, pos
 		else:
 			objetivo.call("configurar_cofre", "torres:" + _entrada_interior_id + ":" + nombre)
 		padre.add_child(objetivo)
+
+
+func _agregar_sprite_decorativo(padre: Node, nombre: String, textura: Texture2D, posicion: Vector2, escala: Vector2 = Vector2.ONE, z: int = 1) -> void:
+	if textura == null:
+		push_warning("ReinoTorres: no se pudo cargar el sprite decorativo: " + nombre)
+		return
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = textura
+	sprite.position = posicion
+	sprite.scale = escala
+	sprite.centered = true
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.z_index = z
+	padre.add_child(sprite)
 
 
 # La estancia usa el calendario jugable: un mes equivale a 30 días del mundo.
