@@ -389,8 +389,8 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if event.is_action_pressed("garumi_encyclopedia"):
-			toggle_enciclopedia_garumis()
+		if event.is_action_pressed("garumi_hub"):
+			toggle_garumi_hub()
 			get_viewport().set_input_as_handled()
 		elif event.is_action_pressed("inventory"):
 			toggle()
@@ -483,7 +483,7 @@ func toggle_mapa() -> void:
 	actualizar()
 
 
-func toggle_enciclopedia_garumis() -> void:
+func toggle_garumi_hub() -> void:
 	if not GameState.has_method("ha_descubierto_criatura_o_garumi") or not bool(GameState.call("ha_descubierto_criatura_o_garumi")):
 		return
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
