@@ -107,7 +107,7 @@ func _actualizar() -> void:
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	if _tipo not in ["forja", "carpinteria", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
+	if _tipo not in ["forja", "carpinteria", "cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento", "vivero", "herbolario_investigacion", "herbolario_procesamiento", "herbolario"]:
 		var titulo := Label.new()
 		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		titulo.add_theme_font_size_override("font_size", 18)
@@ -155,6 +155,15 @@ func _actualizar() -> void:
 func _ajustar_menu_al_viewport() -> void:
 	if is_instance_valid(_panel) and _panel.is_inside_tree():
 		MENU_LAYOUT.vigilar_panel_centrado(_panel)
+
+
+func _aplicar_fondo_seccion_boton(panel: PanelContainer) -> void:
+	if not is_instance_valid(panel):
+		return
+	PIXEL_UI_THEME.apply(panel, false)
+	var superficie := PIXEL_UI_THEME.button_surface_style()
+	if superficie != null:
+		panel.add_theme_stylebox_override("panel", superficie)
 
 
 func _construir_forja() -> void:
@@ -471,8 +480,8 @@ func _construir_vivero() -> void:
 	var panel_lista := layout["list_panel"] as PanelContainer
 	var panel_detalle := layout["detail_panel"] as PanelContainer
 	var detalle := layout["detail_content"] as VBoxContainer
-	PIXEL_UI_THEME.apply(panel_lista, false)
-	PIXEL_UI_THEME.apply(panel_detalle, false)
+	_aplicar_fondo_seccion_boton(panel_lista)
+	_aplicar_fondo_seccion_boton(panel_detalle)
 
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
@@ -804,7 +813,7 @@ func _agregar_tarjeta_receta_herbolario(receta: Dictionary, contenedor: VBoxCont
 	var tarjeta := PanelContainer.new()
 	tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	contenedor.add_child(tarjeta)
-	PIXEL_UI_THEME.apply(tarjeta, false)
+	_aplicar_fondo_seccion_boton(tarjeta)
 	var columna := VBoxContainer.new()
 	columna.add_theme_constant_override("separation", 4)
 	tarjeta.add_child(columna)
