@@ -246,4 +246,10 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - `CreatureMovement._direccion_evitar_superposicion_npcs()`: filtro de distancia con `length_squared()`, raíz sólo para vecinos cercanos, dirección normalizada e ID actual reutilizados por consulta.
 - Se mantienen radios, prioridades, filtros de grupo/padre, exclusión de destinos compartidos y repulsión original.
 - Regresión ampliada: NPC lejano no altera rumbo; distancia exacta de 34 px no activa separación.
-- Validación CI de este commit pendiente.
+- Primera optimización validada: Godot 4.7 46/46 y GDScript Quality success. Segunda optimización documentada a continuación; CI pendiente.
+
+
+## Optimización de movimiento NPC (2026-11-19)
+
+- La separación direccional descarta candidatos lejanos con distancia al cuadrado; la prueba cubre vecino lejano y límite de 34 px. Validado: [Godot 4.7 46/46](https://github.com/Franilover/Game/actions/runs/44623203556), [GDScript Quality](https://github.com/Franilover/Game/actions/runs/44623203373) success.
+- La corrección final de solapamientos usa ahora el mismo filtro por distancia al cuadrado antes de calcular la raíz. Se añadió un caso de regresión que comprueba la distancia mínima de 28 px. CI de esta segunda modificación pendiente.
