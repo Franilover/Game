@@ -447,3 +447,13 @@ La prueba de transición repite el registro del mismo NPC y comprueba que al sal
 Se añadió una regresión para el caso en que un NPC abandona su edificio de rutina mientras el jugador permanece dentro de otro. El NPC vuelve al contenedor exterior, mantiene temporalmente desactivadas sus colisiones y permanece oculto/no interactuable. Al salir el jugador, recupera la visibilidad, pertenencia a `interactable` y capas/máscaras originales capturadas al entrar.
 
 La prueba verifica explícitamente que el cambio de rutina no reactive al NPC antes de la salida del jugador. No se modifica la prioridad de horarios ni el mecanismo de navegación.
+
+
+
+## 43. Transición única al detener paseos interiores
+
+`_aplicar_rutina()` y `_actualizar_rutina_interior()` repetían la detención de `CreatureMovement`, la eliminación de `rutina_paseo_interior_activo` y la actualización de `rutina_en_transito`. Se consolidó esa operación en `_detener_paseo_interior()`.
+
+La transición admite limpiar opcionalmente `rutina_paseo_interior_siguiente`. Al cambiar de edificio se elimina porque el siguiente paseo pertenece al interior anterior; al cerrar temporalmente el interior se conserva para que el NPC retome el horario pendiente cuando corresponda. La prueba de seguridad de movimiento cubre ambas variantes y verifica que la ruta quede detenida.
+
+No cambia la selección de muebles, destinos, pausas ni la frecuencia de los paseos.
