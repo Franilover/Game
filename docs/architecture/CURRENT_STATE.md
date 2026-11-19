@@ -1046,3 +1046,10 @@ Se optimizó el descarte de NPC lejanos en la separación física: primero se co
 ## Movimiento NPC — segunda optimización (2026-11-19)
 
 La comprobación de solapamiento final ahora descarta parejas separadas usando distancia al cuadrado y sólo calcula la raíz para las que realmente necesitan corrección. Se conserva la distancia mínima de 28 px y el ajuste determinista cuando dos NPC ocupan la misma posición. Se amplió la prueba de seguridad de movimiento; CI de esta segunda modificación pendiente.
+
+
+## NPCScheduleSystem — primera extracción de _aplicar_rutina (2026-11-19)
+
+La selección de calendario y las prioridades de ocio, invitaciones, eventos comunitarios y encuentro del trío se movieron a `_resolver_rutina_base_y_eventos()`. La ejecución de destino, navegación, interior, clima y metadatos de movimiento sigue en `_aplicar_rutina()`. Se conserva el calendario original de Elian y se prueba que el ajuste local de cierre no lo muta.
+
+Validación CI: Godot 4.7 46/46 pasos correctos, 0 fallos; GDScript Quality success.
