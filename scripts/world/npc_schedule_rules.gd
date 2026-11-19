@@ -481,3 +481,34 @@ static func evaluar_invitacion_npc(
 		"activa": true,
 		"ubicacion_clave": str(invitacion.get("ubicacion_clave", "plaza")).strip_edges().to_lower()
 	}
+
+
+## Evalúa los requisitos narrativos y relacionales del encuentro de Mara, Ivo y Nima.
+## Recibe progreso y relaciones ya consultados; no accede a servicios ni modifica datos.
+static func cumple_requisitos_encuentro_trio(
+	progreso: Dictionary,
+	relaciones: Array[Dictionary]
+) -> bool:
+	var apoyo: Variant = progreso.get("mara_ivo_apoyo", {})
+	var investigacion: Variant = progreso.get("nima_ivo_investigacion", {})
+	if not apoyo is Dictionary or not investigacion is Dictionary:
+		return false
+	if (
+		int((apoyo as Dictionary).get("etapa", 0)) < 1
+		or int((investigacion as Dictionary).get("etapa", 0)) < 1
+		or relaciones.size() != 3
+	):
+		return false
+
+	for relacion in relaciones:
+		if int(relacion.get("interacciones", 0)) < 1:
+			return false
+		var cercania := (
+			float(relacion.get("amistad", 0.0))
+			+ float(relacion.get("confianza", 0.0))
+			+ float(relacion.get("afecto", 0.0))
+			+ float(relacion.get("colaboracion", 0.0))
+		)
+		if cercania < 0.5 or float(relacion.get("tension", 0.0)) >= 4.0:
+			return false
+	return true
