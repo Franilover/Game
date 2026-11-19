@@ -400,3 +400,53 @@ static func obtener_desplazamiento_evento(
 	var firma := nombre_npc.strip_edges().to_lower() + "|" + clave_evento + "|" + fecha
 	var indice := posmod(hash(firma), posiciones.size())
 	return posiciones[indice]
+
+## Decide si un NPC disponible cubre el puesto del mercado en esta franja.
+## No consulta nodos ni modifica la rutina: sólo evalúa las entradas recibidas.
+static func debe_asignar_turno_comercio(
+	nombre_npc: String,
+	rutina_actual: Dictionary,
+	dia_semana: int,
+	minutos: int
+) -> bool:
+	const VENDEDORES: Array[String] = ["bruna", "elian", "darven", "narel", "nima", "mara", "ivo"]
+	const INICIO_TURNO := 9 * 60
+	const CAMBIO_TURNO := 14 * 60
+	const FIN_TURNO := 18 * 60
+
+	if minutos < INICIO_TURNO or minutos >= FIN_TURNO:
+		return false
+	if nombre_npc == "saira" or not VENDEDORES.has(nombre_npc):
+		return false
+
+	# No apartar a nadie de un oficio, guardia, investigación o compromiso.
+	var clave_actual := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
+	var actividad_actual := str(rutina_actual.get("actividad_clave", "")).strip_edges().to_lower()
+	var actividad_libre := (
+		rutina_actual.is_empty()
+		or clave_actual.begins_with("dia_libre")
+		or actividad_actual.contains("descans")
+		or actividad_actual.contains("pase")
+		or actividad_actual.contains("convers")
+		or actividad_actual.contains("visitar")
+		or actividad_actual.contains("saludar")
+		or actividad_actual.contains("volver")
+	)
+	if not actividad_libre:
+		return false
+	if (
+		clave_actual.begins_with("evento_")
+		or clave_actual == "mercado_vecinal"
+		or clave_actual == "celebracion_estacional"
+		or clave_actual.begins_with("invitacion_")
+		or clave_actual.begins_with("encuentro_")
+	):
+		return false
+
+	var franja := 0 if minutos < CAMBIO_TURNO else 1
+	var inicio := posmod(dia_semana * 2 + franja * 3, VENDEDORES.size())
+	var asignados: Array[String] = [
+		VENDEDORES[inicio],
+		VENDEDORES[posmod(inicio + 1, VENDEDORES.size())]
+	]
+	return asignados.has(nombre_npc)
