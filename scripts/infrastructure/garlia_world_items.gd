@@ -8,14 +8,13 @@ const WORLD_ITEM_SCENE: PackedScene = preload("res://scenes/world/world_item.tsc
 const MAX_OBJECTOS_EN_MUNDO: int = 3
 const CATALOG_CACHE_PATH: String = "user://cache/items_game.json"
 const RECIPES_CACHE_PATH: String = "user://cache/recetas_game.json"
+const DROPS_CACHE_PATH: String = "user://cache/criatura_drops.json"
 const MAX_RECIPES_RETRIES: int = 3
 const INTERVALO_REINTENTO_OFFLINE: float = 30.0
 const INTERVALO_ACTUALIZACION_CATALOGOS: float = 300.0
 const HTTP_TIMEOUT: float = 15.0
 const MAX_CATALOG_RETRIES: int = 3
 const CATALOG_RETRY_DELAY: float = 1.5
-const DROP_RETRY_DELAY: float = 2.0
-const MAX_DROP_RETRIES: int = 3
 
 
 signal catalogo_cargado(items: Array)
@@ -33,11 +32,13 @@ var _timer_actualizacion_catalogos: Timer
 var _cargando: bool = false
 var _intentos_catalogo: int = 0
 var _intentos_recetas: int = 0
+var _intentos_catalogo_drops: int = 0
 var _cargando_recetas: bool = false
 var _cargando_drops: bool = false
-var _solicitud_drop_actual: Dictionary = {}
-var _reintentos_drop_actual: int = 0
+var _procesando_drop_actual: bool = false
 var _cola_drops: Array[Dictionary] = []
+var _reglas_drops_por_criatura: Dictionary = {}
+var drops_disponibles: bool = false
 
 var catalogo: Array[Dictionary] = []
 var catalogo_disponible: bool = false
@@ -96,8 +97,10 @@ func _ready() -> void:
 
 	_cargar_catalogo_local()
 	_cargar_recetas_local()
+	_cargar_drops_local()
 	call_deferred("cargar_catalogo")
 	call_deferred("cargar_recetas")
+	call_deferred("cargar_drops")
 	_timer_actualizacion_catalogos = Timer.new()
 	_timer_actualizacion_catalogos.one_shot = true
 	_timer_actualizacion_catalogos.wait_time = INTERVALO_ACTUALIZACION_CATALOGOS
@@ -458,6 +461,7 @@ func _actualizar_catalogos_periodicamente() -> void:
 		return
 	cargar_catalogo()
 	cargar_recetas()
+	cargar_drops()
 	_timer_actualizacion_catalogos.start()
 
 
@@ -489,149 +493,133 @@ func generar_drops_criatura(
 	_procesar_siguiente_drop()
 
 
-func _procesar_siguiente_drop() -> void:
+func cargar_drops() -> void:
 	if _cargando_drops:
 		return
+	_cargando_drops = true
+	_intentos_catalogo_drops += 1
+	var url := str(GarliaAuth.SUPABASE_URL) + "/rest/v1/criatura_drops?select=criatura_id,item_id,probabilidad"
+	var headers := PackedStringArray([
+		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
+		"Accept: application/json"
+	])
+	var resultado := _request_drops.request(url, headers, HTTPClient.METHOD_GET)
+	if resultado != OK:
+		_cargando_drops = false
+		_reintentar_catalogo_drops("no se pudo iniciar la consulta: " + str(resultado))
 
-	if _cola_drops.is_empty():
+
+func _cargar_drops_local() -> void:
+	var datos := _leer_cache_catalogo(DROPS_CACHE_PATH)
+	if datos.is_empty():
+		print("GarliaWorldItems: no existe caché local de drops.")
 		return
-	# No consumir la cola hasta disponer de los metadatos canónicos del item.
-	if not catalogo_disponible:
+	_procesar_catalogo_drops(datos, "caché local", false)
+
+
+func _al_recibir_drops(resultado: int, response_code: int, _headers: PackedStringArray, body: PackedByteArray) -> void:
+	_cargando_drops = false
+	var texto := body.get_string_from_utf8()
+	if resultado != HTTPRequest.RESULT_SUCCESS:
+		_reintentar_catalogo_drops("falló conexión: " + str(resultado))
+		return
+	if response_code < 200 or response_code >= 300:
+		_reintentar_catalogo_drops("HTTP " + str(response_code) + ": " + texto.left(400))
+		return
+	var datos: Variant = JSON.parse_string(texto)
+	if not datos is Array:
+		_reintentar_catalogo_drops("respuesta JSON de drops inválida")
+		return
+	if (datos as Array).is_empty() and not _reglas_drops_por_criatura.is_empty():
+		_intentos_catalogo_drops = 0
+		print("GarliaWorldItems: Supabase devolvió drops vacíos; se conserva la caché.")
+		return
+	_procesar_catalogo_drops(datos as Array, "Supabase", true)
+
+
+func _procesar_catalogo_drops(datos: Array, origen: String, guardar_cache: bool) -> void:
+	var reglas_nuevas: Dictionary = {}
+	for fila_variant in datos:
+		if not fila_variant is Dictionary:
+			continue
+		var fila := fila_variant as Dictionary
+		var criatura_id := str(fila.get("criatura_id", "")).strip_edges()
+		var item_id := str(fila.get("item_id", "")).strip_edges()
+		if criatura_id.is_empty() or item_id.is_empty():
+			continue
+		if not reglas_nuevas.has(criatura_id):
+			reglas_nuevas[criatura_id] = []
+		(reglas_nuevas[criatura_id] as Array).append({
+			"item_id": item_id,
+			"probabilidad": clampf(float(fila.get("probabilidad", 100.0)), 0.0, 100.0)
+		})
+	if reglas_nuevas.is_empty() and not datos.is_empty():
+		print("GarliaWorldItems: respuesta de drops no interpretable; se conserva la caché.")
+		return
+	_reglas_drops_por_criatura = reglas_nuevas
+	drops_disponibles = true
+	_intentos_catalogo_drops = 0
+	if guardar_cache:
+		_guardar_cache_catalogo(DROPS_CACHE_PATH, datos, "drops")
+	print("GarliaWorldItems: reglas de drops cargadas desde ", origen, " → ", datos.size(), " reglas.")
+	_procesar_siguiente_drop()
+
+
+func _reintentar_catalogo_drops(mensaje: String) -> void:
+	print("GarliaWorldItems: ", mensaje)
+	if _intentos_catalogo_drops >= MAX_CATALOG_RETRIES:
+		print("GarliaWorldItems: se conserva la caché de drops; nuevo intento en ", INTERVALO_REINTENTO_OFFLINE, "s.")
+		await get_tree().create_timer(INTERVALO_REINTENTO_OFFLINE).timeout
+		if is_inside_tree() and not _cargando_drops:
+			_intentos_catalogo_drops = 0
+			cargar_drops()
+		return
+	await get_tree().create_timer(CATALOG_RETRY_DELAY * float(_intentos_catalogo_drops)).timeout
+	if is_inside_tree() and not _cargando_drops:
+		cargar_drops()
+
+
+func _procesar_siguiente_drop() -> void:
+	if _procesando_drop_actual or _cola_drops.is_empty():
+		return
+	if not catalogo_disponible or not drops_disponibles:
 		return
 
 	var solicitud_variant: Variant = _cola_drops.pop_front()
 	if not solicitud_variant is Dictionary:
 		_procesar_siguiente_drop()
 		return
-
-	var solicitud: Dictionary = solicitud_variant as Dictionary
-	_solicitud_drop_actual = solicitud.duplicate(true)
-	var criatura_id: String = str(solicitud.get("criatura_id", ""))
+	var solicitud := solicitud_variant as Dictionary
+	var criatura_id := str(solicitud.get("criatura_id", "")).strip_edges()
 	_posicion_drops_pendiente = solicitud.get("posicion", Vector2.ZERO) as Vector2
-
 	if criatura_id.is_empty():
 		_procesar_siguiente_drop()
 		return
 
-	_cargando_drops = true
-
-	# Los drops sólo descargan su regla. Los datos del objeto se resuelven
-	# desde el catálogo compartido para evitar repetir joins y metadatos.
-	var url := (
-		str(GarliaAuth.SUPABASE_URL)
-		+ "/rest/v1/criatura_drops"
-		+ "?select=item_id,probabilidad"
-		+ "&criatura_id=eq."
-		+ criatura_id
-	)
-
-	var headers := PackedStringArray([
-		"apikey: " + GarliaAuth.SUPABASE_PUBLISHABLE_KEY,
-		"Accept: application/json"
-	])
-
-	print(
-		"GarliaWorldItems: consultando drops públicos → ",
-		criatura_id
-	)
-
-	var resultado := _request_drops.request(
-		url,
-		headers,
-		HTTPClient.METHOD_GET
-	)
-
-	if resultado != OK:
-		_cargando_drops = false
-		_reintentar_drop_actual("error iniciando consulta: " + str(resultado))
-
-
-func _al_recibir_drops(
-	resultado: int,
-	response_code: int,
-	_headers: PackedStringArray,
-	body: PackedByteArray
-) -> void:
-	_cargando_drops = false
-
-	var texto := body.get_string_from_utf8()
-
-	if resultado != HTTPRequest.RESULT_SUCCESS:
-		_reintentar_drop_actual("falló conexión: " + str(resultado))
-		return
-
-	if response_code < 200 or response_code >= 300:
-		_reintentar_drop_actual("HTTP " + str(response_code) + ": " + texto)
-		return
-
-	var datos: Variant = JSON.parse_string(texto)
-
-	if not datos is Array:
-		_reintentar_drop_actual("respuesta JSON inválida: " + texto)
-		return
-
-	var resultado_drops: Array = []
-
-	for fila in datos:
-		if not fila is Dictionary:
-			continue
-
-		var drop := fila as Dictionary
-		var probabilidad := clampf(float(drop.get("probabilidad", 100.0)), 0.0, 100.0)
-		var tirada := randf() * 100.0
-
-		if tirada >= probabilidad:
-			continue
-
-		var item_id := str(drop.get("item_id", "")).strip_edges()
-		var item := buscar_item_por_id(item_id)
-		if item.is_empty():
-			push_warning("GarliaWorldItems: drop referencia un item que no está en el catálogo compartido: " + item_id)
-			continue
-		item["cantidad"] = 1
-		resultado_drops.append(item)
-
-		print(
-			"GarliaWorldItems: drop obtenido → ",
-			str(item.get("nombre", "Objeto")),
-			" | ",
-			str(item.get("tipo", "")),
-			" | probabilidad=",
-			probabilidad,
-			" | tirada=",
-			tirada
-		)
-
-	_reintentos_drop_actual = 0
-	_solicitud_drop_actual.clear()
-	print("GarliaWorldItems: drops generados → ", resultado_drops.size())
+	_procesando_drop_actual = true
+	var reglas_variant: Variant = _reglas_drops_por_criatura.get(criatura_id, [])
+	var resultado_drops: Array[Dictionary] = []
+	if reglas_variant is Array:
+		for regla_variant in reglas_variant as Array:
+			if not regla_variant is Dictionary:
+				continue
+			var regla := regla_variant as Dictionary
+			var probabilidad := clampf(float(regla.get("probabilidad", 100.0)), 0.0, 100.0)
+			if randf() * 100.0 >= probabilidad:
+				continue
+			var item_id := str(regla.get("item_id", "")).strip_edges()
+			var item := buscar_item_por_id(item_id)
+			if item.is_empty():
+				push_warning("GarliaWorldItems: drop referencia un item ausente del catálogo: " + item_id)
+				continue
+			item["cantidad"] = 1
+			resultado_drops.append(item)
 
 	for item in resultado_drops:
 		_generar_world_item(item, _posicion_drops_pendiente)
-
+	print("GarliaWorldItems: drops generados para ", criatura_id, " → ", resultado_drops.size())
 	drops_generados.emit(resultado_drops.duplicate(true))
-	_procesar_siguiente_drop()
-
-
-func _reintentar_drop_actual(mensaje: String) -> void:
-	print("GarliaWorldItems: ", mensaje)
-	if _solicitud_drop_actual.is_empty():
-		_procesar_siguiente_drop()
-		return
-	if _reintentos_drop_actual >= MAX_DROP_RETRIES:
-		print("GarliaWorldItems: solicitud de drop conservada para recuperación manual → ", _solicitud_drop_actual)
-		_cola_drops.push_front(_solicitud_drop_actual.duplicate(true))
-		_solicitud_drop_actual.clear()
-		_reintentos_drop_actual = 0
-		return
-	_reintentos_drop_actual += 1
-	var espera := DROP_RETRY_DELAY * float(_reintentos_drop_actual)
-	print("GarliaWorldItems: reintento de drop ", _reintentos_drop_actual, "/", MAX_DROP_RETRIES, " en ", espera, "s")
-	await get_tree().create_timer(espera).timeout
-	if not is_inside_tree():
-		return
-	_cola_drops.push_front(_solicitud_drop_actual.duplicate(true))
-	_solicitud_drop_actual.clear()
+	_procesando_drop_actual = false
 	_procesar_siguiente_drop()
 
 
