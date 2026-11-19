@@ -625,8 +625,8 @@ func _construir_investigacion_herbolario() -> void:
 	var panel_lista := layout["list_panel"] as PanelContainer
 	var panel_detalle := layout["detail_panel"] as PanelContainer
 	var detalle := layout["detail_content"] as VBoxContainer
-	PIXEL_UI_THEME.apply(panel_lista, false)
-	PIXEL_UI_THEME.apply(panel_detalle, false)
+	_aplicar_fondo_seccion_boton(panel_lista)
+	_aplicar_fondo_seccion_boton(panel_detalle)
 
 	var icono := TextureRect.new()
 	icono.custom_minimum_size = Vector2(0, 88)
@@ -696,8 +696,8 @@ func _construir_procesamiento_herbolario() -> void:
 	var panel_lista := layout["list_panel"] as PanelContainer
 	var panel_detalle := layout["detail_panel"] as PanelContainer
 	var detalle := layout["detail_content"] as VBoxContainer
-	PIXEL_UI_THEME.apply(panel_lista, false)
-	PIXEL_UI_THEME.apply(panel_detalle, false)
+	_aplicar_fondo_seccion_boton(panel_lista)
+	_aplicar_fondo_seccion_boton(panel_detalle)
 
 	var vistos: Dictionary = {}
 	var seleccion_inicial: Dictionary = {}
