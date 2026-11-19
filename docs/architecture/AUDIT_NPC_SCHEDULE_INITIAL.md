@@ -562,3 +562,14 @@ La posición de salida ahora tiene una sola fuente: `ReinoTorres.sacar_npc_del_i
 La regresión `test_npc_building_entry_collision` ahora ejercita directamente la transición extraída y verifica reparentado, umbral, metadatos, visibilidad, interacción y colisiones. La primera ejecución detectó la discrepancia de coordenadas; se corrigió usando la posición autoritativa de `ReinoTorres` antes de validar.
 
 Validación final: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44628441771](https://github.com/Franilover/Game/actions/runs/44628441771); GDScript Quality **success** en [run #44628441413](https://github.com/Franilover/Game/actions/runs/44628441413).
+
+
+## 57. Resolución del destino de rutina
+
+El cálculo de coordenadas locales se extrajo a `_resolver_destino_rutina_local()`. La función recibe el NPC, la rutina, la ubicación, el indicador de horario y el edificio; la variación individual llega ya tipada desde la rutina. No modifica metadatos, no solicita rutas y no mueve al NPC: sólo devuelve el punto local que debe usar el desplazamiento.
+
+Se mantienen las prioridades originales: posición personal del hogar cuando no hay actividad programada; umbral a 28 px de la puerta para destinos de edificio; posición absoluta de plaza cuando está definida; posición estable por habitante y variación individual; y distribución radial de 118 px para NPC sin entrada propia en el catálogo.
+
+`test_npc_schedule_context` cubre esos cinco contratos directamente. La extracción no cambia los puntos de llegada ni la firma de rutina.
+
+Validación: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44628969650](https://github.com/Franilover/Game/actions/runs/44628969650); GDScript Quality **success** en [run #44628969766](https://github.com/Franilover/Game/actions/runs/44628969766).
