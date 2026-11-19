@@ -573,3 +573,12 @@ Se mantienen las prioridades originales: posición personal del hogar cuando no 
 `test_npc_schedule_context` cubre esos cinco contratos directamente. La extracción no cambia los puntos de llegada ni la firma de rutina.
 
 Validación: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44628969650](https://github.com/Franilover/Game/actions/runs/44628969650); GDScript Quality **success** en [run #44628969766](https://github.com/Franilover/Game/actions/runs/44628969766).
+
+
+## 58. Búsqueda compartida de mobiliario interior
+
+Las rutinas interiores y las animaciones de postura recorrían por separado los hijos de la habitación para localizar camas, literas, sillas y asientos. Se unificó el filtro por nombre en `_obtener_muebles_por_tokens()`, que devuelve los sprites coincidentes en el orden original de los hijos.
+
+La rutina conserva la selección de todos los muebles compatibles para buscar un puesto libre y sigue descartando los que no tienen textura. La animación de postura conserva la prioridad del primer mueble coincidente. No se cambian nombres de nodos, posiciones, preferencias de actividad ni recursos visuales.
+
+`test_npc_schedule_context` comprueba coincidencias de cama/litera, silla/asiento, orden de escena y búsqueda vacía. Validación final: Godot 4.7 **48/48 pasos completados, 0 fallos** en [run #44629354647](https://github.com/Franilover/Game/actions/runs/44629354647); GDScript Quality **success** en [run #44629354490](https://github.com/Franilover/Game/actions/runs/44629354490).
