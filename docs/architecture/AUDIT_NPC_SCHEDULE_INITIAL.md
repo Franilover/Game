@@ -457,3 +457,10 @@ La prueba verifica explícitamente que el cambio de rutina no reactive al NPC an
 La transición admite limpiar opcionalmente `rutina_paseo_interior_siguiente`. Al cambiar de edificio se elimina porque el siguiente paseo pertenece al interior anterior; al cerrar temporalmente el interior se conserva para que el NPC retome el horario pendiente cuando corresponda. La prueba de seguridad de movimiento cubre ambas variantes y verifica que la ruta quede detenida. El workflow de regresión ejecuta ahora `test_creature_movement_npc_safety.tscn`, de modo que esta cobertura no queda limitada a la importación/compilación de scripts.
 
 No cambia la selección de muebles, destinos, pausas ni la frecuencia de los paseos.
+
+
+## 44. Escena ejecutable para la regresión de movimiento NPC
+
+La primera ejecución del paso nuevo de CI para `test_creature_movement_npc_safety.gd` falló antes de iniciar la prueba: el workflow apuntaba a `res://tests/creatures/test_creature_movement_npc_safety.tscn`, pero sólo existía el script GDScript. Se añadió la escena mínima que instancia ese script, siguiendo el patrón de las pruebas de contrato de IA ya existentes.
+
+El log de GitHub Actions confirmó que la importación de recursos y las pruebas anteriores terminaban correctamente; el error fue exclusivamente `Cannot open file` para la escena ausente. La prueba ya tiene una escena de entrada verificable y el siguiente run de CI debe confirmar su ejecución real. No se considera validada hasta que ese run termine correctamente.
