@@ -55,9 +55,9 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
-		# Todos los paneles de interfaz usan la misma textura que los botones.
-		# Esta es la superficie compartida para menús, diálogos y Relaciones.
-		var panel: StyleBox = button_surface_style()
+		# Los paneles conservan su fondo propio. Solo los paneles de detalle
+		# que fueron diseñados como superficies de botón comparten esa textura.
+		var panel: StyleBox = button_surface_style() if control.name in ["DetailPanel", "SpeakerPortraitFrame"] else _texture_style("panel_background.png", 8)
 		if panel != null:
 			control.add_theme_stylebox_override("panel", panel)
 
