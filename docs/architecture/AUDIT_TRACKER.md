@@ -294,3 +294,12 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - La selección conserva todos los muebles compatibles y el orden de escena; la animación sigue usando el primero.
 - Se añadieron casos de cama/litera, silla/asiento, orden y búsqueda vacía a `test_npc_schedule_context`.
 - CI Godot 4.7: **48/48 pasos, 0 fallos** ([run #44629354647](https://github.com/Franilover/Game/actions/runs/44629354647)); GDScript Quality: **success** ([run #44629354490](https://github.com/Franilover/Game/actions/runs/44629354490)).
+
+
+## Interrupción de actividades interiores por cinemáticas (2026-11-19)
+
+- Una cinemática cancela el paseo interior activo y libera el control de locomoción del NPC.
+- Se conserva el siguiente horario del paseo para que la actividad pueda reanudarse sin reiniciar su cadencia.
+- Las conversaciones ambientales mantienen su contrato de pausa temporal y conservación de ruta.
+- `test_npc_schedule_context` comprueba la cancelación de una ruta real y la conservación del siguiente horario.
+- CI Godot 4.7 y GDScript Quality pendientes.
