@@ -2779,24 +2779,13 @@ func _obtener_desplazamiento_evento(
 	nombre_npc: String,
 	clave_evento: String
 ) -> Vector2:
-	var posiciones: Array[Vector2] = [
-		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
-		Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
-		Vector2(88.0, -80.0), Vector2(112.0, -24.0),
-		Vector2(96.0, 48.0), Vector2(48.0, 96.0),
-		Vector2(-16.0, 112.0), Vector2(-80.0, 88.0),
-		Vector2(-120.0, 32.0), Vector2(-48.0, -40.0),
-		Vector2(16.0, -48.0), Vector2(64.0, 16.0),
-		Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
-	]
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
 	var fecha := "%s|%s|%s" % [
 		str(tiempo.get("anio", 0)),
 		str(tiempo.get("dia", 0)),
 		str(tiempo.get("estacion_id", ""))
 	]
-	var indice := posmod(hash(nombre_npc.strip_edges().to_lower() + "|" + clave_evento + "|" + fecha), posiciones.size())
-	return posiciones[indice]
+	return NPC_SCHEDULE_RULES.obtener_desplazamiento_evento(nombre_npc, clave_evento, fecha)
 
 
 func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary) -> void:
