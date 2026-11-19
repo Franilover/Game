@@ -2373,10 +2373,24 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		)
 		# Ambos perfiles cuentan: una persona muy sociable tampoco debe imponer
 		# encuentros casuales a alguien reservado con quien apenas tiene vínculo.
-		if not _puede_iniciar_encuentro_social(id_npc, relacion, motivo_concreto, id_candidato):
+		# Cada dirección consulta sus recuerdos una sola vez. El resultado se
+		# reutiliza tanto para validar el encuentro como para puntuar al candidato.
+		var memoria_npc := 0.0
+		var memoria_candidato := 0.0
+		if not motivo_concreto:
+			memoria_npc = _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
+			memoria_candidato = _calcular_influencia_recuerdos_sociales(id_candidato, id_npc)
+		if not _puede_iniciar_encuentro_social(
+			id_npc, relacion, motivo_concreto, memoria_npc
+		):
 			continue
-		if not _puede_iniciar_encuentro_social(id_candidato, relacion, motivo_concreto, id_npc):
+		if not _puede_iniciar_encuentro_social(
+			id_candidato, relacion, motivo_concreto, memoria_candidato
+		):
 			continue
+		if motivo_concreto:
+			memoria_npc = _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
+			memoria_candidato = _calcular_influencia_recuerdos_sociales(id_candidato, id_npc)
 		var distancia := npc.global_position.distance_to(candidato.global_position)
 		var puntuacion := (
 			amistad * 0.22 + afecto * 0.18 + confianza * 0.08
@@ -2388,8 +2402,8 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		# incluso antes de que sus valores sociales cambien mucho.
 		# La evaluación es bilateral: importa tanto cómo ve el iniciador al
 		# candidato como la experiencia que el candidato conserva del iniciador.
-		puntuacion += _calcular_influencia_recuerdos_sociales(id_npc, id_candidato) * 0.7
-		puntuacion += _calcular_influencia_recuerdos_sociales(id_candidato, id_npc) * 0.45
+		puntuacion += memoria_npc * 0.7
+		puntuacion += memoria_candidato * 0.45
 		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
 			puntuacion -= 8.0
 		if not _relationship_system.obtener_promesas_pendientes_npc(id_npc, id_candidato).is_empty():
@@ -2422,7 +2436,7 @@ func _puede_iniciar_encuentro_social(
 	personaje_id: String,
 	relacion: Dictionary,
 	motivo_concreto: bool = false,
-	pareja_id: String = ""
+	memoria_personal: float = 0.0
 ) -> bool:
 	if motivo_concreto:
 		return true
@@ -2431,9 +2445,6 @@ func _puede_iniciar_encuentro_social(
 		float(relacion.get("amistad", 0.0)),
 		maxf(float(relacion.get("afecto", 0.0)), float(relacion.get("confianza", 0.0)))
 	)
-	var memoria_personal := 0.0
-	if not pareja_id.strip_edges().is_empty():
-		memoria_personal = _calcular_influencia_recuerdos_sociales(personaje_id, pareja_id)
 	# Un rechazo reiterado o una experiencia muy negativa puede frenar un
 	# encuentro casual incluso en alguien sociable. Los motivos concretos
 	# (promesas, ayuda o noticias) siguen permitiendo resolver la situación.
