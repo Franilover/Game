@@ -418,3 +418,5 @@ En `teletransportar_jugador_a_npc()`, la comprobación de pertenencia al grupo a
 Se consolidó esa secuencia en `_devolver_npc_al_exterior()`. La salida individual conserva su validación de pertenencia a la capa interior; la salida general conserva su recorrido del grupo y delega cada NPC elegible al mismo método. La validación de nodos de contenedor/capa evita operar sobre referencias liberadas.
 
 Se amplió `test_npc_building_entry_collision.tscn` para cubrir ambas rutas: cambio individual de rutina y salida general del edificio. En las dos se comprueban contenedor, umbral, visibilidad, grupo `interactable` y colisiones exteriores desactivadas.
+
+La devolución general recibe ahora el snapshot de NPCs desde `_salir_del_interior()`, en lugar de consultar el SceneTree internamente. Esto hace explícita la dependencia y permite probar la ruta con un conjunto controlado. La primera ejecución del nuevo test reveló que el fixture mantenía `ReinoTorres` fuera del SceneTree; se ajustó el contrato para inyectar el snapshot, evitando forzar el `_ready()` pesado de la escena real sólo para probar esta operación.
