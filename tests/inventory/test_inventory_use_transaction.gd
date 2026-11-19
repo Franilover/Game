@@ -1,7 +1,7 @@
 extends Node
 
 const ControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
-const PlayerScript = preload("res://scripts/characters/player.gd")
+const PlayerScene = preload("res://scenes/characters/player.tscn")
 
 
 func _ready() -> void:
@@ -11,7 +11,12 @@ func _ready() -> void:
 func _run() -> void:
 	var errors: Array[String] = []
 	var controller := ControllerScript.new() as InventoryController
-	var player := PlayerScript.new() as Player
+	var player := PlayerScene.instantiate() as Player
+	if player == null:
+		get_tree().quit(1)
+		return
+	get_tree().root.add_child(player)
+	await get_tree().process_frame
 	player.restaurar_estado_vital(40, true, 100)
 	var potion := {
 		"id": "health_potion",
@@ -64,8 +69,9 @@ func _run() -> void:
 	if not controller.obtener_item(6).is_empty():
 		errors.append("No retiró el alimento consumido.")
 
-	player.free()
+	player.queue_free()
 	controller.free()
+	await get_tree().process_frame
 	if not errors.is_empty():
 		for error in errors:
 			push_error("InventoryUseTransaction: FAIL: " + error)
