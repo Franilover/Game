@@ -281,6 +281,8 @@ func _comprobar_retorno_a_rutina_con_contexto(
 	npc.set_meta("acercamiento_social_activo", true)
 	npc.set_meta("rutina_en_transito", true)
 	npc.set_meta("rutina_firma", "ruta_temporal_anterior")
+	npc.set_meta("rutina_cambio_pendiente", "prueba_retomar_rutina|plaza|pasear_y_saludar|(0.0, 0.0)")
+	npc.set_meta("rutina_cambio_inicio", -1000000)
 	agenda.finalizar_acercamiento_social(npc)
 
 	var destino_local := NPCScheduleScript._resolver_destino_rutina_local(
