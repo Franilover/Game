@@ -30,6 +30,7 @@ const ROYAL_ARCHIVE_UI_SCRIPT: Script = preload("res://scripts/ui/royal_archive.
 const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_service_ui.gd")
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
+const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
 
 # Ampliación moderada respecto al interior original (448x272).
 # Mantiene el espacio compacto y reduce los bordes visibles sin vaciar la sala.
@@ -37,6 +38,8 @@ const INTERIOR_ANCHO := 512.0
 const INTERIOR_ALTO := 320.0
 const INTERIOR_MEDIO_ANCHO := INTERIOR_ANCHO / 2.0
 const INTERIOR_MEDIO_ALTO := INTERIOR_ALTO / 2.0
+var _interior_ancho_actual: float = INTERIOR_ANCHO
+var _interior_alto_actual: float = INTERIOR_ALTO
 
 # Cada edificio intenta primero su sprite específico y después uno genérico.
 # Los recursos ausentes conservan únicamente su estructura pixel-art disponible.
@@ -1698,8 +1701,8 @@ func _limitar_camara_a_interior() -> void:
 		"enabled": _camara_interior.limit_enabled,
 	}
 	# Coincide con los bordes exteriores de la habitación (incluyendo los muros).
-	var esquina_superior_izquierda := to_global(Vector2(-INTERIOR_MEDIO_ANCHO, -INTERIOR_MEDIO_ALTO))
-	var esquina_inferior_derecha := to_global(Vector2(INTERIOR_MEDIO_ANCHO, INTERIOR_MEDIO_ALTO))
+	var esquina_superior_izquierda := to_global(Vector2(-_interior_ancho_actual / 2.0, -_interior_alto_actual / 2.0))
+	var esquina_inferior_derecha := to_global(Vector2(_interior_ancho_actual / 2.0, _interior_alto_actual / 2.0))
 	_camara_interior.limit_left = floori(esquina_superior_izquierda.x)
 	_camara_interior.limit_top = floori(esquina_superior_izquierda.y)
 	_camara_interior.limit_right = ceili(esquina_inferior_derecha.x)
@@ -1762,6 +1765,20 @@ func _interterior_colisiones(_activar: bool) -> void:
 	return
 
 
+func _obtener_dimensiones_interior(tipo: String) -> Vector2:
+	# Las salas grandes ganan espacio para circulación y mobiliario; las
+	# viviendas y locales pequeños conservan una escala más íntima.
+	match tipo:
+		"castillo":
+			return Vector2(704.0, 416.0)
+		"biblioteca", "archivo", "centro_expediciones", "taberna", "escuela", "comercio", "consejo", "cuartel":
+			return Vector2(640.0, 384.0)
+		"vivero", "granero", "molino", "corrales", "clinica", "carpinteria", "taller":
+			return Vector2(608.0, 368.0)
+		_:
+			return Vector2(INTERIOR_ANCHO, INTERIOR_ALTO)
+
+
 func _construir_habitacion(entrada: Dictionary) -> void:
 	for hijo: Node in _capa_interior.get_children():
 		hijo.free()
@@ -1769,18 +1786,29 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	cuarto.name = "Habitacion_" + str(entrada["id"])
 	_capa_interior.add_child(cuarto)
 
-	# El suelo se conserva como TileMap y las paredes mantienen sus colisiones.
-	# Los muebles existentes se representan con sprites oficiales. Los objetos
-	# sin sprite propio quedan fuera hasta que se dibujen sus recursos pixel art.
-	_agregar_suelo_tilemap(cuarto)
-	# Muros perimetrales ampliados con una abertura de puerta al sur.
-	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -INTERIOR_MEDIO_ALTO - 4.0), Vector2(INTERIOR_ANCHO + 16.0, 16))
-	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-INTERIOR_MEDIO_ANCHO - 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
-	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(INTERIOR_MEDIO_ANCHO + 4.0, 0), Vector2(16, INTERIOR_ALTO + 16.0))
-	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2((-INTERIOR_MEDIO_ANCHO - 4.0 - 12.0) / 2.0, INTERIOR_MEDIO_ALTO + 4.0), Vector2(INTERIOR_MEDIO_ANCHO - 12.0, 16))
-	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2((132.0 + INTERIOR_MEDIO_ANCHO + 4.0) / 2.0, INTERIOR_MEDIO_ALTO + 4.0), Vector2(INTERIOR_MEDIO_ANCHO - 128.0, 16))
-
 	var tipo := str(entrada["tipo"])
+	var dimensiones := _obtener_dimensiones_interior(tipo)
+	_interior_ancho_actual = dimensiones.x
+	_interior_alto_actual = dimensiones.y
+
+	# Cada habitación recibe un acabado propio: suelo, zócalos, paredes y
+	# molduras se dibujan con una paleta coherente con el uso del edificio.
+	var acabado := Node2D.new()
+	acabado.name = "AcabadoInterior"
+	acabado.set_script(BUILDING_INTERIOR_STYLE_SCRIPT)
+	acabado.call("configurar", tipo, dimensiones, _entrada_interior_id)
+	cuarto.add_child(acabado)
+
+	# Las colisiones siguen el tamaño real de esta habitación. La abertura
+	# inferior conserva la posición de la puerta usada por el jugador.
+	var mitad_ancho := _interior_ancho_actual / 2.0
+	var mitad_alto := _interior_alto_actual / 2.0
+	_agregar_colision_muro(cuarto, "ColisionNorte", Vector2(0, -mitad_alto - 4.0), Vector2(_interior_ancho_actual + 16.0, 16))
+	_agregar_colision_muro(cuarto, "ColisionOeste", Vector2(-mitad_ancho - 4.0, 0), Vector2(16, _interior_alto_actual + 16.0))
+	_agregar_colision_muro(cuarto, "ColisionEste", Vector2(mitad_ancho + 4.0, 0), Vector2(16, _interior_alto_actual + 16.0))
+	_agregar_colision_muro(cuarto, "ColisionSurIzq", Vector2((-mitad_ancho - 4.0 - 12.0) / 2.0, mitad_alto + 4.0), Vector2(mitad_ancho - 12.0, 16))
+	_agregar_colision_muro(cuarto, "ColisionSurDer", Vector2((132.0 + mitad_ancho + 4.0) / 2.0, mitad_alto + 4.0), Vector2(mitad_ancho - 128.0, 16))
+
 	match tipo:
 		"castillo":
 			_agregar_sprite_mueble(cuarto, "MesaDelTrono", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -78), Vector2(1.5, 1.0), 1)
