@@ -142,3 +142,17 @@ Se conservaron `_actualizar_movimiento_reunion_castillo()` y sus reglas de agrup
 También se conservó `_iniciar_idle_postura_npc()`. Aunque no tenía llamadas directas, una animación lo invoca mediante `Callable(self, "_iniciar_idle_postura_npc")`; el análisis estático inicial no detectó esa referencia indirecta. La función fue restaurada antes de validar el estado final.
 
 Esta revisión deja una regla de auditoría explícita: antes de eliminar un método hay que revisar llamadas directas, `Callable`, `call/call_deferred`, señales, grupos y contratos externos; el conteo textual por sí solo no basta.
+
+
+## 10. Cuarta extracción: necesidades y elegibilidad de eventos
+
+Se movieron dos reglas independientes a `NPCScheduleRules`:
+
+- `obtener_satisfaccion_actividad(actividad)`: mantiene las palabras clave y ponderaciones existentes para descanso, socialización, diversión, curiosidad, autonomía y seguridad.
+- `puede_participar_en_evento(rutina)`: permite eventos cuando no hay rutina o cuando la rutina corresponde a un día libre; trabajo y guardia siguen excluidos.
+
+La clase de simulación conserva sus métodos de delegación, por lo que los puntos de llamada y el contrato interno permanecen iguales. Se añadieron pruebas para cada ponderación y para los casos de elegibilidad.
+
+No se cambiaron valores de necesidades ni criterios de diseño: sólo se aisló el algoritmo existente y se fijó mediante pruebas.
+
+**Validación:** pendiente de CI para esta extracción.
