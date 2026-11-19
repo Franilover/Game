@@ -381,3 +381,12 @@ La prueba complementa la cobertura previa de captura/restauración de capas y m�
 `Main._materializar_habitantes_sin_oficio()` recorría el grupo `torres_game_npc` una vez para elegir una plantilla y volvía a recorrerlo para construir índices por clave local y nombre. Ambos pasos usaban la misma colección y el mismo orden.
 
 Se combinó en un único recorrido que conserva la primera criatura válida como plantilla, el primer NPC por nombre y las entradas por clave local. No cambian los criterios de identidad ni la prioridad entre habitantes canónicos y locales.
+
+
+## 36. Catálogo estático de habitantes locales
+
+`Main._materializar_habitantes_sin_oficio()` contenía dentro de su ejecución la definición completa de Mara, Ivo y Nima: identidad local, personalidad, historia, hogar y rutinas. Como esos datos no dependen del estado de la partida, se trasladaron a `HABITANTES_LOCALES` como catálogo constante de `Main`.
+
+La función conserva el mismo recorrido y las mismas reglas de reconciliación con NPC canónicos: reutiliza instancias existentes por clave o nombre, evita duplicar identidades registradas globalmente y sólo instancia habitantes que faltan. Los perfiles, horarios, hogares, textos y sprites permanecen iguales.
+
+Se añadió `test_local_npc_catalog.tscn` para proteger que existan exactamente Mara, Ivo y Nima y que cada entrada conserve hogar, rutinas, personalidad e historia. El test se ejecuta en la suite de regresión de Godot.
