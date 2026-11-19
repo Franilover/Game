@@ -1230,7 +1230,7 @@ func _obtener_rutina_encuentro_trio(
 		var participante := participantes[nombre] as Creature
 		var invitacion := _evaluar_invitacion_personaje(
 			participante.get_personaje_game_id().strip_edges(),
-			anios if false else anio,
+			anio,
 			int(tiempo.get("dia", 1)),
 			minutos
 		)
