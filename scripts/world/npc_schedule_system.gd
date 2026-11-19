@@ -2077,28 +2077,11 @@ func _obtener_minutos_hasta_siguiente_rutina(
 	dia_semana: int,
 	minutos: int
 ) -> int:
-	if not rutinas_variant is Array or (rutinas_variant as Array).is_empty():
-		return 0
-	var mejor := 5 * 1440
-	for desplazamiento_dia in range(5):
-		var dia_candidato := posmod(dia_semana + desplazamiento_dia, 5)
-		for rutina_variant in rutinas_variant as Array:
-			if not rutina_variant is Dictionary:
-				continue
-			var rutina := rutina_variant as Dictionary
-			if not bool(rutina.get("activo", true)):
-				continue
-			if not NPC_SCHEDULE_RULES.coincide_dia(rutina.get("dias_semana", []), dia_candidato):
-				continue
-			var inicio := NPC_SCHEDULE_RULES.hora_a_minutos(rutina.get("hora_inicio", ""))
-			var fin := NPC_SCHEDULE_RULES.hora_a_minutos(rutina.get("hora_fin", ""))
-			if inicio < 0 or fin < 0 or inicio == fin:
-				continue
-			var candidato := desplazamiento_dia * 1440 + inicio
-			if candidato <= minutos:
-				continue
-			mejor = mini(mejor, candidato - minutos)
-	return mejor if mejor < 5 * 1440 else 0
+	return NPC_SCHEDULE_RULES.obtener_minutos_hasta_siguiente_rutina(
+		rutinas_variant,
+		dia_semana,
+		minutos
+	)
 
 
 func _obtener_opciones_ocio_npc(nombre: String) -> Dictionary:
