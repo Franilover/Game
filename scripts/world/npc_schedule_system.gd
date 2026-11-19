@@ -2379,11 +2379,12 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var memoria_candidato := 0.0
 		if not motivo_concreto:
 			memoria_npc = _calcular_influencia_recuerdos_sociales(id_npc, id_candidato)
-			memoria_candidato = _calcular_influencia_recuerdos_sociales(id_candidato, id_npc)
 		if not _puede_iniciar_encuentro_social(
 			id_npc, relacion, motivo_concreto, memoria_npc
 		):
 			continue
+		if not motivo_concreto:
+			memoria_candidato = _calcular_influencia_recuerdos_sociales(id_candidato, id_npc)
 		if not _puede_iniciar_encuentro_social(
 			id_candidato, relacion, motivo_concreto, memoria_candidato
 		):
