@@ -303,3 +303,13 @@ Las operaciones de interacción, conocimiento, asuntos y promesas también recon
 `RelationshipSystemService` utiliza esas operaciones para registrar interacciones, actualizar conocimientos, crear/resolver asuntos y crear/resolver promesas. Las rutas antiguas de lectura y escritura completa permanecen como fallback de compatibilidad cuando el objeto de estado no expone los nuevos métodos. No se modifica el formato de guardado ni se introduce caché.
 
 La prueba de roundtrip ahora también ejercita las escrituras puntuales desde `RelationshipSystemService`, comprobando actualización de confianza e interacciones, alta de conocimiento, asunto y promesa, además de las lecturas aisladas descritas en la sección anterior. La validación de CI queda pendiente.
+
+## 26. Lectura y escritura puntual de recuerdos sociales
+
+El historial `recuerdos_sociales` se consultaba y guardaba como un diccionario completo incluso cuando una operación afectaba a un solo habitante. Esto ocurría al registrar un recuerdo, consultar el recuerdo pendiente de diálogo, asignar un identificador estable a recuerdos antiguos y marcar un recuerdo como mencionado.
+
+Se añadieron `GameStateService.obtener_recuerdos_sociales_npc()` y `guardar_recuerdos_sociales_npc()`. La lectura devuelve una copia profunda del array del NPC solicitado; la escritura duplica el registro exterior de forma superficial y reemplaza únicamente el array de ese NPC con una copia profunda. El resto de historiales conserva sus referencias y contenido; el formato de `world_state.flags["recuerdos_sociales"]` no cambia y se mantiene `_al_cambio_guardable()`.
+
+`RelationshipSystemService` usa estas operaciones en registro, consulta y marcado de recuerdos. Si un GameState antiguo no expone los métodos puntuales, conserva un fallback mediante las operaciones completas anteriores. Se mantienen las reglas de consolidación de `tema_conversacion`, contador, primer momento, importancia máxima, prioridad del recuerdo pendiente, identificador estable, límite de 32 entradas y emisión de `recuerdo_registrado`.
+
+La prueba de roundtrip comprueba aislamiento de copias, actualización de un tema recurrente sin duplicarlo, conservación de primer momento e importancia, actualización del último momento, selección y marcado del recuerdo pendiente y aislamiento del historial de otro NPC. La validación de CI queda pendiente.
