@@ -101,6 +101,19 @@ func _probar_identidad_de_apilado(errores: Array[String]) -> void:
 	if int(runtime.state.items[6].get("cantidad", 0)) != 4:
 		errores.append("Fusionó dos IDs distintos por compartir nombre.")
 
+	# Algunos datos antiguos tienen id vacío y conservan la identidad en item_id.
+	var identidad_alternativa := {
+		"id": "",
+		"item_id": "madera_id_c",
+		"nombre": "Madera",
+		"cantidad": 1,
+		"max_stack": 10
+	}
+	if not runtime.agregar_objeto(identidad_alternativa):
+		errores.append("No aceptó un item_id alternativo en un slot libre.")
+	if int(runtime.state.items[6].get("cantidad", 0)) != 4:
+		errores.append("Ignoró item_id al encontrar un campo id vacío.")
+
 	# Los datos antiguos sin ID conservan el fallback por nombre.
 	var legacy := RuntimeScript.new() as InventoryRuntime
 	var legacy_items: Array = []
