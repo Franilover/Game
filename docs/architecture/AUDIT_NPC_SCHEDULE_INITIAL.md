@@ -612,3 +612,24 @@ La prueba `test_npc_schedule_context` cubre: interrupción por cinemática, rean
 Se reforzó la regresión de transición para ejecutar `_salir_de_edificio_para_cambiar_rutina()` directamente, en vez de simular por separado la extracción del NPC y limpiar manualmente su metadata. El escenario mantiene `_interior_activo` durante el cambio: el NPC vuelve al contenedor exterior, limpia `rutina_en_edificio` y `rutina_edificio_id`, permanece oculto, fuera de `interactable` y sin colisiones exteriores. Al cerrar el interior, `_restaurar_npcs_exteriores()` recupera su visibilidad, grupo de interacción y capas/máscaras originales.
 
 Este cambio fortalece la prueba del contrato existente; no modifica el comportamiento de producción. Validación CI pendiente.
+
+
+## 62. Contrato de autoridad de movimiento NPC
+
+La inspección de `CreatureMovement`, `Creature`, `NPCScheduleSystem`, `NPCConversationSystem` y `Main` no justifica introducir otro controlador. El componente `CreatureMovement` ya es el único que ejecuta el desplazamiento físico del cuerpo; los sistemas de mundo deciden cuándo y hacia dónde moverlo.
+
+La prioridad efectiva dentro de `CreatureMovement.procesar()` es:
+
+1. **Pausa temporal:** inmoviliza el cuerpo y conserva la ruta y el modo de control.
+2. **Ruta de rutina:** ejecuta la ruta vigente y tiene prioridad sobre una dirección externa.
+3. **Restricción de movimiento de la criatura:** una configuración inmóvil detiene el movimiento y cancela el control de rutina.
+4. **Dirección externa:** seguimiento u órdenes explícitas a través de `tomar_control()` y `establecer_direccion()`.
+5. **Movimiento autónomo:** sólo se usa cuando no existe ruta de rutina ni dirección externa activa.
+
+`detener_por_rutina()` no equivale a `detener()`: el primero conserva el control de rutina con una ruta vacía, dejando al NPC quieto hasta recibir otra ruta; el segundo libera ese control y permite volver a la movilidad externa/autónoma. `establecer_ruta()` toma el control de rutina y reinicia el recorrido. Las conversaciones ambientales no necesitan tomar control del movimiento: sólo se inician cuando los participantes están detenidos y su marca impide que la agenda les asigne otra rutina durante la escena.
+
+La agenda es propietaria de las rutas de horario, paseo interior/exterior y actividad social. El acercamiento a iniciativa delega el recorrido a `iniciar_acercamiento_social()`; al llegar, detiene el cuerpo para el diálogo y, al finalizar o cancelar, `finalizar_acercamiento_social()` elimina la marca de ocupación y vuelve a aplicar la rutina desde la posición actual. Los objetivos sociales también se procesan en la agenda, después de las actividades sociales; el `continue` del ciclo evita que ambos controladores asignen una ruta al mismo NPC en el mismo tick.
+
+Las cinemáticas no constituyen un segundo motor de locomoción: la elegibilidad exige que el NPC esté detenido y libre, y la marca de cinemática bloquea nuevas asignaciones. La interrupción específica de paseo interior ya cancela su ruta y conserva el próximo horario. Los NPC ocultos por un interior siguen siendo actualizados por la agenda, pero la transición de edificio conserva el control de visibilidad/colisiones en `ReinoTorres`.
+
+No se encontró una sobrescritura simultánea demostrable que justifique modificar producción en esta pasada. Tampoco se debe convertir `pausar_temporalmente()` en una dependencia de conversación: el flujo actual no llama esa API y su contrato es distinto de cancelar una ruta. Próximo límite de prueba: añadir cobertura dedicada a la precedencia pausa/ruta/dirección externa y al ciclo de acercamiento hasta la restauración de la rutina. No se cambian escenas, metadata, señales, guardados ni Supabase.
