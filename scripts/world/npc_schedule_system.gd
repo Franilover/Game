@@ -79,23 +79,23 @@ const POSICIONES_PLAZA: Dictionary = {
 }
 
 const DESPLAZAMIENTOS_PASEO_EXTERIOR: Dictionary = {
-		# Elian suele volver hacia el acceso de la panadería y detenerse a saludar.
-		"elian": [Vector2(-24.0, -8.0), Vector2(-12.0, 22.0), Vector2(18.0, 12.0), Vector2(8.0, -24.0)],
-		# Bruna hace recorridos cortos; no suele alejarse demasiado de su punto.
-		"bruna": [Vector2(-14.0, 8.0), Vector2(12.0, -10.0), Vector2(18.0, 18.0)],
-		# Darven mantiene una vuelta más amplia y ordenada por el perímetro.
-		"darven": [Vector2(-30.0, -18.0), Vector2(28.0, -16.0), Vector2(30.0, 20.0), Vector2(-26.0, 24.0)],
-		# Saira se mueve entre distintos sectores, como si revisara puestos y saludara.
-		"saira": [Vector2(26.0, -22.0), Vector2(34.0, 8.0), Vector2(-18.0, 26.0), Vector2(-30.0, -8.0)],
-		# Narel se detiene cerca de puntos de observación y cambia de dirección.
-		"narel": [Vector2(-22.0, -26.0), Vector2(8.0, -34.0), Vector2(24.0, 6.0)],
-		# Mara prefiere bordear la plaza y evitar el centro.
-		"mara": [Vector2(-34.0, -12.0), Vector2(-26.0, 22.0), Vector2(12.0, 32.0)],
-		# Ivo recorre distancias menores y descansa más entre paseos.
-		"ivo": [Vector2(-12.0, 8.0), Vector2(12.0, -8.0), Vector2(18.0, 12.0)],
-		# Nima alterna observación y pequeños cambios de posición.
-		"nima": [Vector2(0.0, -30.0), Vector2(24.0, -18.0), Vector2(-18.0, -20.0), Vector2(12.0, 24.0)]
-	}
+	# Elian suele volver hacia el acceso de la panadería y detenerse a saludar.
+	"elian": [Vector2(-24.0, -8.0), Vector2(-12.0, 22.0), Vector2(18.0, 12.0), Vector2(8.0, -24.0)],
+	# Bruna hace recorridos cortos; no suele alejarse demasiado de su punto.
+	"bruna": [Vector2(-14.0, 8.0), Vector2(12.0, -10.0), Vector2(18.0, 18.0)],
+	# Darven mantiene una vuelta más amplia y ordenada por el perímetro.
+	"darven": [Vector2(-30.0, -18.0), Vector2(28.0, -16.0), Vector2(30.0, 20.0), Vector2(-26.0, 24.0)],
+	# Saira se mueve entre distintos sectores, como si revisara puestos y saludara.
+	"saira": [Vector2(26.0, -22.0), Vector2(34.0, 8.0), Vector2(-18.0, 26.0), Vector2(-30.0, -8.0)],
+	# Narel se detiene cerca de puntos de observación y cambia de dirección.
+	"narel": [Vector2(-22.0, -26.0), Vector2(8.0, -34.0), Vector2(24.0, 6.0)],
+	# Mara prefiere bordear la plaza y evitar el centro.
+	"mara": [Vector2(-34.0, -12.0), Vector2(-26.0, 22.0), Vector2(12.0, 32.0)],
+	# Ivo recorre distancias menores y descansa más entre paseos.
+	"ivo": [Vector2(-12.0, 8.0), Vector2(12.0, -8.0), Vector2(18.0, 12.0)],
+	# Nima alterna observación y pequeños cambios de posición.
+	"nima": [Vector2(0.0, -30.0), Vector2(24.0, -18.0), Vector2(-18.0, -20.0), Vector2(12.0, 24.0)]
+}
 
 const POSICIONES: Dictionary = {
 	"plaza": Vector2(0.0, 0.0),
