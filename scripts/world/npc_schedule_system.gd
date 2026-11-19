@@ -96,8 +96,6 @@ var _tiempo_actualizacion := 0.0
 var _firma_colisiones := ""
 var _tiempo_cambio_colisiones := -1.0
 var _ultimo_aviso_evento_comunitario := ""
-var _fecha_asistencia_reunion_cache := ""
-var _asistencia_reunion_cache: Dictionary = {}
 
 
 func configurar(
@@ -1494,20 +1492,6 @@ func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	npc.set_meta("animacion_actividad_interior_tween", tween)
 
 
-func _iniciar_idle_postura_npc(npc: Creature, sprite: Sprite2D, postura: String, destino: Vector2) -> void:
-	if not is_instance_valid(npc) or not is_instance_valid(sprite):
-		return
-	var tween := npc.create_tween()
-	tween.set_loops()
-	tween.set_trans(Tween.TRANS_SINE)
-	tween.set_ease(Tween.EASE_IN_OUT)
-	if postura == "dormir":
-		tween.tween_property(sprite, "scale:y", sprite.scale.y * 1.025, 1.1)
-		tween.tween_property(sprite, "scale:y", sprite.scale.y / 1.025, 1.1)
-	else:
-		tween.tween_property(sprite, "position:y", destino.y - 0.8, 0.65)
-		tween.tween_property(sprite, "position:y", destino.y, 0.65)
-	npc.set_meta("animacion_actividad_interior_tween", tween)
 
 
 func _detener_animacion_actividad_interior(npc: Creature) -> void:
@@ -2924,122 +2908,8 @@ func _notificar_evento_comunitario(evento: Dictionary) -> void:
 	Events.notification_pushed.emit(aviso)
 
 
-func _obtener_rutina_reunion_castillo(
-	npc: Creature,
-	rutina_actual: Dictionary,
-	minutos: int
-) -> Dictionary:
-	if not is_instance_valid(npc) or minutos < 1260 or minutos >= 1410:
-		return {}
-	var nombre := npc.get_nombre_visual().strip_edges().to_lower()
-	if nombre.is_empty():
-		return {}
-
-	var clave := str(rutina_actual.get("clave", "")).strip_edges().to_lower()
-	if clave.begins_with("invitacion_") or clave.begins_with("evento_") or clave.begins_with("encuentro_trio_"):
-		return {}
-	if (
-		bool(npc.get_meta("rutina_en_transito", false))
-		and not bool(npc.get_meta("rutina_en_edificio", false))
-		and str(npc.get_meta("rutina_actual", "")) != "reunion_nocturna_castillo"
-	):
-		return {}
-
-	var actividad := str(rutina_actual.get("actividad_clave", npc.get_meta("actividad_actual", ""))).strip_edges().to_lower()
-	var actividades_ocupadas: Array[String] = [
-		"trabaj", "atender", "guard", "ronda", "patrull", "vigilar",
-		"investig", "estudi", "repar", "hornear", "panader", "comerci", "servir"
-	]
-	for patron in actividades_ocupadas:
-		if actividad.contains(patron):
-			return {}
-
-	var ubicacion := str(rutina_actual.get("ubicacion_clave", "")).strip_edges().to_lower()
-	var hogar := obtener_clave_hogar(npc.get_nombre_visual(), "plaza")
-	var actividad_libre := (
-		actividad.is_empty()
-		or actividad.contains("descans")
-		or actividad.contains("dorm")
-		or actividad.contains("pase")
-		or actividad.contains("convers")
-		or actividad.contains("volver")
-	)
-	var rutina_libre := (
-		rutina_actual.is_empty()
-		or clave.begins_with("dia_libre")
-		or actividad_libre
-		or ubicacion == hogar
-	)
-	if not rutina_libre:
-		return {}
-
-	# La asistencia rota por grupos sociales completos, no por individuo.
-	# Así los amigos suelen coincidir sin vaciar el reino cada noche.
-	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
-	var fecha := "%s|%s" % [str(tiempo.get("anio", 0)), str(tiempo.get("dia", 1))]
-	if not _debe_asistir_grupo_reunion_castillo(npc, fecha):
-		return {}
-
-	return {
-		"clave": "reunion_nocturna_castillo",
-		"ubicacion_clave": "castillo",
-		"actividad_clave": "conversar_con_amigos",
-		"activo": true
-	}
 
 
-func _debe_asistir_grupo_reunion_castillo(npc: Creature, fecha: String) -> bool:
-	if not is_instance_valid(npc):
-		return false
-	var id_actual := npc.get_personaje_game_id().strip_edges()
-	if id_actual.is_empty():
-		id_actual = npc.get_nombre_visual().strip_edges().to_lower()
-	if _fecha_asistencia_reunion_cache != fecha or not _asistencia_reunion_cache.has(id_actual):
-		_fecha_asistencia_reunion_cache = fecha
-		_asistencia_reunion_cache.clear()
-		var habitantes: Array[Creature] = []
-		for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-			if (
-				nodo is Creature
-				and is_instance_valid(nodo)
-				and not nodo.is_queued_for_deletion()
-				and (nodo as Creature).is_alive
-			):
-				habitantes.append(nodo as Creature)
-		habitantes.sort_custom(func(a: Creature, b: Creature) -> bool:
-			var id_a := a.get_personaje_game_id().strip_edges()
-			var id_b := b.get_personaje_game_id().strip_edges()
-			if id_a.is_empty():
-				id_a = a.get_nombre_visual().to_lower()
-			if id_b.is_empty():
-				id_b = b.get_nombre_visual().to_lower()
-			return id_a < id_b
-		)
-		var grupos := _formar_grupos_sociales_castillo(habitantes)
-		for grupo_variant in grupos:
-			var grupo: Array = grupo_variant
-			var ids_grupo: Array[String] = []
-			var anfitrion := false
-			for integrante_variant in grupo:
-				if not integrante_variant is Creature or not is_instance_valid(integrante_variant):
-					continue
-				var integrante := integrante_variant as Creature
-				var id_integrante := integrante.get_personaje_game_id().strip_edges()
-				if id_integrante.is_empty():
-					id_integrante = integrante.get_nombre_visual().strip_edges().to_lower()
-				ids_grupo.append(id_integrante)
-				if integrante.get_nombre_visual().strip_edges().to_lower() in ["abel", "liam"]:
-					anfitrion = true
-			var asiste := anfitrion or posmod(hash("reunion_castillo|" + fecha + "|" + "|".join(ids_grupo)), 4) != 0
-			for integrante_variant in grupo:
-				if not integrante_variant is Creature or not is_instance_valid(integrante_variant):
-					continue
-				var integrante := integrante_variant as Creature
-				var id_integrante := integrante.get_personaje_game_id().strip_edges()
-				if id_integrante.is_empty():
-					id_integrante = integrante.get_nombre_visual().strip_edges().to_lower()
-				_asistencia_reunion_cache[id_integrante] = asiste
-	return bool(_asistencia_reunion_cache.get(id_actual, false))
 
 
 func _seleccionar_rutina_respaldo_castillo(minutos: int) -> Dictionary:
