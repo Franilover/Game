@@ -20,6 +20,16 @@ const POSICIONES_EVENTO: Array[Vector2] = [
 	Vector2(8.0, 56.0), Vector2(-64.0, 8.0)
 ]
 
+const MINUTO_INICIO_HORARIO_NOCTURNO := 21 * 60
+const MINUTO_FIN_HORARIO_NOCTURNO := 6 * 60
+
+
+## Devuelve si la hora pertenece al tramo nocturno que cruza medianoche.
+## El inicio (21:00) está incluido y el fin (06:00) está excluido.
+static func es_horario_nocturno(minutos: int) -> bool:
+	return minutos >= MINUTO_INICIO_HORARIO_NOCTURNO or minutos < MINUTO_FIN_HORARIO_NOCTURNO
+
+
 ## Convierte una hora HH:MM a minutos desde medianoche.
 ## Devuelve -1 cuando el formato o sus componentes no son válidos.
 static func hora_a_minutos(valor: Variant) -> int:
