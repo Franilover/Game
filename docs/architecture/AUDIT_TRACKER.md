@@ -286,3 +286,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Se conservan hogar personalizado, umbral de edificio, posición absoluta de plaza, anclas por habitante, variaciones individuales y perímetro de 118 px para NPC adicionales.
 - `test_npc_schedule_context` cubre los cinco casos de selección de destino.
 - CI Godot 4.7: **48/48 pasos, 0 fallos** ([run #44628969650](https://github.com/Franilover/Game/actions/runs/44628969650)); GDScript Quality: **success** ([run #44628969766](https://github.com/Franilover/Game/actions/runs/44628969766)).
+
+
+## Búsqueda compartida de mobiliario interior (2026-11-19)
+
+- Se unificó la búsqueda de sprites por tokens para selección de puestos y animaciones de postura.
+- La selección conserva todos los muebles compatibles y el orden de escena; la animación sigue usando el primero.
+- Se añadieron casos de cama/litera, silla/asiento, orden y búsqueda vacía a `test_npc_schedule_context`.
+- CI Godot 4.7: **48/48 pasos, 0 fallos** ([run #44629354647](https://github.com/Franilover/Game/actions/runs/44629354647)); GDScript Quality: **success** ([run #44629354490](https://github.com/Franilover/Game/actions/runs/44629354490)).
