@@ -285,3 +285,13 @@ La selección social sólo necesita saber si una persona tiene alguna noticia qu
 Se añadió `RelationshipSystemService.tiene_conocimiento_compartible_nuevo_npc()`: obtiene una vez los conocimientos de origen y destino, crea un conjunto local de claves conocidas y recorre los conocimientos de origen hasta encontrar uno nuevo que supere `puede_compartir_conocimiento_npc()`. Conserva las reglas existentes de privacidad, permiso de transmisión y confianza; la función que devuelve la lista completa de conocimientos compartibles sigue disponible sin cambios.
 
 El conjunto de claves vive sólo durante la consulta. No hay caché persistente ni cambios en los datos guardados.
+
+## 24. Lecturas puntuales del estado social
+
+Se detectó que consultar una relación entre dos NPC o los conocimientos de uno solo pasaba por `GameState.obtener_conversaciones_npc()`, que devuelve una copia profunda de todo el registro de conversaciones. Esto multiplicaba el coste en consultas sociales frecuentes y también en la nueva comprobación booleana de noticias.
+
+Se añadieron dos lecturas puntuales en `GameStateService`: `obtener_relacion_npc_entre(clave)` y `obtener_conocimientos_npc(personaje_id)`. Ambas duplican únicamente el dato solicitado y no exponen referencias modificables al estado interno. `RelationshipSystemService` las utiliza cuando están disponibles y conserva el camino anterior como compatibilidad para otros objetos de estado.
+
+La consulta booleana de noticias reutiliza ahora una única relación y su confianza durante el recorrido, y sólo consulta la confianza cuando encuentra conocimiento privado con permiso explícito. El conocimiento público no necesita consultar la relación. Las funciones de lectura completa y guardado siguen intactas, por lo que el formato persistido no cambia.
+
+La prueba de roundtrip de GameState ahora cubre la lectura puntual, el aislamiento de copias y la conservación de otras secciones del registro de conversaciones. La validación de CI queda pendiente.
