@@ -174,7 +174,7 @@ func _ready() -> void:
 	if not is_instance_valid(_npc_schedule_system):
 		push_error("Main: falta Systems/NPCScheduleSystem.")
 	else:
-		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager, RelationshipSystem)
+		_npc_schedule_system.configurar(_world_atmosphere, _zone_manager, RelationshipSystem, _npc_navigation_system)
 
 	if not is_instance_valid(_npc_conversation_system):
 		push_error("Main: falta Systems/NPCConversationSystem.")
