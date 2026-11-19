@@ -642,24 +642,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# Si cambió de destino mientras estaba dentro, sale desde la puerta antes
 	# de comenzar la nueva ruta. El nodo sigue siendo la misma instancia.
 	if esta_dentro and edificio_id != edificio_actual:
-		_detener_animacion_actividad_interior(npc)
-		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
-			_detener_paseo_interior(npc, true)
-		if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
-			_zona.call("sacar_npc_del_interior", npc)
-		if (
-			is_instance_valid(_zona)
-			and not bool(_zona.get("_interior_activo"))
-			and _zona.has_method("restaurar_colision_npc")
-		):
-			_zona.call("restaurar_colision_npc", npc)
-		var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
-		if salida_variant is Dictionary:
-			var salida: Dictionary = salida_variant
-			npc.global_position = _zona.to_global(salida.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
-		npc.set_meta("rutina_en_edificio", false)
-		npc.set_meta("rutina_edificio_id", "")
-		npc.visible = not (is_instance_valid(_zona) and (_zona.get("_interior_activo") == true))
+		_salir_de_edificio_para_cambiar_rutina(npc, edificio_actual)
 
 	# Si la actividad cambia pero sigue en el mismo edificio, permanece dentro.
 	# Durante la reunión nocturna, además rota entre pequeños grupos del salón.
@@ -792,6 +775,29 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		and str(rutina.get("clave", "")) == str(evento_comunitario.get("clave", ""))
 	):
 		_registrar_observacion_evento_comunitario(npc, evento_comunitario)
+
+
+## Devuelve al exterior un NPC cuando su siguiente rutina apunta a otro edificio.
+## Conserva el estado de interior activo: si el jugador sigue dentro, el NPC permanece oculto.
+func _salir_de_edificio_para_cambiar_rutina(npc: Creature, edificio_actual: String) -> void:
+	_detener_animacion_actividad_interior(npc)
+	if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+		_detener_paseo_interior(npc, true)
+	if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
+		_zona.call("sacar_npc_del_interior", npc)
+	if (
+		is_instance_valid(_zona)
+		and not bool(_zona.get("_interior_activo"))
+		and _zona.has_method("restaurar_colision_npc")
+	):
+		_zona.call("restaurar_colision_npc", npc)
+	var salida_variant: Variant = ENTRADAS_INTERIORES.get(edificio_actual, {})
+	if salida_variant is Dictionary and is_instance_valid(_zona):
+		var salida: Dictionary = salida_variant
+		npc.global_position = _zona.to_global(salida.get("pos", Vector2.ZERO) + Vector2(0.0, 28.0))
+	npc.set_meta("rutina_en_edificio", false)
+	npc.set_meta("rutina_edificio_id", "")
+	npc.visible = not (is_instance_valid(_zona) and (_zona.get("_interior_activo") == true))
 
 
 ## Conserva la última actividad significativa para los recuerdos de la reunión.
