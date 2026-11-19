@@ -32,12 +32,12 @@ func _run() -> void:
 
 	var agenda := NPCScheduleScript.new() as NPCScheduleSystem
 	get_tree().root.add_child(agenda)
-	agenda._malla = AStarGrid2D.new()
-	agenda._malla.region = Rect2i(Vector2i.ZERO, Vector2i(5, 5))
-	agenda._malla.cell_size = Vector2.ONE
-	agenda._malla.update()
-	agenda._malla.set_point_solid(Vector2i(2, 2), true)
-	var celda_cercana := agenda._buscar_celda_transitable_cercana(Vector2i(2, 2))
+	var malla_prueba := AStarGrid2D.new()
+	malla_prueba.region = Rect2i(Vector2i.ZERO, Vector2i(5, 5))
+	malla_prueba.cell_size = Vector2.ONE
+	malla_prueba.update()
+	malla_prueba.set_point_solid(Vector2i(2, 2), true)
+	var celda_cercana := NPCNavigationScript.buscar_celda_transitable_cercana(malla_prueba, Vector2i(2, 2))
 	if Vector2(celda_cercana - Vector2i(2, 2)).length_squared() != 1.0:
 		errores.append("La búsqueda de celda libre no eligió la alternativa más cercana.")
 
