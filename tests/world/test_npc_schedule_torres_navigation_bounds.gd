@@ -7,7 +7,7 @@ func _ready() -> void:
 	var errores: Array[String] = []
 	if NPCNavigation.ORIGEN_MAPA != Vector2(-1664.0, -1088.0):
 		errores.append("El origen de navegación no coincide con el mapa ampliado de Torres.")
-	if NPCSchedule.TAMANO_MALLA != Vector2i(104, 68):
+	if NPCNavigation.TAMANO_MALLA != Vector2i(104, 68):
 		errores.append("La malla de navegación no cubre las 104 x 68 celdas de Torres.")
 
 	# Cada punto de rutina más el desplazamiento de 28 px debe coincidir
