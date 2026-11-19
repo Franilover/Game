@@ -2,6 +2,7 @@ extends Node
 
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const NPCScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
+const NPCConversationScript = preload("res://scripts/world/npc_conversation_system.gd")
 
 
 class ZonaInteriorPrueba extends Node2D:
@@ -23,6 +24,7 @@ func _run() -> void:
 		return
 
 	add_child(agenda)
+	agenda.add_to_group("npc_schedule_system")
 	add_child(npc_a)
 	add_child(npc_b)
 	npc_a.add_to_group("torres_game_npc")
@@ -181,14 +183,23 @@ func _comprobar_cancelacion_acercamiento_sin_contexto(
 		errores.append("La cancelación de iniciativa requiere CreatureMovement.")
 		return
 
+	var conversaciones := NPCConversationScript.new() as Node
+	add_child(conversaciones)
 	movimiento.establecer_ruta(PackedVector2Array([npc.global_position + Vector2(120.0, 0.0)]))
 	npc.set_meta("acercamiento_social_activo", true)
 	npc.set_meta("rutina_en_transito", true)
 	npc.set_meta("rutina_firma", "acercamiento_anterior")
 
-	# Sin WorldAtmosphere ni ZoneManager, la recuperación de la rutina no
-	# puede continuar, pero la ruta temporal nunca debe quedar ejecutándose.
-	agenda.finalizar_acercamiento_social(npc)
+	# Reproduce el cierre del diálogo: el movimiento temporal se reanuda
+	# antes de que el sistema de conversación cancele el acercamiento.
+	npc.pausar_movimiento_temporal()
+	npc.reanudar_movimiento_temporal()
+	conversaciones.set("_acercamiento_activo", {
+		"npc": npc,
+		"personaje_id": "",
+		"dialogo_iniciado": false
+	})
+	conversaciones.call("_cancelar_acercamiento")
 
 	if movimiento.rutina_en_ejecucion() or npc.velocity.length_squared() > 0.001:
 		errores.append("La cancelación dejó activa la ruta de acercamiento sin contexto de mundo.")
@@ -198,6 +209,9 @@ func _comprobar_cancelacion_acercamiento_sin_contexto(
 		errores.append("La cancelación conservó el estado de tránsito sin una ruta válida.")
 	if str(npc.get_meta("rutina_firma", "x")) != "":
 		errores.append("La cancelación conservó la firma de la rutina anterior.")
+	if not (conversaciones.get("_acercamiento_activo") as Dictionary).is_empty():
+		errores.append("El sistema de conversación no liberó su estado de acercamiento.")
+	conversaciones.queue_free()
 
 
 func _fail(errores: Array[String]) -> void:
