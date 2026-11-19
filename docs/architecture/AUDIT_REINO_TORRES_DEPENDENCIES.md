@@ -72,6 +72,25 @@
 - Los nodos de la escena son configuración editable, aunque el script los busque por nombre.
 - Esta revisión no confirma funciones o recursos sin uso. Para declarar algo muerto hace falta una búsqueda completa y comprobar las rutas dinámicas.
 
-## 6. Validación pendiente
+## 6. Primera extracción: constructor del vivero
 
-La revisión se realizó sobre código y escenas del repositorio. No se ejecutó Godot ni se modificó comportamiento de juego durante esta auditoría. La importación headless y las pruebas existentes deben ejecutarse en CI o en el entorno local antes de aceptar cambios funcionales.
+Se extrajeron de `reino_torres.gd` tres responsabilidades relacionadas:
+
+- Creación del `TileMapDual` de tierra cultivable.
+- Creación de la capa visual de tierra mojada.
+- Creación de las parcelas e instancias de `watering_interactable.gd`.
+
+Ahora viven en `scripts/world/torres_vivero_builder.gd` como funciones estáticas. `reino_torres.gd` conserva la composición de la habitación y decide dónde colocar cada bancal; el builder solo construye las capas y parcelas solicitadas.
+
+La extracción conserva:
+- Las texturas `Tierra.png` y `Tierra Mojada.png`.
+- Las 16 coordenadas de atlas y las máscaras de terreno.
+- Los nombres de las capas.
+- Las claves persistentes de los cinco bancales centrales.
+- El grupo `interactable` y el script de interacción de cada celda.
+
+Se añadieron `tests/world/test_torres_vivero_builder.gd` y su escena, y el workflow principal ejecuta esa prueba en modo headless. El bloque extraído redujo `reino_torres.gd` de 2.900 a 2.780 líneas (120 líneas menos). Es una extracción de responsabilidad, no una eliminación de funcionalidad.
+
+## 7. Validación pendiente
+
+No se ejecutó Godot localmente en este entorno. La prueba nueva y la importación headless deben completarse en GitHub Actions antes de considerar validado el cambio. Si la prueba falla, corregir el contrato antes de continuar con otra extracción.
