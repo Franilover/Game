@@ -1150,11 +1150,11 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 				_contar_descubrimientos("ecosistemas"), _contar_descubrimientos("habitats")
 			]
 			detalle.add_child(resumen)
-			_agregar_boton_detalle(detalle, "Consultar registros", _abrir_enciclopedia)
+			_agregar_boton_detalle(detalle, "Consultar registros", _abrir_enciclopedia.bind("biomas"))
 
 
 func _construir_clinica() -> void:
-	_agregar_texto("Atención para viajeros y sus compañeros. Recupera fuerzas antes de volver a explorar.")
+	_agregar_texto("Atención para viajeros. Recupera fuerzas antes de volver a explorar.")
 	var layout := _crear_selector_edificio(150.0, 250.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
