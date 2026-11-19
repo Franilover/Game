@@ -1698,19 +1698,24 @@ func _separar_npcs_superpuestos() -> void:
 			var npc := nodo as Creature
 			if npc.is_alive and npc.is_inside_tree():
 				npcs.append(npc)
+
+	var distancia_minima := RADIO_COLISION_NPC * 2.0
+	var distancia_minima_cuadrada := distancia_minima * distancia_minima
 	for indice_a in range(npcs.size()):
 		var a := npcs[indice_a]
 		if not _npc_puede_ajustar_separacion(a):
 			continue
+		var padre_a := a.get_parent()
 		for indice_b in range(indice_a + 1, npcs.size()):
 			var b := npcs[indice_b]
-			if a.get_parent() != b.get_parent() or not _npc_puede_ajustar_separacion(b):
+			if padre_a != b.get_parent() or not _npc_puede_ajustar_separacion(b):
 				continue
 			var diferencia := a.global_position - b.global_position
-			var distancia := diferencia.length()
-			var distancia_minima := RADIO_COLISION_NPC * 2.0
-			if distancia >= distancia_minima:
+			var distancia_cuadrada := diferencia.length_squared()
+			if distancia_cuadrada >= distancia_minima_cuadrada:
 				continue
+			# Sólo los pares realmente superpuestos necesitan raíz cuadrada.
+			var distancia := sqrt(distancia_cuadrada)
 			var direccion := diferencia.normalized()
 			if distancia < 0.01:
 				var clave := a.get_nombre_visual() + "|" + b.get_nombre_visual()
