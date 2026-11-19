@@ -52,7 +52,6 @@ func _construir_suelo(material: String) -> void:
 	if textura == null:
 		push_error("BuildingInteriorStyle: no se encontró la textura de suelo: " + material)
 		return
-	var mitad := _room_size / 2.0
 	_agregar_textura_repetida(
 		"Suelo",
 		textura,
