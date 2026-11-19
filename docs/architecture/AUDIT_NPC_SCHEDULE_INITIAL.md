@@ -194,3 +194,11 @@ Se movió la selección del punto local de reunión a `NPCScheduleRules.obtener_
 Se conserva la normalización del nombre, el texto de la clave del evento, el formato de fecha y el uso de `posmod(hash(...), 16)`. No se alteran los puntos de reunión ni el calendario.
 
 La prueba comprueba estabilidad para entradas iguales, variación posible al cambiar NPC/fecha y pertenencia al catálogo exacto de 16 posiciones. No se trasladan lecturas del mundo ni estado de NPC al helper.
+
+## 15. Octava extracción: asignación de turnos comerciales
+
+La decisión de asignar a un vendedor rotativo se trasladó a `NPCScheduleRules.debe_asignar_turno_comercio(nombre_npc, rutina_actual, dia_semana, minutos)`. La regla recibe datos simples y devuelve un booleano; no accede a nodos ni cambia rutinas.
+
+`NPCScheduleSystem` conserva la validación de instancia y la construcción de la rutina de puesto. Se mantienen el catálogo de siete vendedores rotativos, Saira como coordinadora excluida, las franjas 09:00–14:00 y 14:00–18:00, la fórmula de rotación por día/franja y la prioridad de trabajo, eventos, invitaciones y encuentros.
+
+Se añadieron casos para inicio y fin de horario, coordinadora, oficio existente, evento comunitario y NPC fuera del catálogo. La validación CI debe confirmar esta extracción junto con la corrección del orden de declaración en la prueba de desplazamientos de evento.
