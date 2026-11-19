@@ -620,9 +620,13 @@ func _construir_procesamiento_herbolario() -> void:
 	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	cuerpo.add_child(panel_detalle)
 	PIXEL_UI_THEME.apply(panel_detalle, false)
+	var scroll_detalle := ScrollContainer.new()
+	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	panel_detalle.add_child(scroll_detalle)
 	var detalle := VBoxContainer.new()
 	detalle.add_theme_constant_override("separation", 6)
-	panel_detalle.add_child(detalle)
+	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_detalle.add_child(detalle)
 	var vistos: Dictionary = {}
 	var seleccion_inicial: Dictionary = {}
 	if is_instance_valid(_inventario):
