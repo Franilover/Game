@@ -883,7 +883,9 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 	if clave.is_empty():
 		return
 	if inventory_controller.equipar_desde_inventario(clave, source_index, objeto):
-		equipment_slot.configurar_objeto(objeto)
+		# El runtime conserva el objeto canónico del slot, no la copia que la
+		# interfaz pudo capturar antes de una actualización del inventario.
+		_actualizar_slots_equipamiento()
 		actualizar()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
