@@ -3,7 +3,7 @@
 **Fecha:** 2026-11-19  
 **Rama revisada:** `feat/npc-relational-memory-decay`  
 **Commit revisado:** `bac3dffe0eeeeb965ac962d3ea217a9ba315b240`  
-**Estado:** auditoría estática con primera extracción del constructor del vivero; la prueba de contrato quedó incorporada a CI, pendiente de ejecución.
+**Estado:** auditoría estática con primera extracción del constructor del vivero; importación headless y suite de regresión aprobadas en CI.
 
 ## 1. Contrato de escena
 
@@ -93,4 +93,4 @@ Se añadieron `tests/world/test_torres_vivero_builder.gd` y su escena, y el work
 
 ## 7. Validación pendiente
 
-No se ejecutó Godot localmente en este entorno. La prueba nueva y la importación headless deben completarse en GitHub Actions antes de considerar validado el cambio. Si la prueba falla, corregir el contrato antes de continuar con otra extracción.
+No se ejecutó Godot localmente en este entorno. GitHub Actions completó con éxito la importación headless y la suite completa de regresión, incluida la prueba nueva del builder. La extracción queda validada por CI.
