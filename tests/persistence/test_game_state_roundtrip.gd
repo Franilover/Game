@@ -58,7 +58,8 @@ func _run() -> void:
 			],
 			"nima": [{"clave": "otra_noticia", "titulo": "Otra noticia"}]
 		},
-		"_promesas_npc": [{"id": "promesa_prueba", "estado": "pendiente"}]
+		"_promesas_npc": [{"id": "promesa_prueba", "estado": "pendiente"}],
+		"_asuntos_pendientes_npc": [{"id": "asunto_prueba", "personaje_id": "ivo", "personaje_relacionado": "nima", "estado": "pendiente"}]
 	}
 	misiones._estado = {"mision_recompensa_test": "completada"}
 	misiones._progreso = {"mision_recompensa_test": 3}
@@ -125,6 +126,17 @@ func _run() -> void:
 	var promesas_guardadas: Variant = destino.obtener_conversaciones_npc().get("_promesas_npc", [])
 	if not promesas_guardadas is Array:
 		errores.append("La lectura completa de conversaciones dejó de conservar las demás secciones.")
+	var asuntos_puntuales := destino.obtener_asuntos_pendientes_npc()
+	var promesas_puntuales := destino.obtener_promesas_npc()
+	if asuntos_puntuales.size() != 1 or promesas_puntuales.size() != 1:
+		errores.append("Las lecturas puntuales de asuntos y promesas no devolvieron sus listas.")
+	else:
+		(asuntos_puntuales[0] as Dictionary)["estado"] = "resuelto"
+		(promesas_puntuales[0] as Dictionary)["estado"] = "cumplida"
+		if str((destino.obtener_asuntos_pendientes_npc()[0] as Dictionary).get("estado", "")) != "pendiente":
+			errores.append("La lectura puntual de asuntos expuso el estado interno modificable.")
+		if str((destino.obtener_promesas_npc()[0] as Dictionary).get("estado", "")) != "pendiente":
+			errores.append("La lectura puntual de promesas expuso el estado interno modificable.")
 	relaciones_sociales.free()
 	var inventario_guardado: Dictionary = flags.get("inventario_estado", {}) as Dictionary
 	var items_guardados: Array = inventario_guardado.get("items", []) as Array
