@@ -1580,7 +1580,13 @@ func teletransportar_jugador_a_npc(npc: Node) -> bool:
 func sacar_npc_del_interior(npc: Node) -> void:
 	if not is_instance_valid(npc) or _contenedor_npcs_exterior == null:
 		return
-	if not _capa_interior.is_ancestor_of(npc):
+	if not is_instance_valid(_capa_interior) or not _capa_interior.is_ancestor_of(npc):
+		return
+	_devolver_npc_al_exterior(npc)
+
+
+func _devolver_npc_al_exterior(npc: Node) -> void:
+	if not is_instance_valid(npc) or not is_instance_valid(_contenedor_npcs_exterior):
 		return
 	var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
 	var entrada := _obtener_entrada_por_id(edificio_id)
@@ -1594,19 +1600,12 @@ func sacar_npc_del_interior(npc: Node) -> void:
 
 
 func _devolver_npcs_del_interior_al_exterior() -> void:
-	if _contenedor_npcs_exterior == null:
+	if not is_instance_valid(_contenedor_npcs_exterior) or not is_instance_valid(_capa_interior):
 		return
 	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not is_instance_valid(npc) or not _capa_interior.is_ancestor_of(npc):
 			continue
-		var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
-		var entrada := _obtener_entrada_por_id(edificio_id)
-		npc.reparent(_contenedor_npcs_exterior, true)
-		desactivar_colision_npc_exterior(npc)
-		if not entrada.is_empty() and npc is Node2D:
-			(npc as Node2D).global_position = _obtener_posicion_entrada_global(entrada) + Vector2(0.0, 28.0)
-		if npc is CanvasItem:
-			(npc as CanvasItem).visible = false
+		_devolver_npc_al_exterior(npc)
 
 
 func _volver_al_lobby_posada() -> void:
