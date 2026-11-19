@@ -279,19 +279,10 @@ func _procesar_movimiento_red(delta: float) -> void:
 				_procesar_dash(delta)
 				return
 
-	var eterium_sprint := false
-	if _red_eterium_sprint and direccion != Vector2.ZERO:
-		eterium_sprint = eterium.procesar_carrera(delta)
-	var esta_corriendo := _red_correr and direccion != Vector2.ZERO and not eterium_sprint
-	var multiplicador_velocidad := 1.0
-	if eterium_sprint:
-		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
-	elif esta_corriendo:
-		multiplicador_velocidad = run_multiplier
-	_aplicar_movimiento_normal(
+	_procesar_movimiento_normal_con_intencion(
 		direccion,
-		multiplicador_velocidad,
-		esta_corriendo or eterium_sprint,
+		_red_correr,
+		_red_eterium_sprint,
 		delta,
 		false
 	)
@@ -360,29 +351,48 @@ func _physics_process(delta: float) -> void:
 	var direction: Vector2 = entrada.get("direction", Vector2.ZERO)
 	_movement_input_direction = direction
 
-	var eterium_sprint := false
-	if bool(entrada.get("eterium_sprint_pressed", false)) and direction != Vector2.ZERO:
-		eterium_sprint = eterium.procesar_carrera(delta)
-
-	var is_running := (
-		run_pressed
-		and direction != Vector2.ZERO
-		and not eterium_sprint
-	)
-
-	# Movimiento.
-	var multiplicador_velocidad := 1.0
-	if eterium_sprint:
-		multiplicador_velocidad = run_multiplier * eterium.multiplicador_carrera()
-	elif is_running:
-		multiplicador_velocidad = run_multiplier
-
-	_aplicar_movimiento_normal(
+	_procesar_movimiento_normal_con_intencion(
 		direction,
-		multiplicador_velocidad,
-		is_running,
+		run_pressed,
+		bool(entrada.get("eterium_sprint_pressed", false)),
 		delta,
 		true
+	)
+
+
+## Resuelve la misma intención de movimiento para jugador local y remoto.
+## La adquisición de input y las reglas de exploración siguen siendo responsabilidad
+## de cada ruta; velocidad, sprint y ejecución normal comparten una sola política.
+func _procesar_movimiento_normal_con_intencion(
+	direccion: Vector2,
+	correr_solicitado: bool,
+	sprint_eterium_solicitado: bool,
+	delta: float,
+	ajustar_arena: bool
+) -> void:
+	_movement_input_direction = direccion
+	var eterium_sprint := (
+		sprint_eterium_solicitado
+		and direccion != Vector2.ZERO
+		and eterium.procesar_carrera(delta)
+	)
+	var esta_corriendo := (
+		correr_solicitado
+		and direccion != Vector2.ZERO
+		and not eterium_sprint
+	)
+	var multiplicador_velocidad := movement_controller.calcular_multiplicador_velocidad(
+		run_multiplier,
+		esta_corriendo,
+		eterium_sprint,
+		eterium.multiplicador_carrera()
+	)
+	_aplicar_movimiento_normal(
+		direccion,
+		multiplicador_velocidad,
+		esta_corriendo or eterium_sprint,
+		delta,
+		ajustar_arena
 	)
 
 
