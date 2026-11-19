@@ -640,3 +640,12 @@ No se encontró una sobrescritura simultánea demostrable que justifique modific
 Se añadió `test_creature_movement_authority.tscn` para proteger la precedencia real de `CreatureMovement`: la ruta de rutina permanece propietaria frente a una dirección externa; la pausa temporal conserva la ruta y detiene el cuerpo; reanudar devuelve el control a esa ruta; `detener_por_rutina()` conserva el bloqueo con ruta vacía; `detener()` libera el modo de rutina; y `liberar_control()` limpia el modo/dirección externos.
 
 La prueba usa la escena real de criatura y su componente `CreatureMovement`, sin sustituirlos por dobles. Se incorpora al workflow headless. Validación CI pendiente.
+
+
+## 64. Cancelación segura de acercamientos sin contexto mundial
+
+La revisión del ciclo de iniciativa encontró que `finalizar_acercamiento_social()` sólo detenía el movimiento en una de sus ramas. Si el diálogo ya había reanudado el movimiento temporal y faltaba `WorldAtmosphere`, `ZoneManager` o el calendario cargado, la función podía salir conservando la ruta del acercamiento. El NPC podía continuar hacia la antigua posición del jugador.
+
+La finalización ahora aplica siempre primero el cierre físico del acercamiento: elimina su marca, detiene la ruta con `detener_por_rutina()`, limpia `rutina_en_transito` y reinicia `rutina_firma`. Sólo después intenta recuperar la rutina canónica cuando existen zona, navegación y calendario válidos. La agenda vuelve a establecer la ruta normal en el mismo flujo cuando el contexto está disponible.
+
+Se añadió cobertura a `test_npc_schedule_context` con una criatura real y una ruta real, invocando la finalización sin `WorldAtmosphere` ni `ZoneManager`. Verifica que no quede movimiento, acercamiento, tránsito ni firma anterior. La validación CI queda pendiente.
