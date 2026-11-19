@@ -49,6 +49,10 @@ func _run() -> void:
 			break
 	if indice_ejemplar < 0:
 		errores.append("El inventario no conservó el identificador del ejemplar.")
+	var ejemplar_duplicado := ejemplar.duplicate(true)
+	ejemplar_duplicado["cantidad"] = 2
+	if runtime.agregar_objeto(ejemplar_duplicado):
+		errores.append("Se permitió insertar varias copias de una identidad única.")
 
 	var otro_ejemplar := ejemplar.duplicate(true)
 	otro_ejemplar["ejemplar_id"] = "ejemplar_otro"
