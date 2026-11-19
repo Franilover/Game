@@ -1468,6 +1468,34 @@ func obtener_conocimientos_compartibles_npc(personaje_origen: String, personaje_
 	return resultado
 
 
+## Comprueba si hay información nueva que el origen pueda compartir con el destino.
+## Obtiene cada inventario de conocimientos una sola vez porque sólo necesita saber si existe.
+func tiene_conocimiento_compartible_nuevo_npc(personaje_origen: String, personaje_destino: String) -> bool:
+	var origen := personaje_origen.strip_edges()
+	var destino := personaje_destino.strip_edges()
+	if origen.is_empty() or destino.is_empty() or origen == destino:
+		return false
+	var conocimientos_origen := obtener_conocimientos_npc(origen)
+	var conocimientos_destino := obtener_conocimientos_npc(destino)
+	var claves_destino: Dictionary = {}
+	for conocimiento_variant in conocimientos_destino:
+		if not conocimiento_variant is Dictionary:
+			continue
+		var clave := str((conocimiento_variant as Dictionary).get("clave", ""))
+		if not clave.is_empty():
+			claves_destino[clave] = true
+	for conocimiento_variant in conocimientos_origen:
+		if not conocimiento_variant is Dictionary:
+			continue
+		var conocimiento := conocimiento_variant as Dictionary
+		var clave := str(conocimiento.get("clave", "")).strip_edges()
+		if clave.is_empty() or bool(claves_destino.get(clave, false)):
+			continue
+		if puede_compartir_conocimiento_npc(origen, destino, conocimiento):
+			return true
+	return false
+
+
 func _clave_pareja_npc(personaje_a: String, personaje_b: String) -> String:
 	var a := personaje_a.strip_edges()
 	var b := personaje_b.strip_edges()
