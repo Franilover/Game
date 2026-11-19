@@ -1083,3 +1083,14 @@ La prueba `test_creature_movement_authority.tscn` protege la prioridad entre rut
 
 
 La cancelación de una iniciativa NPC detiene ahora siempre la ruta temporal y limpia tránsito/firma antes de intentar restaurar la rutina. Si el mundo, la zona, la navegación o el calendario aún no están disponibles, el NPC queda quieto en lugar de continuar hacia la posición anterior del jugador. La regresión `test_npc_schedule_context` recorre `NPCConversationSystem._cancelar_acercamiento()`, simula pausa/reanudación del diálogo y verifica la limpieza de la ruta. CI pendiente.
+
+
+## Contrato del inventario — 2026-11-19
+
+- Una recogida es atómica: se calcula sobre una propuesta aislada y solo se confirma si cabe la cantidad completa. El rechazo no puede dejar pilas parcialmente incrementadas.
+- Dos objetos solo se apilan por identidad cuando sus identificadores coinciden. Se resuelve primero `id` y, si está vacío, `item_id`; el nombre es compatibilidad únicamente cuando ambos objetos carecen de identificador. Los ejemplares con identidad propia nunca se fusionan.
+- Equipar toma el objeto canónico del slot del runtime; una copia antigua conservada por la UI no puede sustituirlo. El intercambio conserva el objeto que estaba equipado.
+- La durabilidad de mochila y equipo usa la misma regla de desgaste y elimina el objeto al llegar a cero.
+- La creación del objeto en el mundo precede a retirar la cantidad del inventario; si el mundo rechaza el drop, el inventario conserva el objeto.
+
+Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_transaction` y `test_inventory_drop_contract` protegen estos límites. La validación completa de Godot 4.7 está en curso para esta revisión.
