@@ -178,11 +178,19 @@ func _construir_forja() -> void:
 	distribucion.add_child(panel_herramientas)
 	PIXEL_UI_THEME.apply(panel_herramientas, false)
 
+	var scroll_lista := ScrollContainer.new()
+	scroll_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_lista.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_lista.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	panel_herramientas.add_child(scroll_lista)
+
 	var lista := GridContainer.new()
 	lista.columns = 2
+	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	lista.add_theme_constant_override("h_separation", 5)
 	lista.add_theme_constant_override("v_separation", 5)
-	panel_herramientas.add_child(lista)
+	scroll_lista.add_child(lista)
 
 	var panel_detalle := PanelContainer.new()
 	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -190,10 +198,17 @@ func _construir_forja() -> void:
 	distribucion.add_child(panel_detalle)
 	PIXEL_UI_THEME.apply(panel_detalle, false)
 
+	var scroll_detalle := ScrollContainer.new()
+	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_detalle.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	panel_detalle.add_child(scroll_detalle)
+
 	var detalle := VBoxContainer.new()
-	detalle.alignment = BoxContainer.ALIGNMENT_CENTER
+	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	detalle.add_theme_constant_override("separation", 8)
-	panel_detalle.add_child(detalle)
+	scroll_detalle.add_child(detalle)
 
 	if not is_instance_valid(_inventario):
 		return
