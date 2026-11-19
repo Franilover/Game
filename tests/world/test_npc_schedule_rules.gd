@@ -230,3 +230,42 @@ func _comprobar_siguiente_rutina(errores: Array[String]) -> void:
 
 	if Rules.obtener_minutos_hasta_siguiente_rutina([], 0, 600) != 0:
 		errores.append("Una lista de rutinas vacía debe devolver cero.")
+
+
+func _comprobar_satisfaccion_y_eventos(errores: Array[String]) -> void:
+	var descanso := Rules.obtener_satisfaccion_actividad("descansar en casa")
+	if not is_equal_approx(float(descanso.get("descanso", 0.0)), 2.0):
+		errores.append("Descansar debe satisfacer descanso con valor 2.0.")
+
+	var social := Rules.obtener_satisfaccion_actividad("conversar con amigos")
+	if not is_equal_approx(float(social.get("socializacion", 0.0)), 1.8):
+		errores.append("Conversar debe satisfacer socialización con valor 1.8.")
+	if not is_equal_approx(float(social.get("diversion", 0.0)), 0.6):
+		errores.append("Conversar debe satisfacer diversión con valor 0.6.")
+
+	var lectura := Rules.obtener_satisfaccion_actividad("leer informes")
+	if not is_equal_approx(float(lectura.get("curiosidad", 0.0)), 1.8):
+		errores.append("Leer informes debe satisfacer curiosidad con valor 1.8.")
+
+	var paseo := Rules.obtener_satisfaccion_actividad("visitar la plaza")
+	if not is_equal_approx(float(paseo.get("autonomia", 0.0)), 1.3):
+		errores.append("Visitar debe satisfacer autonomía con valor 1.3.")
+	if not is_equal_approx(float(paseo.get("diversion", 0.0)), 1.0):
+		errores.append("Visitar debe satisfacer diversión con valor 1.0.")
+
+	var vigilancia := Rules.obtener_satisfaccion_actividad("vigilar la entrada")
+	if not is_equal_approx(float(vigilancia.get("seguridad", 0.0)), 0.8):
+		errores.append("Vigilar debe satisfacer seguridad con valor 0.8.")
+
+	var sin_coincidencias := Rules.obtener_satisfaccion_actividad("mirar las nubes")
+	if not sin_coincidencias.is_empty():
+		errores.append("Una actividad sin palabras clave no debe inventar satisfacciones.")
+
+	if not Rules.puede_participar_en_evento({}):
+		errores.append("Una rutina vacía debe permitir participar en eventos.")
+	if not Rules.puede_participar_en_evento({"clave": " DIA_LIBRE_MANANA "}):
+		errores.append("Una rutina de día libre debe permitir participar en eventos.")
+	if Rules.puede_participar_en_evento({"clave": "trabajo_herreria"}):
+		errores.append("Una rutina de trabajo no debe permitir participar en eventos.")
+	if Rules.puede_participar_en_evento({"clave": "guardia"}):
+		errores.append("Una rutina de guardia no debe permitir participar en eventos.")
