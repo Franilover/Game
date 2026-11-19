@@ -479,6 +479,7 @@ func _construir_vivero() -> void:
 	var regadera := _obtener_regadera_en_manos()
 	var agua := int(regadera.get("agua", -1))
 	var cantidad_ocupados := 0
+	var grupo_bancales := ButtonGroup.new()
 	for nombre in nombres:
 		var registro: Variant = estados.get(nombre, {})
 		var cultivo: Dictionary = registro if registro is Dictionary else {}
@@ -487,6 +488,7 @@ func _construir_vivero() -> void:
 		var boton := Button.new()
 		boton.custom_minimum_size = Vector2(52, 52)
 		boton.toggle_mode = true
+		boton.button_group = grupo_bancales
 		boton.button_pressed = nombre == _bancal_seleccionado
 		boton.text = str(nombres.find(nombre) + 1)
 		boton.tooltip_text = nombre.replace("Bancal", "Bancal ")
