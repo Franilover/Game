@@ -360,3 +360,10 @@ La prueba de reglas compara los ocho recorridos y el conjunto de respaldo con su
 Las reglas puras también reconstruían dos listas de posiciones en cada llamada: los cinco desplazamientos de ocio y los dieciséis puntos de distribución de eventos comunitarios. Se trasladaron a las constantes `DESPLAZAMIENTOS_OCIO` y `POSICIONES_EVENTO` de `NPCScheduleRules`.
 
 Se mantienen los mismos puntos y el mismo cálculo hash/modular que selecciona cada uno. Las pruebas ahora verifican tanto la estabilidad del resultado como la composición exacta de ambos catálogos. No se cambia el comportamiento de ocio ni la distribución de asistentes.
+
+
+## 33. Limpieza única de metadatos de reuniones nocturnas
+
+Al forzar el regreso al hogar, `_aplicar_rutina()` eliminaba seis metadatos de agrupación y fase del castillo. La limpieza general inmediatamente posterior ya elimina esas mismas claves para cualquier rutina que no sea `reunion_nocturna_castillo`; por tanto, el bloque nocturno repetía exactamente el mismo trabajo.
+
+Se eliminó la primera eliminación redundante. La limpieza común sigue ejecutándose después de resolver la clave de rutina, por lo que se conservan las mismas condiciones y el mismo momento de eliminación.
