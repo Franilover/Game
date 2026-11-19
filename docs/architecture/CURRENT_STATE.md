@@ -1064,3 +1064,6 @@ Las cinemáticas ahora detienen los paseos interiores activos, liberan el estado
 
 
 La prueba de interrupción por cinemática también cubre la reanudación del paseo interior con `CreatureMovement` real y conserva el minuto programado. Esta ampliación está pendiente de validación CI.
+
+
+Los paseos interiores registran la actividad que generó su destino. Cuando cambia la tarea programada dentro del mismo edificio, la ruta se replantea para la nueva actividad. La prueba cubre también la interrupción cinematográfica y la reanudación. Validación CI pendiente.
