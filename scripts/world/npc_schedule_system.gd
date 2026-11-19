@@ -1224,15 +1224,17 @@ func _obtener_rutina_encuentro_trio(
 	var dia_elegido := dias_disponibles[indice_dia]
 	if dia_semana != dia_elegido or not _puede_participar_en_evento(rutina_actual):
 		return {}
-	# Comprueba también las invitaciones ya aceptadas de los otros dos.
+	# Comprueba las invitaciones de los tres sin aplicar efectos secundarios.
+	# La evaluación de disponibilidad no debe caducar ni guardar invitaciones.
 	for nombre in nombres:
 		var participante := participantes[nombre] as Creature
-		var base_actual: Dictionary
-		var lista_actual: Variant = participante.datos.get("rutinas", [])
-		# El día 5 está excluido de los candidatos del encuentro privado;
-		# aquí sólo se evalúan horarios ordinarios de los días 1 a 4.
-		base_actual = _seleccionar_rutina(lista_actual, dia_semana, minutos, participante.get_nombre_visual())
-		if not _obtener_rutina_invitacion(participante, base_actual, minutos).is_empty():
+		var invitacion := _evaluar_invitacion_personaje(
+			participante.get_personaje_game_id().strip_edges(),
+			anios if false else anio,
+			int(tiempo.get("dia", 1)),
+			minutos
+		)
+		if bool(invitacion.get("activa", false)):
 			return {}
 	var posiciones: Dictionary = {
 		"mara": Vector2(-42.0, 18.0),
@@ -2692,6 +2694,30 @@ func _obtener_desplazamiento_ocio(nombre: String, clave_dia: String, tramo: int)
 	return NPC_SCHEDULE_RULES.obtener_desplazamiento_ocio(nombre, clave_dia, tramo)
 
 
+## Evalúa una invitación usando el progreso y calendario actuales.
+## No modifica GameState, no guarda y no toca metadatos de NPC.
+func _evaluar_invitacion_personaje(
+	personaje_id: String,
+	anio_actual: int,
+	dia_actual: int,
+	minutos: int
+) -> Dictionary:
+	if personaje_id.is_empty() or not is_instance_valid(_world_atmosphere):
+		return {}
+	var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
+	if not invitaciones_variant is Dictionary:
+		return {}
+	var invitacion_variant: Variant = (invitaciones_variant as Dictionary).get(personaje_id, {})
+	if not invitacion_variant is Dictionary:
+		return {}
+	return NPC_SCHEDULE_RULES.evaluar_invitacion_npc(
+		invitacion_variant as Dictionary,
+		anio_actual,
+		dia_actual,
+		minutos
+	)
+
+
 ## Convierte una invitación aceptada en una visita breve a la plaza.
 ## Sólo desplaza una rutina libre; nunca sustituye trabajo, guardia o descanso.
 func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minutos: int) -> Dictionary:
@@ -2705,21 +2731,19 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 	var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
 	if not invitaciones_variant is Dictionary:
 		return {}
-	var invitaciones: Dictionary = invitaciones_variant.duplicate(true)
-	var invitacion_variant: Variant = invitaciones.get(personaje_id, {})
+	var invitacion_variant: Variant = (invitaciones_variant as Dictionary).get(personaje_id, {})
 	if not invitacion_variant is Dictionary:
 		return {}
-	var invitacion := (invitacion_variant as Dictionary).duplicate(true)
+	var invitacion: Dictionary = (invitacion_variant as Dictionary).duplicate(true)
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo() if is_instance_valid(_world_atmosphere) else {}
-	var anio_actual := int(tiempo.get("anio", 0))
-	var dia_actual := int(tiempo.get("dia", 1))
-	var evaluacion := NPC_SCHEDULE_RULES.evaluar_invitacion_npc(
-		invitacion,
-		anio_actual,
-		dia_actual,
+	var evaluacion := _evaluar_invitacion_personaje(
+		personaje_id,
+		int(tiempo.get("anio", 0)),
+		int(tiempo.get("dia", 1)),
 		minutos
 	)
 	if bool(evaluacion.get("caducada", false)):
+		var invitaciones: Dictionary = (invitaciones_variant as Dictionary).duplicate(true)
 		invitacion["estado"] = "caducada"
 		invitaciones[personaje_id] = invitacion
 		GameState.world_state.flags["invitaciones_npc"] = invitaciones
