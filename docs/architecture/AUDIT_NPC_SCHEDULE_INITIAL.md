@@ -402,3 +402,10 @@ Se añadió `test_local_npc_catalog.tscn` para proteger que existan exactamente 
 El orden de las decisiones se conserva: primero se deduplican identidades; después se retiran personajes canónicos ausentes si el snapshot contiene explícitamente el catálogo; finalmente se indexan sólo instancias que siguen perteneciendo al grupo. Esto último es importante porque `queue_free()` difiere la destrucción física, mientras que retirar del grupo ocurre inmediatamente.
 
 No se combinó la lógica de deduplicación y retirada en una sola regla: tienen criterios distintos y deben conservar su prioridad. La optimización reduce consultas al SceneTree sin cambiar esas reglas.
+
+
+## 38. Catálogo de posiciones interiores y pertenencia al grupo
+
+`ReinoTorres._ubicar_npcs_del_edificio_en_interior()` reconstruía dos arreglos fijos de coordenadas en cada sincronización: 22 posiciones para el castillo y cuatro posiciones para interiores normales. Se trasladaron a constantes del script, conservando el orden y las coordenadas. El test de transición de edificios ahora protege el tamaño del catálogo del castillo y las cuatro posiciones normales.
+
+En `teletransportar_jugador_a_npc()`, la comprobación de pertenencia al grupo ahora usa `npc.is_in_group("torres_game_npc")` en vez de obtener el arreglo completo sólo para ejecutar `.has(npc)`. La condición comprueba exactamente la misma pertenencia, evitando crear una colección temporal.
