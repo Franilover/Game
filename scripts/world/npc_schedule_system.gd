@@ -418,9 +418,6 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 		npc.set_meta("rutina_firma", "")
 
 
-## Aplica un coste menor a las celdas del atlas Tierra (zona 1).
-## Los demás terrenos conservan su coste normal y siguen disponibles como
-## desvíos o atajos cuando el camino de tierra no resulte conveniente.
 func _resolver_rutina_base_y_eventos(
 	npc: Creature,
 	dia_semana: int,
