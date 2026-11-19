@@ -166,3 +166,87 @@ Una refactorización está lista cuando:
 ## Historial
 
 - **2026-11-19:** creación de las reglas iniciales para la auditoría y refactorización de arquitectura.
+
+
+## 14. Límites y composición de sistemas
+
+Estas reglas complementan la responsabilidad única sin imponer un tamaño artificial a los archivos:
+
+- Un archivo se divide cuando contiene responsabilidades con motivos de cambio, dependencias o ciclos de vida diferentes; no por alcanzar un número arbitrario de líneas.
+- Antes de extraer un módulo, identificar su dueño, entradas, salidas, estado que controla y consumidores. La extracción debe reducir acoplamiento o duplicación neta.
+- Evitar el patrón de «un archivo por función». Las operaciones pequeñas que forman una misma transición permanecen juntas y privadas dentro de su sistema responsable.
+- Un sistema coordinador puede orquestar varios sistemas, pero las reglas de dominio deben vivir en un único lugar y no replicarse en el coordinador.
+- No crear dos implementaciones activas de la misma regla durante una migración. Si se requiere compatibilidad, el adaptador debe delegar en la implementación canónica.
+- Los catálogos constantes se definen una vez en el sistema responsable o en un recurso compartido si varios sistemas realmente los consumen.
+- Los componentes base deben resolver una necesidad repetida y estable. No anticipar un framework genérico para sistemas que todavía no comparten un contrato real.
+
+## 15. Contratos base y plantillas
+
+Antes de crear un sistema nuevo, definir brevemente:
+
+1. **Responsabilidad:** qué problema resuelve y qué queda fuera.
+2. **Propietario del estado:** qué nodo/servicio es la única autoridad para modificarlo.
+3. **API:** operaciones públicas, señales y datos de entrada/salida necesarios.
+4. **Dependencias:** qué necesita y cómo se le entrega.
+5. **Ciclo de vida:** quién lo crea, configura, pausa, reanuda y destruye.
+6. **Persistencia:** qué se guarda, qué es temporal y qué se reconstruye.
+7. **Validación:** invariantes y pruebas que protegen el contrato.
+
+Plantilla recomendada para un sistema nuevo (adaptar, no copiar mecánicamente):
+
+```gdscript
+extends Node
+class_name ExampleSystem
+
+signal state_changed(new_state: Variant)
+
+# Dependencias explícitas configuradas por el propietario.
+var _owner: Node
+
+func configurar(owner: Node) -> void:
+	_owner = owner
+
+func ejecutar(input: Variant) -> Variant:
+	if not is_instance_valid(_owner):
+		push_error("ExampleSystem requiere una dependencia válida.")
+		return null
+	# La regla del dominio vive aquí, en un único lugar.
+	return input
+```
+
+La plantilla es orientativa: no obliga a añadir señales, estado o métodos que el sistema no necesite. Los nodos de escena, scripts de componentes y recursos de datos deben conservar sus convenciones específicas de Godot.
+
+## 16. Estrategia de pruebas
+
+- Nombrar las pruebas por comportamiento observable o recorrido del jugador, no por el nombre de una función privada.
+- Mantener pruebas unitarias para reglas puras; complementarlas con pruebas de integración para transiciones entre sistemas y pruebas de flujo para recorridos completos.
+- Una prueba de flujo debe preparar el estado inicial, ejecutar las operaciones públicas reales y verificar tanto el resultado final como los estados intermedios críticos y la limpieza al salir.
+- Evitar que la suite dependa de una persona abriendo escenas y repitiendo manualmente los mismos pasos. Automatizar lo determinista; reservar la revisión manual para presentación, controles, legibilidad y sensación de juego.
+- Cada escena de prueba referenciada por CI debe existir, cargar el script correcto y terminar con código distinto de cero ante fallos. La importación de scripts por sí sola no prueba que una escena de test exista o se ejecute.
+- Los tests deben cubrir contratos y riesgos relevantes, no cada línea ni cada método privado. Si una prueba necesita acceder a muchos detalles internos, evaluar si el contrato está mal definido antes de ampliar la API pública.
+- Los fallos de pruebas se diagnostican y corrigen antes de añadir más cobertura sobre el mismo flujo.
+- No declarar un sistema completo por pasar una prueba aislada. El estado de cobertura debe describir qué recorridos reales están protegidos y cuáles siguen pendientes.
+
+## 17. Prioridad de mantenimiento
+
+Orden de trabajo acordado:
+
+1. Corregir errores y regresiones verificables.
+2. Simplificar y optimizar sistemas existentes, eliminando trabajo repetido y duplicación.
+3. Reducir responsabilidades mezcladas en archivos monolíticos sin fragmentar en exceso.
+4. Establecer contratos y componentes base cuando haya patrones repetidos comprobados.
+5. Automatizar pruebas de integración y recorridos completos para proteger el comportamiento.
+6. Ampliar documentación y controles de calidad junto con cada cambio.
+
+Las pruebas, plantillas y documentación respaldan la calidad del juego; no sustituyen la prioridad de mejorar el juego y sus sistemas.
+
+## Registro adicional de decisiones
+
+| Regla | Estado | Alcance |
+|---|---|---|
+| Dividir archivos por responsabilidad y motivo de cambio, no por tamaño arbitrario | Acordada | Arquitectura general |
+| No crear un archivo por función ni sistemas paralelos durante refactorizaciones | Acordada | Arquitectura general |
+| Definir propietario del estado, API, dependencias y ciclo de vida antes de crear sistemas | Acordada | Sistemas nuevos |
+| Priorizar pruebas de integración y flujos completos junto a pruebas unitarias | Acordada | Validación |
+| Automatizar lo determinista y reservar revisión manual para UX/presentación | Acordada | Validación |
+| Mejorar primero sistemas existentes; las pruebas acompañan y protegen ese trabajo | Acordada | Proyecto completo |
