@@ -118,6 +118,34 @@ func _run() -> void:
 	if npc.collision_layer != 0 or npc.collision_mask != 0:
 		errores.append("El NPC recuperó colisiones exteriores antes de salir del interior.")
 
+	# Un NPC puede abandonar su edificio mientras el jugador sigue dentro
+	# de otro. Debe permanecer oculto hasta la salida del jugador y entonces
+	# recuperar el estado visual, grupo y colisiones que tenía al entrar.
+	var npc_cambio_edificio := CreatureScript.new() as Creature
+	npc_cambio_edificio.collision_layer = 4
+	npc_cambio_edificio.collision_mask = 6
+	npc_cambio_edificio.add_to_group("torres_game_npc")
+	npc_cambio_edificio.add_to_group("interactable")
+	add_child(npc_cambio_edificio)
+	await get_tree().process_frame
+	zona.call("_guardar_estado_visibilidad_npc", npc_cambio_edificio)
+	zona.call("desactivar_colision_npc_exterior", npc_cambio_edificio)
+	npc_cambio_edificio.visible = false
+	npc_cambio_edificio.remove_from_group("interactable")
+	npc_cambio_edificio.set_meta("rutina_en_edificio", true)
+	npc_cambio_edificio.set_meta("rutina_edificio_id", "panaderia")
+	npc_cambio_edificio.reparent(habitacion, true)
+	zona.call("sacar_npc_del_interior", npc_cambio_edificio)
+	npc_cambio_edificio.set_meta("rutina_en_edificio", false)
+	npc_cambio_edificio.set_meta("rutina_edificio_id", "")
+	if npc_cambio_edificio.visible or npc_cambio_edificio.collision_layer != 0:
+		errores.append("El cambio de edificio reactivó al NPC antes de salir del interior.")
+	zona.call("_restaurar_npcs_exteriores", [npc_cambio_edificio])
+	if not npc_cambio_edificio.visible or not npc_cambio_edificio.is_in_group("interactable"):
+		errores.append("El cambio de edificio no restauró visibilidad e interacción al salir.")
+	if npc_cambio_edificio.collision_layer != 4 or npc_cambio_edificio.collision_mask != 6:
+		errores.append("El cambio de edificio no restauró las colisiones originales al salir.")
+
 	# La salida completa del edificio debe reutilizar la misma transición
 	# para todos los NPCs que siguen dentro de habitaciones.
 	var npc_colectivo := CreatureScript.new() as Creature
@@ -145,6 +173,7 @@ func _run() -> void:
 	npc_no_interactivo.queue_free()
 	npc_interactivo.queue_free()
 	npc_nuevo.queue_free()
+	npc_cambio_edificio.queue_free()
 	contenedor_exterior.queue_free()
 	capa_interior.queue_free()
 	zona.free()
