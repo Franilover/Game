@@ -1773,7 +1773,8 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalEste", Vector2(155, -5), Vector2i(3, 2))
 			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalSurOeste", Vector2(-155, 92), Vector2i(3, 1))
 			_agregar_parcela_vivero(cuarto, tilemap_tierra, "BancalSurCentro", Vector2(0, 92), Vector2i(3, 1))
-			tilemap_tierra.call_deferred("reconstruir_renderer_dual")
+			if is_instance_valid(tilemap_tierra):
+				tilemap_tierra.call_deferred("reconstruir_renderer_dual")
 			_agregar_deposito_agua_vivero(cuarto, Vector2(-220, -125))
 			_agregar_sprite_mueble(cuarto, "MesaPreparacionCultivo", MUEBLE_MESA, Vector2(115, -125), Vector2(1.1, 0.95), 1)
 			_agregar_estacion_edificio(cuarto, "vivero", "Revisar vivero", Vector2(115, -98))
