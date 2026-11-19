@@ -31,7 +31,9 @@ func get_interaction_distance() -> float:
 
 
 func get_interaction_priority() -> int:
-	return 100
+	# Las estaciones de trabajo deben ganar a los bancales cercanos cuando
+	# ambos están dentro del rango; los pozos conservan su prioridad superior.
+	return 130
 
 
 func get_interaction_text() -> String:
