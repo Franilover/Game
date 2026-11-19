@@ -232,12 +232,21 @@ func _puede_apilar_con(a: Dictionary, b: Dictionary) -> bool:
 	var nombre_b := str(b.get("nombre", "")).strip_edges().to_lower()
 	return not nombre_a.is_empty() and nombre_a == nombre_b
 
-func equipar_desde_inventario(slot: String, indice: int, item: Dictionary) -> bool:
-	if indice < 0 or indice >= state.items.size() or item.is_empty():
+func equipar_desde_inventario(slot: String, indice: int, _item: Dictionary = {}) -> bool:
+	if slot.strip_edges().is_empty():
 		return false
+	if indice < 0 or indice >= state.items.size():
+		return false
+
+	# El slot del runtime es la fuente de verdad. La copia que entrega la UI
+	# puede haber quedado obsoleta durante un arrastre o una actualización.
+	var seleccionado: Dictionary = state.items[indice].duplicate(true)
+	if seleccionado.is_empty():
+		return false
+
 	var anterior := equipment.obtener(slot)
 	state.items[indice] = anterior.duplicate(true) if not anterior.is_empty() else {}
-	equipment.equipar(slot, item)
+	equipment.equipar(slot, seleccionado)
 	return true
 
 func desequipar_a_inventario(slot: String) -> bool:
