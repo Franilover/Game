@@ -273,6 +273,7 @@ func _actualizar_progreso_planta() -> void:
 		_planta["humedo"] = false
 		_guardar_estado_parcela()
 		_actualizar_visual()
+	_actualizar_visual_planta()
 
 
 func _planta_esta_madura() -> bool:
@@ -299,7 +300,7 @@ func _actualizar_visual_planta() -> void:
 		add_child(_planta_sprite)
 	var textura := load(str(_planta.get("sprite", ""))) as Texture2D
 	_planta_sprite.texture = textura
-	_planta_sprite.visible = textura != null
+	_planta_sprite.visible = textura != null and _planta_esta_madura()
 
 
 func _cosechar_planta() -> void:
