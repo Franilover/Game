@@ -988,6 +988,31 @@ func obtener_relaciones_sociales() -> Dictionary:
 	return {}
 
 
+## Lee la relación jugador-NPC solicitada sin copiar las relaciones de los demás.
+func obtener_relacion_social_jugador_npc(personaje_id: String) -> Dictionary:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return {}
+	var relaciones_variant: Variant = world_state.flags.get("relaciones_sociales", {})
+	if not relaciones_variant is Dictionary:
+		return {}
+	var relacion_variant: Variant = (relaciones_variant as Dictionary).get(id, {})
+	return (relacion_variant as Dictionary).duplicate(true) if relacion_variant is Dictionary else {}
+
+
+## Actualiza una relación jugador-NPC sin reconstruir el diccionario completo.
+func guardar_relacion_social_jugador_npc(personaje_id: String, relacion: Dictionary) -> void:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return
+	var relaciones_variant: Variant = world_state.flags.get("relaciones_sociales", {})
+	var relaciones: Dictionary = relaciones_variant if relaciones_variant is Dictionary else {}
+	var actualizadas := relaciones.duplicate()
+	actualizadas[id] = relacion.duplicate(true)
+	world_state.flags["relaciones_sociales"] = actualizadas
+	_al_cambio_guardable()
+
+
 func guardar_relaciones_sociales(relaciones: Dictionary) -> void:
 	world_state.flags["relaciones_sociales"] = relaciones.duplicate(true)
 	_al_cambio_guardable()
