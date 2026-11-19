@@ -1069,10 +1069,10 @@ func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	nota.text = "Los registros se amplían con cada descubrimiento."
 	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(nota)
-	_agregar_boton_detalle(detalle, "Abrir enciclopedia", _abrir_enciclopedia)
+	_agregar_boton_detalle(detalle, "Abrir enciclopedia", _abrir_enciclopedia.bind(id))
 
 
-func _abrir_enciclopedia() -> void:
+func _abrir_enciclopedia(modo: String = "criaturas") -> void:
 	if get_tree().get_first_node_in_group("encyclopedia_modal") != null:
 		return
 	var capa := CanvasLayer.new()
@@ -1103,6 +1103,7 @@ func _abrir_enciclopedia() -> void:
 	enciclopedia.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	columna.add_child(enciclopedia)
 	get_tree().root.add_child(capa)
+	enciclopedia.call("configurar_modo_biblioteca", modo)
 
 
 func _construir_centro_expediciones() -> void:
