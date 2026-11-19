@@ -26,6 +26,7 @@ func _ready() -> void:
 	_comprobar_desplazamiento_ocio(errores)
 	_comprobar_desplazamiento_evento(errores)
 	_comprobar_turnos_comercio(errores)
+	_comprobar_evaluacion_invitacion(errores)
 
 	_comprobar_dia([], 2, true, errores)
 	_comprobar_dia(null, 2, true, errores)
@@ -387,3 +388,39 @@ func _comprobar_turnos_comercio(errores: Array[String]) -> void:
 		errores.append("El mercado no debe asignar turnos desde las 18:00.")
 	if Rules.debe_asignar_turno_comercio("npc_desconocido", libre, 0, 10 * 60):
 		errores.append("Un NPC fuera del catálogo no debe recibir un turno comercial.")
+
+func _comprobar_evaluacion_invitacion(errores: Array[String]) -> void:
+	var aceptada := {
+		"anio": 3,
+		"dia": 12,
+		"estado": "aceptada",
+		"hora_inicio": 17.0,
+		"hora_fin": 19.0,
+		"ubicacion_clave": " Plaza "
+	}
+	var activa := Rules.evaluar_invitacion_npc(aceptada, 3, 12, 17 * 60)
+	if not bool(activa.get("activa", false)):
+		errores.append("Una invitación aceptada debe activarse al inicio de su franja.")
+	if str(activa.get("ubicacion_clave", "")) != "plaza":
+		errores.append("La evaluación debe normalizar la ubicación sin modificar la invitación.")
+
+	var antes := Rules.evaluar_invitacion_npc(aceptada, 3, 12, 16 * 60 + 59)
+	var fin := Rules.evaluar_invitacion_npc(aceptada, 3, 12, 19 * 60)
+	if not antes.is_empty() or not fin.is_empty():
+		errores.append("La invitación debe respetar los límites de su franja horaria.")
+
+	var futura := Rules.evaluar_invitacion_npc(aceptada, 3, 11, 17 * 60)
+	if not futura.is_empty():
+		errores.append("Una invitación de otro día no debe activarse.")
+
+	var pendiente := aceptada.duplicate(true)
+	pendiente["estado"] = "pendiente"
+	if not Rules.evaluar_invitacion_npc(pendiente, 3, 12, 18 * 60).is_empty():
+		errores.append("Una invitación no aceptada no debe activarse.")
+
+	var caducada := Rules.evaluar_invitacion_npc(aceptada, 3, 13, 17 * 60)
+	if not bool(caducada.get("caducada", false)):
+		errores.append("Una invitación de un día anterior debe marcarse como caducada.")
+
+	if str(aceptada.get("ubicacion_clave", "")) != " Plaza ":
+		errores.append("La evaluación pura no debe modificar el diccionario original.")
