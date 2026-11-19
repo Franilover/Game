@@ -2,7 +2,7 @@ name: GDScript Quality (Advisory)
 
 on:
   push:
-    branches: [main, "feat/npc-relational-memory-decay"]
+    branches: [main, "feat/npc-relational-memory-decay", "work/design-and-architecture"]
     paths:
       - "scripts/**/*.gd"
       - "tests/**/*.gd"
