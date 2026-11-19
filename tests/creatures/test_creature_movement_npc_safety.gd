@@ -2,6 +2,7 @@ extends Node
 
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const NPCScheduleScript = preload("res://scripts/world/npc_schedule_system.gd")
+const NPCNavigationScript = preload("res://scripts/world/npc_navigation_system.gd")
 
 
 func _ready() -> void:
