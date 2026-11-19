@@ -311,3 +311,12 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Se valida el contrato con `CreatureMovement` real, el contenedor `Habitacion_panaderia` y la misma hora programada.
 - Se comprueba que el horario pendiente no cambie al reanudar.
 - CI Godot 4.7 y GDScript Quality pendientes.
+
+
+## Replanificación de paseos interiores por cambio de actividad (2026-11-19)
+
+- Se registra la actividad que originó cada paseo interior.
+- Un cambio de actividad dentro del mismo edificio cancela el destino anterior y vuelve a seleccionar un puesto según la nueva tarea.
+- Se limpia la metadata de actividad al detener o completar el paseo.
+- La regresión cubre interrupción cinematográfica, reanudación y cambio de tarea en el mismo interior.
+- CI Godot 4.7 y GDScript Quality pendientes.
