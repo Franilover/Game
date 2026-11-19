@@ -1337,7 +1337,7 @@ func _entrar_al_interior(entrada: Dictionary) -> void:
 	if str(entrada.get("id", "")) == "posada_habitacion" and not _posada_tiene_acceso():
 		Events.notification_pushed.emit("Tu suscripción de la posada no está activa.")
 		return
-	_ocultar_npcs_exteriores()
+	_ocultar_npcs_exteriores(get_tree().get_nodes_in_group("torres_game_npc"))
 	_posicion_exterior = _jugador.global_position
 	_entrada_interior_id = str(entrada.get("id", ""))
 	_visibilidad_exterior.clear()
@@ -1432,9 +1432,9 @@ func registrar_npc_materializado(npc: Node) -> void:
 	npc.remove_from_group("interactable")
 
 
-func _ocultar_npcs_exteriores() -> void:
+func _ocultar_npcs_exteriores(npcs: Array) -> void:
 	_visibilidad_npcs_exterior.clear()
-	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+	for npc in npcs:
 		if not is_instance_valid(npc) or not npc is CanvasItem:
 			continue
 		if _contenedor_npcs_exterior == null:
@@ -1446,8 +1446,8 @@ func _ocultar_npcs_exteriores() -> void:
 		npc.remove_from_group("interactable")
 
 
-func _restaurar_npcs_exteriores() -> void:
-	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+func _restaurar_npcs_exteriores(npcs: Array) -> void:
+	for npc in npcs:
 		if not is_instance_valid(npc) or not npc is CanvasItem:
 			continue
 		var visual := npc as CanvasItem
@@ -1636,8 +1636,9 @@ func _salir_del_interior() -> void:
 	if not _interior_activo or not is_instance_valid(_jugador):
 		return
 	_cerrar_menu_posada()
-	_devolver_npcs_del_interior_al_exterior(get_tree().get_nodes_in_group("torres_game_npc"))
-	_restaurar_npcs_exteriores()
+	var npcs_actuales := get_tree().get_nodes_in_group("torres_game_npc")
+	_devolver_npcs_del_interior_al_exterior(npcs_actuales)
+	_restaurar_npcs_exteriores(npcs_actuales)
 	_capa_interior.visible = false
 	_capa_interior.process_mode = Node.PROCESS_MODE_DISABLED
 	for child: Node in get_children():
