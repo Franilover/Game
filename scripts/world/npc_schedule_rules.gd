@@ -230,3 +230,35 @@ static func obtener_evento_comunitario(
 			"aviso": "Los vecinos se reúnen en la plaza para compartir comida."
 		}
 	return {}
+
+
+## Calcula los minutos hasta el siguiente inicio válido del ciclo semanal.
+## Devuelve cero cuando no existe un siguiente inicio en el ciclo de cinco días.
+static func obtener_minutos_hasta_siguiente_rutina(
+	rutinas_variant: Variant,
+	dia_semana: int,
+	minutos: int
+) -> int:
+	if not rutinas_variant is Array or (rutinas_variant as Array).is_empty():
+		return 0
+	var mejor := 5 * 1440
+	var rutinas: Array = rutinas_variant
+	for desplazamiento_dia in range(5):
+		var dia_candidato := posmod(dia_semana + desplazamiento_dia, 5)
+		for rutina_variant in rutinas:
+			if not rutina_variant is Dictionary:
+				continue
+			var rutina := rutina_variant as Dictionary
+			if not bool(rutina.get("activo", true)):
+				continue
+			if not coincide_dia(rutina.get("dias_semana", []), dia_candidato):
+				continue
+			var inicio := hora_a_minutos(rutina.get("hora_inicio", ""))
+			var fin := hora_a_minutos(rutina.get("hora_fin", ""))
+			if inicio < 0 or fin < 0 or inicio == fin:
+				continue
+			var candidato := desplazamiento_dia * 1440 + inicio
+			if candidato <= minutos:
+				continue
+			mejor = mini(mejor, candidato - minutos)
+	return mejor if mejor < 5 * 1440 else 0
