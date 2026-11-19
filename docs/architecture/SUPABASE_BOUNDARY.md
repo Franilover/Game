@@ -61,7 +61,8 @@ Godot no puede:
 - Items: `obtener_catalogo()`, `buscar_item_por_id()`, `buscar_item_por_nombre()` y `buscar_item_por_prop_id()`.
 - Recetas: `obtener_recetas()`.
 - Señales: `catalogo_cargado` y `recetas_cargadas`.
-- Caché local: `user://cache/items_game.json` y `user://cache/recetas_game.json`.
+- Caché local: `user://cache/items_game.json`, `user://cache/recetas_game.json` y `user://cache/criatura_drops.json`.
+- Las reglas de drops se descargan una vez, se agrupan por criatura y se resuelven contra el índice local de items; el combate no hace un JOIN REST por cada muerte.
 - La caché se presenta inmediatamente y se actualiza desde Supabase; los errores de red no vacían una copia válida.
 - Los consumidores reciben el servicio por inyección de dependencias. No crean sus propios `HTTPRequest`, consultas REST, arrays de items ni índices locales.
 - Los objetos se resuelven por los métodos del servicio. No recorrer `catalogo` manualmente ni usar `ItemIconResolver` como fuente de datos; ese resolver sólo entrega arte.
