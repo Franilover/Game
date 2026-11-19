@@ -19,17 +19,26 @@ var _clave := ""
 var _clave_legacy := ""
 var _distancia := 76.0
 var _tierra: Polygon2D = null
+var _capa_humedad: TileMapLayer = null
+var _celda_humedad := Vector2i.ZERO
 var _humedo := false
 var _planta_sprite: Sprite2D = null
 var _planta: Dictionary = {}
 
 
-func configurar_parcela(clave: String, clave_legacy: String = "") -> void:
+func configurar_parcela(
+	clave: String,
+	clave_legacy: String = "",
+	capa_humedad: TileMapLayer = null,
+	celda_humedad: Vector2i = Vector2i.ZERO
+) -> void:
 	_tipo = "bancal"
 	_clave = clave.strip_edges()
 	_clave_legacy = clave_legacy.strip_edges()
 	_distancia = 23.0
 	_tierra = null
+	_capa_humedad = capa_humedad
+	_celda_humedad = celda_humedad
 	add_to_group("interactable")
 	_cargar_estado_parcela()
 	call_deferred("_conectar_reloj_mundo")
@@ -439,6 +448,15 @@ func _actualizar_visual() -> void:
 		_tierra = get_node_or_null("Tierra") as Polygon2D
 	if is_instance_valid(_tierra):
 		_tierra.color = COLOR_TIERRA_HUMEDA if _humedo else COLOR_TIERRA_SECA
+
+	# Una sola capa compartida dibuja el sprite mojado únicamente en las
+	# coordenadas de las parcelas húmedas. El estado guardado sigue siendo
+	# _humedo; la capa es sólo su representación visual.
+	if is_instance_valid(_capa_humedad):
+		if _humedo:
+			_capa_humedad.set_cell(_celda_humedad, 0, Vector2i(2, 1))
+		else:
+			_capa_humedad.erase_cell(_celda_humedad)
 
 
 func _notificar(mensaje: String) -> void:
