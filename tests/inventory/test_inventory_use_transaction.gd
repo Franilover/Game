@@ -30,6 +30,12 @@ func _run() -> void:
 		items.append({})
 	items[6] = potion.duplicate(true)
 	controller.configurar_items(items)
+	var stale_override := potion.duplicate(true)
+	stale_override["id"] = "different_item"
+	if controller.usar_objeto_desde_ui(6, player, stale_override):
+		errors.append("Usó datos de una selección antigua sobre otro objeto del slot.")
+	if player.health != 40 or controller.obtener_item(6).is_empty():
+		errors.append("La selección obsoleta alteró vida o inventario.")
 	if not controller.usar_objeto_desde_ui(6, player, potion):
 		errors.append("No permitió usar un consumible válido.")
 	if player.health != 55:
