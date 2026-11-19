@@ -60,6 +60,33 @@ func _run() -> void:
 	if str(runtime.state.items[17].get("id", "")) != "axe_c":
 		errors.append("No conservó el objeto devuelto al inventario.")
 
+	# La durabilidad usa una sola regla para objetos en mochila y equipados.
+	runtime.state.items[6] = {
+		"id": "tool_worn",
+		"nombre": "Herramienta",
+		"cantidad": 1,
+		"max_stack": 1,
+		"propiedades_game": {"durabilidad": 2},
+		"durabilidad_actual": 2
+	}
+	if not runtime.consumir_durabilidad(6):
+		errors.append("No consumió durabilidad de un objeto del inventario.")
+	if int(runtime.state.items[6].get("durabilidad_actual", 0)) != 1:
+		errors.append("No redujo la durabilidad del objeto en inventario.")
+	if not runtime.consumir_durabilidad(6) or not runtime.state.items[6].is_empty():
+		errors.append("No retiró el objeto del inventario al agotar su durabilidad.")
+
+	runtime.equipar("armadura", {
+		"id": "armor_worn",
+		"nombre": "Armadura",
+		"propiedades_game": {"durabilidad": 1},
+		"durabilidad_actual": 1
+	})
+	if not runtime.consumir_durabilidad_equipo("armadura"):
+		errors.append("No consumió durabilidad de un objeto equipado.")
+	if not runtime.obtener_equipo("armadura").is_empty():
+		errors.append("No retiró el equipo al agotar su durabilidad.")
+
 	if not errors.is_empty():
 		for error in errors:
 			push_error("InventoryEquipmentTransaction: FAIL: " + error)
