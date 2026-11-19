@@ -127,7 +127,7 @@ func cargar_catalogo() -> void:
 		"select=item_id,tipo,max_stack,propiedades,"
 		+ "categoria:categorias_items_game!items_game_categoria_clave_fkey(clave,nombre,descripcion,orden),"
 		+ "item:items!inner("
-		+ "id,nombre,descripcion,origen,"
+		+ "id,nombre,descripcion,descripcion_detallada,origen,"
 		+ "propiedades_fisicas,estado_fisico,"
 		+ "geometria_fisica,material_id,creador_id,"
 		+ "tipo_objeto:worldbuilder_tipos_objeto!items_tipo_objeto_id_fkey("
