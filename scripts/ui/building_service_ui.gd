@@ -684,13 +684,7 @@ func _seleccionar_muestra_herbolario(objeto: Dictionary, icono: TextureRect, nom
 	icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
 	nombre.text = str(objeto.get("nombre", "Muestra"))
 	descripcion.text = str(objeto.get("descripcion", "Sin descripción registrada."))
-	var categoria_variant: Variant = objeto.get("categoria", {})
-	var categoria := str(objeto.get("categoria_clave", ""))
-	if categoria_variant is Dictionary:
-		categoria = str((categoria_variant as Dictionary).get("nombre", categoria))
-	if not categoria.is_empty():
-		descripcion.text += "\n\nCategoría: " + categoria
-	estado.text = "Muestra examinada · No se ha consumido."
+	estado.text = ""
 
 
 func _construir_procesamiento_herbolario() -> void:
