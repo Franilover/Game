@@ -1270,6 +1270,7 @@ func _detener_paseo_interior(npc: Creature, limpiar_siguiente: bool = false) -> 
 	if is_instance_valid(movimiento):
 		movimiento.detener_por_rutina()
 	npc.remove_meta("rutina_paseo_interior_activo")
+	npc.remove_meta("rutina_paseo_interior_actividad")
 	if limpiar_siguiente:
 		npc.remove_meta("rutina_paseo_interior_siguiente")
 	npc.set_meta("rutina_en_transito", false)
@@ -1305,12 +1306,20 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	if bool(npc.get_meta("animacion_panaderia_activa", false)):
 		return
 	if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
-		if movimiento.rutina_terminada():
+		var actividad_paseo := str(npc.get_meta("rutina_paseo_interior_actividad", ""))
+		if actividad_paseo != actividad.strip_edges().to_lower():
+			# Un cambio de tarea dentro del mismo edificio invalida el destino
+			# anterior: vuelve a elegir puesto con las preferencias actuales.
+			_detener_paseo_interior(npc)
+			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos, 1440))
+		elif movimiento.rutina_terminada():
 			npc.remove_meta("rutina_paseo_interior_activo")
+			npc.remove_meta("rutina_paseo_interior_actividad")
 			npc.set_meta("rutina_en_transito", false)
 			var pausa := 3 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id + "|" + str(minutos / 5)), 8)
 			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + pausa, 1440))
-		return
+		else:
+			return
 	var siguiente := int(npc.get_meta("rutina_paseo_interior_siguiente", -1))
 	if siguiente < 0:
 		var espera_inicial := 1 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id), 6)
@@ -1386,6 +1395,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var ruta := PackedVector2Array([destino_global])
 	movimiento.establecer_ruta(ruta)
 	npc.set_meta("rutina_paseo_interior_activo", true)
+	npc.set_meta("rutina_paseo_interior_actividad", actividad.strip_edges().to_lower())
 	npc.set_meta("rutina_en_transito", true)
 
 
