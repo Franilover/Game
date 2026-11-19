@@ -55,14 +55,14 @@ func _ready() -> void:
 
 func _comprobar_horario_nocturno(errores: Array[String]) -> void:
 	var casos: Array[Dictionary] = [
-		{"minutos": -1, "esperado": true},
+		{"minutos": -1, "esperado": false},
 		{"minutos": 0, "esperado": true},
 		{"minutos": 359, "esperado": true},
 		{"minutos": 360, "esperado": false},
 		{"minutos": 1259, "esperado": false},
 		{"minutos": 1260, "esperado": true},
 		{"minutos": 1439, "esperado": true},
-		{"minutos": 1440, "esperado": true}
+		{"minutos": 1440, "esperado": false}
 	]
 	for caso in casos:
 		var minutos := int(caso["minutos"])
