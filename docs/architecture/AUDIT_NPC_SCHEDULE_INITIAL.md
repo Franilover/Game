@@ -322,3 +322,10 @@ La relación del jugador con cada habitante se almacena en `world_state.flags["r
 Se añadieron `GameStateService.obtener_relacion_social_jugador_npc()` y `guardar_relacion_social_jugador_npc()`. El servicio social ahora usa estas operaciones en la consulta inicial, modificación de valores, registro de eventos, registro de diálogos y variantes de diálogo. Los métodos completos permanecen como fallback para implementaciones antiguas de GameState.
 
 La lectura devuelve una copia profunda de la relación solicitada. La escritura duplica el contenedor exterior y sólo la relación modificada, conservando los demás habitantes y el formato persistido. La prueba de roundtrip verifica aislamiento de la copia, modificación de la amistad y conservación de la relación de otro NPC. No se modifican valores sociales ni reglas de evolución.
+
+
+## 28. Catálogo estático de hogares NPC
+
+`NPCScheduleSystem.obtener_clave_hogar()` reconstruía un diccionario de diez residentes en cada consulta. El contenido no dependía del estado de la partida ni cambiaba durante la ejecución, por lo que se convirtió en la constante `HOGARES_NPC`. La función conserva normalización del nombre, ubicación de respaldo y validación contra `POSICIONES`.
+
+Se amplió la prueba de reglas para cubrir los diez hogares, espacios en los nombres, NPC desconocidos, respaldo personalizado y respaldo inválido. No cambian destinos, identidades ni rutinas.
