@@ -234,6 +234,10 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 		return direccion
 
 	var npc_actual := creature as Creature
+	var direccion_normalizada := direccion.normalized()
+	var npc_actual_id := npc_actual.get_instance_id()
+	var distancia_separacion_cuadrada := DISTANCIA_SEPARACION_NPC * DISTANCIA_SEPARACION_NPC
+	var distancia_ceder_paso_cuadrada := DISTANCIA_CEDER_PASO_NPC * DISTANCIA_CEDER_PASO_NPC
 	var desvio_lateral := Vector2.ZERO
 	var repulsion := Vector2.ZERO
 	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
@@ -253,16 +257,19 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 			continue
 
 		var diferencia := npc_actual.global_position - otro.global_position
-		var distancia := diferencia.length()
-		if distancia >= DISTANCIA_SEPARACION_NPC:
+		var distancia_cuadrada := diferencia.length_squared()
+		# La mayoría de habitantes están fuera del radio de interacción.
+		# Comparar distancias al cuadrado evita calcular una raíz por cada NPC.
+		if distancia_cuadrada >= distancia_separacion_cuadrada:
 			continue
 
+		var distancia := sqrt(distancia_cuadrada)
 		var alejamiento := Vector2.RIGHT
 		if distancia > 0.01:
 			alejamiento = diferencia / distancia
 		else:
 			# Posiciones idénticas: cada NPC obtiene un lado estable y opuesto.
-			alejamiento = Vector2.RIGHT if npc_actual.get_instance_id() < otro.get_instance_id() else Vector2.LEFT
+			alejamiento = Vector2.RIGHT if npc_actual_id < otro.get_instance_id() else Vector2.LEFT
 
 		var hacia_otro := -alejamiento
 		var peso := clampf((DISTANCIA_SEPARACION_NPC - distancia) / DISTANCIA_SEPARACION_NPC, 0.0, 1.0)
@@ -271,17 +278,17 @@ func _direccion_evitar_superposicion_npcs(direccion: Vector2) -> Vector2:
 		# Un NPC quieto o que viene de frente no debe convertirse en una pared.
 		# Se cede por un costado, con lados opuestos según el ID para evitar
 		# que ambos intenten rodearse por el mismo sitio.
-		var esta_delante := direccion.normalized().dot(hacia_otro) > 0.25
-		if esta_delante and distancia < DISTANCIA_CEDER_PASO_NPC:
-			var prioridad_lateral := -1.0 if npc_actual.get_instance_id() < otro.get_instance_id() else 1.0
-			var lado := direccion.normalized().orthogonal() * prioridad_lateral
+		var esta_delante := direccion_normalizada.dot(hacia_otro) > 0.25
+		if esta_delante and distancia_cuadrada < distancia_ceder_paso_cuadrada:
+			var prioridad_lateral := -1.0 if npc_actual_id < otro.get_instance_id() else 1.0
+			var lado := direccion_normalizada.orthogonal() * prioridad_lateral
 			var intensidad := clampf((DISTANCIA_CEDER_PASO_NPC - distancia) / 12.0, 0.0, 1.0)
 			desvio_lateral += lado * intensidad
 
 	if desvio_lateral.length_squared() > 0.001:
 		var lateral := desvio_lateral.normalized()
 		var cercania := clampf(desvio_lateral.length(), 0.0, 1.0)
-		return (direccion.normalized() * (1.0 - cercania) + lateral * cercania).normalized()
+		return (direccion_normalizada * (1.0 - cercania) + lateral * cercania).normalized()
 
 	if repulsion.length_squared() <= 0.001:
 		return direccion
