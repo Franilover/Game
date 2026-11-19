@@ -389,4 +389,7 @@ Se combinó en un único recorrido que conserva la primera criatura válida como
 
 La función conserva el mismo recorrido y las mismas reglas de reconciliación con NPC canónicos: reutiliza instancias existentes por clave o nombre, evita duplicar identidades registradas globalmente y sólo instancia habitantes que faltan. Los perfiles, horarios, hogares, textos y sprites permanecen iguales.
 
+
+La prueba también hizo que Godot compilara directamente `Main` y reveló que el script utilizaba `NPC_SCHEDULE_SYSTEM_SCRIPT` sin declarar su `preload`. Se restauró explícitamente la dependencia a `npc_schedule_system.gd`; ahora el test de catálogo valida el script real y no sólo los datos copiados.
+
 Se añadió `test_local_npc_catalog.tscn` para proteger que existan exactamente Mara, Ivo y Nima y que cada entrada conserve hogar, rutinas, personalidad e historia. El test se ejecuta en la suite de regresión de Godot.
