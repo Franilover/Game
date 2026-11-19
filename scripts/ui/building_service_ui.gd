@@ -770,12 +770,6 @@ func _mostrar_procesos_item_herbolario(item_id: String, item: Dictionary, detall
 	descripcion.text = str(item.get("descripcion", ""))
 	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	detalle.add_child(descripcion)
-	var cantidad := Label.new()
-	cantidad.text = "En inventario: %d" % _contar_item(item_id)
-	detalle.add_child(cantidad)
-	var titulo_procesos := Label.new()
-	titulo_procesos.text = "PROCESOS DISPONIBLES"
-	detalle.add_child(titulo_procesos)
 	var procesos := 0
 	for receta in _world_items.obtener_recetas():
 		if not _receta_es_botanica(receta) or not _receta_usa_item(receta, item_id):
@@ -857,14 +851,14 @@ func _agregar_tarjeta_receta_herbolario(receta: Dictionary, contenedor: VBoxCont
 			var requerido := maxi(1, int(ingrediente.get("cantidad", 1)))
 			var item_ingrediente := _world_items.buscar_item_por_id(ingrediente_id)
 			var disponible := _contar_item(ingrediente_id)
-			lineas.append("%s · %d/%d" % [str(item_ingrediente.get("nombre", "Material desconocido")), disponible, requerido])
+			lineas.append("Necesitas %d/%d" % [disponible, requerido])
 			if item_ingrediente.is_empty() or not ITEM_ICON_RESOLVER.tiene_icono(item_ingrediente):
 				tiene_iconos = false
 			if disponible < requerido:
 				suficientes = false
 	else:
 		lineas.append("Ingredientes no definidos.")
-	detalles.text = "Resultado: %s\n%s" % [nombre_resultado, "\n".join(lineas)]
+	detalles.text = "\n".join(lineas)
 	columna.add_child(detalles)
 	var boton := Button.new()
 	boton.text = "Procesar"
