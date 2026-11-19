@@ -338,3 +338,10 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - El acercamiento a iniciativa restaura la rutina al finalizar/cancelar; las actividades y objetivos sociales se procesan con prioridad excluyente en el tick.
 - No se detectó una colisión de órdenes que justifique añadir un controlador o modificar producción. La siguiente cobertura útil es probar precedencia de órdenes y ciclo completo de iniciativa.
 - CI de los cambios de regresión previos continúa en ejecución; no se declara validación hasta su resultado.
+
+
+### Cobertura del contrato de movimiento NPC
+
+- Nueva regresión `test_creature_movement_authority`: precedencia ruta/dirección externa, pausa y reanudación, diferencia entre detener por rutina y liberar el control, limpieza de dirección externa.
+- Usa la escena real `Creature` y el componente `CreatureMovement`; añadida al workflow headless.
+- CI pendiente.
