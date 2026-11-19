@@ -64,6 +64,8 @@ func _run() -> void:
 	if not controller.obtener_item(6).is_empty():
 		errors.append("No retiró el alimento consumido.")
 
+	player.free()
+	controller.free()
 	if not errors.is_empty():
 		for error in errors:
 			push_error("InventoryUseTransaction: FAIL: " + error)
