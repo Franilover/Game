@@ -118,25 +118,25 @@ func _inicializar_navegacion_tabs() -> void:
 	)
 
 	boton_garumis.pressed.connect(func() -> void:
-		tabs.current_tab = 3
+		tabs.current_tab = 2
 		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
 		if pagina_garumis.has_method("abrir_en_garumis"):
 			pagina_garumis.call("abrir_en_garumis")
 	)
 	boton_mapa.pressed.connect(func() -> void:
-		tabs.current_tab = 4
+		tabs.current_tab = 3
 	)
 	boton_relaciones.pressed.connect(func() -> void:
-		tabs.current_tab = 5
+		tabs.current_tab = 4
 	)
 	boton_admin.pressed.connect(func() -> void:
-		tabs.current_tab = 6
+		tabs.current_tab = 5
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
 	)
 	boton_notas.pressed.connect(func() -> void:
-		tabs.current_tab = 7
+		tabs.current_tab = 6
 	)
 	boton_cerrar.pressed.connect(cerrar)
 
@@ -170,7 +170,7 @@ func _actualizar_visibilidad_tabs_descubrimiento(_dato = null) -> void:
 	# inaccesible abierta.
 	if not desbloqueadas:
 		var tabs := $Window/Margin/Column/Tabs as TabContainer
-		if tabs.current_tab in [2, 3]:
+		if tabs.current_tab == 2:
 			tabs.current_tab = 0
 			$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
 
@@ -449,7 +449,7 @@ func _actualizar_admin_tab() -> void:
 		push_warning("Inventario: no se encontró la pestaña Admin; se omite su actualización.")
 		return
 	admin_tab.visible = es_admin and not _modo_historia
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 6:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
 		admin_tab.abrir(jugador)
@@ -470,7 +470,7 @@ func toggle() -> void:
 
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	if _abierto and tabs.current_tab == 4:
+	if _abierto and tabs.current_tab == 3:
 		cerrar()
 		return
 	if not _abierto:
@@ -487,7 +487,7 @@ func toggle_garumi_hub() -> void:
 	if not GameState.has_method("ha_descubierto_criatura_o_garumi") or not bool(GameState.call("ha_descubierto_criatura_o_garumi")):
 		return
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	if _abierto and tabs.current_tab == 3:
+	if _abierto and tabs.current_tab == 2:
 		cerrar()
 		return
 	if not _abierto:
@@ -495,7 +495,7 @@ func toggle_garumi_hub() -> void:
 		visible = true
 		_notificar_estado_inventario_a_hogar(true)
 		_actualizar_admin_tab()
-	tabs.current_tab = 3
+	tabs.current_tab = 2
 	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
 	var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
 	if pagina_garumis.has_method("abrir_en_garumis"):
