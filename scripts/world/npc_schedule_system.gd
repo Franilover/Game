@@ -150,6 +150,14 @@ var _npcs_actualizacion: Array = []
 var _actualizacion_en_curso := false
 
 
+## Devuelve la instantánea estable del tick actual o consulta el grupo fuera de él.
+## Los sistemas de rutina/social comparten así la misma lista durante una actualización.
+func _obtener_npcs_torres() -> Array:
+	if _actualizacion_en_curso:
+		return _npcs_actualizacion
+	return get_tree().get_nodes_in_group("torres_game_npc")
+
+
 func configurar(
 	atmosfera: WorldAtmosphere,
 	zone_manager: Node,
@@ -520,7 +528,7 @@ func _construir_malla(zona: Node2D) -> void:
 ## Tras mover un edificio, las rutas activas se invalidan para que el
 ## siguiente ciclo de horarios las calcule sobre la nueva geometría.
 func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
-	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for npc_variant in _obtener_npcs_torres():
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
 		var npc := npc_variant as Creature
@@ -940,7 +948,7 @@ func _actualizar_movimiento_reunion_castillo(npc: Creature, minutos: int) -> voi
 		return
 
 	var habitantes: Array[Creature] = []
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+	for nodo in _obtener_npcs_torres():
 		if nodo is Creature and is_instance_valid(nodo) and not nodo.is_queued_for_deletion():
 			var asistente := nodo as Creature
 			var asiste_reunion := (
@@ -1165,7 +1173,7 @@ func _registrar_compra_habitante(npc: Creature, edificio_id: String) -> void:
 ## Evita que Ivo programe la compra de pan cuando Elian no trabaja
 ## en la panadería en ese tramo. No modifica la rutina del panadero.
 func _el_npc_tiene_rutina_en_ubicacion(nombre_buscado: String, ubicacion_buscada: String, _dia_semana: int, _minutos: int) -> bool:
-	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for candidato_variant in _obtener_npcs_torres():
 		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
 			continue
 		var candidato := candidato_variant as Creature
@@ -1178,7 +1186,7 @@ func _el_npc_tiene_rutina_en_ubicacion(nombre_buscado: String, ubicacion_buscada
 
 
 func _buscar_npc_por_nombre(nombre_buscado: String) -> Creature:
-	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for candidato_variant in _obtener_npcs_torres():
 		if candidato_variant is Creature and is_instance_valid(candidato_variant):
 			var candidato := candidato_variant as Creature
 			if candidato.get_nombre_visual().strip_edges().to_lower() == nombre_buscado:
@@ -1214,7 +1222,7 @@ func _obtener_rutina_encuentro_trio(
 	# Se conserva el primer NPC válido encontrado para cada nombre, igual que
 	# _buscar_npc_por_nombre(), y después se valida su estado de vida.
 	var participantes: Dictionary = {}
-	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for candidato_variant in _obtener_npcs_torres():
 		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
 			continue
 		var candidato := candidato_variant as Creature
@@ -1430,7 +1438,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var destino_disponible := false
 	# La lista no cambia mientras se prueban los puntos: reutilizar una sola
 	# instantánea evita volver a consultar el grupo por cada mueble candidato.
-	var otros_npcs: Array = _npcs_actualizacion if _actualizacion_en_curso else get_tree().get_nodes_in_group("torres_game_npc")
+	var otros_npcs: Array = _npcs_actualizacion if _actualizacion_en_curso else _obtener_npcs_torres()
 	for desplazamiento_punto in range(puntos.size()):
 		var candidato: Vector2 = puntos[posmod(indice + desplazamiento_punto, puntos.size())]
 		var ocupado := false
@@ -1658,7 +1666,7 @@ func _detener_animacion_ocio_exterior(npc: Creature) -> void:
 ## No interfiere con rutas, conversaciones, cinemáticas ni actividades sociales.
 func _separar_npcs_superpuestos() -> void:
 	var npcs: Array[Creature] = []
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+	for nodo in _obtener_npcs_torres():
 		if nodo is Creature and is_instance_valid(nodo) and not nodo.is_queued_for_deletion():
 			var npc := nodo as Creature
 			if npc.is_alive and npc.is_inside_tree():
@@ -1790,7 +1798,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	var indice := posmod(hash(nombre + "|" + fecha + "|" + str(minutos / 5)), desplazamientos.size())
 	var desplazamiento: Vector2 = desplazamientos[indice]
 	var destino := ancla + desplazamiento
-	for otro_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for otro_variant in _obtener_npcs_torres():
 		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
 			continue
 		var otro := otro_variant as Creature
@@ -1810,7 +1818,7 @@ func _actualizar_interaccion_panaderia() -> void:
 	# Ambos personajes se necesitan juntos; resolverlos en un solo recorrido.
 	var ivo: Creature
 	var elian: Creature
-	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for candidato_variant in _obtener_npcs_torres():
 		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
 			continue
 		var candidato := candidato_variant as Creature
@@ -2355,7 +2363,7 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 	var mejor: Creature = null
 	var mejor_puntuacion := -INF
 	var id_npc := npc.get_personaje_game_id().strip_edges()
-	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for candidato_variant in _obtener_npcs_torres():
 		if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
 			continue
 		var candidato := candidato_variant as Creature
@@ -2651,7 +2659,7 @@ func _buscar_npc_por_id_social(personaje_id: String) -> Creature:
 	var buscado := personaje_id.strip_edges().to_lower()
 	if buscado.is_empty():
 		return null
-	for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+	for candidato_variant in _obtener_npcs_torres():
 		if candidato_variant is Creature and is_instance_valid(candidato_variant):
 			var candidato := candidato_variant as Creature
 			if candidato.get_personaje_game_id().strip_edges().to_lower() == buscado:
