@@ -58,6 +58,21 @@ func _run() -> void:
 
 	npc_b.global_position = npc_a.global_position + Vector2(18.0, 0.0)
 
+	# La corrección final sólo desplaza parejas realmente superpuestas.
+	npc_a.set_physics_process(false)
+	npc_b.set_physics_process(false)
+	npc_a.velocity = Vector2.ZERO
+	npc_b.velocity = Vector2.ZERO
+	npc_a.global_position = Vector2(200.0, 200.0)
+	npc_b.global_position = Vector2(210.0, 200.0)
+	agenda._separar_npcs_superpuestos()
+	var distancia_corregida := npc_a.global_position.distance_to(npc_b.global_position)
+	var distancia_minima_esperada := NPCScheduleScript.RADIO_COLISION_NPC * 2.0
+	if distancia_corregida < distancia_minima_esperada - 0.01:
+		errores.append("La corrección final no separó dos NPC superpuestos.")
+	npc_a.global_position = Vector2.ZERO
+	npc_b.global_position = Vector2(18.0, 0.0)
+
 	npc_a.set_meta("rutina_en_transito", true)
 	npc_b.set_meta("rutina_en_transito", true)
 	npc_a.set_meta("rutina_destino_es_edificio", true)
