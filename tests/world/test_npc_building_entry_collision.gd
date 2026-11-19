@@ -49,8 +49,8 @@ func _run() -> void:
 	var contenedor_exterior := Node2D.new()
 	var capa_interior := Node2D.new()
 	var habitacion := Node2D.new()
-	zona.add_child(contenedor_exterior)
-	zona.add_child(capa_interior)
+	add_child(contenedor_exterior)
+	add_child(capa_interior)
 	capa_interior.add_child(habitacion)
 	zona.set("_contenedor_npcs_exterior", contenedor_exterior)
 	zona.set("_capa_interior", capa_interior)
@@ -66,6 +66,8 @@ func _run() -> void:
 		errores.append("El NPC recuperó colisiones exteriores antes de salir del interior.")
 
 	npc.queue_free()
+	contenedor_exterior.queue_free()
+	capa_interior.queue_free()
 	zona.free()
 	sistema.free()
 	await get_tree().process_frame
