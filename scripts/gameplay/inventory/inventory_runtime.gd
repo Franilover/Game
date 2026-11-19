@@ -2,7 +2,17 @@ extends RefCounted
 class_name InventoryRuntime
 
 func _garlia_debug() -> Node:
-	return Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
+	var main_loop := Engine.get_main_loop()
+	if main_loop == null:
+		return null
+	return main_loop.root.get_node_or_null("GarliaDebug")
+
+
+func _debug_call(method: String, arguments: Array = []) -> void:
+	var debug := _garlia_debug()
+	if debug == null or not is_instance_valid(debug) or not debug.has_method(method):
+		return
+	debug.callv(method, arguments)
 
 
 
@@ -49,44 +59,55 @@ func obtener_equipamiento() -> Dictionary:
 	return equipment.state.slots.duplicate(true)
 
 func agregar_objeto(datos: Dictionary) -> bool:
-	_garlia_debug().call("registrar", "INVENTORY", "agregar_objeto solicitado", {"item_id": str(datos.get("item_id", datos.get("id", ""))), "nombre": str(datos.get("nombre", ""))})
-	_garlia_debug().call("flujo_inicio", "InventoryRuntime.agregar_objeto", {
+	_debug_call("registrar", ["INVENTORY", "agregar_objeto solicitado", {
+		"item_id": str(datos.get("item_id", datos.get("id", ""))),
+		"nombre": str(datos.get("nombre", ""))
+	}])
+	_debug_call("flujo_inicio", ["InventoryRuntime.agregar_objeto", {
 		"item_id": str(datos.get("item_id", datos.get("id", ""))),
 		"nombre": str(datos.get("nombre", "")),
 		"cantidad_solicitada": int(datos.get("cantidad", 1)),
 		"slots": state.items.size()
-	})
+	}])
 	if datos.is_empty():
-		_garlia_debug().call("flujo_error", "Inventario recibió un Dictionary vacío.")
+		_debug_call("flujo_error", ["Inventario recibió un Dictionary vacío."])
 		return false
+
 	var objeto := datos.duplicate(true)
 	var cantidad: int = maxi(1, int(objeto.get("cantidad", 1)))
-	var es_ejemplar := bool(objeto.get("es_ejemplar", false)) or not str(objeto.get("ejemplar_id", "")).strip_edges().is_empty()
+	var es_ejemplar := (
+		bool(objeto.get("es_ejemplar", false))
+		or not str(objeto.get("ejemplar_id", "")).strip_edges().is_empty()
+	)
 	if es_ejemplar and cantidad != 1:
-		_garlia_debug().call("flujo_error", "Un ejemplar único no puede insertarse con cantidad mayor que uno.", {"ejemplar_id": str(objeto.get("ejemplar_id", "")), "cantidad": cantidad})
+		_debug_call("flujo_error", [
+			"Un ejemplar único no puede insertarse con cantidad mayor que uno.",
+			{"ejemplar_id": str(objeto.get("ejemplar_id", "")), "cantidad": cantidad}
+		])
 		return false
+
 	var max_stack: int = 1 if es_ejemplar else maxi(1, int(objeto.get("max_stack", 1)))
 	objeto["cantidad"] = cantidad
 	objeto["max_stack"] = max_stack
 	if es_ejemplar:
 		objeto["es_ejemplar"] = true
-	# La inserción debe ser atómica: una recogida rechazada no puede dejar
-	# unidades añadidas mientras el objeto del mundo sigue intacto.
-	var items_antes: Array[Dictionary] = []
-	for item_antes in state.items:
-		items_antes.append(item_antes.duplicate(true))
+
+	# La operación se prepara en una copia aislada y se confirma una sola vez.
+	# Si no cabe todo, el estado original nunca llega a modificarse.
+	var propuesta: Array[Dictionary] = []
+	for item_actual in state.items:
+		propuesta.append(item_actual.duplicate(true))
+
 	var restante := cantidad
-	# Primero se apila en la mochila (ranuras 6–11). Si no cabe todo,
-	# la fase de espacios vacíos continúa por las dos manos.
-	var inicio_mochila := mini(6, state.items.size())
-	var fin_mochila := mini(12, state.items.size())
+	var inicio_mochila := mini(6, propuesta.size())
+	var fin_mochila := mini(12, propuesta.size())
+
+	# Primero se completan pilas compatibles de la mochila.
 	if max_stack > 1:
 		for i in range(inicio_mochila, fin_mochila):
 			if restante <= 0:
 				break
-			var existente: Dictionary = state.items[i]
-			if existente.is_empty():
-				continue
+			var existente: Dictionary = propuesta[i]
 			if not _puede_apilar_con(existente, objeto):
 				continue
 			var ocupacion := maxi(1, int(existente.get("cantidad", 1)))
@@ -94,52 +115,55 @@ func agregar_objeto(datos: Dictionary) -> bool:
 			if capacidad <= 0:
 				continue
 			var anadido := mini(restante, capacidad)
-			state.items[i]["cantidad"] = ocupacion + anadido
+			propuesta[i]["cantidad"] = ocupacion + anadido
 			restante -= anadido
+
 	if restante > 0:
-		# Prioridad de recogida: mochila, mano izquierda y mano derecha.
-		# La mochila ocupa los índices 6–11; las manos, 0–5 y 12–17.
+		# Prioridad estable: mochila, mano izquierda, mano derecha y extras.
 		var orden_destinos: Array[int] = []
 		for i in range(inicio_mochila, fin_mochila):
 			orden_destinos.append(i)
-		for i in range(mini(6, state.items.size())):
+		for i in range(mini(6, propuesta.size())):
 			orden_destinos.append(i)
-		for i in range(12, mini(18, state.items.size())):
+		for i in range(12, mini(18, propuesta.size())):
 			orden_destinos.append(i)
-		# Si el inventario está configurado con otra capacidad, también se
-		# consideran los slots restantes sin duplicar índices.
-		for i in range(state.items.size()):
+		for i in range(propuesta.size()):
 			if not orden_destinos.has(i):
 				orden_destinos.append(i)
+
 		for i in orden_destinos:
 			if restante <= 0:
 				break
-			if not state.items[i].is_empty():
+			if not propuesta[i].is_empty():
 				continue
 			var lote := mini(restante, max_stack)
 			var nuevo := objeto.duplicate(true)
 			nuevo["cantidad"] = lote
-			state.items[i] = nuevo
+			propuesta[i] = nuevo
 			restante -= lote
-	var exito := restante <= 0
-	if exito:
-		_garlia_debug().call("registrar", "INVENTORY", "Objeto insertado correctamente.")
-		_garlia_debug().call("flujo_ok", "Objeto insertado en inventario.", {"restante": restante})
-	else:
-		for i in range(mini(state.items.size(), items_antes.size())):
-			state.items[i] = items_antes[i].duplicate(true)
+
+	if restante > 0:
 		var libres := 0
-		for slot in state.items:
-			if slot is Dictionary and (slot as Dictionary).is_empty():
+		for slot in propuesta:
+			if slot.is_empty():
 				libres += 1
-		_garlia_debug().call("registrar", "INVENTORY", "Inserción rechazada: capacidad insuficiente; se revirtió toda la operación.", {"restante": restante, "slots": state.items.size()})
-		_garlia_debug().call("flujo_error", "No hubo capacidad suficiente.", {
-				"restante": restante,
-				"slots": state.items.size(),
-				"slots_libres": libres,
-				"max_stack": max_stack
-			})
-	return exito
+		_debug_call("registrar", [
+			"INVENTORY",
+			"Inserción rechazada: capacidad insuficiente; no se modificó el inventario.",
+			{"restante": restante, "slots": propuesta.size()}
+		])
+		_debug_call("flujo_error", ["No hubo capacidad suficiente.", {
+			"restante": restante,
+			"slots": propuesta.size(),
+			"slots_libres": libres,
+			"max_stack": max_stack
+		}])
+		return false
+
+	state.items = propuesta
+	_debug_call("registrar", ["INVENTORY", "Objeto insertado correctamente."])
+	_debug_call("flujo_ok", ["Objeto insertado en inventario.", {"restante": 0}])
+	return true
 
 func quitar_cantidad(indice: int, cantidad: int = 1) -> bool:
 	if indice < 0 or indice >= state.items.size() or state.items[indice].is_empty():
@@ -200,8 +224,10 @@ func _puede_apilar_con(a: Dictionary, b: Dictionary) -> bool:
 		return false
 	var id_a := str(a.get("id", a.get("item_id", ""))).strip_edges()
 	var id_b := str(b.get("id", b.get("item_id", ""))).strip_edges()
-	if not id_a.is_empty() and not id_b.is_empty():
-		return id_a == id_b
+	# Si existe identidad en cualquiera de los dos objetos, ambos deben
+	# coincidir. El nombre solo sirve como compatibilidad para datos sin ID.
+	if not id_a.is_empty() or not id_b.is_empty():
+		return not id_a.is_empty() and id_a == id_b
 	var nombre_a := str(a.get("nombre", "")).strip_edges().to_lower()
 	var nombre_b := str(b.get("nombre", "")).strip_edges().to_lower()
 	return not nombre_a.is_empty() and nombre_a == nombre_b
