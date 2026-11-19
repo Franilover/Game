@@ -431,3 +431,11 @@ Ahora `_guardar_estado_visibilidad_npc()` conserva por instancia tanto la visibi
 El test de ciclo de interiores cubre NPC originalmente interactuables, NPC visibles sin interacción y NPC materializados durante la estancia. También comprueba que el nuevo registro no les conceda interacción por defecto.
 
 La captura de NPC también se pasa explícitamente a los métodos de ocultación y restauración. Al salir, `_salir_del_interior()` obtiene un único snapshot y lo reutiliza para devolver NPCs de habitaciones y restaurar su estado exterior, evitando nuevas consultas al grupo en mitad de la transición.
+
+
+
+## 41. Snapshot idempotente al registrar NPC materializados
+
+`registrar_npc_materializado()` registra el estado visible/interactuable antes de ocultar un NPC creado mientras el jugador permanece dentro. La captura ahora es idempotente por `instance_id`: si el mismo NPC vuelve a registrarse durante esa estancia, conserva el primer estado y no sustituye los valores originales por el estado temporal oculto/no interactuable.
+
+La prueba de transición repite el registro del mismo NPC y comprueba que al salir se restaure su visibilidad e interacción originales. La cobertura de NPC originalmente no interactuables se mantiene por separado. No se añade caché persistente ni se cambia el ciclo de materialización.
