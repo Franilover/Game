@@ -492,3 +492,10 @@ La lista se limpia al terminar el recorrido para no retener referencias entre ti
 La revisión del mismo ciclo encontró más consultas repetidas al grupo `torres_game_npc` en la selección de encuentros, objetivos sociales, separación y paseos ambientales. Se consolidó el acceso mediante `_obtener_npcs_torres()`: durante `actualizar()` devuelve la instantánea ya tomada para el tick; fuera del ciclo obtiene una lista actual del SceneTree. Así se evita repetir la consulta por cada NPC y se conserva el comportamiento de llamadas independientes.
 
 También se obtiene una sola vez el nodo del jugador al comenzar el tick y se reutiliza en la comprobación de proximidad del paseo ambiental. Ambas referencias se liberan al terminar el recorrido. El snapshot se comparte como contexto temporal, no se convierte en un catálogo persistente ni en una segunda fuente de verdad.
+
+
+## 49. Instantánea temporal compartida durante la simulación NPC
+
+El ciclo de Torres obtiene el calendario del mundo una vez para decidir el día y el minuto. Varias rutinas sociales, eventos, ocio y resúmenes diarios volvían a solicitar el mismo diccionario de tiempo durante el recorrido de NPC. Se añadió `_obtener_tiempo_actual()`: durante el tick devuelve la instantánea compartida y fuera de él conserva la consulta a `WorldAtmosphere` como respaldo. La instantánea se libera junto con el resto del contexto temporal al terminar el tick.
+
+La fecha de la reunión del castillo también se calcula una vez por actualización del grupo y se reutiliza para todos sus integrantes, en vez de consultar dos veces el calendario por cada integrante. No se cambia el reloj del mundo ni se guarda una copia persistente.
