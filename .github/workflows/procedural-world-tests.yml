@@ -157,6 +157,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run local NPC catalog contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_local_npc_catalog.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|LocalNPCatalog: FAIL:' <<<"$output"; then
+            echo "Local NPC catalog contract test reported errors."
+            exit 1
+          fi
+
       - name: Run NPC building doorway collision regression
         shell: bash
         run: |
