@@ -2,7 +2,17 @@ extends Node
 class_name InventoryController
 
 func _garlia_debug() -> Node:
-	return Engine.get_main_loop().root.get_node_or_null("GarliaDebug")
+	var main_loop := Engine.get_main_loop()
+	if main_loop == null:
+		return null
+	return main_loop.root.get_node_or_null("GarliaDebug")
+
+
+func _debug_call(method: String, arguments: Array = []) -> void:
+	var debug := _garlia_debug()
+	if debug == null or not is_instance_valid(debug) or not debug.has_method(method):
+		return
+	debug.callv(method, arguments)
 
 
 
@@ -264,15 +274,15 @@ func consumir_durabilidad_mano_activa(mano: String) -> bool:
 
 func agregar_objeto(datos: Dictionary) -> bool:
 	if not puede_interactuar():
-		_garlia_debug().call("registrar", "INVENTORY", "agregar_objeto bloqueado por GameplayInputGate.")
-		_garlia_debug().call("flujo_error", "InventoryController bloqueó agregar_objeto por GameplayInputGate.")
+		_debug_call("registrar", ["INVENTORY", "agregar_objeto bloqueado por GameplayInputGate."])
+		_debug_call("flujo_error", ["InventoryController bloqueó agregar_objeto por GameplayInputGate."])
 		return false
 	if datos.is_empty():
-		_garlia_debug().call("flujo_error", "InventoryController recibió objeto vacío.")
+		_debug_call("flujo_error", ["InventoryController recibió objeto vacío."])
 		return false
 	var resultado: bool = runtime.agregar_objeto(datos)
 	if resultado:
-		_garlia_debug().call("flujo_paso", "InventoryController aceptó el objeto.")
+		_debug_call("flujo_paso", ["InventoryController aceptó el objeto."])
 		inventario_cambio.emit()
 	return resultado
 
