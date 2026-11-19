@@ -13,7 +13,7 @@ func _run() -> void:
 	var items: Array = []
 	for i in range(18):
 		items.append({})
-	items[6] = {"id": "wood", "item_id": "wood", "nombre": "Madera", "cantidad": 2, "max_stack": 10}
+	items[6] = {"id": "wood", "item_id": "", "nombre": "Madera", "cantidad": 2, "max_stack": 10}
 	items[7] = {"id": "wood", "item_id": "wood", "nombre": "Madera", "cantidad": 2, "max_stack": 10}
 	runtime.establecer_items(items)
 
