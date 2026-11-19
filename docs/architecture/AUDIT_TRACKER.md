@@ -253,3 +253,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 
 - La separación direccional descarta candidatos lejanos con distancia al cuadrado; la prueba cubre vecino lejano y límite de 34 px. Validado: [Godot 4.7 46/46](https://github.com/Franilover/Game/actions/runs/44623203556), [GDScript Quality](https://github.com/Franilover/Game/actions/runs/44623203373) success.
 - La corrección final de solapamientos usa ahora el mismo filtro por distancia al cuadrado antes de calcular la raíz. Se añadió un caso de regresión que comprueba la distancia mínima de 28 px. CI de esta segunda modificación pendiente.
+
+
+## Refactor NPCScheduleSystem — selección de rutina (2026-11-19)
+
+- Extraído `_resolver_rutina_base_y_eventos()` desde `_aplicar_rutina()`: selección calendario/día libre, ocio, invitaciones, evento comunitario y encuentro del trío.
+- El helper devuelve un contexto con calendario, rutina y evento; la fase de turnos, prioridad nocturna, clima y movimiento permanece en `_aplicar_rutina()`.
+- Añadida regresión para la extensión local de Elian y la no mutación del calendario original.
+- CI: [Godot 4.7 46/46](https://github.com/Franilover/Game/actions/runs/44624623124); [GDScript Quality](https://github.com/Franilover/Game/actions/runs/44624623318), ambos success.
