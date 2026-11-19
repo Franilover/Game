@@ -1782,9 +1782,9 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "ArmarioHerramientasVivero", MUEBLE_ARMARIO, Vector2(-220, 105), Vector2(0.85, 0.85), 1)
 		"herbolario":
 			_agregar_sprite_mueble(cuarto, "MesaInvestigacionHerbolario", MUEBLE_MESA_DOCUMENTOS, Vector2(-105, -78), Vector2(1.35, 1.05), 1)
-			_agregar_estacion_edificio(cuarto, "herbolario", "Investigar muestras", Vector2(-105, -48))
+			_agregar_estacion_edificio(cuarto, "herbolario_investigacion", "Investigar muestras", Vector2(-105, -48))
 			_agregar_sprite_mueble(cuarto, "MesaProcesamientoHerbolario", MUEBLE_MESA_PLATOS, Vector2(90, -78), Vector2(1.25, 1.05), 1)
-			_agregar_estacion_edificio(cuarto, "herbolario", "Procesar muestras", Vector2(90, -48))
+			_agregar_estacion_edificio(cuarto, "herbolario_procesamiento", "Procesar muestras", Vector2(90, -48))
 			_agregar_sprite_mueble(cuarto, "ArmarioMuestrasHerbolario", MUEBLE_ARMARIO, Vector2(-205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteHerbolario", MUEBLE_ARMARIO, Vector2(205, 82), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "CofreMuestrasHerbolario", MUEBLE_COFRE, Vector2(0, 115), Vector2(0.9, 0.9), 1)
@@ -2347,6 +2347,8 @@ func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String)
 		return _entrada_interior_id == "registro"
 	if tipo.begins_with("cuartel_"):
 		return _entrada_interior_id == "cuartel"
+	if tipo.begins_with("herbolario_"):
+		return _entrada_interior_id == "herbolario"
 	return _entrada_interior_id == tipo
 
 
