@@ -478,3 +478,10 @@ Es una simplificación local: no cambia los límites (21:00 inclusive y antes de
 La misma regla (21:00 inclusive hasta antes de 06:00, cruzando medianoche) se calculaba en tres puntos de la simulación: ciclo de actualización NPC, resolución de rutina y postura de descanso dentro del edificio. Se centralizó en `NPCScheduleRules.es_horario_nocturno(minutos)` y los tres consumidores reutilizan esa función.
 
 La prueba unitaria de reglas ahora cubre límites y valores adyacentes: -1, 00:00, 05:59, 06:00, 20:59, 21:00, 23:59 y 24:00. Esto fija el contrato temporal en un único lugar y evita que el planificador y las animaciones diverjan con el tiempo.
+
+
+## 47. Reutilización de la instantánea de NPC durante un tick
+
+`actualizar()` ya recorría todos los NPC de Torres para resolver sus rutinas. Durante ese mismo recorrido, el paseo interior volvía a consultar el grupo `torres_game_npc` por cada NPC que necesitaba elegir un puesto libre. Ahora el ciclo obtiene una instantánea una sola vez y la comparte con la búsqueda de ocupación interior mientras el tick está activo; fuera de ese ciclo, el método conserva la consulta directa como respaldo.
+
+La lista se limpia al terminar el recorrido para no retener referencias entre ticks. Se mantiene la misma validación de instancias, sala y distancia de ocupación; sólo se evita repetir la consulta al SceneTree y se usa una vista coherente del grupo durante el tick.
