@@ -1223,6 +1223,7 @@ func _construir_escuela() -> void:
 
 func _mostrar_leccion_escuela(materia: String, detalle: VBoxContainer) -> void:
 	_limpiar_detalle(detalle)
+	_agregar_texto_detalle(detalle, "Apuntes de consulta: no consumen objetos ni modifican atributos del personaje.")
 	match materia:
 		"botanica":
 			_agregar_titulo_detalle(detalle, "Botánica")
@@ -1236,7 +1237,7 @@ func _mostrar_leccion_escuela(materia: String, detalle: VBoxContainer) -> void:
 			_agregar_titulo_detalle(detalle, "Exploración")
 			_agregar_texto_detalle(detalle, "Prepara tus Garumis y revisa el espacio disponible en el inventario antes de salir.")
 			_agregar_texto_detalle(detalle, "El Gremio de Aventureros permite consultar rutas, iniciar viajes y revisar los descubrimientos registrados.")
-		_agregar_texto_detalle(detalle, "Estas lecciones son apuntes de consulta: no consumen objetos ni modifican atributos del personaje.")
+
 
 
 func _agregar_texto_detalle(contenedor: VBoxContainer, texto: String) -> void:
