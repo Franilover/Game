@@ -454,6 +454,6 @@ La prueba verifica explícitamente que el cambio de rutina no reactive al NPC an
 
 `_aplicar_rutina()` y `_actualizar_rutina_interior()` repetían la detención de `CreatureMovement`, la eliminación de `rutina_paseo_interior_activo` y la actualización de `rutina_en_transito`. Se consolidó esa operación en `_detener_paseo_interior()`.
 
-La transición admite limpiar opcionalmente `rutina_paseo_interior_siguiente`. Al cambiar de edificio se elimina porque el siguiente paseo pertenece al interior anterior; al cerrar temporalmente el interior se conserva para que el NPC retome el horario pendiente cuando corresponda. La prueba de seguridad de movimiento cubre ambas variantes y verifica que la ruta quede detenida.
+La transición admite limpiar opcionalmente `rutina_paseo_interior_siguiente`. Al cambiar de edificio se elimina porque el siguiente paseo pertenece al interior anterior; al cerrar temporalmente el interior se conserva para que el NPC retome el horario pendiente cuando corresponda. La prueba de seguridad de movimiento cubre ambas variantes y verifica que la ruta quede detenida. El workflow de regresión ejecuta ahora `test_creature_movement_npc_safety.tscn`, de modo que esta cobertura no queda limitada a la importación/compilación de scripts.
 
 No cambia la selección de muebles, destinos, pausas ni la frecuencia de los paseos.
