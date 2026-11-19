@@ -295,3 +295,11 @@ Se añadieron lecturas puntuales en `GameStateService`: `obtener_relacion_npc_en
 La consulta booleana de noticias reutiliza ahora una única relación y su confianza durante el recorrido, y sólo consulta la confianza cuando encuentra conocimiento privado con permiso explícito. El conocimiento público no necesita consultar la relación. Las funciones de lectura completa y guardado siguen intactas, por lo que el formato persistido no cambia.
 
 La prueba de roundtrip de GameState ahora cubre las cuatro lecturas puntuales, el aislamiento de copias, la conservación de otras secciones del registro y la detección de noticias nuevas. También verifica que el conocimiento público ya conocido no vuelva a contar como novedad y que el conocimiento privado requiera permiso y confianza mínima de 30. La validación de CI queda pendiente.
+
+## 25. Escrituras puntuales del estado social
+
+Las operaciones de interacción, conocimiento, asuntos y promesas también reconstruían el diccionario completo `conversaciones_npc` para cambiar una sola sección. Se añadieron métodos de escritura acotados en `GameStateService`: `guardar_relacion_npc_entre()`, `guardar_conocimientos_npc()`, `guardar_asuntos_pendientes_npc()` y `guardar_promesas_npc()`. Cada método reemplaza sólo la sección correspondiente y conserva el resto del registro; las colecciones recibidas se duplican antes de almacenarse y se mantiene la notificación `_al_cambio_guardable()`.
+
+`RelationshipSystemService` utiliza esas operaciones para registrar interacciones, actualizar conocimientos, crear/resolver asuntos y crear/resolver promesas. Las rutas antiguas de lectura y escritura completa permanecen como fallback de compatibilidad cuando el objeto de estado no expone los nuevos métodos. No se modifica el formato de guardado ni se introduce caché.
+
+La prueba de roundtrip ahora también ejercita las escrituras puntuales desde `RelationshipSystemService`, comprobando actualización de confianza e interacciones, alta de conocimiento, asunto y promesa, además de las lecturas aisladas descritas en la sección anterior. La validación de CI queda pendiente.
