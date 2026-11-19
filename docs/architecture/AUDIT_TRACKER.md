@@ -269,4 +269,4 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - `NPCScheduleSystem` conserva rutinas, actividades, interiores y estado de movimiento; recibe navegación por inyección y delega las rutas.
 - La señal `malla_reconstruida` permite invalidar rutas de rutina desde el propietario de las decisiones NPC, sin transferir esa responsabilidad al servicio geométrico.
 - Se adaptaron las regresiones de límites del mapa y búsqueda de celda transitable. Se añadieron escenas ejecutables para los límites de Torres y la construcción/cálculo/invalidez de la malla real; ambas se incorporaron al workflow. No se cambian puertas, escenas de edificios, datos guardados ni Supabase.
-- CI Godot 4.7 y GDScript Quality: pendiente para este commit.
+- CI Godot 4.7: **48/48 pasos completados, 0 fallos** ([run #44626438272](https://github.com/Franilover/Game/actions/runs/44626438272)); GDScript Quality: **success** ([run #44626236415](https://github.com/Franilover/Game/actions/runs/44626236415)).
