@@ -2858,31 +2858,11 @@ func _obtener_evento_comunitario(dia_semana: int, minutos: int) -> Dictionary:
 	if not is_instance_valid(_world_atmosphere):
 		return {}
 	var tiempo: Dictionary = _world_atmosphere.obtener_tiempo()
-	var dia_estacion := int(tiempo.get("dia_de_estacion", 0))
-	if dia_estacion == 1 and minutos >= 840 and minutos < 1200:
-		return {
-			"clave": "celebracion_estacional",
-			"nombre": "Celebración de temporada",
-			"actividad": "celebrar_el_cambio_de_estacion",
-			"aviso": "Hoy los vecinos celebran el comienzo de una nueva estación en la plaza."
-		}
-	if dia_semana != 4:
-		return {}
-	if minutos >= 540 and minutos < 1020:
-		return {
-			"clave": "mercado_vecinal",
-			"nombre": "Mercado vecinal",
-			"actividad": "visitar_el_mercado",
-			"aviso": "Hoy hay mercado vecinal en la plaza de Torres."
-		}
-	if minutos >= 1020 and minutos < 1200:
-		return {
-			"clave": "comida_comunitaria",
-			"nombre": "Comida comunitaria",
-			"actividad": "compartir_comida_con_vecinos",
-			"aviso": "Los vecinos se reúnen en la plaza para compartir comida."
-		}
-	return {}
+	return NPC_SCHEDULE_RULES.obtener_evento_comunitario(
+		int(tiempo.get("dia_de_estacion", 0)),
+		dia_semana,
+		minutos
+	)
 
 
 func _puede_participar_en_evento(rutina: Dictionary) -> bool:
