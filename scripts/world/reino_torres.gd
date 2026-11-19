@@ -1798,9 +1798,12 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "Hogar", MUEBLE_HORNO, Vector2(-175, -82), Vector2(1.8, 1.8), 1)
 			_agregar_sprite_mueble(cuarto, "Yunque", MUEBLE_YUNQUE, Vector2(65, -20), Vector2(1.3, 1.3), 1)
 			_agregar_sprite_mueble(cuarto, "BancoHerramientas", MUEBLE_MESA_DOCUMENTOS, Vector2(105, 92), Vector2(1.2, 1), 1)
+			_agregar_sprite_mueble(cuarto, "MesaInspeccionEquipo", MUEBLE_MESA_DOCUMENTOS, Vector2(180, -75), Vector2(1.25, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoInspeccionEquipo", MUEBLE_SILLA_FRENTE, Vector2(180, -20), Vector2.ONE, 1)
 			_agregar_sprite_mueble(cuarto, "AlmacenForja", MUEBLE_ARMARIO, Vector2(-190, 95), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "MaterialesForja", MUEBLE_COFRE, Vector2(195, 95), Vector2(0.85, 0.85), 1)
 			_agregar_estacion_edificio(cuarto, "forja", "Reparar herramientas", Vector2(65, 20))
+			_agregar_estacion_laboratorio(cuarto, "forja_inspeccion", "Inspeccionar armas y herramientas", Vector2(180, -48))
 		"archivo":
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoOeste", MUEBLE_ARMARIO, Vector2(-195, -105), Vector2(1.0, 1.0), 1)
 			_agregar_sprite_mueble(cuarto, "EstanteArchivoCentro", MUEBLE_ARMARIO, Vector2(-95, -105), Vector2(1.0, 1.0), 1)
@@ -2209,7 +2212,7 @@ func _agregar_estacion_laboratorio(padre: Node, estacion_id: String, texto: Stri
 
 
 func _puede_interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> bool:
-	return _interior_activo and _entrada_interior_id == "casa_estudio" and estacion_id == "examen"
+	return _interior_activo and ((_entrada_interior_id == "casa_estudio" and estacion_id == "examen") or (_entrada_interior_id == "forja" and estacion_id == "forja_inspeccion"))
 
 
 func _interactuar_estacion_laboratorio(_jugador: Node, estacion_id: String) -> void:
