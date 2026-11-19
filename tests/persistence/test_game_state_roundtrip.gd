@@ -47,6 +47,10 @@ func _run() -> void:
 		"proceso_ium_equipado": {"id": "ium_test", "cantidad": 2},
 		"tiempo_mundo": {"dia": 4, "minuto": 510}
 	}
+	origen.world_state.flags["relaciones_sociales"] = {
+		"ivo": {"amistad": 12.0, "confianza": 8.0},
+		"nima": {"amistad": 34.0, "confianza": 21.0}
+	}
 	origen.world_state.flags["recuerdos_sociales"] = {
 		"ivo": [{
 			"tipo": "tema_conversacion", "clave": "viaje_garlia", "importancia": 3.5,
@@ -110,6 +114,17 @@ func _run() -> void:
 		errores.append("La consulta puntual de conocimientos expuso el estado interno modificable.")
 	var relaciones_sociales := RelationshipSystemScript.new() as RelationshipSystemService
 	relaciones_sociales._game_state = destino
+	var relacion_jugador_ivo := destino.obtener_relacion_social_jugador_npc("ivo")
+	if not is_equal_approx(float(relacion_jugador_ivo.get("amistad", 0.0)), 12.0):
+		errores.append("La lectura puntual de relación jugador-NPC no devolvió sus valores.")
+	relacion_jugador_ivo["amistad"] = 0.0
+	if not is_equal_approx(float(destino.obtener_relacion_social_jugador_npc("ivo").get("amistad", 0.0)), 12.0):
+		errores.append("La lectura puntual de relación jugador-NPC expuso el estado interno.")
+	var relacion_ivo_modificada := relaciones_sociales.modificar_relacion("ivo", {"amistad": 2.0})
+	if not is_equal_approx(float(relacion_ivo_modificada.get("amistad", 0.0)), 14.0):
+		errores.append("La modificación de relación jugador-NPC no usó el valor persistido.")
+	if not is_equal_approx(float(destino.obtener_relacion_social_jugador_npc("nima").get("amistad", 0.0)), 34.0):
+		errores.append("La escritura puntual de Ivo alteró la relación jugador-NPC de Nima.")
 	var recuerdos_ivo := destino.obtener_recuerdos_sociales_npc("ivo")
 	if recuerdos_ivo.size() != 1 or str((recuerdos_ivo[0] as Dictionary).get("clave", "")) != "viaje_garlia":
 		errores.append("La lectura puntual de recuerdos no devolvió el historial del NPC.")
