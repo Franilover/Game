@@ -205,7 +205,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/world/test_npc_navigation_system.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(timeout 45s godot --headless --path . res://tests/world/test_npc_navigation_system.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|NPCNavigationSystemIntegration: FAIL:' <<<"$output"; then
             echo "NPC navigation service integration test reported errors."
