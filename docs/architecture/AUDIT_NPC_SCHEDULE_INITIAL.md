@@ -263,3 +263,11 @@ No se cambió la búsqueda general por nombre ni se creó un registro global de 
 `_actualizar_rutina_interior()` prueba varios puntos de descanso o actividad dentro de una habitación. Antes consultaba `get_nodes_in_group("torres_game_npc")` dentro del bucle de puntos, repitiendo la obtención de la misma lista aunque durante esa selección no se modifica el grupo.
 
 Ahora obtiene una única instantánea del grupo antes de probar los puntos y reutiliza esa lista para comprobar ocupación. Se mantienen el orden de los candidatos, el filtro por tipo e instancia, la exclusión del NPC actual, la comparación de habitación y la distancia mínima de 38 px. No se guarda un registro persistente ni se reutiliza la lista entre ciclos: sólo dentro de esta decisión local.
+
+## 21. Reutilización de influencia de recuerdos al evaluar compañeros sociales
+
+`_seleccionar_companero_social()` usa la influencia de recuerdos en dos decisiones: primero para comprobar si cada integrante aceptaría un encuentro casual y después para ponderar al candidato. Antes, cuando no existía un motivo concreto, la misma dirección podía recorrer y copiar las memorias dos veces.
+
+Ahora cada influencia direccional se calcula una vez y se pasa a `_puede_iniciar_encuentro_social()`; el valor calculado también alimenta la puntuación final (pesos 0.7 para quien inicia y 0.45 para el candidato). Se conserva el orden de evaluación y el cortocircuito: si el iniciador no cumple el requisito, no se consulta la memoria del candidato; con un motivo concreto, la memoria se consulta sólo después de que ambos superan la validación, igual que antes para la puntuación.
+
+No se cachean recuerdos entre candidatos ni entre ciclos. Cada decisión usa el estado actual del sistema de relaciones.
