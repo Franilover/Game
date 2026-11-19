@@ -277,3 +277,11 @@ No se cachean recuerdos entre candidatos ni entre ciclos. Cada decisión usa el 
 En la selección de compañeros, la dirección del NPC que inicia el encuentro ahora conserva los resultados de sus consultas de promesas, asuntos pendientes y noticias compartibles. Si una promesa ya constituye un motivo concreto, se mantiene el cortocircuito original y no se consultan todavía los otros dos indicadores. Si el candidato supera los requisitos bilaterales, se completan únicamente los indicadores que faltan y se reutilizan para la puntuación (+16 promesa, +12 asunto, +8 noticia). Si el candidato se descarta, no se realizan consultas que antes sólo ocurrían durante la puntuación.
 
 La dirección inversa sigue usando la comprobación original de motivo concreto y su orden de prioridad. No se guardan resultados entre candidatos ni entre ciclos. El cambio evita repetir consultas de la dirección principal y mantiene la evaluación diferida de datos que sólo afectan a la puntuación.
+
+## 23. Consulta booleana de conocimientos nuevos compartibles
+
+La selección social sólo necesita saber si una persona tiene alguna noticia que pueda compartir y que la otra todavía no conozca. Antes, `_hay_noticia_compartible()` obtenía la lista completa de conocimientos compartibles y, por cada elemento, volvía a consultar los conocimientos del destinatario mediante `conoce_conocimiento_npc()`. Esa segunda consulta volvía a cargar y duplicar el conjunto de conversaciones.
+
+Se añadió `RelationshipSystemService.tiene_conocimiento_compartible_nuevo_npc()`: obtiene una vez los conocimientos de origen y destino, crea un conjunto local de claves conocidas y recorre los conocimientos de origen hasta encontrar uno nuevo que supere `puede_compartir_conocimiento_npc()`. Conserva las reglas existentes de privacidad, permiso de transmisión y confianza; la función que devuelve la lista completa de conocimientos compartibles sigue disponible sin cambios.
+
+El conjunto de claves vive sólo durante la consulta. No hay caché persistente ni cambios en los datos guardados.
