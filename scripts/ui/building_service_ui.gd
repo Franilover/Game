@@ -1027,7 +1027,8 @@ func _construir_biblioteca() -> void:
 	for categoria in categorias:
 		var id := str(categoria.get("id", ""))
 		var cantidad := _contar_descubrimientos(id)
-		var boton := _agregar_opcion_selector(lista, "%s\n%d" % [str(categoria.get("nombre", id)), cantidad], id == _seccion_biblioteca, _seleccionar_seccion_biblioteca.bind(id, detalle), grupo_selector)
+		var texto_boton := str(categoria.get("nombre", id)) if id == "garumis" else "%s\n%d" % [str(categoria.get("nombre", id)), cantidad]
+		var boton := _agregar_opcion_selector(lista, texto_boton, id == _seccion_biblioteca, _seleccionar_seccion_biblioteca.bind(id, detalle), grupo_selector)
 		boton.custom_minimum_size = Vector2(0.0, 58.0)
 	_mostrar_detalle_biblioteca(_seccion_biblioteca, detalle)
 	_agregar_texto("Los registros se actualizan automáticamente cuando descubres algo nuevo.")
