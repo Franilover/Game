@@ -244,3 +244,6 @@ Los dos usos ahora comparten esa evaluación:
 - La rutina normal de invitación aplica los efectos que le corresponden: persistir la caducidad o activar el metadato del NPC.
 
 No se agregó un sistema nuevo ni se alteraron las prioridades de rutinas, la franja del encuentro o las reglas de caducidad. La separación evita que una comprobación de disponibilidad modifique el estado del mundo.
+
+
+La evaluación del evento comunitario también se reutiliza ahora: el planificador calcula el evento una vez y pasa ese resultado al selector del encuentro privado. Se evita repetir la misma consulta de calendario en cada participante sin alterar la prioridad del evento ni sus condiciones.
