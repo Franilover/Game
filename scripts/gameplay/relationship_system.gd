@@ -822,12 +822,7 @@ func registrar_interaccion_entre_npc(
 		while historial.size() > 12:
 			historial.pop_front()
 		relacion["historial"] = historial
-	var datos := _obtener_datos_conversaciones_npc()
-	var relaciones_variant: Variant = datos.get("_relaciones_npc", {})
-	var relaciones: Dictionary = relaciones_variant.duplicate(true) if relaciones_variant is Dictionary else {}
-	relaciones[clave] = relacion.duplicate(true)
-	datos["_relaciones_npc"] = relaciones
-	_guardar_datos_conversaciones_npc(datos)
+	_guardar_relacion_npc(clave, relacion)
 	return relacion.duplicate(true)
 
 
@@ -838,11 +833,7 @@ func registrar_conocimiento_npc(personaje_id: String, conocimiento: Dictionary) 
 	var clave := str(conocimiento.get("clave", "")).strip_edges()
 	if id.is_empty() or clave.is_empty():
 		return false
-	var datos := _obtener_datos_conversaciones_npc()
-	var todos_variant: Variant = datos.get("_conocimientos_npc", {})
-	var todos: Dictionary = todos_variant.duplicate(true) if todos_variant is Dictionary else {}
-	var lista_variant: Variant = todos.get(id, [])
-	var lista: Array = lista_variant.duplicate(true) if lista_variant is Array else []
+	var lista := obtener_conocimientos_npc(id)
 	var indice := -1
 	for i in range(lista.size()):
 		if lista[i] is Dictionary and str((lista[i] as Dictionary).get("clave", "")) == clave:
@@ -890,9 +881,7 @@ func registrar_conocimiento_npc(personaje_id: String, conocimiento: Dictionary) 
 		lista.append(registro)
 	while lista.size() > 48:
 		lista.pop_front()
-	todos[id] = lista
-	datos["_conocimientos_npc"] = todos
-	_guardar_datos_conversaciones_npc(datos)
+	_guardar_conocimientos_npc(id, lista)
 	return true
 
 
