@@ -237,5 +237,5 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - La memoria diaria que usan las conversaciones de reunión se separó de `_aplicar_rutina()` en `_actualizar_resumen_diario_reunion()`, manteniendo las claves de metadatos existentes.
 - Nueva prueba de integración `tests/world/test_npc_schedule_context.tscn`: snapshot temporal y de NPC, fallback fuera del tick, conservación de actividad significativa y reinicio de memoria al cambiar de fecha. Añadida al workflow.
 - Se detectó y corrigió una colisión de nombre entre el acumulador de intervalo y la instantánea temporal (`_tiempo_actualizacion` / `_tiempo_mundo_actualizacion`). Las ejecuciones anteriores a esa corrección fallaron al cargar NPCScheduleSystem; no se cuentan como validación.
-- La validación final de la revisión actual está en curso en GitHub Actions; no se declara completa hasta que termine la suite y el análisis GDScript.
+- CI Godot 4.7: **46/46 pasos correctos, 0 fallos**, run [#44622633288](https://github.com/Franilover/Game/actions/runs/44622633288). GDScript Quality: **success**, run [#44622597880](https://github.com/Franilover/Game/actions/runs/44622597880).
 - Auditoría detallada: secciones 44–51 de `AUDIT_NPC_SCHEDULE_INITIAL.md`.
