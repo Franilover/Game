@@ -367,3 +367,10 @@ Se mantienen los mismos puntos y el mismo cálculo hash/modular que selecciona c
 Al forzar el regreso al hogar, `_aplicar_rutina()` eliminaba seis metadatos de agrupación y fase del castillo. La limpieza general inmediatamente posterior ya elimina esas mismas claves para cualquier rutina que no sea `reunion_nocturna_castillo`; por tanto, el bloque nocturno repetía exactamente el mismo trabajo.
 
 Se eliminó la primera eliminación redundante. La limpieza común sigue ejecutándose después de resolver la clave de rutina, por lo que se conservan las mismas condiciones y el mismo momento de eliminación.
+
+
+## 34. Regresión del traslado de NPC al salir de un edificio
+
+Se amplió `test_npc_building_entry_collision.gd` para cubrir `ReinoTorres.sacar_npc_del_interior()`. La prueba coloca al NPC en una habitación, simula un cambio de destino y comprueba que vuelve al contenedor exterior, aparece en el umbral correcto, permanece oculto/no interactuable y conserva desactivadas las colisiones exteriores hasta que el planificador reanude su ruta.
+
+La prueba complementa la cobertura previa de captura/restauración de capas y máscaras de colisión. No cambia el comportamiento de producción.
