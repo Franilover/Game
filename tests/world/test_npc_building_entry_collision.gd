@@ -60,6 +60,12 @@ func _run() -> void:
 	zona.call("sacar_npc_del_interior", npc)
 	if npc.get_parent() != contenedor_exterior:
 		errores.append("El NPC no regresó al contenedor exterior al cambiar de edificio.")
+	var entrada_panaderia: Dictionary = zona.call("_obtener_entrada_por_id", "panaderia")
+	var posicion_puerta_esperada: Vector2 = zona.to_global(
+		entrada_panaderia.get("pos", Vector2.ZERO)
+	) + Vector2(0.0, 28.0)
+	if npc.global_position.distance_to(posicion_puerta_esperada) > 0.1:
+		errores.append("El NPC no reapareció en el umbral exterior de su edificio anterior.")
 	if npc.visible or npc.is_in_group("interactable"):
 		errores.append("El NPC quedó visible o interactuable antes de reanudar su ruta.")
 	if npc.collision_layer != 0 or npc.collision_mask != 0:
