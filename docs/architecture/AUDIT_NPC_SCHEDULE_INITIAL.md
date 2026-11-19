@@ -350,6 +350,6 @@ También se reutiliza el nombre normalizado y el hogar de respaldo calculado al 
 
 `_actualizar_paseo_ambiental_exterior()` reconstruía un diccionario con los desplazamientos preferidos de ocho NPC cada vez que actualizaba sus paseos. Esos puntos son constantes de diseño y no dependen del estado del mundo.
 
-El catálogo se trasladó a `DESPLAZAMIENTOS_PASEO_EXTERIOR`, junto a los demás datos estáticos del planificador. Se conservaron los puntos, su orden y el algoritmo que elige el desplazamiento según NPC, fecha y tramo horario. Los NPC fuera del catálogo mantienen el mismo conjunto de posiciones de respaldo.
+El catálogo se trasladó a `DESPLAZAMIENTOS_PASEO_EXTERIOR`, junto a los demás datos estáticos del planificador. Se conservaron los puntos, su orden y el algoritmo que elige el desplazamiento según NPC, fecha y tramo horario. El conjunto de siete posiciones de respaldo también quedó en `DESPLAZAMIENTOS_PASEO_EXTERIOR_DEFAULT`, evitando reconstruirlo para NPC fuera del catálogo.
 
-La prueba de reglas compara los ocho recorridos con sus coordenadas originales. El cambio elimina reconstrucciones repetidas de datos sin modificar la selección ni la navegación.
+La prueba de reglas compara los ocho recorridos y el conjunto de respaldo con sus coordenadas originales. El cambio elimina reconstrucciones repetidas de datos sin modificar la selección ni la navegación.
