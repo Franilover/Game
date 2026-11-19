@@ -351,6 +351,8 @@ func _comprobar_desplazamiento_ocio(errores: Array[String]) -> void:
 	]
 	if not permitidos.has(primero):
 		errores.append("El desplazamiento de ocio debe usar uno de los puntos locales permitidos.")
+	if Rules.DESPLAZAMIENTOS_OCIO != permitidos:
+		errores.append("Cambió el catálogo de desplazamientos de ocio.")
 
 
 func _comprobar_desplazamiento_evento(errores: Array[String]) -> void:
@@ -375,6 +377,8 @@ func _comprobar_desplazamiento_evento(errores: Array[String]) -> void:
 		errores.append("Cada combinación de NPC y fecha debe producir un punto permitido.")
 	if not permitidos.has(primero):
 		errores.append("El desplazamiento de evento debe usar uno de los 16 puntos permitidos.")
+	if Rules.POSICIONES_EVENTO != permitidos:
+		errores.append("Cambió el catálogo de posiciones de eventos comunitarios.")
 
 func _comprobar_turnos_comercio(errores: Array[String]) -> void:
 	var libre := {"clave": "dia_libre", "actividad_clave": "pasear"}
