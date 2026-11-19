@@ -287,6 +287,39 @@ func _comprobar_respaldo_castillo(errores: Array[String]) -> void:
 		errores.append("A las 20:00 debe volver el destino del castillo.")
 
 
+
+func _comprobar_catalogo_ocio(errores: Array[String]) -> void:
+	var nombres: Array[String] = [
+		"elian", "bruna", "darven", "saira", "narel",
+		"mara", "ivo", "nima", "abel", "liam"
+	]
+	for nombre in nombres:
+		var catalogo: Dictionary = Rules.obtener_opciones_ocio_npc(nombre)
+		var opciones: Variant = catalogo.get("opciones", null)
+		if not opciones is Array:
+			errores.append("El catálogo de %s debe devolver una lista de opciones." % nombre)
+			continue
+		if (opciones as Array).size() != 3:
+			errores.append("El catálogo de %s debe conservar sus tres opciones." % nombre)
+		for opcion_variant in opciones as Array:
+			if not opcion_variant is Dictionary:
+				errores.append("Las opciones de %s deben ser diccionarios." % nombre)
+				continue
+			var opcion: Dictionary = opcion_variant
+			if str(opcion.get("id", "")).strip_edges().is_empty():
+				errores.append("Toda opción de %s debe tener identificador." % nombre)
+			if not opcion.get("necesidades", {}) is Dictionary:
+				errores.append("Las necesidades de %s deben ser un diccionario." % nombre)
+
+	var desconocido: Dictionary = Rules.obtener_opciones_ocio_npc("npc_inexistente")
+	if not (desconocido.get("opciones", []) as Array).is_empty():
+		errores.append("Un NPC sin catálogo no debe recibir actividades ajenas.")
+
+	var mayusculas: Dictionary = Rules.obtener_opciones_ocio_npc("ELIAN")
+	if not (mayusculas.get("opciones", []) as Array).is_empty():
+		errores.append("La normalización del nombre debe seguir en la capa llamadora.")
+
+
 func _comprobar_desplazamiento_ocio(errores: Array[String]) -> void:
 	var primero: Vector2 = Rules.obtener_desplazamiento_ocio("Mara", "1:2:3", 1)
 	var repetido: Vector2 = Rules.obtener_desplazamiento_ocio("Mara", "1:2:3", 1)
