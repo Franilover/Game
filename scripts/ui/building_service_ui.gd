@@ -81,9 +81,19 @@ func _crear_interfaz() -> void:
 	margen.add_theme_constant_override("margin_bottom", 12)
 	_panel.add_child(margen)
 
+	var scroll_contenido := ScrollContainer.new()
+	var alto_viewport := get_viewport_rect().size.y
+	scroll_contenido.custom_minimum_size = Vector2(0.0, minf(440.0, maxf(180.0, alto_viewport - 72.0)))
+	scroll_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_contenido.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	scroll_contenido.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
+	margen.add_child(scroll_contenido)
+
 	_contenido = VBoxContainer.new()
 	_contenido.add_theme_constant_override("separation", 7)
-	margen.add_child(_contenido)
+	_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_contenido.add_child(_contenido)
 
 
 func _actualizar() -> void:
@@ -548,6 +558,7 @@ func _construir_investigacion_herbolario() -> void:
 				continue
 			cantidad += 1
 			var boton := MenuLayout.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(objeto))
+			PIXEL_UI_THEME.apply(boton, false)
 			MenuLayout.agregar_cantidad(boton, maxi(1, int(objeto.get("cantidad", 1))))
 			boton.pressed.connect(_seleccionar_muestra_herbolario.bind(objeto.duplicate(true), icono, nombre_label, descripcion, estado))
 			lista.add_child(boton)
@@ -613,6 +624,7 @@ func _construir_procesamiento_herbolario() -> void:
 				seleccion_inicial = item_catalogo
 				id_inicial = item_id
 			var boton := MenuLayout.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(item_catalogo))
+			PIXEL_UI_THEME.apply(boton, false)
 			MenuLayout.agregar_cantidad(boton, _contar_item(item_id))
 			boton.pressed.connect(_mostrar_procesos_item_herbolario.bind(item_id, item_catalogo, detalle))
 			lista.add_child(boton)
