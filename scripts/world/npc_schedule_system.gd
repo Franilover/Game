@@ -64,6 +64,20 @@ const HOGARES_NPC: Dictionary = {
 	"nima": "vivienda_oeste_03"
 }
 
+# Posiciones estables de los residentes en la plaza; se reutilizan en cada rutina.
+const POSICIONES_PLAZA: Dictionary = {
+	"elian": Vector2(-72.0, 24.0),
+	"bruna": Vector2(64.0, 32.0),
+	"darven": Vector2(-24.0, -64.0),
+	"saira": Vector2(76.0, -52.0),
+	"narel": Vector2(-88.0, -48.0),
+	"abel": Vector2(12.0, 76.0),
+	"liam": Vector2(104.0, 20.0),
+	"mara": Vector2(-132.0, -28.0),
+	"ivo": Vector2(18.0, 132.0),
+	"nima": Vector2(132.0, -18.0)
+}
+
 const POSICIONES: Dictionary = {
 	"plaza": Vector2(0.0, 0.0),
 	"panaderia": Vector2(-360.0, -86.0),
@@ -828,24 +842,12 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		if posicion_absoluta_variant is Vector2:
 			destino_local = posicion_absoluta_variant
 		else:
-			var posiciones_plaza: Dictionary = {
-				"elian": Vector2(-72.0, 24.0),
-				"bruna": Vector2(64.0, 32.0),
-				"darven": Vector2(-24.0, -64.0),
-				"saira": Vector2(76.0, -52.0),
-				"narel": Vector2(-88.0, -48.0),
-				"abel": Vector2(12.0, 76.0),
-				"liam": Vector2(104.0, 20.0),
-				# Los tres habitantes locales ocupan sectores distintos del borde
-				# de la plaza; ninguno usa el punto central como destino por defecto.
-				"mara": Vector2(-132.0, -28.0),
-				"ivo": Vector2(18.0, 132.0),
-				"nima": Vector2(132.0, -18.0)
-			}
+			# Los tres habitantes locales ocupan sectores distintos del borde
+			# de la plaza; ninguno usa el punto central como destino por defecto.
 			var nombre_plaza := npc.get_nombre_visual().strip_edges().to_lower()
 			var posicion_plaza: Vector2
-			if posiciones_plaza.has(nombre_plaza):
-				posicion_plaza = posiciones_plaza[nombre_plaza]
+			if POSICIONES_PLAZA.has(nombre_plaza):
+				posicion_plaza = POSICIONES_PLAZA[nombre_plaza]
 			else:
 				# Los NPC adicionales también se reparten alrededor del perímetro,
 				# en vez de acumularse en el centro de la plaza.
