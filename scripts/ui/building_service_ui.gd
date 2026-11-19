@@ -695,7 +695,7 @@ func _mostrar_procesos_item_herbolario(item_id: String, item: Dictionary, detall
 		if not _receta_es_botanica(receta) or not _receta_usa_item(receta, item_id):
 			continue
 		procesos += 1
-		_agregar_tarjeta_receta_herbolario(receta)
+		_agregar_tarjeta_receta_herbolario(receta, detalle)
 	if procesos == 0:
 		var sin_procesos := Label.new()
 		sin_procesos.text = "No hay procesos registrados para este material."
@@ -738,10 +738,10 @@ func _receta_es_botanica(receta: Dictionary) -> bool:
 	return false
 
 
-func _agregar_tarjeta_receta_herbolario(receta: Dictionary) -> void:
+func _agregar_tarjeta_receta_herbolario(receta: Dictionary, contenedor: VBoxContainer) -> void:
 	var tarjeta := PanelContainer.new()
 	tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	_contenido.add_child(tarjeta)
+	contenedor.add_child(tarjeta)
 	PIXEL_UI_THEME.apply(tarjeta, false)
 	var columna := VBoxContainer.new()
 	columna.add_theme_constant_override("separation", 4)
