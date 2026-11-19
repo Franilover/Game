@@ -165,3 +165,12 @@ El horario provisional de Abel y Liam se movió a `NPCScheduleRules.seleccionar_
 La clase de simulación conserva el método de delegación. La prueba fija los cuatro límites: 07:59, 08:00, 19:59 y 20:00.
 
 **Validación:** pendiente de CI para el commit de esta extracción.
+
+
+## 12. Sexta extracción: desplazamiento determinista de ocio
+
+El cálculo del pequeño desplazamiento local de ocio se movió a `NPCScheduleRules.obtener_desplazamiento_ocio(nombre, clave_dia, tramo)`. Se conserva exactamente la lista de cinco posiciones y la firma hash usada para distribuir a los habitantes en la plaza.
+
+La prueba verifica que las mismas entradas producen el mismo desplazamiento y que el resultado pertenece a las posiciones locales permitidas. La capa de simulación sigue decidiendo cuándo aplicar el desplazamiento y sólo lo usa para actividades ubicadas en la plaza.
+
+**Validación:** pendiente de CI para el commit de esta extracción.
