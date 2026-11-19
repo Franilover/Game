@@ -1288,9 +1288,9 @@ func _esperar_desfase_cambio_rutina(npc: Creature, firma: String) -> bool:
 ## Se usa para escoger un puesto físico y probar la regla sin escenas.
 static func obtener_preferencias_mueble_actividad(actividad: String) -> Array[String]:
 	var texto := actividad.strip_edges().to_lower()
-	if texto.contains("dorm"):
+	if texto.contains("dorm") or texto.contains("descans"):
 		return ["cama", "litera"]
-	if texto.contains("sentar") or texto.contains("descans"):
+	if texto.contains("sentar"):
 		return ["silla", "asiento"]
 	if texto.contains("leer") or texto.contains("estudi") or texto.contains("investig") or texto.contains("observar") or texto.contains("nota") or texto.contains("informe"):
 		return ["mesa", "consulta", "estudio", "muestra"]
