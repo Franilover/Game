@@ -1162,6 +1162,31 @@ func guardar_recuerdos_sociales(recuerdos: Dictionary) -> void:
 	_al_cambio_guardable()
 
 
+## Lee los recuerdos de un solo habitante sin duplicar el historial de los demás.
+func obtener_recuerdos_sociales_npc(personaje_id: String) -> Array:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return []
+	var recuerdos_variant: Variant = world_state.flags.get("recuerdos_sociales", {})
+	if not recuerdos_variant is Dictionary:
+		return []
+	var lista_variant: Variant = (recuerdos_variant as Dictionary).get(id, [])
+	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
+## Reemplaza sólo el historial social del habitante indicado.
+func guardar_recuerdos_sociales_npc(personaje_id: String, recuerdos: Array) -> void:
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
+		return
+	var todos_variant: Variant = world_state.flags.get("recuerdos_sociales", {})
+	var todos: Dictionary = todos_variant if todos_variant is Dictionary else {}
+	var actualizados := todos.duplicate()
+	actualizados[id] = recuerdos.duplicate(true)
+	world_state.flags["recuerdos_sociales"] = actualizados
+	_al_cambio_guardable()
+
+
 func establecer_proceso_ium_equipado(proceso: Dictionary) -> void:
 	world_state.flags["proceso_ium_equipado"] = proceso.duplicate(true)
 
