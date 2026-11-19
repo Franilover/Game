@@ -16,6 +16,7 @@ func _ready() -> void:
 	_comprobar_hora("abc", -1, errores)
 	_comprobar_hora("12", -1, errores)
 	_comprobar_hora("12:30:45", 750, errores)
+	_comprobar_horario_nocturno(errores)
 
 	_comprobar_seleccion_rutina(errores)
 	_comprobar_rutinas_dia_libre(errores)
@@ -50,6 +51,24 @@ func _ready() -> void:
 	for error in errores:
 		push_error("NPCScheduleRules: FAIL: " + error)
 	get_tree().quit(1)
+
+
+func _comprobar_horario_nocturno(errores: Array[String]) -> void:
+	var casos: Array[Dictionary] = [
+		{"minutos": -1, "esperado": true},
+		{"minutos": 0, "esperado": true},
+		{"minutos": 359, "esperado": true},
+		{"minutos": 360, "esperado": false},
+		{"minutos": 1259, "esperado": false},
+		{"minutos": 1260, "esperado": true},
+		{"minutos": 1439, "esperado": true},
+		{"minutos": 1440, "esperado": true}
+	]
+	for caso in casos:
+		var minutos := int(caso["minutos"])
+		var esperado := bool(caso["esperado"])
+		if Rules.es_horario_nocturno(minutos) != esperado:
+			errores.append("es_horario_nocturno(%d) debe ser %s." % [minutos, str(esperado)])
 
 
 func _comprobar_hora(valor: Variant, esperado: int, errores: Array[String]) -> void:
