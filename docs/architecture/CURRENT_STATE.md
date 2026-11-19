@@ -1104,3 +1104,10 @@ Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_tran
 - Si faltan materiales, la receta está mal formada o el resultado no cabe completo, no cambia ningún slot.
 - InventoryController.fabricar aplica el input gate y emite una sola actualización de inventario tras confirmar.
 - Regresión: tests/inventory/test_inventory_crafting_transaction.tscn.
+
+## Contrato de uso de objetos — 2026-11-19
+
+- El controlador valida el índice real del inventario incluso cuando la interfaz entrega datos enriquecidos del objeto.
+- Los consumibles no alimenticios sólo se usan si al menos un efecto tiene margen aplicable; se retira el objeto antes de mutar recursos.
+- Los alimentos se consumen aunque vida, Eterium y stamina estén al máximo, manteniendo el comportamiento de juego.
+- Regresión: tests/inventory/test_inventory_use_transaction.tscn.
