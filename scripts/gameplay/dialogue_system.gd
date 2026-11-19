@@ -75,6 +75,14 @@ var _estilo_panel_dialogo_normal: StyleBox = null
 
 ## Las escenas usan la misma tipografía y color de texto del diálogo habitual,
 ## pero una superficie de botón para distinguir el cuadro sin perder legibilidad.
+func _aplicar_superficie_button(panel: PanelContainer) -> void:
+	if not is_instance_valid(panel):
+		return
+	var superficie := PIXEL_UI_THEME.button_surface_style()
+	if superficie != null:
+		panel.add_theme_stylebox_override("panel", superficie.duplicate())
+
+
 func configurar_estilo_cinematica(activar: bool) -> void:
 	if not is_instance_valid(dialogue_panel):
 		_crear_interfaz()
@@ -3160,6 +3168,7 @@ func _abrir_tienda_mercado() -> void:
 	_tienda_mercado.configurar(_fuente, _inventario, world_items, tienda_edificio)
 	_tienda_mercado.solicitar_cierre.connect(_cerrar_tienda_mercado)
 	dialogue_panel.add_child(_tienda_mercado)
+	_aplicar_superficie_button(_tienda_mercado)
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = false
 
@@ -3573,19 +3582,6 @@ func _crear_interfaz() -> void:
 	dialogue_panel.clip_contents = false
 	dialogue_panel.z_as_relative = false
 
-	var style := StyleBoxFlat.new()
-	style.bg_color = Color(0.075, 0.05, 0.032, 0.97)
-	style.border_color = Color(0.58, 0.43, 0.24, 1.0)
-	style.set_border_width_all(2)
-	style.corner_radius_top_left = 6
-	style.corner_radius_top_right = 6
-	style.corner_radius_bottom_left = 6
-	style.corner_radius_bottom_right = 6
-
-	dialogue_panel.add_theme_stylebox_override(
-		"panel",
-		style
-	)
 
 	var margin := MarginContainer.new()
 	_dialogue_margin = margin
@@ -3845,7 +3841,10 @@ func _crear_interfaz() -> void:
 	selector_scroll.add_child(_selector_items_grid)
 
 	ui_root.add_child(dialogue_panel)
-	PIXEL_UI_THEME.apply(dialogue_panel)
+	PIXEL_UI_THEME.apply(dialogue_panel, false)
+	_aplicar_superficie_button(dialogue_panel)
+	_aplicar_superficie_button(_selector_conversacion)
+	_aplicar_superficie_button(_selector_items)
 	dialogue_panel.visible = false
 	if not get_viewport().size_changed.is_connected(_adaptar_panel_dialogo):
 		get_viewport().size_changed.connect(_adaptar_panel_dialogo)
