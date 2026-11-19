@@ -278,3 +278,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - `ReinoTorres.sacar_npc_del_interior()` queda como fuente única de la posición del umbral; se elimina el recálculo duplicado del planificador.
 - `test_npc_building_entry_collision` ejercita el helper real y comprueba umbral, reparentado, metadatos, visibilidad, interacción y colisiones.
 - CI Godot 4.7: **48/48 pasos, 0 fallos** ([run #44628441771](https://github.com/Franilover/Game/actions/runs/44628441771)); GDScript Quality: **success** ([run #44628441413](https://github.com/Franilover/Game/actions/runs/44628441413)).
+
+
+## Resolución del destino de rutina (2026-11-19)
+
+- Extraído `_resolver_destino_rutina_local()` como cálculo de coordenadas sin efectos secundarios; recibe la variación de posición ya tipada.
+- Se conservan hogar personalizado, umbral de edificio, posición absoluta de plaza, anclas por habitante, variaciones individuales y perímetro de 118 px para NPC adicionales.
+- `test_npc_schedule_context` cubre los cinco casos de selección de destino.
+- CI Godot 4.7: **48/48 pasos, 0 fallos** ([run #44628969650](https://github.com/Franilover/Game/actions/runs/44628969650)); GDScript Quality: **success** ([run #44628969766](https://github.com/Franilover/Game/actions/runs/44628969766)).
