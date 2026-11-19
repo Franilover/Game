@@ -303,3 +303,11 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Las conversaciones ambientales mantienen su contrato de pausa temporal y conservación de ruta.
 - `test_npc_schedule_context` comprueba la cancelación de una ruta real y la conservación del siguiente horario.
 - CI Godot 4.7 y GDScript Quality pendientes.
+
+
+### Ampliación: regresión de reanudación
+
+- La prueba de cinemática verifica ahora también que el paseo pendiente se reanude al terminar la interrupción.
+- Se valida el contrato con `CreatureMovement` real, el contenedor `Habitacion_panaderia` y la misma hora programada.
+- Se comprueba que el horario pendiente no cambie al reanudar.
+- CI Godot 4.7 y GDScript Quality pendientes.
