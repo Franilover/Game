@@ -130,6 +130,8 @@ func _actualizar() -> void:
 			"herbolario": titulo.text = "HERBOLARIO"
 			"biblioteca": titulo.text = "BIBLIOTECA"
 			"centro_expediciones": titulo.text = "GREMIO DE AVENTUREROS"
+			"taberna": titulo.text = "TABERNA"
+			"escuela": titulo.text = "ESCUELA DE OFICIOS"
 			"clinica": titulo.text = "CLÍNICA"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
@@ -152,6 +154,8 @@ func _actualizar() -> void:
 		"herbolario": _construir_investigacion_herbolario()
 		"biblioteca": _construir_biblioteca()
 		"centro_expediciones": _construir_centro_expediciones()
+		"taberna": _construir_taberna()
+		"escuela": _construir_escuela()
 		"clinica": _construir_clinica()
 
 	if _tipo in ["cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
@@ -1157,6 +1161,89 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 			]
 			detalle.add_child(resumen)
 			_agregar_boton_detalle(detalle, "Consultar registros", _abrir_enciclopedia.bind("biomas"))
+
+
+func _construir_taberna() -> void:
+	_agregar_texto("Un lugar para descansar un momento, escuchar a los viajeros y enterarte de lo que ocurre en Torres.")
+	var layout := _crear_selector_edificio(142.0, 260.0)
+	var lista := layout["list_content"] as GridContainer
+	lista.columns = 1
+	var grupo := ButtonGroup.new()
+	var detalle := layout["detail_content"] as VBoxContainer
+	_agregar_opcion_selector(lista, "Sala común", true, _mostrar_detalle_taberna.bind("sala", detalle), grupo)
+	_agregar_opcion_selector(lista, "Voces de Torres", false, _mostrar_detalle_taberna.bind("voces", detalle), grupo)
+	_mostrar_detalle_taberna("sala", detalle)
+
+
+func _mostrar_detalle_taberna(seccion: String, detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	if seccion == "voces":
+		_agregar_titulo_detalle(detalle, "Voces de Torres")
+		var conocidos := 0
+		for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
+			if not is_instance_valid(nodo) or not nodo is Creature:
+				continue
+			var npc := nodo as Creature
+			if not npc.is_alive:
+				continue
+			var nombre := npc.get_nombre_visual().strip_edges()
+			if nombre.is_empty():
+				continue
+			var linea := Label.new()
+			linea.text = nombre
+			linea.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+			detalle.add_child(linea)
+			conocidos += 1
+		if conocidos == 0:
+			_agregar_texto_detalle(detalle, "Todavía no hay viajeros conocidos para registrar.")
+		else:
+			_agregar_texto_detalle(detalle, "Habitantes y viajeros conocidos en Torres: %d." % conocidos)
+	else:
+		_agregar_titulo_detalle(detalle, "Sala común")
+		_agregar_texto_detalle(detalle, "Aquí se reúnen habitantes, comerciantes y aventureros. Es un buen lugar para buscar conversaciones y conocer las noticias de la ciudad.")
+		_agregar_texto_detalle(detalle, "Las conversaciones y encargos especiales podrán ampliarse a medida que se incorporen actividades sociales.")
+
+
+func _construir_escuela() -> void:
+	_agregar_texto("Un espacio para aprender los oficios y consultar apuntes prácticos antes de ponerse manos a la obra.")
+	var layout := _crear_selector_edificio(142.0, 260.0)
+	var lista := layout["list_content"] as GridContainer
+	lista.columns = 1
+	var grupo := ButtonGroup.new()
+	var detalle := layout["detail_content"] as VBoxContainer
+	var materias := [
+		{"id":"exploracion", "nombre":"Exploración"},
+		{"id":"botanica", "nombre":"Botánica"},
+		{"id":"oficios", "nombre":"Oficios"}
+	]
+	for materia in materias:
+		_agregar_opcion_selector(lista, str(materia.nombre), materia.id == "exploracion", _mostrar_leccion_escuela.bind(str(materia.id), detalle), grupo)
+	_mostrar_leccion_escuela("exploracion", detalle)
+
+
+func _mostrar_leccion_escuela(materia: String, detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	match materia:
+		"botanica":
+			_agregar_titulo_detalle(detalle, "Botánica")
+			_agregar_texto_detalle(detalle, "El vivero permite plantar semillas, cuidar la humedad de la tierra y recoger las flores cuando hayan crecido.")
+			_agregar_texto_detalle(detalle, "Para estudiar materiales vegetales, utiliza las mesas de investigación y procesamiento del Herbolario.")
+		"oficios":
+			_agregar_titulo_detalle(detalle, "Oficios")
+			_agregar_texto_detalle(detalle, "La Forja sirve para reparar e inspeccionar armas y herramientas. La Carpintería permite encargar muebles usando madera y monedas.")
+			_agregar_texto_detalle(detalle, "Cada taller tiene sus propias estaciones; acércate a ellas para consultar sus servicios.")
+		_:
+			_agregar_titulo_detalle(detalle, "Exploración")
+			_agregar_texto_detalle(detalle, "Prepara tus Garumis y revisa el espacio disponible en el inventario antes de salir.")
+			_agregar_texto_detalle(detalle, "El Gremio de Aventureros permite consultar rutas, iniciar viajes y revisar los descubrimientos registrados.")
+		_agregar_texto_detalle(detalle, "Estas lecciones son apuntes de consulta: no consumen objetos ni modifican atributos del personaje.")
+
+
+func _agregar_texto_detalle(contenedor: VBoxContainer, texto: String) -> void:
+	var etiqueta := Label.new()
+	etiqueta.text = texto
+	etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	contenedor.add_child(etiqueta)
 
 
 func _construir_clinica() -> void:
