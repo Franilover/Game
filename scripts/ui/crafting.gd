@@ -28,7 +28,7 @@ func configurar(inventario: Node, world_items: GarliaWorldItems = null) -> void:
 		_recetas = _world_items.obtener_recetas()
 		if _world_items.recetas_disponibles:
 			call_deferred("_renderizar_recetas")
-	else:
+	elif is_instance_valid(_estado):
 		_estado.text = "No se ha conectado el catálogo compartido."
 
 
