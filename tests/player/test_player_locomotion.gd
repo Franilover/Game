@@ -16,6 +16,7 @@ func _ready() -> void:
 func _run() -> void:
 	var errores: Array[String] = []
 	_probar_intensidad_analogica(errores)
+	_probar_politica_multiplicador_velocidad(errores)
 	_probar_limite_direccion_y_estado(errores)
 	_probar_coordinador(errores)
 	_probar_recarga_dash_reutilizable(errores)
@@ -47,6 +48,19 @@ func _probar_intensidad_analogica(errores: Array[String]) -> void:
 		errores.append("El jugador perdió su orientación al dejar de moverse.")
 	if movement.state != MovementScript.State.IDLE:
 		errores.append("La ausencia de input no produjo estado IDLE.")
+
+
+func _probar_politica_multiplicador_velocidad(errores: Array[String]) -> void:
+	var movement = MovementScript.new()
+	if not is_equal_approx(movement.calcular_multiplicador_velocidad(1.5, false, false, 2.0), 1.0):
+		errores.append("Caminar alteró el multiplicador base.")
+	if not is_equal_approx(movement.calcular_multiplicador_velocidad(1.5, true, false, 2.0), 1.5):
+		errores.append("Correr no aplicó el multiplicador común.")
+	if not is_equal_approx(movement.calcular_multiplicador_velocidad(1.5, false, true, 1.8), 2.7):
+		errores.append("El sprint de Eterium no combinó ambos multiplicadores.")
+	# El sprint tiene prioridad sobre el estado de carrera normal.
+	if not is_equal_approx(movement.calcular_multiplicador_velocidad(1.5, true, true, 1.8), 2.7):
+		errores.append("La política de sprint cambió cuando correr también estaba solicitado.")
 
 
 func _probar_limite_direccion_y_estado(errores: Array[String]) -> void:
