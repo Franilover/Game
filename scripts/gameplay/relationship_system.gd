@@ -79,14 +79,13 @@ func obtener_reglas_sociales() -> Dictionary:
 
 
 func obtener_relacion(personaje_id: String) -> Dictionary:
-	if personaje_id.is_empty():
+	var id := personaje_id.strip_edges()
+	if id.is_empty():
 		return {}
 
-	var relaciones := _obtener_relaciones_guardadas()
-	if relaciones.has(personaje_id):
-		var guardada: Variant = relaciones.get(personaje_id, {})
-		if guardada is Dictionary:
-			return (guardada as Dictionary).duplicate(true)
+	var guardada := _obtener_relacion_guardada(id)
+	if not guardada.is_empty():
+		return guardada
 
 	var personaje: Dictionary = WorldData.obtener_personaje_game_por_id(personaje_id)
 	if personaje.is_empty():
@@ -103,8 +102,7 @@ func obtener_relacion(personaje_id: String) -> Dictionary:
 		"afecto": float(regla.get("afecto_inicial", 0.0))
 	}
 
-	relaciones[personaje_id] = nueva
-	_guardar_relaciones(relaciones)
+	_guardar_relacion_guardada(personaje_id, nueva)
 	return nueva.duplicate(true)
 
 
@@ -151,9 +149,7 @@ func modificar_relacion(
 				100.0
 			)
 
-	var relaciones := _obtener_relaciones_guardadas()
-	relaciones[personaje_id] = relacion.duplicate(true)
-	_guardar_relaciones(relaciones)
+	_guardar_relacion_guardada(personaje_id, relacion)
 
 	if not recuerdo.is_empty():
 		registrar_recuerdo(personaje_id, recuerdo)
@@ -231,9 +227,7 @@ func registrar_evento_social(
 	if not contador.is_empty():
 		tendencias[contador] = int(tendencias.get(contador, 0)) + 1
 		resultado["_tendencias_sociales"] = tendencias
-		var relaciones_actuales := _obtener_relaciones_guardadas()
-		relaciones_actuales[id] = resultado.duplicate(true)
-		_guardar_relaciones(relaciones_actuales)
+		_guardar_relacion_guardada(id, resultado)
 	return resultado
 
 
@@ -285,9 +279,7 @@ func registrar_dialogo(personaje_id: String, clave: String) -> Dictionary:
 		return {}
 
 	relacion_actualizada["_ultimo_dialogo_dia"] = dia_actual
-	var relaciones := _obtener_relaciones_guardadas()
-	relaciones[id] = relacion_actualizada.duplicate(true)
-	_guardar_relaciones(relaciones)
+	_guardar_relacion_guardada(id, relacion_actualizada)
 	return relacion_actualizada
 
 
@@ -700,9 +692,7 @@ func registrar_variante_dialogo_mostrada(
 			break
 		vistas.erase(claves[0])
 	relacion["_variantes_dialogo_vistas"] = vistas
-	var relaciones := _obtener_relaciones_guardadas()
-	relaciones[id] = relacion.duplicate(true)
-	_guardar_relaciones(relaciones)
+	_guardar_relacion_guardada(id, relacion)
 	return true
 
 
@@ -1556,15 +1546,34 @@ func _guardar_lista_conversaciones_npc(clave: String, metodo: String, lista: Arr
 	_guardar_datos_conversaciones_npc(datos)
 
 
-func _obtener_relaciones_guardadas() -> Dictionary:
-	var variant: Variant = _game_state.call("obtener_relaciones_sociales")
-	if variant is Dictionary:
-		return (variant as Dictionary).duplicate(true)
-	return {}
+func _obtener_relacion_guardada(personaje_id: String) -> Dictionary:
+	if _game_state == null or not is_instance_valid(_game_state):
+		return {}
+	if _game_state.has_method("obtener_relacion_social_jugador_npc"):
+		var resultado: Variant = _game_state.call("obtener_relacion_social_jugador_npc", personaje_id)
+		return resultado if resultado is Dictionary else {}
+	if not _game_state.has_method("obtener_relaciones_sociales"):
+		return {}
+	var todas_variant: Variant = _game_state.call("obtener_relaciones_sociales")
+	if not todas_variant is Dictionary:
+		return {}
+	var relacion_variant: Variant = (todas_variant as Dictionary).get(personaje_id, {})
+	return (relacion_variant as Dictionary).duplicate(true) if relacion_variant is Dictionary else {}
 
 
-func _guardar_relaciones(relaciones: Dictionary) -> void:
-	_game_state.call("guardar_relaciones_sociales", relaciones)
+func _guardar_relacion_guardada(personaje_id: String, relacion: Dictionary) -> void:
+	if _game_state == null or not is_instance_valid(_game_state):
+		return
+	if _game_state.has_method("guardar_relacion_social_jugador_npc"):
+		_game_state.call("guardar_relacion_social_jugador_npc", personaje_id, relacion)
+		return
+	if not _game_state.has_method("obtener_relaciones_sociales") or not _game_state.has_method("guardar_relaciones_sociales"):
+		return
+	var todas_variant: Variant = _game_state.call("obtener_relaciones_sociales")
+	var todas: Dictionary = todas_variant if todas_variant is Dictionary else {}
+	var actualizadas := todas.duplicate(true)
+	actualizadas[personaje_id] = relacion.duplicate(true)
+	_game_state.call("guardar_relaciones_sociales", actualizadas)
 
 
 func _obtener_recuerdos_personaje(personaje_id: String) -> Array:
