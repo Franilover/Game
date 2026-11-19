@@ -433,37 +433,11 @@ func _craftear(receta: Dictionary) -> void:
 	objeto_resultado["cantidad"] = output_cantidad
 	objeto_resultado["max_stack"] = maxi(1, int(objeto_resultado.get("max_stack", 1)))
 
-	# Primero añadimos el resultado. agregar_objeto es atómico si no hay espacio,
-	# así evitamos consumir materiales cuando el resultado no puede entrar.
-	if not inventario.agregar_objeto(objeto_resultado):
-		_estado.text = "No hay espacio para el resultado."
+	# La fabricación se confirma en una única transacción del runtime.
+	# Si faltan ingredientes o no cabe el resultado, no se modifica ningún slot.
+	if not inventario.has_method("fabricar") or not inventario.fabricar(ingredientes, objeto_resultado):
+		_estado.text = "No se pudo completar la fabricación: revisa los materiales y el espacio."
 		return
-
-	# Los materiales ya fueron comprobados; ahora se consumen de los slots reales.
-	var ingredientes := receta.get("ingredientes", []) as Array
-
-	for ingrediente_variant in ingredientes:
-		var ingrediente := ingrediente_variant as Dictionary
-		var item_id := str(ingrediente.get("item_id", ""))
-		var restante := maxi(1, int(ingrediente.get("cantidad", 1)))
-
-		for indice in range(inventario.obtener_objetos().size()):
-			if restante <= 0:
-				break
-
-			var objeto: Dictionary = inventario.obtener_objeto(indice)
-			if objeto.is_empty():
-				continue
-
-			var actual_id := str(objeto.get("item_id", objeto.get("id", "")))
-			if actual_id != item_id:
-				continue
-
-			var disponible := maxi(1, int(objeto.get("cantidad", 1)))
-			var quitar := mini(restante, disponible)
-
-			if inventario.quitar_cantidad(indice, quitar):
-				restante -= quitar
 
 	Events.notification_pushed.emit(
 		"Creaste " + str(objeto_resultado.get("nombre", "Objeto"))
