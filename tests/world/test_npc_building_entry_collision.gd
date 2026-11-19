@@ -45,6 +45,7 @@ func _run() -> void:
 	add_child(npc_no_interactivo)
 	add_child(npc_interactivo)
 	await get_tree().process_frame
+	npc_no_interactivo.remove_from_group("interactable")
 	zona.call("_ocultar_npcs_exteriores")
 	if npc_no_interactivo.visible or npc_interactivo.visible:
 		errores.append("La entrada al interior no ocultó todos los NPC exteriores.")
@@ -60,6 +61,7 @@ func _run() -> void:
 	npc_nuevo.add_to_group("torres_game_npc")
 	add_child(npc_nuevo)
 	await get_tree().process_frame
+	npc_nuevo.remove_from_group("interactable")
 	zona.set("_interior_activo", true)
 	zona.call("registrar_npc_materializado", npc_nuevo)
 	if npc_nuevo.visible or npc_nuevo.is_in_group("interactable"):
