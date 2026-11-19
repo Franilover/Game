@@ -92,7 +92,7 @@ func _run() -> void:
 	npc_colectivo.add_to_group("interactable")
 	habitacion.add_child(npc_colectivo)
 	await get_tree().process_frame
-	zona.call("_devolver_npcs_del_interior_al_exterior")
+	zona.call("_devolver_npcs_del_interior_al_exterior", [npc_colectivo])
 	if npc_colectivo.get_parent() != contenedor_exterior:
 		errores.append("La salida completa no devolvió el NPC al contenedor exterior.")
 	if npc_colectivo.visible or npc_colectivo.is_in_group("interactable"):
