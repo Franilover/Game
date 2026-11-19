@@ -302,10 +302,12 @@ func _process(_delta: float) -> void:
 	if not is_instance_valid(_jugador) or not _interior_activo:
 		return
 	var posicion_local := to_local(_jugador.global_position)
-	posicion_local.x = clampf(posicion_local.x, -INTERIOR_MEDIO_ANCHO + 30.0, INTERIOR_MEDIO_ANCHO - 30.0)
-	posicion_local.y = clampf(posicion_local.y, -INTERIOR_MEDIO_ALTO + 30.0, INTERIOR_MEDIO_ALTO - 40.0)
+	var mitad_ancho := _interior_ancho_actual / 2.0
+	var mitad_alto := _interior_alto_actual / 2.0
+	posicion_local.x = clampf(posicion_local.x, -mitad_ancho + 30.0, mitad_ancho - 30.0)
+	posicion_local.y = clampf(posicion_local.y, -mitad_alto + 30.0, mitad_alto - 40.0)
 	_jugador.global_position = to_global(posicion_local)
-	var cerca_salida := posicion_local.y >= INTERIOR_MEDIO_ALTO - 60.0 \
+	var cerca_salida := posicion_local.y >= mitad_alto - 60.0 \
 		and posicion_local.x >= -12.0 \
 		and posicion_local.x <= 132.0
 	if cerca_salida:
