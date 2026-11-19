@@ -521,4 +521,13 @@ La escena se incorpora al workflow de regresión headless. Esta prueba cubre el 
 
 Se conservan los contratos: mismo grupo y padre, sólo criaturas vivas, exclusión de NPC con el mismo edificio objetivo, radio de separación de 34 px, cesión de paso a 27 px y prioridad lateral estable por ID. La prueba `test_creature_movement_npc_safety` ahora comprueba además que un NPC lejano no altere el rumbo y que a 34 px exactos no se active la separación.
 
-La mejora reduce raíces cuadradas y normalizaciones innecesarias en la comprobación de cada pareja; no cambia el algoritmo de vecinos ni elimina la búsqueda de grupo. Validación CI pendiente para este cambio.
+La mejora reduce raíces cuadradas y normalizaciones innecesarias en la comprobación de cada pareja; no cambia el algoritmo de vecinos ni elimina la búsqueda de grupo. Validación: Godot 4.7 46/46 pasos correctos y GDScript Quality success; ver sección 53.
+
+
+## 53. Corrección final de solapamientos: filtro por distancia al cuadrado
+
+`_separar_npcs_superpuestos()` también recorría las parejas de NPC y calculaba una distancia completa antes de saber si había solapamiento. Ahora compara primero `length_squared()` con el cuadrado de la distancia mínima (28 px) y calcula la raíz sólo para parejas que necesitan corrección. La referencia al padre y el umbral se calculan una vez por NPC/llamada, respectivamente.
+
+Se conserva la separación simétrica, el desplazamiento determinista para posiciones idénticas, los filtros de visibilidad/actividad y el límite de 28 px. La prueba de seguridad de movimiento ahora ejecuta la corrección con dos NPC superpuestos y verifica que recuperan la distancia mínima.
+
+**Validación de la optimización anterior:** Godot 4.7 46/46 pasos correctos, 0 fallos en [run #44623203556](https://github.com/Franilover/Game/actions/runs/44623203556); GDScript Quality success en [run #44623203373](https://github.com/Franilover/Game/actions/runs/44623203373). La nueva corrección y su caso adicional están pendientes de CI.
