@@ -16,6 +16,7 @@ const COSTE_CAMINO_TIERRA := 1.0
 const COSTE_OTRO_TERRENO := 1.55
 # Espera breve para agrupar varios cambios de posición/tamaño en una reconstrucción.
 const ESPERA_RECONSTRUCCION_NAVEGACION := 1.0
+const INTERVALO_ACTUALIZACION := 0.5
 
 var _zona: Node2D = null
 var _terreno_visual: Node = null
