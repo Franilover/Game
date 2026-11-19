@@ -34,6 +34,7 @@ var _jugador_fisica_previa := true
 var _jugador_input_previo := true
 var _jugador_unhandled_previo := true
 var _herramienta_seleccionada := -1
+var _bancal_seleccionado := "BancalOeste"
 
 
 func configurar(tipo: String, inventario: InventoryController, world_items: GarliaWorldItems, jugador: Node = null) -> void:
@@ -148,6 +149,12 @@ func _actualizar() -> void:
 	cerrar.pressed.connect(cerrar_interfaz)
 	_contenido.add_child(cerrar)
 	PIXEL_UI_THEME.apply(cerrar, false)
+	call_deferred("_ajustar_menu_al_viewport")
+
+
+func _ajustar_menu_al_viewport() -> void:
+	if is_instance_valid(_panel) and _panel.is_inside_tree():
+		MENU_LAYOUT.vigilar_panel_centrado(_panel)
 
 
 func _construir_forja() -> void:
@@ -455,49 +462,127 @@ func _encargar_mueble(mueble_id: String) -> void:
 
 
 func _construir_vivero() -> void:
-	_panel.custom_minimum_size = Vector2(520, 0)
+	_panel.custom_minimum_size = Vector2(590, 0)
 	_agregar_texto("CUIDADO DE CULTIVOS")
-	_agregar_texto("Revisa los bancales, administra el agua y guarda tus semillas y herramientas en el cofre del vivero.")
+	_agregar_texto("Selecciona un bancal para revisar su cultivo, humedad y cuidados.")
+	var nombres := ["BancalOeste", "BancalCentro", "BancalEste", "BancalSurOeste", "BancalSurCentro"]
+	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 184.0, 268.0, 9)
+	var lista := layout["list_content"] as GridContainer
+	var panel_lista := layout["list_panel"] as PanelContainer
+	var panel_detalle := layout["detail_panel"] as PanelContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	PIXEL_UI_THEME.apply(panel_lista, false)
+	PIXEL_UI_THEME.apply(panel_detalle, false)
+
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
-	var nombres := ["BancalOeste", "BancalCentro", "BancalEste", "BancalSurOeste", "BancalSurCentro"]
-	var rejilla := GridContainer.new()
-	rejilla.columns = 2
-	rejilla.add_theme_constant_override("h_separation", 8)
-	rejilla.add_theme_constant_override("v_separation", 8)
-	_contenido.add_child(rejilla)
+	var regadera := _obtener_regadera_en_manos()
+	var agua := int(regadera.get("agua", -1))
+	var subtitulo_lista := Label.new()
+	subtitulo_lista.text = "BANCALES"
+	subtitulo_lista.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	panel_lista.add_child(subtitulo_lista)
+
+	var cantidad_ocupados := 0
 	for nombre in nombres:
 		var registro: Variant = estados.get(nombre, {})
 		var cultivo: Dictionary = registro if registro is Dictionary else {}
-		var humedo := bool(cultivo.get("humedo", false)) if not cultivo.is_empty() else bool(registro)
-		var tarjeta := PanelContainer.new()
-		tarjeta.custom_minimum_size = Vector2(220, 64)
-		rejilla.add_child(tarjeta)
-		PIXEL_UI_THEME.apply(tarjeta, false)
-		var fila := HBoxContainer.new()
-		fila.add_theme_constant_override("separation", 8)
-		tarjeta.add_child(fila)
-		var indicador := ColorRect.new()
-		indicador.custom_minimum_size = Vector2(10, 10)
-		indicador.color = Color("#527F91") if humedo else Color("#765039")
-		fila.add_child(indicador)
-		var etiqueta := Label.new()
-		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		var estado_texto := "Húmedo" if humedo else "Seco"
-		if not cultivo.is_empty():
-			estado_texto += " · %s · Riegos %d/2" % [str(cultivo.get("nombre", "Cultivo")), int(cultivo.get("riegos", 0))]
-		etiqueta.text = "%s\n%s" % [nombre.replace("Bancal", "Bancal "), estado_texto]
-		fila.add_child(etiqueta)
-	var regadera := _obtener_regadera_en_manos()
-	var agua := int(regadera.get("agua", -1))
-	_agregar_texto("Regadera en mano: %s" % ("Agua %d/4" % agua if agua >= 0 else "No detectada"))
-	_agregar_texto("Usa una semilla desde el inventario junto a un bancal vacío. Después equipa la regadera y riégala una vez por día; cuando madure, interactúa para recoger la flor.")
+		if not cultivo.is_empty() and str(cultivo.get("nombre", "")).strip_edges() != "":
+			cantidad_ocupados += 1
+		var boton := Button.new()
+		boton.custom_minimum_size = Vector2(52, 52)
+		boton.toggle_mode = true
+		boton.button_pressed = nombre == _bancal_seleccionado
+		boton.text = str(nombres.find(nombre) + 1)
+		boton.tooltip_text = nombre.replace("Bancal", "Bancal ")
+		boton.pressed.connect(_seleccionar_bancal_vivero.bind(nombre, detalle))
+		lista.add_child(boton)
+		PIXEL_UI_THEME.apply(boton, false)
+
+	if not nombres.has(_bancal_seleccionado):
+		_bancal_seleccionado = nombres[0]
+	_mostrar_detalle_bancal_vivero(_bancal_seleccionado, detalle)
+
+	var pie := Label.new()
+	pie.text = "%d / %d bancales ocupados  ·  Regadera: %s" % [
+		cantidad_ocupados, nombres.size(),
+		("Agua %d/4" % agua) if agua >= 0 else "no equipada"
+	]
+	pie.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	pie.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_contenido.add_child(pie)
+
 	var actualizar := Button.new()
 	actualizar.text = "Actualizar estado"
+	actualizar.custom_minimum_size = Vector2(0, 34)
 	actualizar.pressed.connect(_actualizar)
 	_contenido.add_child(actualizar)
 	PIXEL_UI_THEME.apply(actualizar, false)
+
+
+func _seleccionar_bancal_vivero(nombre: String, detalle: VBoxContainer) -> void:
+	_bancal_seleccionado = nombre
+	_mostrar_detalle_bancal_vivero(nombre, detalle)
+
+
+func _mostrar_detalle_bancal_vivero(nombre: String, detalle: VBoxContainer) -> void:
+	for hijo in detalle.get_children():
+		hijo.queue_free()
+	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
+	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
+	var registro: Variant = estados.get(nombre, {})
+	var cultivo: Dictionary = registro if registro is Dictionary else {}
+	var ocupado := not cultivo.is_empty() and str(cultivo.get("nombre", "")).strip_edges() != ""
+	var humedo := bool(cultivo.get("humedo", false)) if not cultivo.is_empty() else bool(registro)
+
+	var icono := TextureRect.new()
+	icono.custom_minimum_size = Vector2(0, 104)
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if ocupado:
+		var item_id := str(cultivo.get("item_id", cultivo.get("id", "")))
+		var objeto: Dictionary = _world_items.buscar_item_por_id(item_id) if is_instance_valid(_world_items) and not item_id.is_empty() else {}
+		if objeto.is_empty():
+			objeto = {"nombre": str(cultivo.get("nombre", ""))}
+		icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
+	detalle.add_child(icono)
+
+	var titulo := Label.new()
+	titulo.text = nombre.replace("Bancal", "BANCAL ")
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 17)
+	detalle.add_child(titulo)
+
+	var estado := Label.new()
+	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	if ocupado:
+		var nombre_cultivo := str(cultivo.get("nombre", "Cultivo"))
+		estado.text = "%s\n%s\nRiegos: %d / 2" % [
+			nombre_cultivo,
+			("Suelo húmedo" if humedo else "Necesita agua"),
+			int(cultivo.get("riegos", 0))
+		]
+	else:
+		estado.text = "Bancal vacío\nPrepara una semilla desde el inventario y úsala junto a este bancal."
+	detalle.add_child(estado)
+
+	var separador := HSeparator.new()
+	detalle.add_child(separador)
+	var cuidados := Label.new()
+	cuidados.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cuidados.text = "CUIDADOS\n• Planta una semilla desde el inventario.\n• Equipa la regadera y riega una vez por día.\n• Cuando madure, recoge la flor directamente."
+	if ocupado and humedo:
+		cuidados.text += "\n\nEl suelo conserva humedad."
+	detalle.add_child(cuidados)
+
+	var regadera := _obtener_regadera_en_manos()
+	var agua := int(regadera.get("agua", -1))
+	var herramienta := Label.new()
+	herramienta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	herramienta.text = ("Regadera equipada · Agua %d/4" % agua) if agua >= 0 else "Equipa una regadera para cuidar tus cultivos."
+	detalle.add_child(herramienta)
 
 
 func _obtener_regadera_en_manos() -> Dictionary:
