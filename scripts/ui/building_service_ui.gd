@@ -129,7 +129,7 @@ func _actualizar() -> void:
 			"herbolario_procesamiento": titulo.text = "PROCESAMIENTO BOTÁNICO"
 			"herbolario": titulo.text = "HERBOLARIO"
 			"biblioteca": titulo.text = "BIBLIOTECA"
-			"centro_expediciones": titulo.text = "CENTRO DE EXPEDICIONES"
+			"centro_expediciones": titulo.text = "GREMIO DE AVENTUREROS"
 			"clinica": titulo.text = "CLÍNICA"
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
@@ -1113,7 +1113,7 @@ func _abrir_enciclopedia(modo: String = "criaturas") -> void:
 
 
 func _construir_centro_expediciones() -> void:
-	_agregar_texto("Prepara tus salidas, revisa lo que has descubierto y elige tu próximo destino.")
+	_agregar_texto("El Gremio reúne a quienes exploran Garlia. Consulta rutas, prepara tus salidas y registra tus descubrimientos en la bitácora.")
 	var layout := _crear_selector_edificio(160.0, 260.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
@@ -1137,7 +1137,7 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 			_agregar_titulo_detalle(detalle, "Primera expedición")
 			var finalizada := _primera_expedicion_finalizada()
 			var estado := Label.new()
-			estado.text = "Esta salida ya fue completada." if finalizada else "Hay una ruta de iniciación disponible. Prepara tus Garumis y lleva espacio para los materiales que encuentres."
+			estado.text = "Esta salida ya fue completada." if finalizada else "El gremio tiene una ruta de iniciación disponible. Revisa tu equipo, prepara tus Garumis y deja espacio para los materiales que encuentres."
 			estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			detalle.add_child(estado)
 			_agregar_boton_detalle(detalle, "Ver destinos y salir", _emitir_solicitud_selector_expediciones, finalizada)
@@ -1149,7 +1149,7 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 			detalle.add_child(destinos)
 			_agregar_boton_detalle(detalle, "Abrir selector de viajes", _emitir_solicitud_selector_expediciones)
 		"bitacora":
-			_agregar_titulo_detalle(detalle, "Bitácora de campo")
+			_agregar_titulo_detalle(detalle, "Bitácora del gremio")
 			var resumen := Label.new()
 			resumen.text = "Criaturas: %d\nBiomas: %d\nEcosistemas: %d\nHábitats: %d" % [
 				_contar_descubrimientos("criaturas"), _contar_descubrimientos("biomas"),
