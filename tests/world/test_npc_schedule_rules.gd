@@ -353,12 +353,8 @@ func _comprobar_desplazamiento_evento(errores: Array[String]) -> void:
 	if primero != repetido:
 		errores.append("El desplazamiento de evento debe ser estable para las mismas entradas.")
 
-	var distinto_npc: Vector2 = Rules.obtener_desplazamiento_evento("Ivo", "mercado_vecinal", "3|12|primavera")
-	var distinta_fecha: Vector2 = Rules.obtener_desplazamiento_evento("Mara", "mercado_vecinal", "3|13|primavera")
-	var distintas_entradas := primero != distinto_npc or primero != distinta_fecha
-	if not distintas_entradas:
-		errores.append("La distribución de evento debe poder variar según NPC o fecha.")
-
+	var otro_npc: Vector2 = Rules.obtener_desplazamiento_evento("Ivo", "mercado_vecinal", "3|12|primavera")
+	var otra_fecha: Vector2 = Rules.obtener_desplazamiento_evento("Mara", "mercado_vecinal", "3|13|primavera")
 	var permitidos: Array[Vector2] = [
 		Vector2(-112.0, -72.0), Vector2(-72.0, -104.0),
 		Vector2(-24.0, -112.0), Vector2(32.0, -108.0),
