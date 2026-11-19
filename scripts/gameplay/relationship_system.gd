@@ -317,8 +317,7 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 	if personaje_id.is_empty():
 		return
 
-	var recuerdos := _obtener_recuerdos()
-	var lista: Array = recuerdos.get(personaje_id, [])
+	var lista := _obtener_recuerdos_personaje(personaje_id)
 	var nuevo_recuerdo := recuerdo.duplicate(true)
 	var tipo := str(nuevo_recuerdo.get("tipo", "")).strip_edges()
 	var clave := str(nuevo_recuerdo.get("clave", "")).strip_edges()
@@ -382,17 +381,12 @@ func registrar_recuerdo(personaje_id: String, recuerdo: Dictionary) -> void:
 			break
 		lista.remove_at(indice_descartar)
 
-	recuerdos[personaje_id] = lista
-	_game_state.call("guardar_recuerdos_sociales", recuerdos)
+	_guardar_recuerdos_personaje(personaje_id, lista)
 	recuerdo_registrado.emit(personaje_id, nuevo_recuerdo.duplicate(true))
 
 
 func obtener_recuerdos(personaje_id: String) -> Array:
-	var recuerdos := _obtener_recuerdos()
-	var lista_variant: Variant = recuerdos.get(personaje_id, [])
-	if lista_variant is Array:
-		return (lista_variant as Array).duplicate(true)
-	return []
+	return _obtener_recuerdos_personaje(personaje_id)
 
 
 
@@ -402,11 +396,9 @@ func obtener_recuerdo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 	var id := personaje_id.strip_edges()
 	if id.is_empty():
 		return {}
-	var recuerdos := _obtener_recuerdos()
-	var lista_variant: Variant = recuerdos.get(id, [])
-	if not lista_variant is Array:
+	var lista := _obtener_recuerdos_personaje(id)
+	if lista.is_empty():
 		return {}
-	var lista: Array = lista_variant
 	var mejor_indice := -1
 	var mejor_importancia := -1.0
 	for i in range(lista.size()):
@@ -440,8 +432,7 @@ func obtener_recuerdo_pendiente_mencionar(personaje_id: String) -> Dictionary:
 			mejor_indice
 		]
 		lista[mejor_indice] = resultado.duplicate(true)
-		recuerdos[id] = lista
-		_game_state.call("guardar_recuerdos_sociales", recuerdos)
+		_guardar_recuerdos_personaje(id, lista)
 	resultado["_indice_recuerdo"] = mejor_indice
 	return resultado
 
@@ -455,11 +446,9 @@ func marcar_recuerdo_mencionado(
 	var id := personaje_id.strip_edges()
 	if id.is_empty():
 		return false
-	var recuerdos := _obtener_recuerdos()
-	var lista_variant: Variant = recuerdos.get(id, [])
-	if not lista_variant is Array:
+	var lista := _obtener_recuerdos_personaje(id)
+	if lista.is_empty():
 		return false
-	var lista: Array = lista_variant
 	var indice := -1
 	if not recuerdo_uid.is_empty():
 		for i in range(lista.size()):
@@ -479,8 +468,7 @@ func marcar_recuerdo_mencionado(
 		return false
 	recuerdo["mencionado_en_dialogo"] = true
 	lista[indice] = recuerdo
-	recuerdos[id] = lista
-	_game_state.call("guardar_recuerdos_sociales", recuerdos)
+	_guardar_recuerdos_personaje(id, lista)
 	return true
 
 
@@ -1579,8 +1567,31 @@ func _guardar_relaciones(relaciones: Dictionary) -> void:
 	_game_state.call("guardar_relaciones_sociales", relaciones)
 
 
-func _obtener_recuerdos() -> Dictionary:
-	var variant: Variant = _game_state.call("obtener_recuerdos_sociales")
-	if variant is Dictionary:
-		return (variant as Dictionary).duplicate(true)
-	return {}
+func _obtener_recuerdos_personaje(personaje_id: String) -> Array:
+	if _game_state == null or not is_instance_valid(_game_state):
+		return []
+	if _game_state.has_method("obtener_recuerdos_sociales_npc"):
+		var resultado: Variant = _game_state.call("obtener_recuerdos_sociales_npc", personaje_id)
+		return resultado if resultado is Array else []
+	if not _game_state.has_method("obtener_recuerdos_sociales"):
+		return []
+	var todos_variant: Variant = _game_state.call("obtener_recuerdos_sociales")
+	if not todos_variant is Dictionary:
+		return []
+	var lista_variant: Variant = (todos_variant as Dictionary).get(personaje_id, [])
+	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
+func _guardar_recuerdos_personaje(personaje_id: String, recuerdos: Array) -> void:
+	if _game_state == null or not is_instance_valid(_game_state):
+		return
+	if _game_state.has_method("guardar_recuerdos_sociales_npc"):
+		_game_state.call("guardar_recuerdos_sociales_npc", personaje_id, recuerdos)
+		return
+	if not _game_state.has_method("obtener_recuerdos_sociales") or not _game_state.has_method("guardar_recuerdos_sociales"):
+		return
+	var todos_variant: Variant = _game_state.call("obtener_recuerdos_sociales")
+	var todos: Dictionary = todos_variant if todos_variant is Dictionary else {}
+	var actualizados := todos.duplicate(true)
+	actualizados[personaje_id] = recuerdos.duplicate(true)
+	_game_state.call("guardar_recuerdos_sociales", actualizados)
