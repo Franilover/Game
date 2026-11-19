@@ -2607,13 +2607,7 @@ func _registrar_experiencia_social_npc(
 func _hay_noticia_compartible(personaje_id: String, pareja_id: String) -> bool:
 	if not is_instance_valid(_relationship_system):
 		return false
-	for conocimiento_variant in _relationship_system.obtener_conocimientos_compartibles_npc(personaje_id, pareja_id):
-		if not conocimiento_variant is Dictionary:
-			continue
-		var clave := str((conocimiento_variant as Dictionary).get("clave", "")).strip_edges()
-		if not clave.is_empty() and not _relationship_system.conoce_conocimiento_npc(pareja_id, clave):
-			return true
-	return false
+	return _relationship_system.tiene_conocimiento_compartible_nuevo_npc(personaje_id, pareja_id)
 
 
 func _obtener_punto_encuentro_social(npc: Creature, pareja: Creature) -> Vector2:
