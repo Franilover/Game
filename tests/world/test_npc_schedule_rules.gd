@@ -25,6 +25,7 @@ func _ready() -> void:
 	_comprobar_catalogo_ocio(errores)
 	_comprobar_desplazamiento_ocio(errores)
 	_comprobar_desplazamiento_evento(errores)
+	_comprobar_turnos_comercio(errores)
 
 	_comprobar_dia([], 2, true, errores)
 	_comprobar_dia(null, 2, true, errores)
@@ -369,3 +370,20 @@ func _comprobar_desplazamiento_evento(errores: Array[String]) -> void:
 		errores.append("Cada combinación de NPC y fecha debe producir un punto permitido.")
 	if not permitidos.has(primero):
 		errores.append("El desplazamiento de evento debe usar uno de los 16 puntos permitidos.")
+
+func _comprobar_turnos_comercio(errores: Array[String]) -> void:
+	var libre := {"clave": "dia_libre", "actividad_clave": "pasear"}
+	if not Rules.debe_asignar_turno_comercio("bruna", libre, 0, 9 * 60):
+		errores.append("El primer vendedor asignado debe cubrir la franja inicial del lunes.")
+	if Rules.debe_asignar_turno_comercio("saira", libre, 0, 9 * 60):
+		errores.append("Saira coordina el mercado y no debe entrar en los turnos rotativos.")
+	if Rules.debe_asignar_turno_comercio("bruna", {"clave": "trabajo", "actividad_clave": "hornear"}, 0, 9 * 60):
+		errores.append("Un turno laboral existente no debe ser sustituido.")
+	if Rules.debe_asignar_turno_comercio("bruna", {"clave": "evento_mercado", "actividad_clave": "participar"}, 0, 9 * 60):
+		errores.append("Un evento comunitario debe conservar prioridad.")
+	if Rules.debe_asignar_turno_comercio("bruna", libre, 0, 8 * 60 + 59):
+		errores.append("El mercado no debe asignar turnos antes de las 09:00.")
+	if Rules.debe_asignar_turno_comercio("bruna", libre, 0, 18 * 60):
+		errores.append("El mercado no debe asignar turnos desde las 18:00.")
+	if Rules.debe_asignar_turno_comercio("npc_desconocido", libre, 0, 10 * 60):
+		errores.append("Un NPC fuera del catálogo no debe recibir un turno comercial.")
