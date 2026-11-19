@@ -373,20 +373,23 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
 	npc.remove_meta("acercamiento_social_activo")
+	# El diálogo ya reanudó el movimiento temporal. Detener primero la ruta
+	# de acercamiento evita que sobreviva si falta contexto para restaurar
+	# la rutina canónica (por ejemplo, durante una transición de zona).
+	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+	if movimiento != null:
+		movimiento.detener_por_rutina()
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_firma", "")
 	if not is_instance_valid(_world_atmosphere) or not is_instance_valid(_zone_manager):
 		return
 	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres" or not _navegacion_lista():
-		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-		if movimiento != null:
-			movimiento.detener_por_rutina()
-		npc.set_meta("rutina_firma", "")
 		return
 	var tiempo := _obtener_tiempo_actual()
 	if not bool(tiempo.get("calendario_cargado", false)):
 		return
 	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 5)
 	var minutos := clampi(int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0)), 0, 1439)
-	npc.set_meta("rutina_firma", "")
 	_aplicar_rutina(npc, dia_semana, minutos)
 
 
