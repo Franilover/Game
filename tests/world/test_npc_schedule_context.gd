@@ -28,6 +28,7 @@ func _run() -> void:
 	_comprobar_memoria_diaria(agenda, npc_a, errores)
 	_comprobar_seleccion_rutina_y_copia(agenda, npc_a, errores)
 	_comprobar_destinos_rutina(npc_a, errores)
+	_comprobar_busqueda_muebles(errores)
 
 	npc_a.remove_from_group("torres_game_npc")
 	npc_b.remove_from_group("torres_game_npc")
@@ -134,6 +135,33 @@ func _comprobar_destinos_rutina(npc: Creature, errores: Array[String]) -> void:
 	)
 	if not is_equal_approx(destino_npc_adicional.length(), 118.0):
 		errores.append("Los NPC sin posición propia deben distribuirse en el perímetro de la plaza.")
+
+
+func _comprobar_busqueda_muebles(errores: Array[String]) -> void:
+	var contenedor := Node2D.new()
+	var cama := Sprite2D.new()
+	cama.name = "Cama_Madera"
+	var litera := Sprite2D.new()
+	litera.name = "Litera_Superior"
+	var asiento := Sprite2D.new()
+	asiento.name = "Asiento_Plaza"
+	var decoracion := Node2D.new()
+	contenedor.add_child(cama)
+	contenedor.add_child(decoracion)
+	contenedor.add_child(litera)
+	contenedor.add_child(asiento)
+
+	var camas := NPCScheduleScript._obtener_muebles_por_tokens(contenedor, ["cama", "litera"])
+	if camas.size() != 2 or camas[0] != cama or camas[1] != litera:
+		errores.append("La búsqueda de muebles debe conservar el orden de hijos y todos los elementos coincidentes.")
+
+	var asientos := NPCScheduleScript._obtener_muebles_por_tokens(contenedor, ["silla", "asiento"])
+	if asientos.size() != 1 or asientos[0] != asiento:
+		errores.append("La búsqueda compartida debe reconocer los tokens de silla/asiento.")
+
+	if not NPCScheduleScript._obtener_muebles_por_tokens(contenedor, []).is_empty():
+		errores.append("Una búsqueda sin tokens no debe devolver mobiliario.")
+	contenedor.free()
 
 
 func _fail(errores: Array[String]) -> void:
