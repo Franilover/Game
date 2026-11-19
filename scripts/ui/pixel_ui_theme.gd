@@ -10,8 +10,11 @@ static func apply(root: Control, use_pixel_titles: bool = true) -> void:
 	if root == null:
 		return
 	_apply_control(root, use_pixel_titles)
+	_vigilar_panel_menu(root)
 	for node in root.find_children("*", "Control", true, false):
-		_apply_control(node as Control, use_pixel_titles)
+		var control := node as Control
+		_apply_control(control, use_pixel_titles)
+		_vigilar_panel_menu(control)
 
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
@@ -136,3 +139,12 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 			control.add_theme_stylebox_override("background", bar_background)
 		if bar_fill != null:
 			control.add_theme_stylebox_override("fill", bar_fill)
+
+
+static func _vigilar_panel_menu(control: Control) -> void:
+	if not (control is PanelContainer or control is Panel):
+		return
+	var anclado_al_centro := is_equal_approx(control.anchor_left, 0.5) and is_equal_approx(control.anchor_right, 0.5) and is_equal_approx(control.anchor_top, 0.5) and is_equal_approx(control.anchor_bottom, 0.5)
+	var centrado_por_contenedor := control.get_parent() is CenterContainer
+	if anclado_al_centro or centrado_por_contenedor:
+		MenuLayout.vigilar_panel_centrado(control)
