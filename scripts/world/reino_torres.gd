@@ -2421,8 +2421,17 @@ func _abrir_menu_servicio_edificio(tipo: String) -> void:
 	if not is_instance_valid(interfaz):
 		return
 	interfaz.add_to_group("building_service_ui")
+	if interfaz.has_signal("solicitar_selector_expediciones"):
+		interfaz.connect("solicitar_selector_expediciones", Callable(self, "_abrir_selector_viajes_desde_servicio"))
 	get_tree().root.add_child(interfaz)
 	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
+
+
+func _abrir_selector_viajes_desde_servicio() -> void:
+	_actualizar_selector_viajes()
+	if is_instance_valid(_selector_viajes_layer):
+		_selector_viajes_layer.visible = true
+		_posicionar_selector_viajes()
 
 
 func _agregar_estacion_edificio(padre: Node, tipo: String, texto: String, posicion: Vector2) -> void:
@@ -2458,12 +2467,6 @@ func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> vo
 		return
 	if tipo == "pasaje_exterior":
 		_mostrar_confirmacion_pasaje_exterior()
-		return
-	if tipo == "centro_expediciones":
-		_actualizar_selector_viajes()
-		if is_instance_valid(_selector_viajes_layer):
-			_selector_viajes_layer.visible = true
-			_posicionar_selector_viajes()
 		return
 	_abrir_menu_servicio_edificio(tipo)
 
