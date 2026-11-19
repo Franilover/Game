@@ -1536,6 +1536,24 @@ func obtener_conocimientos_npc(personaje_id: String) -> Array:
 	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
 
 
+## Lee sólo la lista de asuntos pendientes de los habitantes.
+func obtener_asuntos_pendientes_npc() -> Array:
+	return _obtener_lista_conversaciones_npc("_asuntos_pendientes_npc")
+
+
+## Lee sólo la lista de promesas entre habitantes.
+func obtener_promesas_npc() -> Array:
+	return _obtener_lista_conversaciones_npc("_promesas_npc")
+
+
+func _obtener_lista_conversaciones_npc(clave: String) -> Array:
+	var progreso_variant: Variant = world_state.flags.get("conversaciones_npc", {})
+	if not progreso_variant is Dictionary:
+		return []
+	var lista_variant: Variant = (progreso_variant as Dictionary).get(clave, [])
+	return (lista_variant as Array).duplicate(true) if lista_variant is Array else []
+
+
 func guardar_conversaciones_npc(progreso: Dictionary) -> void:
 	world_state.flags["conversaciones_npc"] = progreso.duplicate(true)
 	_al_cambio_guardable()
