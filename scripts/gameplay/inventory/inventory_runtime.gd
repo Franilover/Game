@@ -182,6 +182,12 @@ func intercambiar_o_apilar(origen: int, destino: int) -> bool:
 func _puede_apilar_con(a: Dictionary, b: Dictionary) -> bool:
 	if a.is_empty() or b.is_empty():
 		return false
+	# Un ejemplar tiene identidad propia: nunca se fusiona con otro objeto,
+	# aunque ambos hereden el mismo item_id y compartan sprite.
+	if bool(a.get("es_ejemplar", false)) or bool(b.get("es_ejemplar", false)):
+		return false
+	if not str(a.get("ejemplar_id", "")).strip_edges().is_empty() or not str(b.get("ejemplar_id", "")).strip_edges().is_empty():
+		return false
 	var max_a := maxi(1, int(a.get("max_stack", 1)))
 	var max_b := maxi(1, int(b.get("max_stack", 1)))
 	if max_a <= 1 or max_b <= 1:
