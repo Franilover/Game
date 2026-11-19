@@ -226,3 +226,16 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Las conversaciones pueden retomar antecedentes reales del historial de la pareja y el título de una noticia conocida; no se inventan hechos adicionales.
 - Se añadieron pruebas de voces diferenciadas, rotación de variantes, continuidad histórica e inclusión de información compartida.
 - CI Godot 4.7: **41/41 pasos correctos, 0 fallos**, run [#1719](https://github.com/Franilover/Game/actions/runs/43941877535).
+
+
+## Limpieza y optimización del ciclo NPC (2026-11-19)
+
+- Se reparó la escena de prueba ausente para la regresión de movimiento NPC; la suite pudo volver a ejecutar esa prueba.
+- La regla del tramo nocturno (21:00–06:00) vive ahora en `NPCScheduleRules.es_horario_nocturno()`, con pruebas de límites e invalidación de minutos fuera del día.
+- `NPCScheduleSystem.actualizar()` comparte una sola instantánea del grupo de NPC, la referencia del jugador y el calendario del mundo durante el tick. Los métodos sociales, de rutina, ocio y eventos reutilizan ese contexto; fuera del tick conservan el acceso de respaldo a sus fuentes.
+- La consulta del grupo `torres_game_npc` se centralizó en `_obtener_npcs_torres()`; la fecha de la reunión del castillo se calcula una vez por grupo.
+- La memoria diaria que usan las conversaciones de reunión se separó de `_aplicar_rutina()` en `_actualizar_resumen_diario_reunion()`, manteniendo las claves de metadatos existentes.
+- Nueva prueba de integración `tests/world/test_npc_schedule_context.tscn`: snapshot temporal y de NPC, fallback fuera del tick, conservación de actividad significativa y reinicio de memoria al cambiar de fecha. Añadida al workflow.
+- Se detectó y corrigió una colisión de nombre entre el acumulador de intervalo y la instantánea temporal (`_tiempo_actualizacion` / `_tiempo_mundo_actualizacion`). Las ejecuciones anteriores a esa corrección fallaron al cargar NPCScheduleSystem; no se cuentan como validación.
+- La validación final de la revisión actual está en curso en GitHub Actions; no se declara completa hasta que termine la suite y el análisis GDScript.
+- Auditoría detallada: secciones 44–51 de `AUDIT_NPC_SCHEDULE_INITIAL.md`.
