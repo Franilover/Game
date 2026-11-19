@@ -2,6 +2,7 @@ extends Node
 
 const GameStateScript = preload("res://scripts/core/game_state.gd")
 const MissionManagerScript = preload("res://scripts/gameplay/mission_manager.gd")
+const RelationshipSystemScript = preload("res://scripts/gameplay/relationship_system.gd")
 
 
 func _ready() -> void:
@@ -51,7 +52,10 @@ func _run() -> void:
 			"ivo|nima": {"confianza": 42.0, "historial": [{"evento": "prueba"}]}
 		},
 		"_conocimientos_npc": {
-			"ivo": [{"clave": "noticia_prueba", "titulo": "Noticia de prueba"}],
+			"ivo": [
+				{"clave": "noticia_prueba", "titulo": "Noticia de prueba", "tipo": "noticia", "compartible": true, "privacidad": "publica"},
+				{"clave": "privada_prueba", "titulo": "Dato privado", "tipo": "testimonio", "compartible": true, "privacidad": "personal", "permiso_transmision": true}
+			],
 			"nima": [{"clave": "otra_noticia", "titulo": "Otra noticia"}]
 		},
 		"_promesas_npc": [{"id": "promesa_prueba", "estado": "pendiente"}]
@@ -90,11 +94,26 @@ func _run() -> void:
 	var conocimientos_ivo := destino.obtener_conocimientos_npc("ivo")
 	if conocimientos_ivo.size() != 1 or str((conocimientos_ivo[0] as Dictionary).get("clave", "")) != "noticia_prueba":
 		errores.append("La consulta puntual de conocimientos no devolvió los datos del NPC.")
-	(conocimientos_ivo[0] as Dictionary)["titulo"] = "Modificado desde la copia"
+	if not conocimientos_ivo.is_empty():
+		(conocimientos_ivo[0] as Dictionary)["titulo"] = "Modificado desde la copia"
 	if str((destino.obtener_conocimientos_npc("ivo")[0] as Dictionary).get("titulo", "")) != "Noticia de prueba":
 		errores.append("La consulta puntual de conocimientos expuso el estado interno modificable.")
+	var relaciones_sociales := RelationshipSystemScript.new() as RelationshipSystemService
+	relaciones_sociales._game_state = destino
+	if not relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
+		errores.append("No detectó una noticia pública nueva que puede compartirse.")
+	var conversaciones := destino.obtener_conversaciones_npc()
+	var conocimientos_guardados: Dictionary = conversaciones.get("_conocimientos_npc", {})
+	var conocimientos_nima: Array = conocimientos_guardados.get("nima", [])
+	conocimientos_nima.append({"clave": "noticia_prueba", "tipo": "noticia", "compartible": true, "privacidad": "publica"})
+	conocimientos_guardados["nima"] = conocimientos_nima
+	conversaciones["_conocimientos_npc"] = conocimientos_guardados
+	destino.guardar_conversaciones_npc(conversaciones)
+	if relaciones_sociales.tiene_conocimiento_compartible_nuevo_npc("ivo", "nima"):
+		errores.append("Consideró nueva una noticia que el destinatario ya conoce.")
 	if not destino.obtener_conversaciones_npc().get("_promesas_npc", []) is Array:
 		errores.append("La lectura completa de conversaciones dejó de conservar las demás secciones.")
+	relaciones_sociales.free()
 	var inventario_guardado: Dictionary = flags.get("inventario_estado", {}) as Dictionary
 	var items_guardados: Array = inventario_guardado.get("items", []) as Array
 	if items_guardados.is_empty():
