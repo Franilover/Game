@@ -698,7 +698,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		return
 
 	var destino_local := _resolver_destino_rutina_local(
-		npc, rutina, ubicacion, esta_en_horario, edificio
+		npc, rutina, ubicacion, esta_en_horario, edificio, variacion_posicion
 	)
 	var destino_global := _zona.to_global(destino_local)
 	if clave_rutina.begins_with("encuentro_trio_"):
@@ -755,7 +755,8 @@ static func _resolver_destino_rutina_local(
 	rutina: Dictionary,
 	ubicacion: String,
 	esta_en_horario: bool,
-	edificio: Dictionary
+	edificio: Dictionary,
+	variacion_posicion: Vector2
 ) -> Vector2:
 	var destino_local: Vector2 = POSICIONES[ubicacion]
 	var hogar_variant: Variant = npc.datos.get("posicion_hogar_local", null)
@@ -780,7 +781,7 @@ static func _resolver_destino_rutina_local(
 		var indice_perimetro := posmod(hash(nombre_plaza), 12)
 		var angulo_perimetro := TAU * float(indice_perimetro) / 12.0
 		posicion_plaza = Vector2(cos(angulo_perimetro) * 118.0, sin(angulo_perimetro) * 118.0)
-	return destino_local + posicion_plaza + rutina.get("variacion_posicion", Vector2.ZERO)
+	return destino_local + posicion_plaza + variacion_posicion
 
 
 ## Devuelve al exterior un NPC cuando su siguiente rutina apunta a otro edificio.
