@@ -112,6 +112,7 @@ func _actualizar() -> void:
 		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		titulo.add_theme_font_size_override("font_size", 18)
 		match _tipo:
+			"cuartel": titulo.text = "CUARTEL DE LA GUARDIA"
 			"carpinteria": titulo.text = "CARPINTERÍA"
 			"vivero": titulo.text = "VIVERO"
 			"herbolario_investigacion": titulo.text = "INVESTIGACIÓN BOTÁNICA"
@@ -126,6 +127,7 @@ func _actualizar() -> void:
 	_contenido.add_child(saldo)
 
 	match _tipo:
+		"cuartel": _construir_menu_cuartel()
 		"forja": _construir_forja()
 		"carpinteria": _construir_carpinteria()
 		"cuartel_licencia": _construir_cuartel_licencia()
@@ -135,6 +137,13 @@ func _actualizar() -> void:
 		"herbolario_investigacion": _construir_investigacion_herbolario()
 		"herbolario_procesamiento": _construir_procesamiento_herbolario()
 		"herbolario": _construir_investigacion_herbolario()
+
+	if _tipo in ["cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
+		var volver := Button.new()
+		volver.text = "Volver al cuartel"
+		volver.pressed.connect(_volver_menu_cuartel)
+		_contenido.add_child(volver)
+		PIXEL_UI_THEME.apply(volver, false)
 
 	_contenido.add_child(_estado)
 	# Los textos informativos conservan contraste aunque el tema global cambie.
@@ -935,6 +944,62 @@ func _es_muestra_botanica(objeto: Dictionary) -> bool:
 		if identidad.contains(termino):
 			return true
 	return false
+
+func _construir_menu_cuartel() -> void:
+	_agregar_opcion_menu_cuartel(
+		"Licencias",
+		"Aquí puedes consultar y solicitar licencias para ejercer distintas técnicas.",
+		"cuartel_licencia"
+	)
+	_agregar_opcion_menu_cuartel(
+		"Arsenal",
+		"Echa un vistazo a las armas disponibles y compra lo que necesites.",
+		"cuartel_armas"
+	)
+	_agregar_opcion_menu_cuartel(
+		"Entrenamiento",
+		"Practica y mejora tus habilidades de combate.",
+		"cuartel_entrenamiento"
+	)
+
+
+func _agregar_opcion_menu_cuartel(titulo: String, descripcion: String, destino: String) -> void:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var estilo: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
+	if estilo != null:
+		panel.add_theme_stylebox_override("panel", estilo)
+	_contenido.add_child(panel)
+	var columna := VBoxContainer.new()
+	columna.add_theme_constant_override("separation", 4)
+	panel.add_child(columna)
+	var encabezado := Label.new()
+	encabezado.text = titulo
+	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	encabezado.add_theme_font_size_override("font_size", 14)
+	columna.add_child(encabezado)
+	var detalle := Label.new()
+	detalle.text = descripcion
+	detalle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	detalle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	columna.add_child(detalle)
+	var boton := Button.new()
+	boton.text = "Abrir"
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.pressed.connect(_abrir_seccion_cuartel.bind(destino))
+	columna.add_child(boton)
+	PIXEL_UI_THEME.apply(boton, false)
+
+
+func _abrir_seccion_cuartel(destino: String) -> void:
+	_tipo = destino
+	_actualizar()
+
+
+func _volver_menu_cuartel() -> void:
+	_tipo = "cuartel"
+	_actualizar()
+
 
 func _construir_cuartel_licencia() -> void:
 	var licencia := bool(GameState.world_state.flags.get("licencia_espadas", false))
