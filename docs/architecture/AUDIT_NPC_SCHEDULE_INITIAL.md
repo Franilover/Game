@@ -598,3 +598,10 @@ Validación CI pendiente para este cambio.
 La regresión ahora comprueba también el ciclo de vuelta: después de retirar la marca de cinemática, el planificador recibe el mismo minuto programado y debe reconstruir la ruta interior mediante `CreatureMovement`, restaurando `rutina_paseo_interior_activo` y `rutina_en_transito` sin modificar `rutina_paseo_interior_siguiente`. La prueba usa una habitación de prueba con el identificador real esperado por el planificador y un NPC con su componente de movimiento real.
 
 Validación CI de esta ampliación pendiente.
+
+
+## 60. Replanificación al cambiar la actividad dentro del mismo edificio
+
+El paseo interior ahora registra la actividad que originó su destino. Si cambia la actividad programada y el NPC permanece en el mismo edificio, la ruta anterior se cancela y se calcula un nuevo puesto usando las preferencias de la actividad actual. La interrupción limpia la actividad asociada al paseo, conserva el estado de horario necesario y permite iniciar el nuevo recorrido en el mismo tick. Al completar el paseo también se elimina la metadata de actividad asociada.
+
+La prueba `test_npc_schedule_context` cubre: interrupción por cinemática, reanudación del paseo pendiente y sustitución de ruta cuando cambia la actividad dentro del mismo edificio. Validación CI pendiente.
