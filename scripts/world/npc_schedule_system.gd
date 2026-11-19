@@ -1,6 +1,8 @@
 extends Node
 class_name NPCScheduleSystem
 
+const NPC_SCHEDULE_RULES = preload("res://scripts/world/npc_schedule_rules.gd")
+
 const INTERVALO_ACTUALIZACION := 0.5
 const TAMANO_CELDA := 32.0
 # Debe coincidir con el mapa de Torres: 104 x 68 celdas de 32 px.
@@ -2086,10 +2088,10 @@ func _obtener_minutos_hasta_siguiente_rutina(
 			var rutina := rutina_variant as Dictionary
 			if not bool(rutina.get("activo", true)):
 				continue
-			if not _coincide_dia(rutina.get("dias_semana", []), dia_candidato):
+			if not NPC_SCHEDULE_RULES.coincide_dia(rutina.get("dias_semana", []), dia_candidato):
 				continue
-			var inicio := _hora_a_minutos(rutina.get("hora_inicio", ""))
-			var fin := _hora_a_minutos(rutina.get("hora_fin", ""))
+			var inicio := NPC_SCHEDULE_RULES.hora_a_minutos(rutina.get("hora_inicio", ""))
+			var fin := NPC_SCHEDULE_RULES.hora_a_minutos(rutina.get("hora_fin", ""))
 			if inicio < 0 or fin < 0 or inicio == fin:
 				continue
 			var candidato := desplazamiento_dia * 1440 + inicio
@@ -3262,8 +3264,8 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 
 		var inicio_raw: Variant = rutina.get("hora_inicio", "")
 		var fin_raw: Variant = rutina.get("hora_fin", "")
-		var inicio := _hora_a_minutos(inicio_raw)
-		var fin := _hora_a_minutos(fin_raw)
+		var inicio := NPC_SCHEDULE_RULES.hora_a_minutos(inicio_raw)
+		var fin := NPC_SCHEDULE_RULES.hora_a_minutos(fin_raw)
 		if inicio < 0 or fin < 0 or inicio == fin:
 			diagnostico_rechazos.append(clave + ": hora_invalida inicio=" + str(inicio_raw) + " fin=" + str(fin_raw) + " parseadas=" + str(inicio) + "/" + str(fin))
 			continue
@@ -3279,7 +3281,7 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			dia_referencia = posmod(dia_semana - 1, 5)
 
 		var dias_variant: Variant = rutina.get("dias_semana", [])
-		var coincide_dia := _coincide_dia(dias_variant, dia_referencia)
+		var coincide_dia := NPC_SCHEDULE_RULES.coincide_dia(dias_variant, dia_referencia)
 		if not esta_activa or not coincide_dia:
 			diagnostico_rechazos.append(clave + ": " + ("fuera_de_hora" if not esta_activa else "dia_no_coincide") + " ahora=" + str(minutos) + " rango=" + str(inicio) + "-" + str(fin) + " dia=" + str(dia_referencia) + " dias=" + str(dias_variant))
 			continue
@@ -3297,37 +3299,6 @@ func _seleccionar_rutina(rutinas_variant: Variant, dia_semana: int, minutos: int
 			set_meta("ultimo_diagnostico_selector", firma_fallo)
 
 	return mejor
-
-
-func _coincide_dia(dias_variant: Variant, dia: int) -> bool:
-	if not dias_variant is Array or (dias_variant as Array).is_empty():
-		return true
-
-	# WorldData llega desde JSON/RPC y sus números pueden venir como float
-	# (por ejemplo 0.0). No usar "in" aquí: la comparación Variant puede
-	# distinguir tipos numéricos aunque representen el mismo día.
-	for dia_variant in dias_variant as Array:
-		if dia_variant is int or dia_variant is float:
-			if is_equal_approx(float(dia_variant), float(dia)):
-				return true
-		elif dia_variant is String:
-			var dia_texto := str(dia_variant).strip_edges()
-			if dia_texto.is_valid_int() and int(dia_texto) == dia:
-				return true
-	return false
-
-
-func _hora_a_minutos(valor: Variant) -> int:
-	var partes := str(valor).strip_edges().split(":")
-	if partes.size() < 2:
-		return -1
-	if not partes[0].is_valid_int() or not partes[1].is_valid_int():
-		return -1
-	var hora := int(partes[0])
-	var minuto := int(partes[1])
-	if hora < 0 or hora > 23 or minuto < 0 or minuto > 59:
-		return -1
-	return hora * 60 + minuto
 
 
 func _crear_ruta(origen: Vector2, destino: Vector2) -> PackedVector2Array:
