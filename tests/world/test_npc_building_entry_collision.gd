@@ -46,10 +46,10 @@ func _run() -> void:
 	add_child(npc_interactivo)
 	await get_tree().process_frame
 	npc_no_interactivo.remove_from_group("interactable")
-	zona.call("_ocultar_npcs_exteriores")
+	zona.call("_ocultar_npcs_exteriores", [npc_no_interactivo, npc_interactivo])
 	if npc_no_interactivo.visible or npc_interactivo.visible:
 		errores.append("La entrada al interior no ocultó todos los NPC exteriores.")
-	zona.call("_restaurar_npcs_exteriores")
+	zona.call("_restaurar_npcs_exteriores", [npc_no_interactivo, npc_interactivo])
 	if not npc_no_interactivo.visible or npc_no_interactivo.is_in_group("interactable"):
 		errores.append("La restauración añadió interacción a un NPC que no la tenía.")
 	if not npc_interactivo.visible or not npc_interactivo.is_in_group("interactable"):
@@ -66,7 +66,7 @@ func _run() -> void:
 	zona.call("registrar_npc_materializado", npc_nuevo)
 	if npc_nuevo.visible or npc_nuevo.is_in_group("interactable"):
 		errores.append("El NPC materializado durante el interior no quedó oculto.")
-	zona.call("_restaurar_npcs_exteriores")
+	zona.call("_restaurar_npcs_exteriores", [npc_nuevo])
 	if not npc_nuevo.visible or npc_nuevo.is_in_group("interactable"):
 		errores.append("El NPC materializado recuperó un grupo interactuable que no tenía.")
 
