@@ -109,3 +109,12 @@ La prueba ahora cubre los diez habitantes con reglas específicas en la mañana 
 Esta extracción es de reglas locales de simulación. No altera horarios de Supabase ni el catálogo de rutinas de WorldData.
 
 **Validación:** pendiente de CI para el commit que incorpora esta extracción y sus casos.
+
+
+## 10. Cuarta extracción: calendario comunitario
+
+La resolución del evento comunitario se separó como `NPCScheduleRules.obtener_evento_comunitario(dia_estacion, dia_semana, minutos)`. El sistema de NPC conserva la lectura de `WorldAtmosphere`; la función pura decide qué evento corresponde a esos tres valores.
+
+Se documentan y prueban las franjas de 09:00–17:00 (mercado), 17:00–20:00 (comida comunitaria) y 14:00–20:00 (celebración estacional en el primer día de estación). La celebración estacional conserva prioridad si coincide con el quinto día.
+
+La prueba también cubre los límites de inicio y fin, así como días sin evento. No se cambia el calendario ni se agregan eventos nuevos.
