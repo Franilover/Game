@@ -3,6 +3,7 @@ class_name CreatureAI
 
 const CreaturePerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
 const CreatureTargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
+const CreatureStateDecisionScript = preload("res://scripts/creatures/creature_state_decision.gd")
 
 
 signal estado_cambiado(anterior: int, nuevo: int)
@@ -498,27 +499,46 @@ func _cambiar_a_respuesta_atacar() -> void:
 	_cambiar_estado(Estado.ATACANDO)
 
 
+func _aplicar_decision_respuesta(
+	respuesta: String,
+	permitir_perseguir: bool,
+	permitir_investigar: bool,
+	estado_sin_respuesta: Estado
+) -> void:
+	# La política decide una intención; CreatureAI conserva la ejecución
+	# concreta, incluida la comprobación de alcance antes de atacar.
+	var decision := CreatureStateDecisionScript.resolver(
+		respuesta,
+		permitir_perseguir,
+		permitir_investigar
+	)
+
+	match decision:
+		CreatureStateDecisionScript.Decision.HUIR:
+			_cambiar_estado(Estado.HUYENDO)
+		CreatureStateDecisionScript.Decision.ATACAR:
+			_cambiar_a_respuesta_atacar()
+		CreatureStateDecisionScript.Decision.PERSEGUIR:
+			_cambiar_estado(Estado.PERSIGUIENDO)
+		CreatureStateDecisionScript.Decision.INVESTIGAR:
+			_cambiar_estado(Estado.INVESTIGANDO)
+		_:
+			if estado != estado_sin_respuesta:
+				_cambiar_estado(estado_sin_respuesta)
+
+
 func _procesar_explorando() -> void:
 	if perfil == Perfil.LIGNIANOS and not _movimiento_permitido():
 		criatura.detener_movimiento()
 		criatura.tomar_control_movimiento()
 
 	if objetivo_detectado:
-		match _obtener_respuesta_a_objetivo():
-			"huir":
-				_cambiar_estado(Estado.HUYENDO)
-
-			"atacar":
-				_cambiar_a_respuesta_atacar()
-
-			"perseguir":
-				_cambiar_estado(Estado.PERSIGUIENDO)
-
-			"investigar":
-				_cambiar_estado(Estado.INVESTIGANDO)
-
-			_:
-				pass
+		_aplicar_decision_respuesta(
+			_obtener_respuesta_a_objetivo(),
+			true,
+			true,
+			Estado.EXPLORANDO
+		)
 	elif perfil != Perfil.LIGNIANOS or _movimiento_permitido():
 		criatura.liberar_control_movimiento()
 
@@ -529,19 +549,12 @@ func _procesar_investigando() -> void:
 		criatura.tomar_control_movimiento()
 
 	if objetivo_detectado:
-		match _obtener_respuesta_a_objetivo():
-			"huir":
-				_cambiar_estado(Estado.HUYENDO)
-
-			"atacar":
-				_cambiar_a_respuesta_atacar()
-
-			"perseguir":
-				_cambiar_estado(Estado.PERSIGUIENDO)
-
-			_:
-				_cambiar_estado(Estado.EXPLORANDO)
-
+		_aplicar_decision_respuesta(
+			_obtener_respuesta_a_objetivo(),
+			false,
+			false,
+			Estado.EXPLORANDO
+		)
 		return
 
 	# La memoria espacial sobrevive a la desaparición del nodo objetivo.
@@ -721,21 +734,12 @@ func _procesar_recuperando(delta: float) -> void:
 		return
 
 	if objetivo_detectado:
-		match _obtener_respuesta_a_objetivo():
-			"huir":
-				_cambiar_estado(Estado.HUYENDO)
-
-			"atacar":
-				_cambiar_a_respuesta_atacar()
-
-			"perseguir":
-				_cambiar_estado(Estado.PERSIGUIENDO)
-
-			"investigar":
-				_cambiar_estado(Estado.INVESTIGANDO)
-
-			_:
-				_cambiar_estado(Estado.EXPLORANDO)
+		_aplicar_decision_respuesta(
+			_obtener_respuesta_a_objetivo(),
+			true,
+			true,
+			Estado.EXPLORANDO
+		)
 	else:
 		_cambiar_estado(Estado.INVESTIGANDO)
 
