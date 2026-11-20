@@ -1144,3 +1144,8 @@ La posición global del jugador sólo se reutiliza al cargar la misma zona persi
 ## Captura antes de descargar una zona global — 2026-11-19
 
 En servidor dedicado, ZoneManager solicita a GlobalWorldStore capturar el runtime mientras la zona anterior y su WorldEntityManager todavía existen, después de validar la escena destino y antes de queue_free. Esto conserva el estado de criaturas y props también en transiciones iniciadas por salidas físicas u otros flujos, no sólo por el RPC del menú de viaje. La captura duplicada del RPC de viaje se retiró para mantener un único punto de persistencia. Si el guardado falla, se advierte y la transición continúa, igual que el comportamiento previo del flujo RPC.
+
+
+## Clave runtime de criaturas sin metadatos — 2026-11-19
+
+Cuando una criatura se registra sin `runtime_instance_key`, el administrador usa su ID natural como clave de instancia y añade las coordenadas del chunk una sola vez. Antes se añadían las coordenadas al fallback y nuevamente al construir la clave final, por lo que la recuperación por ID natural no encontraba el estado. La regresión `tests/entities/test_world_entity_runtime_key.tscn` verifica clave, posición, vida, velocidad y registro DATA.
