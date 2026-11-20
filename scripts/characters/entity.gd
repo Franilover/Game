@@ -20,10 +20,15 @@ var _ultima_y_profundidad: int = 2147483647
 
 func _ready() -> void:
 	_configurar_estado_vital()
-	add_to_group("damageable")
-	_crear_hurtbox()
+	if _debe_aceptar_danio():
+		add_to_group("damageable")
+		_crear_hurtbox()
+		_emitir_estado_vital()
 	_actualizar_profundidad()
-	_emitir_estado_vital()
+
+
+func _debe_aceptar_danio() -> bool:
+	return true
 
 func _process(_delta: float) -> void:
 	# La profundidad solo cambia cuando cambia Y.
@@ -83,6 +88,8 @@ func restaurar_estado_vital(
 	vivo: bool,
 	mana_guardado: int = -1
 ) -> void:
+	if not _debe_aceptar_danio():
+		return
 	var vida_segura := clampi(vida, 0, max_health)
 	vital_state.health = vida_segura
 	if mana_guardado >= 0:
@@ -96,7 +103,7 @@ func restaurar_estado_vital(
 
 
 func take_damage(cantidad: int, origen: String = "desconocido") -> void:
-	if not is_alive:
+	if not _debe_aceptar_danio() or not is_alive:
 		return
 
 	var dano_real := vital_state.recibir_danio(cantidad)
@@ -123,7 +130,7 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 		_die()
 
 func heal(cantidad: int) -> void:
-	if not is_alive:
+	if not _debe_aceptar_danio() or not is_alive:
 		return
 
 	var curacion := vital_state.curar(cantidad)

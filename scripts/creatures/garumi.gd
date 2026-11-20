@@ -16,15 +16,22 @@ var eterium_actual: int = 30
 
 func _ready() -> void:
 	super._ready()
-	# Creature hereda la hurtbox de Entity para especies combatientes.
-	# Garumi conserva movimiento e interacción, pero no tiene hurtbox ni recibe daño.
-	var hurtbox := get_node_or_null("Hurtbox")
-	if is_instance_valid(hurtbox):
-		hurtbox.queue_free()
-	remove_from_group("damageable")
 	add_to_group("garumi_instances")
 	_normalizar_grupos_garumi()
 	_configurar_cerebro_garumi()
+
+
+func _debe_aceptar_danio() -> bool:
+	return false
+
+
+func _configurar_estado_vital() -> void:
+	# La base Creature comparte esta inicialización con especies combatientes.
+	# Para Garumi no existe un estado de vida: solo permanece como entidad del mundo.
+	max_health = 0
+	health = 0
+	is_alive = true
+	_death_emitted = false
 
 
 func _configurar_cerebro_garumi() -> void:
@@ -66,6 +73,8 @@ func configurar(datos_garumi: Dictionary) -> void:
 	datos_separados["categoria_entidad"] = "garumi"
 	if not datos_separados.has("asset_key"):
 		datos_separados["asset_key"] = str(datos_separados.get("nombre", ""))
+	for campo_vital in ["health", "stats_dnd", "nivel", "experiencia_total"]:
+		datos_separados.erase(campo_vital)
 	super.configurar(datos_separados)
 	_vinculado = bool(datos_separados.get("vinculado", false))
 	_tipo_vinculo = str(datos_separados.get("tipo_vinculo", ""))

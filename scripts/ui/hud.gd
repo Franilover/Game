@@ -1326,7 +1326,7 @@ func _input(event: InputEvent) -> void:
 					if is_instance_valid(modal) and modal.is_inside_tree() and not modal.is_queued_for_deletion():
 						modal_abierto = true
 						break
-				if not modal_abierto and not _combate_garumi_activo and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
+				if not modal_abierto and not _interaction_panel_open and not _mission_panel_open and (_inventory_ref == null or not _inventory_ref.esta_abierto()):
 					_r_hold_activo = true
 					_r_hold_elapsed = 0.0
 					get_viewport().set_input_as_handled()
@@ -1777,7 +1777,7 @@ func _procesar_hold_selector_garumi(delta: float) -> void:
 
 
 func _abrir_selector_garumi() -> void:
-	if _combate_garumi_activo or not is_instance_valid(_garumi_selector_panel):
+	if not is_instance_valid(_garumi_selector_panel):
 		return
 	_r_selector_abierto = true
 	for hijo in _garumi_selector_lista.get_children():

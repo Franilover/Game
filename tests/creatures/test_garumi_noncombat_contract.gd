@@ -37,6 +37,8 @@ func _run() -> void:
 		errores.append("El Garumi se registró como objetivo de daño.")
 	if garumi.get_node_or_null("Hurtbox") != null:
 		errores.append("El Garumi conserva una hurtbox heredada.")
+	if int(garumi.get("health")) != 0 or int(garumi.get("max_health")) != 0:
+		errores.append("El Garumi conserva valores de vida funcionales.")
 	var vida_interna: int = int(garumi.get("health"))
 	garumi.call("take_damage", 999, "test")
 	if int(garumi.get("health")) != vida_interna:
