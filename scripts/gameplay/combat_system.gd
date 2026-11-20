@@ -565,6 +565,8 @@ func solicitar_danio_desde_entidad(
 		return COMBAT_ATTACK_RESULT.rechazado(&"atacante_invalido")
 	if objetivo == null or not is_instance_valid(objetivo):
 		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_invalido")
+	if not objetivo.is_in_group("damageable"):
+		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_no_daniable")
 	if not objetivo.is_alive:
 		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_derrotado")
 
