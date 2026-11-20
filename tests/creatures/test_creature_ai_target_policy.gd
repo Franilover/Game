@@ -7,6 +7,7 @@ const PerceptionScript = preload("res://scripts/creatures/creature_perception.gd
 const TargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
 const StateDecisionScript = preload("res://scripts/creatures/creature_state_decision.gd")
 const UtilityAIScript = preload("res://scripts/creatures/creature_utility_ai.gd")
+const InteractionMemoryScript = preload("res://scripts/creatures/creature_interaction_memory.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
 const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
@@ -73,6 +74,43 @@ func _run() -> void:
 		_fail("Utility AI convirtió un booleano en un peso numérico.")
 		return
 
+	# La memoria es individual, temporal y no confunde actores distintos.
+	var memoria := InteractionMemoryScript.new() as CreatureInteractionMemory
+	var otro_actor := Node2D.new()
+	get_tree().root.add_child(otro_actor)
+	memoria.registrar_agresion(player, 1.0, 8.0)
+	memoria.registrar_agresion(player, 1.0, 8.0)
+	if not is_equal_approx(memoria.obtener_agresion(player), 2.0):
+		_fail("La memoria no acumuló agresiones del mismo actor.")
+		return
+	if memoria.obtener_agresion(otro_actor) != 0.0:
+		_fail("La memoria atribuyó a otro actor una agresión ajena.")
+		return
+	memoria.actualizar(2.0, 0.25)
+	if not is_equal_approx(memoria.obtener_agresion(player), 1.5):
+		_fail("La memoria no redujo gradualmente la agresión.")
+		return
+	memoria.actualizar(6.0, 0.0)
+	if memoria.obtener_agresion(player) != 0.0 or memoria.cantidad_recuerdos() != 0:
+		_fail("La memoria no expiró al terminar su duración.")
+		return
+	memoria.registrar_agresion(player, 1.0, 8.0)
+	memoria.registrar_agresion(player, 1.0, 8.0)
+	memoria.actualizar(1.0, 0.5)
+	if not is_equal_approx(memoria.obtener_agresion(player), 1.5):
+		_fail("La memoria no aplicó decaimiento sin expirar.")
+		return
+	memoria.registrar_agresion(otro_actor, 1.0, 8.0)
+	memoria.registrar_agresion(otro_actor, 1.0, 8.0)
+	if memoria.obtener_agresion(otro_actor) != 2.0:
+		_fail("La memoria no mantuvo recuerdos independientes.")
+		return
+	memoria.actualizar(8.0, 0.0)
+	if memoria.cantidad_recuerdos() != 0:
+		_fail("La memoria conservó recuerdos después de expirar.")
+		return
+	otro_actor.queue_free()
+
 	# Un jugador cercano no debe ser un objetivo implícito de una criatura
 	# neutral sin una respuesta definida.
 	ai._refrescar_objetivo()
@@ -91,6 +129,29 @@ func _run() -> void:
 		return
 	if ai._obtener_respuesta_a_objetivo() != "perseguir":
 		_fail("La conducta agresiva debe traducirse en perseguir.")
+		return
+
+	# La memoria optativa modifica sólo la respuesta hacia quien agredió.
+	ai.configuracion_ia = {"memoria_interaccion": {
+		"activo": true,
+		"intensidad_agresion": 1.0,
+		"duracion_segundos": 30.0,
+		"decaimiento_por_segundo": 0.2,
+		"umbral_agresion": 1.0,
+		"respuesta_agresion": "huir"
+	}}
+	ai.al_recibir_danio(1, player)
+	if ai._obtener_respuesta_para_objetivo(player) != "huir":
+		_fail("La criatura no recordó al actor que la agredió.")
+		return
+	ai._actualizar_memoria_interaccion(6.0)
+	if ai._obtener_respuesta_para_objetivo(player) != "perseguir":
+		_fail("La respuesta de memoria no volvió al comportamiento base tras decaer.")
+		return
+	ai.configuracion_ia = {}
+	ai._memoria_interaccion = InteractionMemoryScript.new()
+	if ai._obtener_respuesta_para_objetivo(player) != "perseguir":
+		_fail("La memoria cambió el comportamiento cuando estaba desactivada.")
 		return
 
 	# Lignianos debe fallar de forma segura: si Supabase/snapshot no
