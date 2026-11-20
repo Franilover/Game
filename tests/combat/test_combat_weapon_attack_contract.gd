@@ -11,7 +11,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
-	_probar_validacion(errores)
+	await _probar_validacion(errores)
 	await _probar_resultados_de_ejecucion(errores)
 	if not errores.is_empty():
 		for error in errores:
@@ -23,8 +23,11 @@ func _run() -> void:
 
 
 func _probar_validacion(errores: Array[String]) -> void:
-	var atacante := Node.new()
+	var atacante := EntityScript.new() as Entity
 	var objetivo := EntityScript.new() as Entity
+	get_tree().root.add_child(atacante)
+	get_tree().root.add_child(objetivo)
+	await get_tree().process_frame
 	var arma := {
 		"tipo": "arma",
 		"nombre": "Arma de prueba",
@@ -43,8 +46,9 @@ func _probar_validacion(errores: Array[String]) -> void:
 	objetivo.is_alive = false
 	if Validator.validar(atacante, objetivo, arma) != &"objetivo_derrotado":
 		errores.append("No rechazó un objetivo derrotado.")
-	atacante.free()
-	objetivo.free()
+	atacante.queue_free()
+	objetivo.queue_free()
+	await get_tree().process_frame
 
 
 func _probar_resultados_de_ejecucion(errores: Array[String]) -> void:
