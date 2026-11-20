@@ -1954,7 +1954,12 @@ func _iniciar_ataque_ligniano() -> void:
 		)
 
 		var jugador_objetivo := objetivo as Player
-		if jugador_objetivo != null and resultado.contacto_registrado:
+		if (
+			jugador_objetivo != null
+			and resultado.contacto_registrado
+			and criatura.is_alive
+			and jugador_objetivo.is_alive
+		):
 			jugador_objetivo.aplicar_efecto_slow(
 				_obtener_float_ataque(
 					"duracion_slow",
