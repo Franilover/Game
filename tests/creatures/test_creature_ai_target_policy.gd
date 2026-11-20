@@ -262,6 +262,10 @@ func _run() -> void:
 		_fail("La confianza no habilitó la respuesta de investigación configurada.")
 		return
 	ai.configuracion_ia["memoria_interaccion"]["respuesta_confianza"] = "atacar"
+	if ai._obtener_respuesta_memoria(player) != "":
+		_fail("La confianza permitió una respuesta agresiva no autorizada.")
+		return
+	ai.configuracion_ia["memoria_interaccion"]["respuesta_confianza"] = "investigar"
 	actor.datos["personalidad"] = {"curiosidad": 0.5}
 	ai.configuracion_ia["memoria_interaccion"]["umbral_confianza"] = 1.0
 	if ai._obtener_respuesta_memoria(player) != "investigar":
@@ -272,9 +276,6 @@ func _run() -> void:
 		_fail("La baja curiosidad no elevó moderadamente el umbral de confianza.")
 		return
 	actor.datos["personalidad"] = {}
-	if ai._obtener_respuesta_memoria(player) != "":
-		_fail("La confianza permitió una respuesta agresiva no autorizada.")
-		return
 	ai._memoria_interaccion.limpiar()
 	ai.configuracion_ia = {}
 
