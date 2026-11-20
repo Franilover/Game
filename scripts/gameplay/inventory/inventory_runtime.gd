@@ -39,12 +39,17 @@ func seleccionar_hotbar(indice: int) -> bool:
 	return hotbar.seleccionar(indice)
 
 func establecer_equipamiento(equipamiento: Dictionary) -> void:
+	# La carga reemplaza el conjunto completo: nunca conserva piezas de otra
+	# instancia/partida y tampoco admite ranuras heredadas o fichas incompatibles.
 	equipment.limpiar()
 	for clave_variant in equipamiento.keys():
 		var clave := str(clave_variant)
-		var item_variant: Variant = equipamiento.get(clave, {})
-		if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
-			equipment.equipar(clave, item_variant as Dictionary)
+		var item_variant: Variant = equipamiento.get(clave_variant, {})
+		if not item_variant is Dictionary:
+			continue
+		var item := item_variant as Dictionary
+		if EquipmentState.es_objeto_compatible(clave, item):
+			equipment.equipar(clave, item)
 
 func equipar(slot: String, item: Dictionary) -> void:
 	if not EquipmentState.es_objeto_compatible(slot, item):
