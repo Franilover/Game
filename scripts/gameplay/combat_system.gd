@@ -107,7 +107,7 @@ func procesar_accion_primaria() -> bool:
 
 
 func procesar_accion_secundaria() -> bool:
-	if player == null or not player.is_alive:
+	if not CombatTargeting.es_atacante_valido(player):
 		return false
 
 	var objeto_mano := _obtener_objeto_mano_activa("derecha")
