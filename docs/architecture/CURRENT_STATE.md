@@ -1125,3 +1125,7 @@ Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_tran
 - `PlayerState.from_dictionary()` conserva la stamina fraccionaria dentro de su escala actual `0..3`; ya no redondea a enteros durante la carga.
 - Los saves antiguos en escala `0..100` se convierten proporcionalmente a `0..3`, conservando también sus fracciones.
 - `test_game_state_roundtrip` cubre un roundtrip con stamina `1.5` y la migración de un valor antiguo `50.0`.
+
+## Registro de réplicas de entidades — 2026-11-19
+
+Al salir una criatura o un prop del árbol, WorldEntityManager elimina también las referencias que mantenía en los registros de réplicas de red. Antes, esos diccionarios podían conservar nodos liberados hasta que volviera a registrarse la misma clave; en sesiones con muchas entidades transitorias, el registro podía crecer aunque las entidades ya no existieran. La limpieza compara la referencia exacta y conserva las demás réplicas. Regresión: tests/entities/test_world_entity_replica_registry.tscn.
