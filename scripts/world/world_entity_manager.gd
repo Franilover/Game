@@ -290,8 +290,8 @@ func _al_salir_entidad(entity: Node) -> void:
 	# Registrar el tombstone aquí evita que los datos originales lo regeneren.
 	if entity is WorldProp and entity.is_queued_for_deletion() and not bool(entity.get_meta("world_manager_unloading", false)):
 		var chunk_recolectado: Variant = _obtener_chunk_de_entidad(entity)
-		if chunk_recolectado != null:
-			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_recolectado)
+		if chunk_recolectado is Vector2i:
+			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_recolectado as Vector2i)
 
 	_global_entities.erase(entity)
 	for chunk_variant in _by_chunk.keys():
