@@ -307,6 +307,26 @@ func _run() -> void:
 	if ai._obtener_respuesta_para_objetivo(player) != "perseguir":
 		_fail("La respuesta de memoria no volvió al comportamiento base tras decaer.")
 		return
+	# El aprendizaje individual es acotado: agresiones repetidas pueden escalar la respuesta.
+	ai.configuracion_ia = {"memoria_interaccion": {
+		"activo": true,
+		"intensidad_agresion": 1.0,
+		"duracion_segundos": 30.0,
+		"umbral_agresion": 1.0,
+		"respuesta_agresion": "investigar",
+		"umbral_agresion_repetida": 2.0,
+		"respuesta_agresion_repetida": "huir"
+	}}
+	ai.al_recibir_danio(1, player)
+	if ai._obtener_respuesta_para_objetivo(player) != "investigar":
+		_fail("La primera agresión no conservó la respuesta inicial configurada.")
+		return
+	ai.al_recibir_danio(1, player)
+	if ai._obtener_respuesta_para_objetivo(player) != "huir":
+		_fail("Las agresiones repetidas no escalaron la respuesta individual.")
+		return
+	ai._memoria_interaccion.limpiar()
+
 	# Las reacciones ecológicas/específicas de especie prevalecen sobre recuerdos genéricos.
 	actor.criatura_nombre = "Lignianos"
 	player.set_meta("garlia_bosque_asesino", false)
