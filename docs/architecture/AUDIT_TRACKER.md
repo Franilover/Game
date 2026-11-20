@@ -454,8 +454,9 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Hallazgo: calcular el daño con `salud_antes - salud_después` después de `health_changed` mezcla el golpe actual con otros golpes síncronos disparados por listeners. El evento `Creature.danio_recibido` podía publicar un total incorrecto y el robo de vida vampírico podía curar de más.
 - Corrección: `Entity`, `Player` y `Creature` devuelven el daño de la invocación; `CombatDamage.aplicar_y_obtener_danio()` propaga el resultado. El método booleano antiguo permanece por compatibilidad.
 - Efectos posteriores, señales de impacto y robo de vida usan el daño mitigado real, no el valor bruto de arma.
-- Regresiones: `CreatureDamageReentrancy` verifica dos golpes anidados, su atribución y cantidad independiente; `PlayerVitalStateContract` verifica retorno de daño para fisiología normal y compartida. Ambas integradas en CI.
-- Estado: implementado; pendiente resultado CI y validación en partida.
+- Regresiones: `CreatureDamageReentrancy` verifica dos golpes anidados, su atribución y cantidad independiente; `PlayerVitalStateContract` verifica retorno de daño para fisiología normal y compartida. Ambas integradas y aprobadas en CI, junto con todos los contratos de combate.
+- GDScript Quality también pasó. El workflow general falla posteriormente en `PlayerEteriumRestoreReadiness` por liberar un `RefCounted` (línea 49), sin relación con combate.
+- Estado: código y contratos automatizados aprobados; pendiente validación visual y balance en partida.
 
 
 ## Colisiones físicas de combate y tunneling de proyectiles (2026-11-20)
