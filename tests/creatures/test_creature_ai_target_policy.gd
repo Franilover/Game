@@ -183,6 +183,7 @@ func _run() -> void:
 		return
 	# Las reacciones ecológicas/específicas de especie prevalecen sobre recuerdos genéricos.
 	actor.criatura_nombre = "Lignianos"
+	player.set_meta("garlia_bosque_asesino", false)
 	ai.perfil = AIScript.Perfil.LIGNIANOS
 	ai.configuracion_ia = {"memoria_interaccion": {
 		"activo": true,
