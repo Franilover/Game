@@ -408,3 +408,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Corrección: las acciones primaria/secundaria, solicitudes tardías, uso de objeto activo y creación de melee/proyectil utilizan `CombatTargeting.es_atacante_valido()`.
 - Regresión: `CombatTemporalContract` comprueba que un jugador derrotado no pueda iniciar ninguna de las dos entradas ni crear un hitbox mediante una señal tardía.
 - Estado: implementado; pendiente de CI y ejecución local.
+
+
+## Contrato de cooldown de combate (2026-11-20)
+
+- Corrección: las entradas primaria/secundaria devuelven rechazo durante el cooldown en vez de informar una solicitud aceptada que el sistema luego descarta. El handler conserva la protección frente a señales tardías.
+- Normalización: melee, arma/proyectil y pala inicializan el cooldown con el mismo helper y no admiten duraciones negativas.
+- Regresión: `CombatTemporalContract` cubre la entrada durante cooldown, el handler tardío y la configuración negativa.
+- Estado: implementado; pendiente de CI y prueba en partida.
