@@ -93,7 +93,17 @@ func _procesar_objetivo(objetivo: Node) -> void:
 
 	# objetivo_impactado conserva su contrato histórico: solo se emite cuando
 	# CombatDamage confirma una reducción real de salud.
-	if CombatDamage.aplicar(entidad, attack.damage, attack.origin, Callable(), attack.attacker):
+	var danio_real := CombatDamage.aplicar_y_obtener_danio(
+		entidad,
+		attack.damage,
+		attack.origin,
+		Callable(),
+		attack.attacker
+	)
+	if danio_real > 0:
+		# El ataque transporta el resultado del impacto para que los efectos
+		# posteriores y las señales no confundan daño bruto con daño efectivo.
+		attack.damage = danio_real
 		objetivo_impactado.emit(entidad, attack)
 
 	# El feedback corresponde al consumidor del resultado, no al proyectil;
