@@ -197,7 +197,7 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 3. Corregir los contratos de inventario de recogida y soltar objetos.
 4. Seguir misiones desde la finalización hasta la recompensa persistida.
 5. Auditar la validación de snapshots offline de mundo.
-6. Continuar IA y división de `WorldGenerator`.
+6. Continuar IA de criaturas (Utility AI contextual, memoria de interacción y aprendizaje acotado) y división de `WorldGenerator`.
 7. Perfilar y ampliar pruebas de integración.
 
 **Límites:** esta hoja de ruta no autoriza cambios en Supabase ni cambios de canon de Garlia. Los cambios de código permanecen aislados en la rama indicada; no se hace merge a `main` sin autorización explícita.
