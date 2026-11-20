@@ -648,6 +648,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run saved zone, Player and inventory session resume integration
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/persistence/test_main_session_resume.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|MainSessionResume: FAIL:' <<<"$output"; then
+            echo "Main session resume integration test reported errors."
+            exit 1
+          fi
+
       - name: Run NPC mind core regression test
         shell: bash
         run: |
