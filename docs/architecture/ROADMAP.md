@@ -59,9 +59,9 @@
 - [x] Distinguir solicitud aceptada, contacto y daño real mediante `CombatAttackResult`.
 - [~] Defensa plana: Player aplica armadura equipada y Creature aplica `stats_dnd.defensa`; los contratos de ambos pasan en Godot 4.7. Resistencias/inmunidades por tipo siguen pendientes porque el contrato de ataque todavía no define tipos de daño.
 - [x] Ruta de daño IUM verificada mediante `CombatSystem.solicitar_danio_desde_entidad()` y `CombatEntityAttackContract` en Godot 4.7; no se alteraron fórmulas IUM.
-- [~] Proyectiles de impacto único, objetivos derrotados, impactos simultáneos y melee contra varios objetivos pasan sus contratos en Godot 4.7. Falta validar colisiones físicas y barridos en escenas reales.
+- [x] Proyectiles de impacto único, objetivos derrotados, impactos simultáneos, melee contra varios objetivos y colisiones físicas reales de hitbox/hurtbox pasan contratos en Godot 4.7; proyectiles rápidos usan barrido continuo para evitar tunneling.
 - [~] Cooldown, cancelación por atacante inválido (incluido jugador derrotado), interrupciones síncronas y atribución de daño pasan sus contratos en Godot 4.7; falta validación integrada y balance en partida.
-- [~] Cubrir fisiología compartida, absorción y muerte al agotar Eterium en `PlayerVitalStateContract`; falta ampliar a todos los caminos.
+- [x] `PlayerVitalStateContract` cubre fisiología normal y compartida, absorción, daño, muerte al agotar Eterium y reaparición; el contrato se ejecuta en CI.
 - [ ] Mantener el balance separado de la infraestructura.
 
 ### 2.2 IA de criaturas
