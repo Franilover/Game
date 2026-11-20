@@ -6,6 +6,7 @@ const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const PerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
 const TargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
 const StateDecisionScript = preload("res://scripts/creatures/creature_state_decision.gd")
+const UtilityAIScript = preload("res://scripts/creatures/creature_utility_ai.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
 const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
@@ -47,6 +48,20 @@ func _run() -> void:
 		return
 	if StateDecisionScript.resolver("respuesta_desconocida") != StateDecisionScript.Decision.SIN_CAMBIO:
 		_fail("Una respuesta desconocida produjo una conducta.")
+		return
+
+	# Utility AI puntúa necesidades comparables y conserva desempates deterministas.
+	if not is_equal_approx(UtilityAIScript.puntuar_urgencia(50.0, 50.0), 0.01):
+		_fail("Una necesidad en su umbral no produjo una urgencia mínima válida.")
+		return
+	if UtilityAIScript.puntuar_urgencia(40.0, 50.0) != 0.0:
+		_fail("Una necesidad bajo su umbral produjo urgencia.")
+		return
+	if UtilityAIScript.seleccionar_accion({"descansar": 0.4, "alimentarse": 0.8}) != "alimentarse":
+		_fail("Utility AI no seleccionó la acción con mayor puntuación.")
+		return
+	if UtilityAIScript.seleccionar_accion({"descansar": 0.8, "alimentarse": 0.8}) != "descansar":
+		_fail("Utility AI no resolvió el empate de forma determinista.")
 		return
 
 	# Un jugador cercano no debe ser un objetivo implícito de una criatura
@@ -384,6 +399,40 @@ func _run() -> void:
 	ai._aplicar_prioridad_necesidades()
 	if ai.actividad_horaria == "reposar":
 		_fail("El descanso no terminó al alcanzar el umbral de salida.")
+		return
+
+	# Si ambas necesidades superan sus umbrales, la urgencia relativa decide.
+	# La configuración heredada sigue usando pesos iguales por defecto.
+	ai._descanso_por_fatiga = false
+	ai.configuracion_ia = {"necesidades": {
+		"umbral_fatiga": 60.0,
+		"umbral_hambre": 50.0,
+		"recuperacion_fatiga_por_segundo": 5.0,
+		"peso_prioridad_fatiga": 1.0,
+		"peso_prioridad_hambre": 1.0,
+		"actividad_descanso": "reposar",
+		"actividad_alimentacion": "alimentarse"
+	}, "alimentacion": {"item_ids": ["fruta-test"]}}
+	ai._fatiga_actual = 65.0
+	ai._hambre_actual = 90.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "alimentarse":
+		_fail("Utility AI no priorizó el hambre cuando su urgencia era mayor.")
+		return
+	ai._fatiga_actual = 95.0
+	ai._hambre_actual = 60.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "reposar" or not ai._descanso_por_fatiga:
+		_fail("Utility AI no priorizó la fatiga cuando su urgencia era mayor.")
+		return
+	ai._fatiga_actual = 30.0
+	ai._hambre_actual = 30.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai._descanso_por_fatiga:
+		_fail("La histéresis de descanso no se liberó al alcanzar el umbral de salida.")
 		return
 
 	# Seguir una especie no debe convertirse automáticamente en un ataque al contacto.
