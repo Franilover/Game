@@ -198,9 +198,13 @@ El Player también es una dependencia inyectada en la UI de inventario para usos
 
 La implementación actual lee el objeto de la mano izquierda (slots 0–5) para la acción primaria y de la mano derecha (slots 12–17) para la secundaria. La hotbar (slots 6–11) no decide qué arma se usa.
 
-La durabilidad de las herramientas se descuenta del slot de mano que ejecutó la acción.
+La durabilidad de herramientas se descuenta del slot de mano que ejecutó la acción. Las armaduras sólo pueden equiparse en cabeza, torso y pies; InventoryRuntime valida tipo y ranura antes de intercambiar objetos, por lo que la regla no depende de la UI.
 
-Las ranuras de Equipment visibles en la UI son cabeza, torso y pies; CreatureAI consulta esas ranuras para la armadura. El código de combate conserva todavía una ruta privada antigua para consultar armas equipadas que no participa en el flujo activo y debe eliminarse sólo después de verificar todos sus consumidores.
+CombatDefense sólo suma defensa de esas tres ranuras y reconoce `estadisticas.defensa`, `propiedades_game.defensa` y `defensa` raíz sin sumar dos veces el mismo valor. Las entradas antiguas de manos/equipo no otorgan defensa.
+
+Se eliminó de CombatSystem la búsqueda obsoleta de armas dentro de Equipment y su modo heredado `mano_secundaria`: las armas activas provienen exclusivamente de las manos del inventario.
+
+La durabilidad de armadura puede consumirse explícitamente, pero no se desgasta al recibir daño. No se implementó desgaste automático porque todavía no existe una regla de diseño confirmada.
 
 
 ### Limpieza estructural
