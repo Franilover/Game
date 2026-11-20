@@ -644,3 +644,13 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Verifica que ZoneManager reanuda Torres desde `zona_actual_tipo`, y que GameState restaura posición, orientación, salud, Eterium, stamina, objetos y hotbar.
 - El paso de integración terminó **success** en el workflow Godot 4.7 [44747758966](https://github.com/Franilover/Game/actions/runs/44747758966), commit `4422b9bd`. La restauración aislada del Player y el roundtrip anterior también pasaron en el mismo job.
 - Límite: no instancia todavía `main.tscn`, no cierra/reabre el proceso ni prueba continuidad de una sesión real. No cerrar la persistencia P0 completa por este contrato.
+
+
+## Integración de reanudación en main.tscn — 2026-11-20
+
+- Se añadió `tests/persistence/test_main_scene_resume.gd`, que instancia la escena principal real y comprueba que Main inicia Torres a partir de `zona_actual_tipo` y que la aplicación automática del snapshot restaura Player e inventario.
+- Aserciones: posición, orientación, salud, Eterium, stamina, objetos, hotbar y propiedad de `GameplayInputGate` por `InventoryController`.
+- Hallazgo: `Inventory.gd` creaba `GameplayInputGate.new()` y lo entregaba al controlador sin parentarlo. Godot detectaba el Node huérfano al cerrar el test. `InventoryController.configurar_gate()` ahora lo incorpora a su árbol y gestiona el reemplazo del gate anterior.
+- El test aísla el catálogo de NPC y resuelve Eterium localmente para no depender de red/credenciales. No materializa NPC, no cubre interiores ni simula el cierre/reapertura de un proceso real.
+- Suite completa Godot 4.7: **success**, run [44750243790](https://github.com/Franilover/Game/actions/runs/44750243790), commit `49d52ae3`; GDScript Quality (Advisory): **success**, run [44750243789](https://github.com/Franilover/Game/actions/runs/44750243789).
+- Persistencia integral P0 sigue abierta para cierre/reinicio real, migraciones antiguas, interrupciones de filesystem y continuidad de gameplay.
