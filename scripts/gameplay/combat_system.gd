@@ -288,7 +288,7 @@ func _al_recibir_objetivo_de_ataque(
 		objetivo,
 		danio,
 		str(objeto.get("nombre", "Objeto")),
-		player,
+		atacante,
 		objeto
 	)
 
