@@ -51,7 +51,6 @@ var _siguiendo_jugador: bool = false
 var _jugador_seguimiento: Node = null
 var _distancia_seguimiento: float = 24.0
 var _muerte_procesada: bool = false
-var _atacante_actual_danio: Node = null
 var _control_remoto_cliente: bool = false
 var _red_posicion_objetivo: Vector2 = Vector2.ZERO
 var _red_velocidad_objetivo: Vector2 = Vector2.ZERO
@@ -757,15 +756,25 @@ func aplicar_estado_red(
 		_red_ataque_activo_previo = false
 
 
-func take_damage_desde(atacante: Node, cantidad: int, origen: String = "desconocido") -> void:
-	_atacante_actual_danio = atacante if is_instance_valid(atacante) else null
-	take_damage(cantidad, origen)
-	_atacante_actual_danio = null
+func take_damage_desde(
+	atacante: Node,
+	cantidad: int,
+	origen: String = "desconocido"
+) -> void:
+	_aplicar_danio_recibido(cantidad, origen, atacante)
 
 
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
+) -> void:
+	_aplicar_danio_recibido(cantidad, origen, null)
+
+
+func _aplicar_danio_recibido(
+	cantidad: int,
+	origen: String,
+	atacante: Node
 ) -> void:
 	if not is_alive:
 		return
@@ -777,15 +786,16 @@ func take_damage(
 			return
 
 	var salud_anterior := health
+	var atacante_evento := atacante if is_instance_valid(atacante) else null
 
 	super.take_damage(cantidad, origen)
 
 	if health < salud_anterior:
-		# La criatura publica el resultado; su IA decide qué reacción ejecutar.
-		# Se emite también para golpes letales y conserva al atacante original.
+		# El atacante pertenece a esta invocación. No se guarda en estado
+		# compartido: health_changed puede disparar daño reentrante.
 		danio_recibido.emit(
 			salud_anterior - health,
-			_atacante_actual_danio
+			atacante_evento
 		)
 
 
