@@ -271,3 +271,13 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] El paso específico `Run saved zone, Player and inventory session resume integration` terminó **success** en CI Godot 4.7, run [44747758966](https://github.com/Franilover/Game/actions/runs/44747758966), commit `4422b9bd`.
 - [~] El alcance confirma restauración integrada de zona/Player/inventario en un árbol de prueba, pero no instancia `main.tscn` ni ejecuta el ciclo real de cerrar y volver a abrir el juego.
 - [ ] Siguen pendientes el reinicio real del proceso, continuidad de gameplay, interiores completos, migraciones antiguas y arranque/reconexión offline end-to-end.
+
+
+### Reanudación desde main.tscn y propiedad del input gate — 2026-11-20
+
+- [x] Se añadió `tests/persistence/test_main_scene_resume.gd`: instancia `scenes/world/main.tscn`, deja que Main inicie Torres desde el tipo de zona guardado y verifica la aplicación automática de GameState.
+- [x] Comprueba Player real (posición, orientación, salud, Eterium y stamina), inventario real (objetos/hotbar) y que `InventoryController` sea dueño del nodo `GameplayInputGate`.
+- [x] La prueba aísla el catálogo de NPC y resuelve Eterium localmente; no requiere credenciales ni modifica saves reales. No cubre materialización de NPC, interiores ni reinicio real del proceso.
+- [x] El contrato encontró y corrigió un nodo `GameplayInputGate` huérfano: `InventoryController.configurar_gate()` ahora adopta el nodo como hijo y libera el gate anterior al reemplazarlo.
+- [x] Suite completa Godot 4.7: **success**, run [44750243790](https://github.com/Franilover/Game/actions/runs/44750243790), commit `49d52ae3`. GDScript Quality (Advisory): **success**, run [44750243789](https://github.com/Franilover/Game/actions/runs/44750243789).
+- [~] La aplicación automática de snapshot a `main.tscn` ya tiene cobertura headless integrada. Sigue pendiente guardar/cerrar/reabrir el proceso real y continuar gameplay con interiores/NPC en ejecución.
