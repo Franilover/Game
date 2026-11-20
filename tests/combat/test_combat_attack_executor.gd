@@ -15,6 +15,7 @@ func _run() -> void:
 	await _probar_creacion_melee(errores)
 	await _probar_creacion_proyectil(errores)
 	await _probar_melee_con_multiples_objetivos(errores)
+	await _probar_colision_melee_fisica(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -192,3 +193,48 @@ func _al_detectar_contacto_proyectil(_objetivo: Entity, _ataque: CombatAttack) -
 
 func _al_recibir_impacto_proyectil(_objetivo: Entity, _ataque: CombatAttack) -> void:
 	pass
+
+
+func _probar_colision_melee_fisica(errores: Array[String]) -> void:
+	var jugador := PlayerScene.instantiate() as Player
+	var objetivo := EntityScript.new() as Entity
+	jugador.name = "MeleePhysicsAttacker"
+	objetivo.name = "MeleePhysicsTarget"
+	var colision := CollisionShape2D.new()
+	var forma := RectangleShape2D.new()
+	forma.size = Vector2(12.0, 12.0)
+	colision.shape = forma
+	objetivo.add_child(colision)
+	objetivo.position = Vector2(40.0, 0.0)
+	get_tree().root.add_child(jugador)
+	get_tree().root.add_child(objetivo)
+	await get_tree().physics_frame
+
+	var combate := CombatSystemScript.new() as CombatSystem
+	combate.player = jugador
+	get_tree().root.add_child(combate)
+	var area := CombatAttackArea.new()
+	area.configurar(
+		jugador,
+		Vector2.RIGHT,
+		64.0,
+		32.0,
+		{"nombre": "Melee físico", "propiedades_game": {"danio": 0}},
+		0.2,
+		Color(0.8, 0.6, 0.4, 0.5)
+	)
+	area.objetivo_detectado.connect(
+		func(entidad: Entity) -> void:
+			combate._al_recibir_objetivo_de_ataque(entidad, area)
+	)
+	jugador.add_child(area)
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+
+	if objetivo.health != objetivo.max_health - combate.danio_desarmado:
+		errores.append("El hitbox melee no detectó el hurtbox real durante la simulación física.")
+
+	combate.queue_free()
+	jugador.queue_free()
+	objetivo.queue_free()
+	await get_tree().process_frame
