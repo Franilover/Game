@@ -222,6 +222,15 @@ func _run() -> void:
 	if memoria.obtener_tipo_relacion(player) != "confiable":
 		_fail("La memoria no derivó una relación confiable al superar el umbral.")
 		return
+	for _i in range(8):
+		memoria.registrar_interaccion_positiva(player, 1.0, 180.0)
+	if memoria.obtener_confianza(player) != InteractionMemoryScript.MAX_CONFIANZA:
+		_fail("La confianza acumulada superó o no alcanzó su límite.")
+		return
+	memoria.actualizar(10.0, 0.0)
+	if not is_equal_approx(memoria.obtener_confianza(player), 4.95):
+		_fail("La confianza no tuvo un decaimiento temporal lento.")
+		return
 	memoria.registrar_agresion(player, 2.0, 180.0)
 	if memoria.obtener_tipo_relacion(player) != "hostil":
 		_fail("La agresión no prevaleció sobre la confianza al derivar hostilidad.")
