@@ -1389,7 +1389,7 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - `CombatDamage.aplicar_y_obtener_danio()` es la API central que devuelve ese valor; `aplicar()` conserva su contrato booleano para consumidores existentes.
 - `CombatSystem` usa el valor real para `ataque_realizado`, feedback, efectos y robo de vida. Los proyectiles actualizan el resultado transportado antes de emitir el impacto confirmado.
 - Se corrigió la reentrada: una señal `health_changed` puede causar otro golpe síncrono, pero el golpe exterior ya no suma ese daño al suyo ni lo atribuye al atacante equivocado.
-- Regresión `CreatureDamageReentrancy` y ampliación de `PlayerVitalStateContract` añadidas al workflow; ejecución CI pendiente.
+- Regresión `CreatureDamageReentrancy` y ampliación de `PlayerVitalStateContract` pasan en CI. También pasan `CombatTemporalContract`, `CombatItemResolver`, `CombatAttackExecutor` (incluida colisión melee física), `CombatProjectileContract` (barrido continuo), `CombatImpactEffects`, `CombatWeaponAttackContract`, `CombatEntityAttackContract` y `CombatEventQueueContract`. GDScript Quality pasó. El workflow global se detiene después en `PlayerEteriumRestoreReadiness` por un intento de liberar un objeto `RefCounted` en la línea 49, ajeno al bloque de combate.
 
 
 ## Colisiones físicas melee y barrido continuo de proyectiles (2026-11-20)
