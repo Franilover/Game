@@ -2,8 +2,10 @@ extends Area2D
 class_name CombatProjectile
 
 ## Proyectil de combate.
-## Transporta una instancia de ataque y resuelve el impacto mediante
-## la capa canónica CombatDamage. No busca objetivos en el SceneTree.
+## Transporta una instancia de ataque y ejecuta su impacto mediante el
+## resolver compartido CombatDamage. No implementa reglas de daño propias
+## ni busca objetivos en el SceneTree. CombatSystem consume sus señales
+## para feedback y efectos confirmados.
 
 signal contacto_detectado(objetivo: Entity, ataque: CombatAttack)
 signal objetivo_impactado(objetivo: Entity, ataque: CombatAttack)
