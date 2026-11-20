@@ -6,7 +6,12 @@ class_name CombatDefense
 
 static func obtener_defensa(equipo: Dictionary) -> float:
 	var defensa := 0.0
-	for item_variant in equipo.values():
+	for slot_variant in equipo.keys():
+		# Sólo las tres ranuras de armadura contribuyen a la defensa.
+		# Entradas antiguas de armas/manos no deben convertirse en blindaje.
+		if str(slot_variant) not in ["cabeza", "torso", "pies"]:
+			continue
+		var item_variant: Variant = equipo.get(slot_variant, {})
 		if not item_variant is Dictionary:
 			continue
 		defensa += _obtener_defensa_objeto(item_variant as Dictionary)
