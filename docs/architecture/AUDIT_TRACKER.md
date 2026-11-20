@@ -392,3 +392,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Regresión: `CreatureAISignalContract` ahora verifica defensa 3 frente a daño 7 (4 de daño efectivo), atribución y muerte.
 - Estado: implementado; pendiente ejecutar el contrato en Godot 4.7/CI.
 - Límite: resistencias e inmunidades por tipo no se implementan hasta que el modelo de ataque defina un tipo de daño real. No se inventaron categorías ni reglas elementales.
+
+
+## Ataque melee a múltiples objetivos (2026-11-20)
+
+- Hallazgo/cobertura: el hitbox guarda los objetivos ya afectados para impedir golpes repetidos, pero debe seguir procesando otros objetivos válidos dentro del mismo barrido.
+- Regresión añadida a `CombatAttackExecutor`: un solo hitbox daña una vez a dos entidades distintas y no vuelve a dañar la primera al detectarla de nuevo.
+- El workflow `procedural-world-tests.yml` ya ejecuta esa escena; no se añadió un paso duplicado.
+- Estado: prueba añadida, pendiente de CI. La prueba invoca la detección del hitbox directamente; no sustituye la validación de colisiones físicas en una escena de juego.
