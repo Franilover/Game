@@ -447,7 +447,10 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		return
 	var instance_key := str(criatura.get_meta("runtime_instance_key", "")).strip_edges()
 	if instance_key.is_empty():
-		instance_key = _runtime_key(chunk_coord, criatura_id)
+		# _runtime_key añade las coordenadas una sola vez al construir la clave.
+		# Guardar aquí una clave ya expandida duplicaría el prefijo del chunk y
+		# haría imposible recuperar el estado usando el ID natural de la criatura.
+		instance_key = criatura_id
 	var key := _runtime_key(chunk_coord, instance_key)
 	var categoria_entidad := str(criatura.datos.get("categoria_entidad", "criatura")).strip_edges().to_lower()
 	var datos_criatura := {
