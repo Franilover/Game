@@ -283,8 +283,7 @@ func _procesar_movimiento_red(delta: float) -> void:
 		direccion,
 		_red_correr,
 		_red_eterium_sprint,
-		delta,
-		false
+		delta
 	)
 
 
@@ -355,8 +354,7 @@ func _physics_process(delta: float) -> void:
 		direction,
 		run_pressed,
 		bool(entrada.get("eterium_sprint_pressed", false)),
-		delta,
-		true
+		delta
 	)
 
 
@@ -367,8 +365,7 @@ func _procesar_movimiento_normal_con_intencion(
 	direccion: Vector2,
 	correr_solicitado: bool,
 	sprint_eterium_solicitado: bool,
-	delta: float,
-	ajustar_arena: bool
+	delta: float
 ) -> void:
 	_movement_input_direction = direccion
 	var eterium_sprint := (
@@ -391,8 +388,7 @@ func _procesar_movimiento_normal_con_intencion(
 		direccion,
 		multiplicador_velocidad,
 		esta_corriendo or eterium_sprint,
-		delta,
-		ajustar_arena
+		delta
 	)
 
 
@@ -400,8 +396,7 @@ func _aplicar_movimiento_normal(
 	direccion: Vector2,
 	multiplicador_velocidad: float,
 	estado_corriendo: bool,
-	delta: float,
-	ajustar_arena: bool
+	delta: float
 ) -> void:
 	var velocidad := _calcular_movimiento_normal(
 		direccion,
@@ -410,7 +405,6 @@ func _aplicar_movimiento_normal(
 	)
 	physics_movement_controller.establecer_velocidad(self, velocidad)
 	physics_movement_controller.aplicar_desplazamiento(self)
-	if ajustar_arena:
 	if direccion == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
 	_sincronizar_estado_movimiento()
