@@ -301,7 +301,7 @@ func usar_objeto_activo() -> void:
 func _obtener_objeto_activo_para_accion() -> Dictionary:
 	if inventory == null:
 		return {}
-	# El ataque primario usa el objeto activo de la mano derecha.
+	# La acción contextual de este helper usa la mano derecha.
 	return inventory.obtener_objeto_mano_activa("derecha")
 
 
