@@ -1128,6 +1128,15 @@ func _registrar_agresion_interaccion(atacante: Node) -> void:
 		CreatureUtilityAIScript.leer_numero(memoria, "duracion_segundos", 45.0)
 	)
 
+func registrar_interaccion_positiva(actor: Node, intensidad: float = 0.5, duracion: float = 180.0) -> void:
+	## Punto de entrada para eventos de juego confirmados (ayuda/intercambio).
+	if actor == null or not is_instance_valid(actor) or actor.is_in_group("garumis"):
+		return
+	var memoria := _obtener_config_memoria_interaccion()
+	if not bool(memoria.get("activo", false)) or not bool(memoria.get("aceptar_interacciones_positivas", false)):
+		return
+	_memoria_interaccion.registrar_interaccion_positiva(actor, intensidad, duracion)
+
 
 func _actualizar_memoria_interaccion(delta: float) -> void:
 	var memoria := _obtener_config_memoria_interaccion()
@@ -1147,10 +1156,18 @@ func _obtener_respuesta_memoria(candidato: Node2D) -> String:
 	if not bool(memoria.get("activo", false)):
 		return ""
 	var umbral := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_agresion", 1.0), 0.0)
-	if _memoria_interaccion.obtener_agresion(candidato) < umbral:
-		return ""
-	var respuesta := str(memoria.get("respuesta_agresion", "huir")).strip_edges().to_lower()
-	return respuesta if respuesta in ["atacar", "huir", "perseguir", "investigar"] else ""
+	var agresion := _memoria_interaccion.obtener_agresion(candidato)
+	if agresion >= umbral:
+		var respuesta_agresion := str(memoria.get("respuesta_agresion", "huir")).strip_edges().to_lower()
+		if respuesta_agresion in ["atacar", "huir", "perseguir", "investigar"]:
+			return respuesta_agresion
+	var umbral_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_confianza", 1.0), 0.0)
+	if _memoria_interaccion.obtener_confianza(candidato) >= umbral_confianza and bool(memoria.get("aceptar_interacciones_positivas", false)):
+		var respuesta_confianza := str(memoria.get("respuesta_confianza", "investigar")).strip_edges().to_lower()
+		# La confianza sólo puede habilitar aproximación/investigación, nunca agresión.
+		if respuesta_confianza == "investigar":
+			return respuesta_confianza
+	return ""
 
 
 func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
