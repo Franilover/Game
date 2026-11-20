@@ -142,8 +142,6 @@ func _physics_process(delta: float) -> void:
 		return
 	if garumi._movimiento == null:
 		return
-	if garumi.esta_vinculado() or garumi.esta_enfrentamiento() or garumi.esta_guardado():
-		return
 
 	_recargar_configuracion()
 	if not _tiene_perfil_ejecutable():

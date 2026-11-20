@@ -1,20 +1,13 @@
 extends Creature
 class_name Garumi
 
-const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
-
 signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
 signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
 signal eterium_cambiado(actual: int, maximo: int)
 
-const OPCION_OFRECER_VINCULO := 0
-const OPCION_OFRECER_AMISTAD := 1
-
 @export_category("Vínculo")
 var _vinculado: bool = false
 var _tipo_vinculo: String = ""
-var _menu_contextual: CanvasLayer = null
-var _jugador_menu_contextual: Node2D = null
 var _garumi_instancia_id: String = ""
 var _cerebro_garumi: GarumiBrain = null
 var eterium_maximo: int = 30
@@ -116,139 +109,9 @@ func get_interaction_text() -> String:
 
 
 ## Se invoca desde InteractionSystem al acercarse y usar la acción contextual.
-func interact(jugador: Node) -> void:
-	if jugador == null or not is_instance_valid(jugador):
-		return
-	_mostrar_menu_contextual(jugador)
-
-
-func _mostrar_menu_contextual(jugador: Node) -> void:
-	if _vinculado:
-		return
-	if not is_instance_valid(jugador) or not jugador is Node2D:
-		return
-	if is_instance_valid(_menu_contextual):
-		_al_cerrar_menu_contextual()
-
-	# Dos acciones pequeñas flotan sobre la criatura; sin pantalla oscura ni ventana modal grande.
-	_jugador_menu_contextual = jugador as Node2D
-	_menu_contextual = CanvasLayer.new()
-	_menu_contextual.name = "GarumiBondMenuLayer"
-	_menu_contextual.layer = 120
-	_menu_contextual.add_to_group("modal_ui")
-	get_tree().root.add_child(_menu_contextual)
-
-	var overlay := Control.new()
-	overlay.name = "Overlay"
-	overlay.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	overlay.mouse_filter = Control.MOUSE_FILTER_STOP
-	_menu_contextual.add_child(overlay)
-	overlay.gui_input.connect(_al_input_menu_contextual)
-
-	var panel_menu := PanelContainer.new()
-	panel_menu.name = "GarumiBondPanel"
-	panel_menu.mouse_filter = Control.MOUSE_FILTER_STOP
-	overlay.add_child(panel_menu)
-	var margen := MarginContainer.new()
-	margen.name = "Margin"
-	margen.add_theme_constant_override("margin_left", 10)
-	margen.add_theme_constant_override("margin_top", 8)
-	margen.add_theme_constant_override("margin_right", 10)
-	margen.add_theme_constant_override("margin_bottom", 8)
-	panel_menu.add_child(margen)
-	var acciones := HBoxContainer.new()
-	acciones.name = "GarumiBondMenu"
-	acciones.add_theme_constant_override("separation", 8)
-	acciones.mouse_filter = Control.MOUSE_FILTER_STOP
-	acciones.custom_minimum_size = Vector2(0.0, 38.0)
-	margen.add_child(acciones)
-	PIXEL_UI_THEME.apply(panel_menu, false)
-
-	_agregar_boton_menu_garumi(acciones, "Vincular", OPCION_OFRECER_VINCULO, jugador)
-	if not _es_amigo_del_jugador():
-		_agregar_boton_menu_garumi(acciones, "Amistad", OPCION_OFRECER_AMISTAD, jugador)
-	_actualizar_posicion_menu_contextual()
-
-
-func cerrar_menu_contextual() -> void:
-	_al_cerrar_menu_contextual()
-
-
-func _actualizar_posicion_menu_contextual() -> void:
-	if not is_instance_valid(_menu_contextual) or not is_instance_valid(self):
-		return
-	var overlay := _menu_contextual.get_node_or_null("Overlay") as Control
-	var panel_menu := _menu_contextual.get_node_or_null("Overlay/GarumiBondPanel") as Control
-	if overlay == null or panel_menu == null:
-		return
-	var escala_pantalla := get_global_transform_with_canvas().origin
-	var viewport := get_viewport().get_visible_rect().size
-	var tamano := panel_menu.get_combined_minimum_size()
-	panel_menu.size = tamano
-	panel_menu.position = Vector2(
-		clampf(escala_pantalla.x - tamano.x * 0.5, 8.0, maxf(8.0, viewport.x - tamano.x - 8.0)),
-		clampf(escala_pantalla.y - tamano.y - 22.0, 8.0, maxf(8.0, viewport.y - tamano.y - 8.0))
-	)
-
-
-func _process(_delta: float) -> void:
-	if not is_instance_valid(_menu_contextual):
-		return
-	if not is_instance_valid(_jugador_menu_contextual):
-		_al_cerrar_menu_contextual()
-		return
-	if global_position.distance_to(_jugador_menu_contextual.global_position) > get_interaction_distance() + 12.0:
-		_al_cerrar_menu_contextual()
-		return
-	_actualizar_posicion_menu_contextual()
-
-
-func _agregar_boton_menu_garumi(contenedor: HBoxContainer, texto: String, opcion: int, jugador: Node) -> void:
-	var boton := Button.new()
-	boton.text = texto
-	boton.custom_minimum_size = Vector2(112.0, 38.0)
-	boton.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	boton.focus_mode = Control.FOCUS_ALL
-	boton.add_theme_font_size_override("font_size", 12)
-	PIXEL_UI_THEME.apply(boton, false)
-	boton.pressed.connect(_al_seleccionar_opcion.bind(opcion, jugador))
-	contenedor.add_child(boton)
-
-
-func _al_input_menu_contextual(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo:
-		var tecla := event as InputEventKey
-		if tecla.keycode == KEY_ESCAPE:
-			_al_cerrar_menu_contextual()
-			get_viewport().set_input_as_handled()
-	elif event is InputEventMouseButton and event.pressed:
-		var clic := event as InputEventMouseButton
-		if clic.button_index == MOUSE_BUTTON_LEFT:
-			var panel := _menu_contextual.get_node_or_null("Overlay/GarumiBondMenu") if is_instance_valid(_menu_contextual) else null
-			if panel is Control and not (panel as Control).get_global_rect().has_point(clic.position):
-				_al_cerrar_menu_contextual()
-				get_viewport().set_input_as_handled()
-
-
-func _al_cerrar_menu_contextual() -> void:
-	var menu_a_cerrar := _menu_contextual
-	_menu_contextual = null
-	_jugador_menu_contextual = null
-	if is_instance_valid(menu_a_cerrar):
-		menu_a_cerrar.queue_free()
-
-
-func _al_seleccionar_opcion(opcion: int, jugador: Node) -> void:
-	_al_cerrar_menu_contextual()
-	match opcion:
-		OPCION_OFRECER_VINCULO:
-			ofrecer_vinculo(jugador)
-		OPCION_OFRECER_AMISTAD:
-			ofrecer_amistad(jugador)
-
-
-func _al_ocultar_menu() -> void:
-	_al_cerrar_menu_contextual()
+func interact(_jugador: Node) -> void:
+	# Un Garumi se conoce hablando con él; no abre menús de captura ni combate.
+	abrir_dialogo()
 
 
 func _es_amigo_del_jugador() -> bool:
