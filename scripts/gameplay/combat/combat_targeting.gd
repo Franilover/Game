@@ -13,6 +13,7 @@ static func es_atacante_valido(atacante: Node) -> bool:
 		entidad.is_inside_tree()
 		and not entidad.is_queued_for_deletion()
 		and entidad.is_alive
+		and entidad.is_in_group("damageable")
 	)
 
 static func es_objetivo_valido(
