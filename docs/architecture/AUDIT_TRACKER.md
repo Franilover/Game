@@ -375,3 +375,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 | ZONE-02 | Crítica | Persistencia del mundo compartido | Antes se advertía de un fallo al guardar el mundo global pero se descargaba igualmente la zona. Ahora ZoneManager aborta la transición, libera la escena destino preparada y conserva la zona actual si GlobalWorldStore no confirma el snapshot. | Corregido pendiente de prueba de fallo de escritura | Simular una ruta global no escribible en un entorno aislado y confirmar que la zona actual permanece activa. |
 
 | SAVE-04 | Alta | Descubrimiento de partidas recuperables | `listar_ids_partidas()` ahora incluye respaldos `.json.bak` válidos cuando falta el archivo principal. No lista temporales `.tmp` ni respaldos corruptos; `obtener_partidas()` valida el contenido y `leer_partida()` intenta restaurarlo. | Corregido pendiente de CI | Ejecutar `SaveFileRepositoryContract` y comprobar en el menú de partidas una recuperación con sólo `.bak`. |
+
+
+## Operaciones de combate sobre nodos pendientes de eliminación (2026-11-20)
+
+- Hallazgo: `queue_free()` difiere la liberación hasta el final del frame. Durante esa ventana, `is_instance_valid()` e `is_inside_tree()` todavía podían ser verdaderos y permitir un ataque tardío.
+- Corrección: `CombatTargeting` rechaza atacantes/objetivos con `is_queued_for_deletion()`; `CombatDamage` aplica la misma frontera final al objetivo. `CombatSystem.solicitar_danio_desde_entidad()` y `CombatWeaponAttackValidator` identifican el objetivo pendiente como `objetivo_invalido` antes del contacto.
+- Regresión: `test_combat_entity_attack_contract` comprueba API genérica, daño directo y atacante pendiente; `test_combat_weapon_attack_contract` comprueba la ruta de armas.
+- Estado: corregido en código, pendiente de ejecución Godot 4.7 y CI. La protección cubre estas rutas de combate, no declara resuelto el ítem general de entidades inválidas del P0.
