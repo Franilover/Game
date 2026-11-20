@@ -238,17 +238,15 @@ No escribe directamente el estado de misión.
 
 ## 9. Combat
 
-Ruta única:
+**Resolución única de daño:** `CombatDamage.aplicar()` es el único resolver autorizado que entrega daño a `Entity.take_damage()`. No deben existir fórmulas paralelas ni escrituras directas de salud desde gameplay.
 
-`Input → CombatController → CombatAttack → CombatTargeting → CombatDamage → Entity.take_damage()`
+Los caminos de entrada dependen del tipo de acción:
 
-CombatDamage es el único camino de resolución de daño.
+- Melee: `Input → CombatController → CombatSystem → CombatAttackArea/Targeting → CombatDamage`.
+- Proyectiles: `CombatSystem → CombatAttackExecutor → CombatProjectile → CombatDamage`. El proyectil ejecuta el impacto y notifica el resultado; no implementa otra fórmula de daño.
+- IA e IUM: solicitan daño a `CombatSystem.solicitar_danio_desde_entidad()`, que valida la solicitud y delega en `CombatDamage`.
 
-Los procesos IUM con efecto de daño solicitan la ejecución a `CombatSystem.solicitar_danio_desde_entidad()`; no llaman `Entity.take_damage()` directamente.
-
-CombatFeedback sólo muestra el resultado.
-
-CreatureAI e IUMManager no pueden tener otro DamageSystem.
+CombatSystem coordina solicitudes y efectos de gameplay; CombatDamage resuelve el daño; Entity conserva su estado vital. Ningún sistema de IA, IUM, proyectiles o feedback puede crear un DamageSystem alternativo.
 
 ---
 
