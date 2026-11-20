@@ -214,3 +214,6 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [ ] Conectar un evento positivo real cuando exista una acción de gameplay con semántica inequívoca.
 - [ ] Añadir cooperación/evitación entre individuos sólo con eventos y reglas ecológicas existentes.
 - [ ] Validar conducta visual y perfilar carga con muchas criaturas.
+
+
+- [x] Escalado opcional de respuesta por agresiones repetidas, con umbral y memoria temporal acotada.
