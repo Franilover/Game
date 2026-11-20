@@ -370,3 +370,5 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 
 
 | ZONE-01 | Alta | Transiciones de zona | El destino se carga e instancia antes de descargar la zona actual; fallos de ruta/instanciación cancelan la transición sin dejar el manager bloqueado. | Corregido pendiente de ejecución | Ejecutar `test_zone_manager_torres_fallback.tscn` y probar navegación real entre Torres, Hogar y Mundo Abierto. |
+
+| ZONE-02 | Crítica | Persistencia del mundo compartido | Antes se advertía de un fallo al guardar el mundo global pero se descargaba igualmente la zona. Ahora ZoneManager aborta la transición, libera la escena destino preparada y conserva la zona actual si GlobalWorldStore no confirma el snapshot. | Corregido pendiente de prueba de fallo de escritura | Simular una ruta global no escribible en un entorno aislado y confirmar que la zona actual permanece activa. |
