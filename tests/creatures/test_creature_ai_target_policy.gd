@@ -5,6 +5,7 @@ const GarumiScript = preload("res://scripts/creatures/garumi.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const PerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
 const TargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
+const StateDecisionScript = preload("res://scripts/creatures/creature_state_decision.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
 const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
@@ -30,6 +31,23 @@ func _run() -> void:
 	ai.configuracion_ia = {}
 	ai.actividad_horaria = "explorar"
 	ai.perfil = AIScript.Perfil.GENERICO
+
+	# La política de estados clasifica intenciones sin ejecutar conductas.
+	if StateDecisionScript.resolver("atacar") != StateDecisionScript.Decision.ATACAR:
+		_fail("La política no reconoció la intención de atacar.")
+		return
+	if StateDecisionScript.resolver("HUir") != StateDecisionScript.Decision.HUIR:
+		_fail("La política no normalizó la respuesta de huida.")
+		return
+	if StateDecisionScript.resolver("perseguir", false) != StateDecisionScript.Decision.SIN_CAMBIO:
+		_fail("La política ignoró la restricción de persecución del estado.")
+		return
+	if StateDecisionScript.resolver("investigar", true, false) != StateDecisionScript.Decision.SIN_CAMBIO:
+		_fail("La política permitió investigar cuando el estado lo prohíbe.")
+		return
+	if StateDecisionScript.resolver("respuesta_desconocida") != StateDecisionScript.Decision.SIN_CAMBIO:
+		_fail("Una respuesta desconocida produjo una conducta.")
+		return
 
 	# Un jugador cercano no debe ser un objetivo implícito de una criatura
 	# neutral sin una respuesta definida.
