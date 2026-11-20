@@ -68,7 +68,7 @@
 - [x] Separar la salud y el estado vital de las decisiones de IA.
 - [x] Comunicar configuración y daño mediante señales.
 - [~] Separar percepción, selección de objetivo, decisión y ejecución: CreaturePerception descubre candidatos; CreatureTargetSelector elige según la política ecológica; CreatureStateDecision traduce respuestas a intenciones de estado sin ejecutar conductas. CreatureAI conserva la ejecución, los movimientos especializados y los ataques con validación de alcance. Falta extraer conductas de navegación y completar pruebas de transiciones por estado.
-- [~] Auditar navegación, memoria, pérdida de objetivo y reacciones: la pérdida de objetivo conserva y visita la última posición conocida; CreatureMovement recupera bloqueos locales para criaturas y NPC tras detectar falta de progreso. Falta navegación global para rutas complejas y revisión integral de reacciones.
+- [~] Auditar navegación, memoria, pérdida de objetivo y reacciones: la pérdida de objetivo conserva y visita la última posición conocida; CreatureMovement recupera bloqueos locales para criaturas y NPC tras detectar falta de progreso, consultando la geometría estática sin alterar la máscara física predeterminada. Falta navegación global para rutas complejas y revisión integral de reacciones.
 - [ ] Verificar IA fuera de rango y transiciones de simulación.
 - [ ] Revisar perfiles y `ia_config` de las especies existentes.
 - [ ] Comprobar sincronización de configuración desde los datos canónicos.
