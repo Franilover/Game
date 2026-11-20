@@ -622,6 +622,15 @@ func _al_eterium_runtime_cargado(
 func _aplicar_eterium_runtime(reglas: Dictionary, organismos: Array) -> void:
 	eterium.aplicar_runtime(reglas, organismos)
 	_eterium_runtime_resuelto = eterium.esta_listo()
+	# Si las reglas de especie llegaron primero, el runtime general acaba de
+	# establecer sus máximos globales. Reaplicar especie fija la capacidad final.
+	if (
+		_eterium_runtime_resuelto
+		and _eterium_especie_resuelta
+		and not _configuracion_eterium_notificada
+		and _supabase_client_ref != null
+	):
+		_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
 	_sync_vital_desde_eterium()
 	_actualizar_disponibilidad_restauracion_eterium()
 
