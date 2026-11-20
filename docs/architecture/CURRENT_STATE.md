@@ -1363,3 +1363,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Esto bloquea ataques de Garumis y de proxies de criatura desactivados, además de impedir que una entidad no combatiente invoque directamente la API de daño como atacante.
 - `CombatEntityAttackContract` comprueba rechazo de Garumi como atacante tanto desde `CombatSystem` como desde `CombatDamage`.
 - Implementado; pendiente de CI.
+
+
+## Motivos de rechazo explícitos en daño de entidades (2026-11-20)
+
+- `CombatSystem.solicitar_danio_desde_entidad()` distingue ahora objetivo inválido, entidad no dañable y objetivo derrotado, en vez de devolver `objetivo_no_daniable` para cualquier estado rechazado.
+- Esto mantiene el contrato de resultados consistente con la validación de armas y permite a IA/sistemas consumidores reaccionar al motivo correcto.
+- La regresión de entidad usa un objetivo vivo separado al comprobar atacantes pendientes de eliminación, evitando pasar referencias ya liberadas a una API tipada.
+- Implementado; pendiente de CI.
