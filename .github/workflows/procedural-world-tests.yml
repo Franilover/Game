@@ -626,6 +626,14 @@ jobs:
             exit 1
           fi
 
+      - name: Run independent process save restart contract test
+        run: |
+          output="$(timeout 45s godot --headless --path . --script res://tests/persistence/test_save_process_restart.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if ! grep -q 'SaveProcessRestart: PASS' <<<"$output"; then
+            echo "Independent process save restart test did not report PASS."
+            exit 1
+          fi
       - name: Run game state roundtrip persistence contract test
         shell: bash
         run: |
