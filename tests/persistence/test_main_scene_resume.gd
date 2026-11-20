@@ -149,12 +149,22 @@ func _run() -> void:
 
 
 func _limpiar_main(main: Node) -> void:
+	# Liberar primero los gates que se crean dinámicamente y se reubican
+	# durante la configuración. Esperar un frame evita dejar nodos diferidos
+	# huérfanos al desmontar toda la escena principal.
+	if is_instance_valid(main):
+		var inventory := main.get_node_or_null("UI/Inventory") as GarliaInventory
+		if is_instance_valid(inventory) and is_instance_valid(inventory.inventory_controller):
+			inventory.inventory_controller.configurar_gate(null)
+		var player := main.get_node_or_null("Entities/Player") as Player
+		if is_instance_valid(player) and is_instance_valid(player.input_gate):
+			if player.input_gate.get_parent() == player:
+				player.input_gate.queue_free()
+	await get_tree().process_frame
 	await _limpiar_estado_global()
 	if is_instance_valid(main):
 		get_tree().current_scene = self
-		# Este harness es headless y no necesita una animación de salida:
-		# liberar el runtime completo evita dejar NPCs/deferred nodes al salir.
-		main.free()
+		main.queue_free()
 	await get_tree().process_frame
 	await get_tree().process_frame
 
