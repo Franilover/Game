@@ -97,7 +97,7 @@ func procesar_accion_primaria() -> bool:
 	# Aquí solo se decide la acción primaria de combate.
 	var objeto_activo: Dictionary = inventory.obtener_objeto_mano_activa("izquierda") if inventory != null else {}
 	_accion_en_mano_derecha = false
-	var modo := "arma_equipada" if _es_objeto_ataque(objeto_activo) else "desarmado"
+	var modo := "objeto_mano" if _es_objeto_ataque(objeto_activo) else "desarmado"
 
 	return combat_controller.solicitar_ataque(
 		_obtener_direccion_ataque(),
@@ -110,15 +110,15 @@ func procesar_accion_secundaria() -> bool:
 	if player == null or not player.is_alive:
 		return false
 
-	var objeto_equipado := _obtener_objeto_equipado_para_accion()
+	var objeto_mano := _obtener_objeto_mano_activa("derecha")
 	_accion_en_mano_derecha = true
-	if objeto_equipado.is_empty():
+	if objeto_mano.is_empty():
 		return false
 
-	var modo := "arma_equipada" if _es_objeto_ataque(objeto_equipado) else "desarmado"
+	var modo := "objeto_mano" if _es_objeto_ataque(objeto_mano) else "desarmado"
 	return combat_controller.solicitar_ataque(
 		_obtener_direccion_ataque(),
-		objeto_equipado,
+		objeto_mano,
 		modo
 	)
 
@@ -141,7 +141,7 @@ func _al_ataque_solicitado(
 		_atacar_desarmado(direccion_ataque)
 		return
 
-	if modo == "arma_equipada":
+	if modo == "objeto_mano":
 		if not _es_objeto_ataque(objeto):
 			return
 		_atacar_con_objeto(objeto, direccion_ataque)
@@ -292,24 +292,16 @@ func usar_objeto_activo() -> void:
 	if player == null:
 		return
 
-	var objeto_activo := _obtener_objeto_activo_para_accion()
+	var objeto_activo := _obtener_objeto_mano_activa("derecha")
 	if objeto_activo.is_empty() or not _es_objeto_ataque(objeto_activo):
 		return
 	_atacar_con_objeto(objeto_activo, _obtener_direccion_ataque())
 
 
-func _obtener_objeto_activo_para_accion() -> Dictionary:
+func _obtener_objeto_mano_activa(mano: String) -> Dictionary:
 	if inventory == null:
 		return {}
-	# La acción contextual de este helper usa la mano derecha.
-	return inventory.obtener_objeto_mano_activa("derecha")
-
-
-func _obtener_objeto_equipado_para_accion() -> Dictionary:
-	if inventory == null:
-		return {}
-	# El clic derecho usa el objeto activo de la mano derecha.
-	return inventory.obtener_objeto_mano_activa("derecha")
+	return inventory.obtener_objeto_mano_activa(mano)
 
 
 func _atacar_desarmado(direccion: Vector2) -> void:
