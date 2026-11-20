@@ -445,9 +445,6 @@ func _guardar_tombstone_garumi_vinculado(garumi: Garumi) -> void:
 		"runtime_instance_key": instancia,
 		"position": garumi.global_position,
 		"velocity": Vector2.ZERO,
-		"health": 0,
-		"max_health": garumi.max_health,
-		"is_alive": false,
 		"estado": "vinculado"
 	}
 	_runtime_state_by_key[_runtime_key(chunk, instancia)] = tombstone
@@ -518,17 +515,18 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		"garumi_debug_preview": bool(criatura.datos.get("garumi_debug_preview", false)),
 		"position": criatura.global_position,
 		"velocity": criatura.velocity,
-		"health": criatura.health,
-		"max_health": criatura.max_health,
-		"is_alive": criatura.is_alive,
 		"estado": criatura.get_meta("estado_mundo", "")
 	}
 	if criatura is Garumi:
+		# Garumis son entidades de exploración: su estado de mundo no contiene
+		# vitalidad, nivel ni experiencia del sistema de criaturas combatientes.
 		var garumi := criatura as Garumi
 		datos_criatura["garumi_datos"] = garumi.datos.duplicate(true)
-		datos_criatura["nivel"] = garumi.nivel
-		datos_criatura["experiencia_total"] = garumi.experiencia_total
 		datos_criatura["eterium_actual"] = garumi.eterium_actual
+	else:
+		datos_criatura["health"] = criatura.health
+		datos_criatura["max_health"] = criatura.max_health
+		datos_criatura["is_alive"] = criatura.is_alive
 	var ai := criatura.get_node_or_null("AIController") as CreatureAI
 	if ai != null:
 		var necesidades_runtime := ai._obtener_estado_necesidades()
