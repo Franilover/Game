@@ -2,6 +2,7 @@ extends SceneTree
 
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const EntityScript = preload("res://scripts/characters/entity.gd")
+const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
 
 
 func _initialize() -> void:
@@ -42,10 +43,12 @@ func _run() -> void:
 			)
 	)
 
-	var danio_externo := criatura.take_damage_desde(
-		atacante_externo,
+	var danio_externo := CombatDamageScript.aplicar_y_obtener_danio(
+		criatura,
 		10,
-		"Prueba/Externo"
+		"Prueba/Externo",
+		Callable(),
+		atacante_externo
 	)
 
 	if danio_externo != 10:
