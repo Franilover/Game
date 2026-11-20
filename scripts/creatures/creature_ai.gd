@@ -1134,15 +1134,15 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 		if criatura.get_meta("garlia_objetivo_liberacion") == candidato:
 			return "atacar"
 
-	var respuesta_memoria := _obtener_respuesta_memoria(candidato)
-	if not respuesta_memoria.is_empty():
-		return respuesta_memoria
-
 	if _es_reactivo_bosque() and (candidato.is_in_group("player") or candidato == jugador):
 		# La conducta se evalúa sobre el jugador concreto detectado por la IA.
 		if _es_seiloris():
 			return "huir" if _jugador_es_agresor_bosque(candidato) else ""
 		return "atacar" if _jugador_es_asesino_bosque(candidato) else ""
+
+	var respuesta_memoria := _obtener_respuesta_memoria(candidato)
+	if not respuesta_memoria.is_empty():
+		return respuesta_memoria
 
 	if candidato is Creature and bool((candidato as Creature).get_meta("atractor_refugio", false)):
 		return "perseguir"
