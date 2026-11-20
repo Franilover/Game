@@ -439,3 +439,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - `solicitar_danio_desde_entidad()` devuelve ahora `objetivo_derrotado` para objetivos vivos=false y `objetivo_no_daniable` para entidades fuera del grupo de daño, conservando `objetivo_invalido` para referencias/instancias fuera de juego.
 - La prueba de atacante pendiente utiliza un segundo objetivo vivo, evitando invocar APIs tipadas con una referencia que el propio test ya liberó.
 - Estado: corrección implementada; pendiente de CI.
+
+
+## Resultado de validación P1 de combate (2026-11-20)
+
+- Godot 4.7: PASS en los contratos de criatura/defensa, temporalidad, resolver de objetos, executor melee/proyectiles, proyectiles, efectos de impacto, validación de armas, ataque de entidades y cola de eventos.
+- GDScript Quality (Advisory): PASS.
+- El workflow completo continúa fallando después del bloque de combate en `PlayerEteriumRestoreReadiness` (error de liberación de objeto RefCounted en la línea 49); no es una regresión de combate.
+- Pendiente real de P1: validar colisiones físicas y balance dentro de una partida; definir resistencias/inmunidades solo cuando exista un contrato explícito de tipos de daño.
