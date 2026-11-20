@@ -660,3 +660,7 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - La curación automática sólo existe cuando salud y Eterium son reservas separadas. En fisiología compartida, gastar Eterium para curar salud consumiría la misma reserva que representa la vida; por eso el runtime rechaza esa operación. La recuperación de la reserva compartida se realiza mediante las rutas de restauración/absorción permitidas.
 - `establecer_mana()` no puede reanimar un estado vital muerto. La reaparición es responsabilidad del ciclo explícito de respawn.
 - `test_player_vital_state_contract` cubre curación por el ciclo idle, rechazo de gasto/restauración/curación tras la muerte, y bloqueo de curación automática en fisiología compartida.
+
+- Los costes pendientes de sprint no se calculan ni confirman con el jugador muerto; si la confirmación pierde validez, el acumulador se descarta. El coordinador también rechaza procesar sprint sin un estado vital vivo.
+- Las reapariciones local y de red reinician los acumuladores de recuperación, sprint y curación. Ningún tiempo o coste pendiente de una vida anterior se traslada a la siguiente.
+- El cálculo de curación rechaza tasas de coste/curación no positivas y la aplicación rechaza costes negativos.
