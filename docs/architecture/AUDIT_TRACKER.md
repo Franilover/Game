@@ -1,8 +1,8 @@
 # Garlia — Registro persistente de auditoría
 
-**Última actualización:** 2026-11-16  
+**Última actualización:** 2026-11-20  
 **Repositorio:** `Franilover/Game`  
-**Rama auditada:** `fix/p0-godot47-crafting-token-type`  
+**Rama auditada en esta continuación:** `work/design-and-architecture`  
 **Commit validado por CI:** `1ceaad725f31e47cbd6446e502463c9eb422fc2b`  
 **Pull request de correcciones:** [#12](https://github.com/Franilover/Game/pull/12)  
 **Método:** inspección estática del código actual y CI completo Godot 4.7. No equivale a una prueba visual ni a una validación manual de gameplay.
@@ -353,3 +353,16 @@ Esta sección sustituye los estados históricos para los hallazgos revalidados e
 - Evita que el NPC continúe caminando hacia la antigua posición del jugador cuando el diálogo termina durante una transición o con calendario no disponible.
 - `test_npc_schedule_context` recorre la cancelación real de `NPCConversationSystem`, simula pausa/reanudación del diálogo y comprueba que agenda y movimiento liberen el acercamiento sin contexto mundial.
 - CI pendiente.
+
+
+## Continuación P0 — 2026-11-20
+
+La rama de trabajo recibió correcciones adicionales de persistencia que todavía no deben marcarse como verificadas hasta ejecutar Godot/CI:
+
+| ID | Prioridad | Área | Hallazgo y corrección | Estado | Verificación pendiente |
+|---|---|---|---|---|---|
+| SAVE-02 | Alta | Validación del payload | GameState valida ahora la estructura anidada de `inventario_estado`: items deben ser diccionarios, hotbar debe ser un arreglo numérico, equipo debe contener diccionarios y los selectores deben ser numéricos. Conserva lectura legacy de la clave `hotbar`. | Corregido pendiente de prueba | Ejecutar `GameStateSavePayloadContract` en Godot 4.7/CI y probar un save corrupto real con respaldo válido. |
+| INV-04 | Alta | Restauración de equipo | La carga de equipamiento ahora reemplaza todas las ranuras y solo acepta armaduras compatibles en cabeza/torso/pies. El controlador notifica el estado completo y la UI ya no añade equipo sobre el anterior. | Corregido pendiente de prueba | Ejecutar `InventoryEquipmentTransaction`; probar dos cargas consecutivas en la misma instancia de inventario y comprobar que no sobreviva equipo del primer save. |
+| INV-03 | Media | Capacidad visible del inventario | Sigue pendiente decidir cómo hacer accesibles los objetos guardados por encima de `slot_count`; no se recortan para evitar pérdida silenciosa. | En verificación | Probar un save con más slots que la UI actual y elegir migración/paginación o validación conservadora. |
+
+Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las nuevas pruebas están integradas en pasos ya existentes del workflow; no hay confirmación de ejecución en esta sesión.
