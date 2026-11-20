@@ -1195,3 +1195,12 @@ La regresión de salud de Garumi se reemplazó por un contrato de no combate: ve
 ## Interacción Garumi conversacional — 2026-11-19
 
 La interacción principal de Garumi ahora deriva al diálogo heredado de Creature mediante `abrir_dialogo()`. Se retiró el menú contextual de acciones de vínculo/amistad que sustituía la conversación. El vínculo persistente queda como relación para habilitar habilidades, no como invocación física; los Garumis vinculados continúan como entidades del mundo.
+
+## Recepción de daño del jugador y defensa — 2026-11-20
+
+- El daño entrante del jugador atraviesa `Player.take_damage()`; allí se calcula la defensa del equipamiento antes de aplicar el impacto a la vida o a la reserva de Eterium compartida.
+- `CombatDefense` es el único cálculo de mitigación: resta defensa plana, limita el resultado a cero y redondea hacia arriba cuando queda daño fraccionario.
+- La ruta de Eterium compartido sincroniza vida y estado de supervivencia desde `PlayerEteriumRuntime`; el evento de cambio actualiza la presentación y activa la muerte una sola vez.
+- La durabilidad de armadura no se consume al recibir daño. El desgaste de equipo sigue siendo una operación explícita de inventario, no un efecto implícito del golpe.
+- `test_inventory_equipment_transaction` cubre ahora daño reducido, bloqueo completo, impacto nulo, defensa negativa, redondeo fraccionario y fallback ante estadísticas mal formadas.
+- La regresión verifica el cálculo puro de mitigación; la prueba de integración en ejecución de `Player.take_damage()` sigue siendo una cobertura separada por añadir.
