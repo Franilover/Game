@@ -424,3 +424,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Corrección: `CombatDamage.aplicar()` valida al atacante no nulo antes y después del modificador mediante `CombatTargeting.es_atacante_valido()`. El daño ambiental sin atacante explícito conserva `null`.
 - Regresión: `CombatEntityAttackContract` cubre atacante fuera del árbol; el contrato de Creature ahora usa una entidad atacante válida.
 - Estado: implementado; pendiente de CI.
+
+
+## Elegibilidad de atacantes y no-combate Garumi (2026-11-20)
+
+- Hallazgo: `CombatTargeting` exigía una Entity viva y dentro del árbol, pero no comprobaba que siguiera siendo un combatiente activo. Un Garumi conserva `is_alive=true` por diseño y podía superar esa primera frontera como atacante si se invocaba la API directamente.
+- Corrección: el atacante también debe pertenecer a `damageable`. Esto excluye Garumis y proxies de criaturas desactivados; no cambia su presencia, vínculo ni habilidades de exploración.
+- Regresión: `CombatEntityAttackContract` comprueba que Garumi no pueda iniciar ataques desde CombatSystem ni atribuir daño a través de CombatDamage.
+- Estado: implementado; pendiente de CI.
