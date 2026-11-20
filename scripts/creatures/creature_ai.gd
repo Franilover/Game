@@ -1,6 +1,8 @@
 extends Node
 class_name CreatureAI
 
+const CreaturePerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
+
 
 signal estado_cambiado(anterior: int, nuevo: int)
 
@@ -766,44 +768,11 @@ func _actualizar_percepcion() -> void:
 
 
 func _obtener_candidatos_entidad() -> Array[Node2D]:
-	var candidatos: Array[Node2D] = []
-	# La referencia explícita también sirve para pruebas aisladas y para
-	# escenas donde el Player todavía no se ha añadido al grupo.
-	if is_instance_valid(jugador) and jugador is Node2D:
-		var jugador_configurado := jugador as Node2D
-		if jugador_configurado.is_inside_tree() and not ("is_alive" in jugador_configurado and not bool(jugador_configurado.get("is_alive"))):
-			candidatos.append(jugador_configurado)
-	# En multijugador el nodo Player configurado en la fábrica es sólo el ancla
-	# del mundo. Los jugadores reales se descubren por grupo en cada tick.
-	var arbol := Engine.get_main_loop() as SceneTree
-	if arbol == null:
-		return candidatos
-	for jugador_variant in arbol.get_nodes_in_group("player"):
-		if not jugador_variant is Node2D:
-			continue
-		var jugador_actual := jugador_variant as Node2D
-		if not is_instance_valid(jugador_actual) or not jugador_actual.is_inside_tree():
-			continue
-		if "is_alive" in jugador_actual and not bool(jugador_actual.get("is_alive")):
-			continue
-		if not jugador_actual in candidatos:
-			candidatos.append(jugador_actual)
-
-	if entity_manager == null or not is_instance_valid(entity_manager):
-		return candidatos
-	for entidad_variant in entity_manager.obtener_entidades_activas():
-		if not entidad_variant is Node2D:
-			continue
-		var entidad := entidad_variant as Node2D
-		if entidad == criatura or not is_instance_valid(entidad):
-			continue
-		if not entidad.is_inside_tree() or not entidad is Entity:
-			continue
-		if not entidad in candidatos:
-			candidatos.append(entidad)
-
-	return candidatos
-
+	return CreaturePerceptionScript.obtener_candidatos(
+		criatura,
+		jugador,
+		entity_manager
+	)
 
 func _refrescar_objetivo() -> void:
 	# Los Lesfleeng liberados por un Ligniano protegen al objetivo que lo atacó.
