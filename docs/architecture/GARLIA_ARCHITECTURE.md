@@ -634,3 +634,11 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - `CombatProjectile._finalizar()` es el único cierre para impacto, cancelación y expiración. Marca el proyectil como consumido, desactiva la detección de colisiones de forma diferida y solicita su eliminación; las rutas de salida son idempotentes.
 - La señal de contacto es síncrona y puede disparar cambios de estado. El proyectil vuelve a validar atacante y objetivo después de emitirla y antes de llamar a `CombatDamage`; morir durante un listener cancela el daño pendiente.
 - La expiración bloquea también los callbacks de colisión tardíos del mismo frame. La prueba temporal cubre expiración, cierre y muerte del atacante durante el contacto.
+
+
+### Contrato de ejecución de ataques de criaturas
+
+- `CreatureAI` decide objetivo, perfil, alcance y momento; no reduce salud. Los perfiles de contacto (genérico, Dramarias, Flaxis y Lignianos) pasan por `_aplicar_danio_objetivo()` y `CombatSystem.solicitar_danio_desde_entidad()`. Cambiaformas usa `solicitar_ataque_con_arma()`; Rancrodeen usa la solicitud genérica en cada intervalo de adherencia.
+- Las señales de contacto son síncronas. Tras emitir `contacto_efectivo`, las APIs centrales vuelven a validar atacante y objetivo antes del daño. Una señal que derrote o retire al atacante/objetivo cancela el daño pendiente. El resolver melee `_aplicar_danio()` aplica la misma validación, cubriendo la ruta del jugador y armas de entidades.
+- Los efectos posteriores al contacto no deben ejecutarse sobre participantes derrotados. Lignianos sólo aplica ralentización si atacante y jugador siguen vivos; Rancrodeen se desprende cuando el objetivo deja de ser una entidad válida para combate.
+- Las pruebas de contrato cubren interrupción en solicitudes genéricas, melee y armas; conservan el contacto ya emitido, pero no registran daño ni `ataque_realizado` cuando la acción fue interrumpida.
