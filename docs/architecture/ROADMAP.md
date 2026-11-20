@@ -340,3 +340,12 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] Nuevo contrato tests/persistence/test_zone_manager_home_position.tscn cubre coordenadas válidas y rechaza datos inválidos. También se mantienen aprobadas las pruebas de muebles/interior y reinicio general.
 - [x] Regresión completa Godot 4.7 aprobada: [run 44811300461](https://github.com/Franilover/Game/actions/runs/44811300461). Calidad GDScript del cambio: [run 44811288159](https://github.com/Franilover/Game/actions/runs/44811288159).
 - [~] Esto cierra la restauración de posición al reingresar a Hogar desde otra zona. Sigue pendiente el ciclo de dos procesos que guarde y reabra directamente una partida mientras el jugador permanece dentro del interior.
+
+### Persistencia local de entidades del mundo procedural — 2026-11-20
+
+- [x] Hallazgo: WorldEntityManager ya capturaba/restauraba el estado dinámico de criaturas y props, pero el único consumidor de esa API era GlobalWorldStore. Las partidas locales no conservaban esos cambios entre procesos.
+- [x] GameState guarda deltas por tipo de zona en entidades_mundo_local_por_zona. Se serializan Vector2 y Vector2i con etiquetas explícitas para sobrevivir al JSON y recuperar sus tipos al cargar.
+- [x] GameState captura el manager al guardar una partida; ZoneManager también captura antes de descargar Mundo Abierto/Expedición. Main restaura el estado local antes de registrar al jugador y activar el streaming.
+- [x] Servidor dedicado continúa usando GlobalWorldStore; los clientes de mundo global no mezclan su save privado con el estado autoritativo de la sesión.
+- [x] Nuevo contrato tests/persistence/test_local_world_entity_state.tscn verifica JSON roundtrip, posiciones/velocidades, coordenadas de chunk, tombstones de props y aislamiento entre zonas. Regresión completa Godot 4.7: [run 44812559373](https://github.com/Franilover/Game/actions/runs/44812559373); calidad GDScript: [run 44812537936](https://github.com/Franilover/Game/actions/runs/44812537936).
+- [~] Falta una prueba de dos procesos que cargue un mundo procedural real, materialice chunks y demuestre que criaturas/props modificados vuelven a aparecer con el estado correcto. El contrato actual valida el manager y la serialización, no el ciclo completo del streamer.
