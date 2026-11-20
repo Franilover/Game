@@ -43,6 +43,9 @@ func _run() -> void:
 		errores.append("No se pudo registrar el prop de recolección.")
 	else:
 		recolectado.queue_free()
+		# Un guardado global puede ocurrir antes de que queue_free procese
+		# tree_exiting; la captura no debe revivir el recurso como presente.
+		manager.guardar_estado_entidad(recolectado, chunk_recoleccion)
 		await get_tree().process_frame
 		var estado_recolectado: Dictionary = manager.obtener_estado_prop(chunk_recoleccion, "prop:0:recurso_a")
 		if estado_recolectado.is_empty() or bool(estado_recolectado.get("is_present", true)):
