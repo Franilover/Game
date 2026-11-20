@@ -576,3 +576,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Los recuerdos siguen limitados a 16 individuos, con referencias débiles, decaimiento y expiración.
 - Pendiente: identificar un evento positivo de gameplay que tenga semántica inequívoca; no conectar diálogo o proximidad como recompensa social. Pendiente también validación visual y profiling con poblaciones grandes.
 - Estado: código y pruebas añadidos; CI de la serie en ejecución. Un run anterior falló por una expectativa de test corregida posteriormente; no se declara aprobada la serie hasta que termine la regresión de la punta actual.
+
+
+## Escalado de respuesta por agresiones repetidas (2026-11-20)
+
+- `CreatureAI` admite umbrales y respuesta opcionales para agresión repetida (`umbral_agresion_repetida`, `respuesta_agresion_repetida`).
+- La respuesta de escalado sólo se activa cuando la agresión acumulada supera el umbral configurado; la memoria mantiene límites, decaimiento y expiración, por lo que la adaptación no es permanente ni ilimitada.
+- Sin esos campos, se conserva exactamente la respuesta de agresión existente. No se modifica la política ecológica ni se introduce aprendizaje de especie.
+- `CreatureAITargetPolicy` cubre respuesta inicial y escalado después de agresiones repetidas. La regresión completa y GDScript Quality pasaron para el commit `521b694` (runs `44698006887` y `44698006898`); los cambios posteriores de percepción y escalado están en nueva validación.
