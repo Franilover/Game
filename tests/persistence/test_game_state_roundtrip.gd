@@ -96,7 +96,6 @@ func _run() -> void:
 	estado_legacy.from_dictionary({"stamina": 50.0})
 	if not is_equal_approx(estado_legacy.stamina, 1.5):
 		errores.append("La migración de stamina antigua (0..100) no conservó su valor proporcional.")
-	estado_legacy.free()
 	if destino.player_state.position != Vector2(123.5, 456.25) or not destino.player_state.position_valida:
 		errores.append("La posición válida del jugador no sobrevivió al roundtrip.")
 	if destino.player_state.tile != Vector2i(12, 45) or not destino.player_state.tile_valido:
