@@ -636,10 +636,6 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if not _entity_manager.registrar(prop, chunk_coord):
 			prop.queue_free()
 			continue
-		var estado := _entity_manager.obtener_estado_prop(
-			chunk_coord,
-			str(dato.get("runtime_instance_key", ""))
-		)
 		if not estado.is_empty():
 			prop.global_position = estado.get("position", dato.get("position", prop.global_position))
 		else:
