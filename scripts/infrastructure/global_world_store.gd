@@ -15,6 +15,7 @@ const GLOBAL_FLAGS := [
 ]
 
 var _elapsed_save: float = 0.0
+var _pause_after_save_pending: bool = false
 var _main: Node = null
 var _entidades_por_zona: Dictionary = {}
 
@@ -292,20 +293,28 @@ func _leer_json_dictionary(ruta: String) -> Dictionary:
 	return resultado
 
 func _process(delta: float) -> void:
-	if not GarliaMultiplayer.es_servidor_dedicado():
+	if not GarliaMultiplayer.es_servidor_dedicado() or get_tree().paused:
 		return
-	if GarliaMultiplayer.obtener_cantidad_jugadores_remotos() <= 0:
+	var sin_jugadores := GarliaMultiplayer.obtener_cantidad_jugadores_remotos() <= 0
+	if sin_jugadores and not _pause_after_save_pending:
 		return
+	if not sin_jugadores:
+		_pause_after_save_pending = false
 	_elapsed_save += delta
 	if _elapsed_save < SAVE_INTERVAL:
 		return
 	_elapsed_save = 0.0
-	guardar_desde_runtime()
+	if sin_jugadores:
+		guardar_y_pausar()
+	else:
+		guardar_desde_runtime()
 
 
 func guardar_y_pausar() -> void:
 	if not guardar_desde_runtime():
-		push_error("GlobalWorldStore: no se pausó el mundo porque el guardado no pudo confirmarse.")
+		_pause_after_save_pending = true
+		push_error("GlobalWorldStore: no se pausó el mundo porque el guardado no pudo confirmarse; se reintentará.")
 		return
+	_pause_after_save_pending = false
 	get_tree().paused = true
 	print("GlobalWorldStore: no quedan jugadores; mundo guardado y pausado.")
