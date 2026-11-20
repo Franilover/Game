@@ -436,6 +436,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run hotbar runtime selection synchronization regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/ui/test_hotbar_selection_sync.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|HotbarSelectionSync: FAIL:' <<<"$output"; then
+            echo "Hotbar runtime selection synchronization test reported errors."
+            exit 1
+          fi
+
       - name: Run inventory drop transaction contract test
         shell: bash
         run: |
