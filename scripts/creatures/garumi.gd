@@ -1,42 +1,24 @@
 extends Creature
 class_name Garumi
 
-const GARUMI_PROGRESSION_SCRIPT: Script = preload("res://scripts/creatures/garumi_progression.gd")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
 signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
-signal nivel_cambiado(nivel_anterior: int, nivel_actual: int)
-signal experiencia_cambiada(total: int, nivel: int)
 signal eterium_cambiado(actual: int, maximo: int)
 
 const OPCION_OFRECER_VINCULO := 0
-const OPCION_ENFRENTAR := 1
-const OPCION_FORZAR_VINCULO := 2
-const OPCION_RETIRARSE := 3
-const OPCION_ROMPER_VINCULO := 4
-const OPCION_OFRECER_AMISTAD := 5
+const OPCION_OFRECER_AMISTAD := 1
 
-@export_category("Vínculo y combate")
-@export_range(1, 1000, 1) var salud_combate_predeterminada: int = 40
-@export_range(0.05, 0.75, 0.05) var umbral_vinculo_forzado: float = 0.25
-
-var _enfrentamiento_activo: bool = false
-var _combate_vinculado_activo: bool = false
+@export_category("Vínculo")
 var _vinculado: bool = false
 var _tipo_vinculo: String = ""
-var _jugador_del_encuentro: Node = null
 var _menu_contextual: CanvasLayer = null
 var _jugador_menu_contextual: Node2D = null
 var _jugador_vinculado: Node = null
 var _guardado: bool = false
 var _garumi_instancia_id: String = ""
-var _distancia_maxima_seguimiento: float = 520.0
 var _cerebro_garumi: GarumiBrain = null
-var _progresion: Variant = GARUMI_PROGRESSION_SCRIPT.new()
-var nivel: int = 1
-var experiencia_total: int = 0
-var estadisticas_combate: Dictionary = {}
 var eterium_maximo: int = 30
 var eterium_actual: int = 30
 
@@ -57,92 +39,7 @@ func _configurar_cerebro_garumi() -> void:
 
 
 func _physics_process(delta: float) -> void:
-	if _combate_vinculado_activo:
-		return
-	if _vinculado:
-		if _guardado:
-			return
-		if not is_instance_valid(_jugador_vinculado):
-			_guardar_garumi()
-			return
-		if not _enfrentamiento_activo and global_position.distance_to((_jugador_vinculado as Node2D).global_position) > _distancia_maxima_seguimiento:
-			_guardar_garumi()
-			return
-		super._physics_process(delta)
-		return
 	super._physics_process(delta)
-
-
-func obtener_estadisticas_combate() -> Dictionary:
-	return estadisticas_combate.duplicate(true)
-
-
-func experiencia_para_siguiente_nivel() -> int:
-	if nivel >= GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO:
-		return 0
-	return _progresion.xp_para_siguiente_nivel(nivel)
-
-
-func ganar_experiencia(cantidad: int) -> int:
-	if cantidad <= 0 or nivel >= GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO:
-		return 0
-	var nivel_anterior := nivel
-	var vida_maxima_anterior := max_health
-	var eterium_maximo_anterior := eterium_maximo
-	experiencia_total += cantidad
-	nivel = _progresion.nivel_desde_experiencia(experiencia_total)
-	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
-	max_health = int(estadisticas_combate.get("vida", max_health))
-	eterium_maximo = int(estadisticas_combate.get("eterium", eterium_maximo))
-	if nivel > nivel_anterior:
-		# El aumento de capacidad no castiga la salud o Eterium que ya tenía.
-		health = mini(max_health, health + max_health - vida_maxima_anterior)
-		eterium_actual = mini(eterium_maximo, eterium_actual + eterium_maximo - eterium_maximo_anterior)
-		vital_state.configurar(max_health, max_mana)
-		vital_state.health = health
-		vital_state.is_alive = health > 0
-		_sync_desde_vital()
-		health_changed.emit(health, max_health)
-		eterium_cambiado.emit(eterium_actual, eterium_maximo)
-		nivel_cambiado.emit(nivel_anterior, nivel)
-	datos["nivel"] = nivel
-	datos["experiencia_total"] = experiencia_total
-	datos["eterium_actual"] = eterium_actual
-	experiencia_cambiada.emit(experiencia_total, nivel)
-	_persistir_estado_vinculo()
-	return nivel - nivel_anterior
-
-
-func calcular_danio_ofensivo(potencia: float = 100.0) -> int:
-	return _progresion.calcular_danio(
-		int(estadisticas_combate.get("ataque", 10)),
-		0,
-		potencia
-	)
-
-
-func calcular_danio_recibido(danio_base: int) -> int:
-	return _progresion.calcular_danio(
-		danio_base,
-		int(estadisticas_combate.get("defensa", 0)),
-		100.0
-	)
-
-
-func curar_con_eterium(cantidad: int) -> int:
-	if cantidad <= 0 or not is_alive or health >= max_health:
-		return 0
-	var anterior := health
-	health = mini(max_health, health + cantidad)
-	vital_state.health = health
-	vital_state.is_alive = health > 0
-	_sync_desde_vital()
-	var recuperada := health - anterior
-	if recuperada > 0:
-		health_changed.emit(health, max_health)
-		salud_combate_cambiada.emit(health, max_health)
-		_persistir_estado_vinculo()
-	return recuperada
 
 
 func gastar_eterium(cantidad: int) -> bool:
@@ -251,35 +148,8 @@ func configurar(datos_garumi: Dictionary) -> void:
 	super.configurar(datos_separados)
 	_vinculado = bool(datos_separados.get("vinculado", false))
 	_tipo_vinculo = str(datos_separados.get("tipo_vinculo", ""))
-	_progresion.configurar(datos_separados)
-	var nivel_guardado := clampi(
-		int(datos_separados.get("nivel", 1)),
-		1,
-		GARUMI_PROGRESSION_SCRIPT.NIVEL_MAXIMO
-	)
-	var tiene_experiencia_guardada := datos_separados.has("experiencia_total")
-	experiencia_total = maxi(0, int(datos_separados.get("experiencia_total", 0)))
-	if tiene_experiencia_guardada:
-		# La XP acumulada es la fuente de verdad cuando existe en el guardado.
-		nivel = _progresion.nivel_desde_experiencia(experiencia_total)
-	else:
-		# Compatibilidad con guardados antiguos que sólo conservaban el nivel.
-		nivel = nivel_guardado
-		experiencia_total = _progresion.xp_total_para_nivel(nivel)
-	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
-	max_health = int(estadisticas_combate.get("vida", salud_combate_predeterminada))
-	eterium_maximo = int(estadisticas_combate.get("eterium", 30))
 	eterium_actual = clampi(int(datos_separados.get("eterium_actual", eterium_maximo)), 0, eterium_maximo)
-	datos["nivel"] = nivel
-	datos["experiencia_total"] = experiencia_total
 	datos["eterium_actual"] = eterium_actual
-	var salud_guardada := clampi(
-		int(datos_separados.get("health", max_health)),
-		0,
-		max_health
-	)
-	vital_state.configurar(max_health, max_mana)
-	restaurar_estado_vital(salud_guardada, salud_guardada > 0)
 	_configurar_cerebro_garumi()
 
 
@@ -326,7 +196,7 @@ func interact(jugador: Node) -> void:
 
 
 func _mostrar_menu_contextual(jugador: Node) -> void:
-	if _vinculado or _enfrentamiento_activo:
+	if _vinculado:
 		return
 	if not is_instance_valid(jugador) or not jugador is Node2D:
 		return
@@ -442,19 +312,10 @@ func _al_cerrar_menu_contextual() -> void:
 
 
 func _al_seleccionar_opcion(opcion: int, jugador: Node) -> void:
-	# Liberar el menú antes de ejecutar una acción que cambie de estado o de cámara.
 	_al_cerrar_menu_contextual()
 	match opcion:
 		OPCION_OFRECER_VINCULO:
 			ofrecer_vinculo(jugador)
-		OPCION_ENFRENTAR:
-			iniciar_enfrentamiento(jugador)
-		OPCION_FORZAR_VINCULO:
-			forzar_vinculo(jugador)
-		OPCION_RETIRARSE:
-			finalizar_enfrentamiento()
-		OPCION_ROMPER_VINCULO:
-			romper_vinculo()
 		OPCION_OFRECER_AMISTAD:
 			ofrecer_amistad(jugador)
 
@@ -483,16 +344,16 @@ func obtener_datos_amistad() -> Dictionary:
 	registro["garumi_instancia_id"] = _obtener_id_instancia_social()
 	registro["vinculado"] = _vinculado
 	registro["tipo_vinculo"] = _tipo_vinculo
-	registro["nivel"] = nivel
-	registro["experiencia_total"] = experiencia_total
 	registro["eterium_actual"] = eterium_actual
-	registro["health"] = health
+	registro.erase("health")
+	registro.erase("nivel")
+	registro.erase("experiencia_total")
 	registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", criatura_nombre)))
 	return registro
 
 
 func ofrecer_amistad(jugador: Node) -> bool:
-	if _vinculado or _enfrentamiento_activo or not is_instance_valid(jugador):
+	if not is_instance_valid(jugador):
 		return false
 	if _es_amigo_del_jugador():
 		return true
@@ -518,7 +379,7 @@ func _notificar_resultado_amistad(exito: bool) -> void:
 
 
 func ofrecer_vinculo(jugador: Node) -> bool:
-	if _vinculado or _enfrentamiento_activo or jugador == null or not is_instance_valid(jugador):
+	if _vinculado or jugador == null or not is_instance_valid(jugador):
 		return false
 	var probabilidad := clampf(float(datos.get("aceptacion_vinculo", 0.5)), 0.0, 1.0)
 	if _rng.randf() > probabilidad:
@@ -529,59 +390,12 @@ func ofrecer_vinculo(jugador: Node) -> bool:
 	return _establecer_vinculo(jugador, "voluntario")
 
 
-## Permite proponer un vínculo voluntario durante el combate desde el HUD.
-## Si lo rechaza, el enfrentamiento continúa; si acepta, _establecer_vinculo cierra la arena.
-func ofrecer_vinculo_en_combate(jugador: Node) -> bool:
-	if _vinculado or not _enfrentamiento_activo or jugador == null or not is_instance_valid(jugador):
-		return false
-	if _jugador_del_encuentro != jugador:
-		return false
-	var probabilidad := clampf(float(datos.get("aceptacion_vinculo", 0.5)), 0.0, 1.0)
-	if _rng.randf() > probabilidad:
-		propuesta_vinculo_rechazada.emit(self, jugador)
-		_notificar_resultado_vinculo(false, "")
-		print("Garumi: ", criatura_nombre, " rechaza la propuesta de vínculo durante el combate.")
-		return false
-	return _establecer_vinculo(jugador, "voluntario")
-
-
-## Compatibilidad temporal con llamadas antiguas. Los Garumis no entran en combate.
-func iniciar_enfrentamiento(_jugador: Node) -> bool:
-	return false
-
-
-
-## Activa un rival adicional de un encuentro múltiple sin reiniciar arena ni HUD.
-## Compatibilidad temporal: los encuentros Garumi ya no tienen variantes de combate.
-func iniciar_enfrentamiento_secundario(_jugador: Node) -> bool:
-	return false
-
-
-## Se conserva el método por compatibilidad con interfaces antiguas; siempre es falso.
-func puede_forzar_vinculo() -> bool:
-	return false
-
-
-## El daño común sigue sin afectar a los Garumis. Solo el daño durante un
-## enfrentamiento explícito reduce su salud y nunca puede matarlos.
-## Los Garumis no son objetivos de daño. La salud/daño pertenece a Creature normal.
-func take_damage(_cantidad: int, _origen: String = "desconocido") -> void:
-	return
-
-
-## Los vínculos se establecen por interacción voluntaria, nunca debilitando al Garumi.
-func forzar_vinculo(_jugador: Node) -> bool:
-	return false
-
-
 func _establecer_vinculo(jugador: Node, tipo: String) -> bool:
 	if not _vinculado and not _puede_establecer_otro_vinculo():
 		push_warning("Garumi: límite de 3 vínculos alcanzado; establece una relación antes de crear otra.")
 		_notificar_resultado_vinculo(false, "limite_alcanzado")
 		return false
 	_vinculado = true
-	_jugador_vinculado = jugador
-	_guardado = true
 	_tipo_vinculo = tipo
 	datos["vinculado"] = true
 	datos["tipo_vinculo"] = tipo
@@ -606,10 +420,10 @@ func obtener_datos_persistencia_vinculo() -> Dictionary:
 	registro["vinculado"] = true
 	registro["tipo_vinculo"] = _tipo_vinculo
 	registro["guardado"] = _guardado
-	registro["nivel"] = nivel
-	registro["experiencia_total"] = experiencia_total
 	registro["eterium_actual"] = eterium_actual
-	registro["health"] = health
+	registro.erase("health")
+	registro.erase("nivel")
+	registro.erase("experiencia_total")
 	registro["position_x"] = global_position.x
 	registro["position_y"] = global_position.y
 	registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", criatura_nombre)))
@@ -650,10 +464,8 @@ func _puede_establecer_otro_vinculo() -> bool:
 
 
 func romper_vinculo() -> bool:
-	if not _vinculado or _combate_vinculado_activo:
+	if not _vinculado:
 		return false
-	if has_method("detener_seguimiento_jugador"):
-		detener_seguimiento_jugador()
 	var game_state := get_node_or_null("/root/GameState")
 	var id_instancia := str(obtener_datos_persistencia_vinculo().get("garumi_instancia_id", "")).strip_edges()
 	if game_state != null and not id_instancia.is_empty() and game_state.has_method("eliminar_garumi_vinculado"):
@@ -683,23 +495,12 @@ func romper_vinculo() -> bool:
 	return true
 
 
-## Guarda al Garumi antes de abrir el selector para que no aparezca en la arena por seguimiento.
-func guardar_para_seleccion_combate() -> void:
-	if not _vinculado or _combate_vinculado_activo or _guardado:
-		return
-	_guardar_garumi()
-
-
 func esta_vinculado() -> bool:
 	return _vinculado
 
 
 func obtener_tipo_vinculo() -> String:
 	return _tipo_vinculo
-
-
-func esta_enfrentamiento() -> bool:
-	return _enfrentamiento_activo
 
 
 func _notificar_resultado_vinculo(exito: bool, tipo: String) -> void:
