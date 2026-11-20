@@ -26,7 +26,7 @@ func _run() -> void:
 	if manager._runtime_state_by_key.has(clave_duplicada):
 		errores.append("La clave runtime duplicó las coordenadas del chunk.")
 
-	var estado := manager.obtener_estado_criatura(
+	var estado: Dictionary = manager.obtener_estado_criatura(
 		Vector2i(2, -3),
 		"criatura_sin_clave"
 	)
@@ -40,7 +40,7 @@ func _run() -> void:
 		if estado.get("velocity") != Vector2(12.0, -4.0):
 			errores.append("La velocidad no sobrevivió al guardado y recuperación.")
 
-	var datos_chunk := manager.obtener_datos_chunk(Vector2i(2, -3), "criaturas")
+	var datos_chunk: Array = manager.obtener_datos_chunk(Vector2i(2, -3), "criaturas")
 	if datos_chunk.size() != 1 or str(datos_chunk[0].get("runtime_instance_key", "")) != "criatura_sin_clave":
 		errores.append("El registro DATA no conservó la misma clave natural.")
 
