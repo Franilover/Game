@@ -1225,3 +1225,10 @@ Se corrigió una carrera temporal: la animación de muerte podía seguir activa 
 ## Cancelación de ataques tras la muerte del atacante — 2026-11-20
 
 La ejecución melee y a distancia ahora depende de `CombatTargeting.es_atacante_valido()`: atacante de tipo Entity, válido, dentro del árbol y vivo. Hitboxes y proyectiles se cancelan al detectar que el atacante murió, y vuelven a validar antes de procesar un objetivo. CombatSystem protege también los callbacks de contacto/impacto, evitando efectos posteriores de un ataque interrumpido. `test_combat_temporal_contract` comprueba cancelación melee/proyectil, ausencia de señales y ausencia de daño.
+
+
+## Validación compartida de impactos simultáneos — 2026-11-20
+
+`CombatTargeting.es_objetivo_valido()` ahora aplica la misma política en melee, proyectiles y ataques de entidad: el atacante debe ser una Entity viva dentro del árbol y el objetivo debe seguir vivo y pertenecer a `damageable`. `CombatWeaponAttackValidator` y `CombatSystem.solicitar_danio_desde_entidad()` comparten esta frontera; la IA ya no puede registrar contacto ni aplicar daño con un atacante derrotado o fuera del árbol.
+
+La fase posterior al impacto conserva una distinción importante: un objetivo muerto es inválido para recibir otro ataque, pero sigue siendo válido como resultado de un impacto letal ya confirmado. Por eso el callback de efectos comprueba que el nodo exista y que el atacante siga válido, sin exigir que el objetivo continúe vivo. La resolución central impide que impactos posteriores reduzcan de nuevo la salud. La regresión temporal prueba dos proyectiles sobre un objetivo con 5 puntos de vida, un único contacto/resultado confirmado y el rechazo de un atacante derrotado o fuera del árbol.
