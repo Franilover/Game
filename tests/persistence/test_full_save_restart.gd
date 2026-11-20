@@ -43,7 +43,9 @@ func _run_parent() -> void:
 		var save_id := manifest.get_as_text().strip_edges()
 		manifest.close()
 		if not save_id.is_empty():
-			GameState.save_repository.eliminar_partida(save_id)
+			var game_state: Node = root.get_node("GameState")
+			var repository: Variant = game_state.get("save_repository")
+			repository.call("eliminar_partida", save_id)
 	var manifest_absolute := ProjectSettings.globalize_path(MANIFEST_PATH)
 	if FileAccess.file_exists(MANIFEST_PATH):
 		DirAccess.remove_absolute(manifest_absolute)
@@ -64,16 +66,18 @@ func _run_child(mode: String, output: Array) -> int:
 func _worker_write() -> void:
 	var stamp := str(Time.get_unix_time_from_system()).replace(".", "_")
 	var save_id := SAVE_ID_PREFIX + stamp
-	var created_id := GameState.crear_partida("Restart integration", "7348291", {
+	var game_state: Node = root.get_node("GameState")
+	var repository: Variant = game_state.get("save_repository")
+	var created_id := str(game_state.call("crear_partida", "Restart integration", "7348291", {
 		"nombre": "Restart probe",
 		"especie": "Humano"
-	})
+	}))
 	if created_id.is_empty():
 		_fail("GameState.crear_partida no creó la partida.")
 		return
 	save_id = created_id
 
-	var data := GameState.save_repository.leer_partida(save_id)
+	var data := repository.call("leer_partida", save_id) as Dictionary
 	if data.is_empty():
 		_fail("No se pudo releer el archivo creado por GameState.")
 		return
@@ -116,7 +120,7 @@ func _worker_write() -> void:
 	}
 	state["scene"] = "res://scenes/world/main.tscn"
 	data["estado"] = state
-	if not GameState.save_repository.escribir_partida(save_id, data):
+	if not bool(repository.call("escribir_partida", save_id, data)):
 		_fail("No se pudo preparar el snapshot real de la partida.")
 		return
 
@@ -143,7 +147,9 @@ func _worker_read() -> void:
 
 	# Mantener la prueba offline y evitar materialización de NPCs dependientes
 	# del catálogo remoto. Torres es una zona local y debe reanudarse igualmente.
-	WorldData.cargado = false
+	var world_data: Node = root.get_node("WorldData")
+	world_data.set("cargado", false)
+	var game_state: Node = root.get_node("GameState")
 	var menu_scene := load("res://scenes/ui/start_menu.tscn") as PackedScene
 	if menu_scene == null:
 		_fail("No se pudo cargar el menú real.")
@@ -198,16 +204,16 @@ func _worker_read() -> void:
 
 	frames = 0
 	while frames < 180 and (
-		not GameState._partida_aplicada_en_escena
-		or not GameState._estado_vital_restaurado_en_escena
+		not bool(game_state.get("_partida_aplicada_en_escena"))
+		or not bool(game_state.get("_estado_vital_restaurado_en_escena"))
 	):
 		await process_frame
 		frames += 1
 
 	var errors: Array[String] = []
-	if GameState.active_save_id != save_id:
+	if str(game_state.get("active_save_id")) != save_id:
 		errors.append("GameState no activó el ID seleccionado.")
-	if GameState.world_state.world_seed != 7348291:
+	if int(game_state.get("world_state").get("world_seed")) != 7348291:
 		errors.append("La semilla no fue cargada por GameState.")
 	var zone_manager := main.get_node_or_null("World/ZoneManager")
 	if not is_instance_valid(zone_manager) or str(zone_manager.call("obtener_tipo_actual")) != "reino_torres":
@@ -228,7 +234,8 @@ func _worker_read() -> void:
 		errors.append("GameState no marcó la aplicación del estado.")
 	if not GameState._estado_vital_restaurado_en_escena:
 		errors.append("La restauración vital no terminó.")
-	var mission_state: Dictionary = MissionManager.serializar_estado_partida()
+	var mission_manager: Node = root.get_node("MissionManager")
+	var mission_state: Dictionary = mission_manager.call("serializar_estado_partida") as Dictionary
 	var mission_status: Dictionary = mission_state.get("estado", {}) as Dictionary
 	var mission_progress: Dictionary = mission_state.get("progreso", {}) as Dictionary
 	var mission_rewards: Dictionary = mission_state.get("recompensas_reclamadas", {}) as Dictionary
