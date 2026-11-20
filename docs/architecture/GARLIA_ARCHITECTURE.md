@@ -683,3 +683,8 @@ SaveFileRepository valida integridad de archivo JSON y recuperación transaccion
 ### Barrera de restauración de Eterium
 
 La configuración persistida del personaje se aplica después de inyectar GameState, porque Player._ready() ocurre antes de que Main llame a configurar_dependencias(). La restauración del snapshot vital no puede ejecutarse hasta que el runtime general y la resolución de reglas de especie hayan terminado. Si las respuestas llegan en orden inverso, Player reaplica la regla de especie tras el runtime general para que la capacidad específica no sea sobrescrita por la capacidad global. PlayerEteriumCoordinator expresa esa condición; Player publica la señal de disponibilidad y GameStateService difiere sólo la restauración vital; el resto del snapshot (posición, stamina, inventario, misiones y tiempo) se aplica sin esperar a Eterium. Los guardados quedan bloqueados mientras la restauración vital siga pendiente, evitando sobrescribir el archivo con valores temporales. Una regla de especie ausente también cuenta como resuelta cuando el catálogo termina de cargar; no equivale a usar máximos por defecto mientras la consulta sigue pendiente.
+
+
+### Contrato de persistencia del inventario
+
+La carga de inventario es una sustitución de estado, no una fusión con el runtime previo. Los objetos/hotbar se reconstruyen desde el snapshot; el equipamiento se reemplaza y valida contra las ranuras de armadura admitidas. GameState valida las estructuras anidadas antes de aplicar el snapshot, para que un payload corrupto no se convierta silenciosamente en un inventario vacío o equipo residual.
