@@ -252,24 +252,25 @@ CombatSystem coordina solicitudes y efectos de gameplay; CombatDamage resuelve e
 
 ## 10. Inventory / Equipment / Hotbar
 
-Tres estados distintos:
+Tres estados distintos, con una sola autoridad runtime:
 
 ### InventoryRuntime
-Qué objetos existen y cantidades.
+Qué objetos existen, sus cantidades y durabilidad.
 
 ### Equipment
-Qué está equipado.
+Qué objetos están equipados en ranuras de equipo. Equipar/desequipar desde el inventario es una transacción: el objeto equipado sale del inventario y el anterior vuelve al slot de origen; desequipar requiere espacio libre.
 
 ### Hotbar
-Qué índices están asignados y cuál está seleccionado.
+Qué índices de inventario están asignados y cuál está seleccionado. Sus seis posiciones sólo pueden apuntar a la mochila (índices 6–11), nunca a las manos ni a espacios adicionales.
 
-**Regla canónica:**
+**Reglas canónicas:**
 
-`hotbar_selected != equipped_item`
+- `hotbar_selected != equipped_item`.
+- La hotbar referencia objetos del inventario; no mantiene copias de objetos.
+- InventoryRuntime posee la selección. La hotbar visual sólo refleja el índice activo.
+- La UI conserva únicamente selección de inspección/arrastre y datos visuales temporales; nunca replica items, hotbar o equipo.
 
-InventoryController coordina el runtime.
-
-Inventory UI representa.
+InventoryController coordina operaciones y permisos de interacción; InventoryRuntime aplica transacciones; InventoryState, InventoryHotbarState y EquipmentState poseen cada estado.
 
 Combat consulta Equipment cuando necesita saber qué arma está equipada.
 
