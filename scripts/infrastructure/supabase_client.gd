@@ -66,6 +66,7 @@ var _intento_actual: int = 0
 var _sincronizacion_inicial_realizada: bool = false
 var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
+var _especie_eterium_game_cargado: bool = false
 var _especies_jugables: Array = []
 var _intentos_especies_jugables: int = 0
 var _reintento_especies_programado: bool = false
@@ -651,12 +652,17 @@ func _al_completar_especie_eterium_game(
 	for regla_variant in json.data as Array:
 		if regla_variant is Dictionary:
 			_especie_eterium_game.append((regla_variant as Dictionary).duplicate(true))
+	_especie_eterium_game_cargado = true
 	print("SupabaseClient: reglas Eterium de especies cargadas → ", _especie_eterium_game.size())
 	especie_eterium_game_cargado.emit(_especie_eterium_game.duplicate(true))
 
 
 func tiene_especie_eterium_game() -> bool:
 	return not _especie_eterium_game.is_empty()
+
+
+func especie_eterium_game_esta_cargado() -> bool:
+	return _especie_eterium_game_cargado
 
 
 func obtener_especie_eterium_game() -> Array:
