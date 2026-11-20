@@ -1406,8 +1406,9 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - La percepción reúne al jugador explícito, jugadores del grupo y entidades activas del WorldEntityManager; descarta entidades inválidas, muertas, fuera del árbol o pendientes de queue_free().
 - La percepción no decide hostilidad: puede incluir Garumis como habitantes presentes; la política de objetivos de CreatureAI continúa excluyéndolos de persecución y combate.
 - CreatureAITargetPolicy amplía la regresión para comprobar percepción, Garumis perceptibles, descarte de entidades pendientes y selección del objetivo elegible más cercano al cambiar distancias. El contrato pasa en Godot 4.7 CI.
+- La persecución conserva la última posición conocida cuando el objetivo desaparece o se libera; la criatura pasa a INVESTIGANDO, se desplaza hasta esa posición y luego vuelve a explorar. CreatureAITargetPolicy cubre pérdida real del nodo y llegada a la posición memorizada.
 - Se corrigió PlayerEteriumRestoreReadiness: sus cuatro llamadas a free() sobre RefCounted se retiraron; estos objetos se liberan al perder sus referencias. El contrato vuelve a pasar en CI.
 - El contrato de equipamiento fallaba por usar el nombre `errores` en vez de `errors`; se corrigió la referencia en el test. El contrato y el workflow completo vuelven a pasar.
 - La ejecución completa `Garlia Godot 4.7 Regression Tests` terminó en success en el commit `7137f82`; `GDScript Quality (Advisory)` también pasó.
-- La extracción adicional de CreatureTargetSelector y su regresión pasan en la suite completa del commit `3f47549`; GDScript Quality también pasó. Ejecución: https://github.com/Franilover/Game/actions/runs/44690720916.
+- La extracción adicional de CreatureTargetSelector y la memoria de último objetivo pasan en la suite completa del commit `76c5161`; GDScript Quality también pasó. Ejecución: https://github.com/Franilover/Game/actions/runs/44691254596.
 - La comprobación visual y el balance del combate P1 siguen pendientes de una partida real; no se consideran cerrados por CI.
