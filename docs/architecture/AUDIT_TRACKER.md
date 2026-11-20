@@ -456,3 +456,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Efectos posteriores, señales de impacto y robo de vida usan el daño mitigado real, no el valor bruto de arma.
 - Regresiones: `CreatureDamageReentrancy` verifica dos golpes anidados, su atribución y cantidad independiente; `PlayerVitalStateContract` verifica retorno de daño para fisiología normal y compartida. Ambas integradas en CI.
 - Estado: implementado; pendiente resultado CI y validación en partida.
+
+
+## Colisiones físicas de combate y tunneling de proyectiles (2026-11-20)
+
+- Regresión detectada al sustituir las pruebas simuladas por colisiones físicas: el test melee debía dar al hitbox el override de daño real de una acción desarmada y nombrar la forma de colisión como espera `Entity` para crear su hurtbox.
+- Corrección de gameplay: `CombatProjectile._physics_process()` consulta el segmento recorrido con `PhysicsRayQueryParameters2D` antes de mover el proyectil; excluye al atacante y procesa hurtboxes/entidades mediante la ruta existente de impacto único.
+- Pruebas físicas: `CombatAttackExecutor` detecta un hurtbox real en melee; `CombatProjectileContract` confirma un impacto contra un hurtbox de 12 px atravesado en un solo paso de 100 px.
+- Estado: implementado y validado por Godot 4.7 CI; pendiente revisión visual y de balance dentro de partida.
