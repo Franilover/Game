@@ -29,6 +29,20 @@ var _debug_registrado: bool = false
 var _supabase_client: GarliaSupabaseClient = null
 
 
+static func resolver_posicion_reanudacion(
+	tipo_zona: String,
+	tipo_guardado: String,
+	posicion_valida: bool,
+	posicion_guardada: Vector2,
+	spawn_inicial: Vector2
+) -> Vector2:
+	# Las coordenadas globales sólo son válidas dentro de la zona en que
+	# fueron capturadas. Una transición normal debe conservar el spawn destino.
+	if not posicion_valida or tipo_zona.is_empty() or tipo_guardado != tipo_zona:
+		return spawn_inicial
+	return posicion_guardada
+
+
 func _ready() -> void:
 	add_to_group("zone_manager")
 	_registrar_debug()
