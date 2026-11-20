@@ -13,10 +13,12 @@ static func validar(
 	objetivo: Entity,
 	arma: Dictionary
 ) -> StringName:
-	if atacante == null or not is_instance_valid(atacante):
+	if not CombatTargeting.es_atacante_valido(atacante):
 		return &"atacante_invalido"
 	if objetivo == null or not is_instance_valid(objetivo):
 		return &"objetivo_invalido"
+	if not objetivo.is_in_group("damageable"):
+		return &"objetivo_no_daniable"
 	if not objetivo.is_alive:
 		return &"objetivo_derrotado"
 	if arma.is_empty():
