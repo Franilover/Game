@@ -102,13 +102,13 @@ func restaurar_estado_vital(
 	_emitir_estado_vital()
 
 
-func take_damage(cantidad: int, origen: String = "desconocido") -> void:
+func take_damage(cantidad: int, origen: String = "desconocido") -> int:
 	if not _debe_aceptar_danio() or not is_alive:
-		return
+		return 0
 
 	var dano_real := vital_state.recibir_danio(cantidad)
 	if dano_real <= 0:
-		return
+		return 0
 
 	_sync_desde_vital()
 	health_changed.emit(health, max_health)
@@ -128,6 +128,8 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 
 	if not is_alive:
 		_die()
+
+	return dano_real
 
 func heal(cantidad: int) -> void:
 	if not _debe_aceptar_danio() or not is_alive:
