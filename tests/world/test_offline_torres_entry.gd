@@ -29,11 +29,11 @@ func _run() -> void:
 	if str(manager.get("tipo_actual")) != "reino_torres":
 		_fail("ZoneManager no registró el tipo local de Torres.")
 		return
-	if zone.scene_file_path != "res://scenes/kingdom/reino_torres.tscn":
-		_fail("Torres no usó su escena local fija: %s" % zone.scene_file_path)
+	if zone.get_node_or_null("LayoutEdificios") == null:
+		_fail("Torres no cargó su estructura local de edificios.")
 		return
 
-	print("OfflineTorresEntry: PASS scene=%s frames=%d" % [zone.scene_file_path, frames])
+	print("OfflineTorresEntry: PASS local_torres=true frames=%d" % frames)
 	get_tree().quit(0)
 
 
