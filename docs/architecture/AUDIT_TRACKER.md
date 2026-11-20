@@ -555,3 +555,13 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Al superar el límite, se elimina el recuerdo de menor agresión acumulada; los empates se resuelven por menor duración restante.
 - Se amplía `CreatureAITargetPolicy` para comprobar el límite y la conservación de recuerdos intensos.
 - Estado: implementación enviada; regresión y calidad GDScript pendientes de CI.
+
+
+## T2 — familiaridad individual a partir de avistamientos (2026-11-20)
+
+- La memoria de criatura ahora separa agresión recibida de familiaridad acumulada por encuentros visuales repetidos.
+- CreatureAI registra candidatos vivos dentro del radio de percepción, con un cooldown por individuo para evitar sumar familiaridad cada tick.
+- La familiaridad tiene incremento acotado, decaimiento lento y caducidad; no se interpreta como confianza y no sobrescribe reglas ecológicas ni respuestas específicas.
+- El límite de 16 recuerdos conserva ahora los individuos con mayor experiencia acumulada (agresión + familiaridad).
+- Pruebas añadidas para cooldown, decaimiento, exclusión de Garumis y conexión con percepción.
+- Estado: código y pruebas añadidos; CI y validación visual pendientes.
