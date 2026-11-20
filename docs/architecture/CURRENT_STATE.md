@@ -1139,3 +1139,8 @@ Al salir una criatura o un prop del árbol, WorldEntityManager elimina también 
 ## Reanudación de posición por zona — 2026-11-19
 
 La posición global del jugador sólo se reutiliza al cargar la misma zona persistida. Si la zona de destino difiere, se conserva su punto de aparición normal; los retornos explícitos de expedición y viaje exterior siguen aplicándose después del spawn. La regla se comparte entre mundo procedural, reinos de escena fija e Historia, evitando que una partida reanude siempre en el spawn inicial o que una transición herede coordenadas de otra zona. Regresión: tests/world/test_zone_spawn_resume_contract.tscn.
+
+
+## Captura antes de descargar una zona global — 2026-11-19
+
+En servidor dedicado, ZoneManager solicita a GlobalWorldStore capturar el runtime mientras la zona anterior y su WorldEntityManager todavía existen, después de validar la escena destino y antes de queue_free. Esto conserva el estado de criaturas y props también en transiciones iniciadas por salidas físicas u otros flujos, no sólo por el RPC del menú de viaje. La captura duplicada del RPC de viaje se retiró para mantener un único punto de persistencia. Si el guardado falla, se advierte y la transición continúa, igual que el comportamiento previo del flujo RPC.
