@@ -4,6 +4,7 @@ class_name CreatureAI
 const CreaturePerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
 const CreatureTargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
 const CreatureStateDecisionScript = preload("res://scripts/creatures/creature_state_decision.gd")
+const CreatureUtilityAIScript = preload("res://scripts/creatures/creature_utility_ai.gd")
 
 
 signal estado_cambiado(anterior: int, nuevo: int)
@@ -1242,21 +1243,38 @@ func _aplicar_prioridad_necesidades() -> void:
 	var umbral_hambre := clampf(float(necesidades.get("umbral_hambre", 70.0)), 0.0, 100.0)
 	var actividad_descanso := str(necesidades.get("actividad_descanso", "reposar")).strip_edges().to_lower()
 	var actividad_comida := str(necesidades.get("actividad_alimentacion", "alimentarse")).strip_edges().to_lower()
-	# El descanso tiene prioridad cuando ambas necesidades son altas. Se usa
-	# histéresis para evitar alternar entre explorar y reposar cada pocos frames.
 	var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
 	var puede_recuperar := (recuperacion is int or recuperacion is float) and float(recuperacion) > 0.0
-	if puede_recuperar and actividad_descanso in ["reposar", "dormir"]:
-		if _fatiga_actual >= umbral_fatiga:
-			_descanso_por_fatiga = true
+	if _descanso_por_fatiga:
 		var umbral_salida := clampf(float(necesidades.get("umbral_fatiga_salida", umbral_fatiga * 0.5)), 0.0, umbral_fatiga)
-		if _descanso_por_fatiga and _fatiga_actual <= umbral_salida:
+		if _fatiga_actual <= umbral_salida:
 			_descanso_por_fatiga = false
-		if _descanso_por_fatiga:
+		else:
 			actividad_horaria = actividad_descanso
-	if not _descanso_por_fatiga and _hambre_actual >= umbral_hambre and not _obtener_ids_alimento().is_empty() and actividad_comida == "alimentarse":
-		actividad_horaria = actividad_comida
+			return
 
+	# Sólo se ofrecen acciones que la especie puede ejecutar realmente.
+	# Los pesos permiten modular urgencias sin cambiar sus umbrales fisiológicos.
+	var puntuaciones: Dictionary = {}
+	if puede_recuperar and actividad_descanso in ["reposar", "dormir"] and _fatiga_actual >= umbral_fatiga:
+		puntuaciones["descansar"] = CreatureUtilityAIScript.puntuar_urgencia(
+			_fatiga_actual,
+			umbral_fatiga,
+			float(necesidades.get("peso_prioridad_fatiga", 1.0))
+		)
+	if actividad_comida == "alimentarse" and not _obtener_ids_alimento().is_empty() and _hambre_actual >= umbral_hambre:
+		puntuaciones["alimentarse"] = CreatureUtilityAIScript.puntuar_urgencia(
+			_hambre_actual,
+			umbral_hambre,
+			float(necesidades.get("peso_prioridad_hambre", 1.0))
+		)
+
+	match CreatureUtilityAIScript.seleccionar_accion(puntuaciones):
+		"descansar":
+			_descanso_por_fatiga = true
+			actividad_horaria = actividad_descanso
+		"alimentarse":
+			actividad_horaria = actividad_comida
 
 func _obtener_estado_necesidades() -> Dictionary:
 	if _obtener_config_necesidades().is_empty():
