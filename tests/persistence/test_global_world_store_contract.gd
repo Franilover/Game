@@ -10,7 +10,6 @@ func _ready() -> void:
 func _run() -> void:
 	var errores: Array[String] = []
 	var ruta := "user://global_world_store_contract/world.json"
-	var ruta_absoluta := ProjectSettings.globalize_path(ruta)
 	var directorio := ruta.get_base_dir()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directorio))
 	var store := StoreScript.new() as Node
@@ -45,6 +44,21 @@ func _run() -> void:
 		errores.append("No recuperó el mundo desde un respaldo válido.")
 	if not _diccionario_coincide(store._leer_json_dictionary(ruta), respaldo):
 		errores.append("La recuperación no restauró el archivo principal.")
+
+	# La carga debe recuperar un backup incluso si el archivo principal falta.
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta))
+	_escribir_texto(ruta_backup, JSON.stringify({
+		"version": 5,
+		"world_seed": 555,
+		"world_seed_valida": true,
+		"elapsed_time": 12.5,
+		"flags": {"zona_actual_tipo": "bosque"}
+	}))
+	var game_state := get_node_or_null("/root/GameState")
+	if game_state == null or not store.restaurar_en_game_state(game_state):
+		errores.append("No restauró el mundo cuando sólo quedaba un backup válido.")
+	elif int(game_state.world_state.world_seed) != 555:
+		errores.append("La recuperación desde backup no aplicó la semilla al GameState.")
 
 	# Una apertura temporal fallida no debe pausar el mundo ni borrar el save.
 	var ruta_temporal := ruta + ".tmp"
