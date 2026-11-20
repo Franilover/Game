@@ -1466,3 +1466,14 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Si se supera el límite, expulsa primero el recuerdo con menor agresión acumulada; en empate, el de menor tiempo restante.
 - La prueba `CreatureAITargetPolicy` verifica el límite y que un recuerdo intenso no sea expulsado antes que recuerdos débiles.
 - Esto limita el crecimiento de memoria temporal sin persistir datos ni alterar las reglas de especie.
+
+
+## Familiaridad individual por avistamientos (2026-11-20)
+
+- `CreatureInteractionMemory` ahora registra familiaridad temporal por individuo además de agresión recibida.
+- `CreatureAI` registra avistamientos de candidatos vivos dentro del radio de detección cuando `memoria_interaccion.activo=true`; un intervalo configurable evita acumular familiaridad en cada tick de percepción.
+- La familiaridad aumenta de forma pequeña y limitada, decae lentamente y no equivale a confianza ni modifica por sí sola la respuesta hostil.
+- La memoria mantiene un máximo de 16 individuos y ahora prioriza conservar recuerdos con mayor suma de agresión y familiaridad.
+- Los Garumis siguen excluidos de esta memoria; no se conectó `RelationshipSystem` ni se cambió el canon.
+- `CreatureAITargetPolicy` añade pruebas de acumulación limitada por intervalo, decaimiento, exclusión de Garumis e integración del avistamiento con la percepción.
+- CI de esta ampliación pendiente; todavía falta validar visualmente el ritmo de familiaridad en una partida con varias criaturas.
