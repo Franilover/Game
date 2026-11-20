@@ -5,6 +5,7 @@ const CreaturePerceptionScript = preload("res://scripts/creatures/creature_perce
 const CreatureTargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
 const CreatureStateDecisionScript = preload("res://scripts/creatures/creature_state_decision.gd")
 const CreatureUtilityAIScript = preload("res://scripts/creatures/creature_utility_ai.gd")
+const CreatureInteractionMemoryScript = preload("res://scripts/creatures/creature_interaction_memory.gd")
 
 
 signal estado_cambiado(anterior: int, nuevo: int)
@@ -98,6 +99,7 @@ var _alimentacion_realizada: bool = false
 var _hambre_actual: float = 0.0
 var _fatiga_actual: float = 0.0
 var _descanso_por_fatiga: bool = false
+var _memoria_interaccion: CreatureInteractionMemory = CreatureInteractionMemoryScript.new()
 
 
 func configurar_dependencias(
@@ -211,6 +213,7 @@ func _physics_process(delta: float) -> void:
 		_tiempo_revision_ambiental = 0.0
 		_actualizar_velocidad_ambiental()
 
+	_actualizar_memoria_interaccion(delta)
 	_actualizar_rutina()
 	_aplicar_prioridad_necesidades()
 	_actualizar_necesidades(delta)
@@ -1082,6 +1085,47 @@ func _obtener_respuesta_a_objetivo() -> String:
 	return _obtener_respuesta_para_objetivo(objetivo)
 
 
+func _obtener_config_memoria_interaccion() -> Dictionary:
+	var valor: Variant = configuracion_ia.get("memoria_interaccion", {})
+	return valor as Dictionary if valor is Dictionary else {}
+
+
+func _registrar_agresion_interaccion(atacante: Node) -> void:
+	if atacante == null or not is_instance_valid(atacante):
+		return
+	var memoria := _obtener_config_memoria_interaccion()
+	if not bool(memoria.get("activo", false)):
+		return
+	_memoria_interaccion.registrar_agresion(
+		atacante,
+		CreatureUtilityAIScript.leer_numero(memoria, "intensidad_agresion", 1.0),
+		CreatureUtilityAIScript.leer_numero(memoria, "duracion_segundos", 45.0)
+	)
+
+
+func _actualizar_memoria_interaccion(delta: float) -> void:
+	var memoria := _obtener_config_memoria_interaccion()
+	if not bool(memoria.get("activo", false)):
+		return
+	_memoria_interaccion.actualizar(
+		delta,
+		CreatureUtilityAIScript.leer_numero(memoria, "decaimiento_por_segundo", 0.2)
+	)
+
+
+func _obtener_respuesta_memoria(candidato: Node2D) -> String:
+	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
+		return ""
+	var memoria := _obtener_config_memoria_interaccion()
+	if not bool(memoria.get("activo", false)):
+		return ""
+	var umbral := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_agresion", 1.0), 0.0)
+	if _memoria_interaccion.obtener_agresion(candidato) < umbral:
+		return ""
+	var respuesta := str(memoria.get("respuesta_agresion", "huir")).strip_edges().to_lower()
+	return respuesta if respuesta in ["atacar", "huir", "perseguir", "investigar"] else ""
+
+
 func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 	if candidato == null or not is_instance_valid(candidato):
 		return ""
@@ -1089,6 +1133,10 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		if criatura.get_meta("garlia_objetivo_liberacion") == candidato:
 			return "atacar"
+
+	var respuesta_memoria := _obtener_respuesta_memoria(candidato)
+	if not respuesta_memoria.is_empty():
+		return respuesta_memoria
 
 	if _es_reactivo_bosque() and (candidato.is_in_group("player") or candidato == jugador):
 		# La conducta se evalúa sobre el jugador concreto detectado por la IA.
@@ -2667,6 +2715,7 @@ func _liberar_lesfleengs_al_ser_atacado(atacante: Node = null) -> void:
 
 
 func al_recibir_danio(cantidad: int, atacante: Node = null) -> void:
+	_registrar_agresion_interaccion(atacante)
 	if criatura != null and is_instance_valid(criatura):
 		var nombre_especie := criatura.get_nombre().strip_edges().to_lower()
 		if nombre_especie == "lignianos":
