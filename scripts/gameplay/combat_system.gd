@@ -600,10 +600,11 @@ func _aplicar_danio(
 	return true
 
 
-## Daño genérico de entidades
+## Daño solicitado por sistemas de gameplay
 ##
-## CombatSystem es el único punto de aplicación de daño del gameplay.
-## Las IA deciden cuándo atacar, pero no modifican directamente la salud.
+## API de coordinación para IA e IUM. CombatDamage sigue siendo el único
+## resolver autorizado que aplica daño a Entity; los proyectiles usan ese
+## mismo resolver desde su ejecución de impacto.
 func solicitar_danio_desde_entidad(
 	atacante: Node,
 	objetivo: Entity,
