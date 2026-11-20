@@ -671,14 +671,14 @@ jobs:
             exit 1
           fi
 
-      - name: Run Garumi health persistence regression test
+      - name: Run Garumi non-combat contract regression test
         shell: bash
         run: |
           set -euo pipefail
           output="$(timeout 30s godot --headless --path . res://tests/creatures/test_garumi_health_persistence.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiHealthPersistence: FAIL:' <<<"$output"; then
-            echo "Garumi health persistence test reported errors."
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GarumiNonCombatContract: FAIL:' <<<"$output"; then
+            echo "Garumi non-combat contract test reported errors."
             exit 1
           fi
 

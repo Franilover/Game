@@ -1184,3 +1184,8 @@ La implementación heredada aún conserva dependencias de `Creature` y UI/arena 
 - Se retiraron de Garumi las APIs de combate como aliado vinculado y el vínculo ya no activa seguimiento físico: es una relación, no una invocación.
 - Los Garumis vinculados siguen siendo dialogables y el texto de interacción refleja conversación.
 - La progresión de combate heredada y la salud compartida con Creature siguen pendientes de desacoplar en una pasada separada.
+
+
+## Contrato no combatiente Garumi — 2026-11-19
+
+La regresión de salud de Garumi se reemplazó por un contrato de no combate: verifica que el modelo no exponga APIs de arena, daño, derrota, curación o progresión de combate; que no pertenezca al grupo `damageable`; y que los registros sociales y de vínculo no persistan salud, nivel ni experiencia de combate. La energía Eterium se conserva como recurso separado para futuras habilidades prestadas.
