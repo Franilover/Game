@@ -270,7 +270,6 @@ func configurar(datos_garumi: Dictionary) -> void:
 		experiencia_total = _progresion.xp_total_para_nivel(nivel)
 	estadisticas_combate = _progresion.obtener_estadisticas(nivel)
 	max_health = int(estadisticas_combate.get("vida", salud_combate_predeterminada))
-	health = max_health
 	eterium_maximo = int(estadisticas_combate.get("eterium", 30))
 	eterium_actual = clampi(int(datos_separados.get("eterium_actual", eterium_maximo)), 0, eterium_maximo)
 	datos["nivel"] = nivel
