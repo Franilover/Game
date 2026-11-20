@@ -1,8 +1,5 @@
 extends Node
 
-const MainScene: PackedScene = preload("res://scenes/world/main.tscn")
-
-
 func _ready() -> void:
 	call_deferred("_run")
 
@@ -39,7 +36,13 @@ func _run() -> void:
 	GameState.player_state.position_valida = true
 	GameState.player_state.facing = Vector2.LEFT
 
-	var main := MainScene.instantiate()
+	var main_scene: PackedScene = load("res://scenes/world/main.tscn") as PackedScene
+	if main_scene == null:
+		await _limpiar_estado_global()
+		_finalizar(["No se pudo cargar scenes/world/main.tscn."])
+		return
+	var main: Node = main_scene.instantiate()
+	main_scene = null
 	if main == null:
 		await _limpiar_estado_global()
 		_finalizar(["No se pudo instanciar scenes/world/main.tscn."])
@@ -74,7 +77,6 @@ func _run() -> void:
 		errores.append("Main no conservó la instancia real del inventario.")
 	if not errores.is_empty():
 		await _limpiar_main(main)
-		await _limpiar_estado_global()
 		_finalizar(errores)
 		return
 
@@ -133,15 +135,17 @@ func _run() -> void:
 		errores.append("La restauración vital no terminó dentro de Main.")
 
 	await _limpiar_main(main)
-	await _limpiar_estado_global()
 	_finalizar(errores)
 
 
 func _limpiar_main(main: Node) -> void:
+	await _limpiar_estado_global()
 	if is_instance_valid(main):
 		get_tree().current_scene = self
 		main.queue_free()
-		await get_tree().process_frame
+		await main.tree_exited
+	await get_tree().process_frame
+	await get_tree().process_frame
 
 
 func _limpiar_estado_global() -> void:
