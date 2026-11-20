@@ -288,3 +288,8 @@ La cuadrícula visible se reconstruye en `GarliaInventory.cargar_estado_partida(
 Revisar `ZoneManager._cambiar_zona()`: debe cargar e instanciar el destino antes de ejecutar `queue_free()` sobre la zona actual. Si la ruta o instancia falla, `_transicionando` debe volver a `false` y `zona_actual` debe seguir apuntando a la zona previa. El contrato de regresión está en `tests/world/test_zone_manager_torres_fallback.gd`.
 
 En servidor dedicado, si aparece el aviso de transición cancelada por fallo de snapshot, revisar primero `GlobalWorldStore.guardar_desde_runtime()`, permisos/ruta `--world-data`, escritura temporal y respaldo. ZoneManager conserva la zona activa deliberadamente hasta que el guardado global confirme.
+
+
+### Una partida recuperable no aparece en el selector
+
+Comprobar `SaveFileRepository.listar_ids_partidas()`: enumera `.json` y respaldos `.json.bak` válidos, pero excluye `.tmp` y respaldos corruptos. Después `GameState.obtener_partidas()` aplica validación del payload y `leer_partida()` intenta restaurar el respaldo. Contrato: `tests/persistence/test_save_file_repository_contract.tscn`.
