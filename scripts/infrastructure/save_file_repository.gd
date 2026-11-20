@@ -180,7 +180,9 @@ func listar_ids_partidas() -> Array[String]:
 			if (
 				_id_valido(id_respaldo)
 				and not resultado.has(id_respaldo)
-				and not _leer_json_dictionary(_ruta_respaldo(ruta_partida(id_respaldo))).is_empty()
+				and not _leer_json_dictionary(
+					_ruta_respaldo(ruta_partida(id_respaldo))
+				).is_empty()
 			):
 				resultado.append(id_respaldo)
 	entrada.list_dir_end()
