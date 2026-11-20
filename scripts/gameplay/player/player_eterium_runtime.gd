@@ -72,7 +72,7 @@ func mana() -> int:
 	return 0 if vital_state == null else vital_state.mana
 
 func establecer_mana(valor: int) -> void:
-	if vital_state == null:
+	if vital_state == null or not vital_state.is_alive:
 		return
 	vital_state.mana = clampi(valor, 0, vital_state.max_mana)
 	if vida_eterium_compartidos():
@@ -81,7 +81,7 @@ func establecer_mana(valor: int) -> void:
 	_emitir_mana()
 
 func gastar(cantidad: int) -> bool:
-	if vital_state == null:
+	if vital_state == null or not vital_state.is_alive:
 		return false
 	var gasto := maxi(cantidad, 0)
 	if gasto <= 0 or vital_state.mana < gasto:
@@ -112,6 +112,9 @@ func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
 			recovery_accumulator = 0.0
 		return 0
 	if vital_state == null:
+		return 0
+	if not vital_state.is_alive:
+		recovery_accumulator = 0.0
 		return 0
 	# Al estar lleno, el reloj de recuperación se pausa. Conservamos la
 	# fracción acumulada para continuar desde ella tras gastar Eterium.
@@ -169,7 +172,13 @@ func confirmar_costo_carrera(cantidad: int) -> bool:
 	return true
 
 func calcular_curacion(delta: float) -> Dictionary:
-	if not runtime_ready or vital_state == null or vital_state.health >= vital_state.max_health:
+	if (
+		not runtime_ready
+		or vital_state == null
+		or not vital_state.is_alive
+		or vida_eterium_compartidos()
+		or vital_state.health >= vital_state.max_health
+	):
 		heal_timer = 0.0
 		return {}
 	var escala := _escala_runtime()
@@ -190,7 +199,13 @@ func calcular_curacion(delta: float) -> Dictionary:
 	return {"curacion": curacion, "costo_eterium": costo_runtime}
 
 func aplicar_curacion(curacion: int, costo_eterium: int) -> bool:
-	if vital_state == null or curacion <= 0 or (costo_eterium > 0 and mana() < costo_eterium):
+	if (
+		vital_state == null
+		or not vital_state.is_alive
+		or vida_eterium_compartidos()
+		or curacion <= 0
+		or (costo_eterium > 0 and mana() < costo_eterium)
+	):
 		return false
 	var anterior := vital_state.health
 	vital_state.health = mini(vital_state.health + curacion, vital_state.max_health)
