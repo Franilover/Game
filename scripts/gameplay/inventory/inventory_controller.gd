@@ -47,6 +47,12 @@ func configurar_items(items: Array, hotbar_indices: Array = []) -> void:
 func cargar_items(items: Array) -> void:
 	runtime.establecer_items(items)
 	inventario_cambio.emit()
+
+
+func establecer_equipamiento(equipamiento: Dictionary) -> void:
+	runtime.establecer_equipamiento(equipamiento)
+	for slot in ["cabeza", "torso", "pies"]:
+		equipo_cambio.emit(slot, runtime.obtener_equipo(slot))
  
 func obtener_item(indice: int) -> Dictionary:
 	return runtime.obtener_item(indice)
