@@ -1206,3 +1206,10 @@ La interacción principal de Garumi ahora deriva al diálogo heredado de Creatur
 - `test_combat_temporal_contract` instancia las escenas reales de Player e Inventory y verifica mitigación con vida normal y Eterium compartido, sincronización de vida/reserva, emisión única de muerte, invulnerabilidad durante el estado DASH y ausencia de desgaste implícito.
 - `Player.take_damage()` ignora impactos mientras `state == DASH`; fuera del dash, la defensa se aplica antes de la vida o la reserva compartida.
 - La prueba de integración no consume durabilidad de armadura: confirma que la recepción de daño no introduce desgaste implícito.
+
+## Frontera de objetivos de combate — 2026-11-20
+
+- `CombatSystem.solicitar_danio_desde_entidad()` rechaza objetivos fuera del grupo `damageable` antes de registrar contacto; heredar de `Entity` o conservar `is_alive=true` no concede permiso de combate.
+- `CreatureAI` excluye a los Garumis de respuestas hostiles aunque aparezcan en el registro general de entidades o tengan relaciones ecológicas configuradas.
+- `test_combat_entity_attack_contract` verifica el rechazo explícito de un Garumi, sin evento de contacto ni daño.
+- La IA de criaturas continúa usando el mismo resolver central; los ataques especializados no aplican daño directamente.
