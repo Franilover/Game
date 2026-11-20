@@ -1178,8 +1178,10 @@ func _obtener_respuesta_memoria(candidato: Node2D) -> String:
 		var respuesta_agresion := str(memoria.get("respuesta_agresion", "huir")).strip_edges().to_lower()
 		if respuesta_agresion in ["atacar", "huir", "perseguir", "investigar"]:
 			return respuesta_agresion
-	var umbral_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_confianza", 1.0), 0.0)
 	var personalidad := _obtener_personalidad_individual()
+	var curiosidad := clampf(CreatureUtilityAIScript.leer_numero(personalidad, "curiosidad", 0.0), -0.5, 0.5)
+	var umbral_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_confianza", 1.0), 0.0)
+	umbral_confianza *= 1.0 - curiosidad * 0.5
 	var peso_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "peso_respuesta_confianza", 0.5), 0.0)
 	var puntuacion_confianza := CreatureUtilityAIScript.puntuar_urgencia(
 		_memoria_interaccion.obtener_confianza(candidato),
@@ -1382,13 +1384,13 @@ func _aplicar_prioridad_necesidades() -> void:
 	# Sólo se ofrecen acciones que la especie puede ejecutar realmente.
 	# Los pesos permiten modular urgencias sin cambiar sus umbrales fisiológicos.
 	var puntuaciones: Dictionary = {}
+	var personalidad := _obtener_personalidad_individual()
 	if puede_recuperar and actividad_descanso in ["reposar", "dormir"] and _fatiga_actual >= umbral_fatiga:
 		var puntuacion_descanso := CreatureUtilityAIScript.puntuar_urgencia(
 			_fatiga_actual,
 			umbral_fatiga,
 			CreatureUtilityAIScript.leer_numero(necesidades, "peso_prioridad_fatiga", 1.0)
 		)
-		var personalidad := _obtener_personalidad_individual()
 		puntuaciones["descansar"] = CreatureUtilityAIScript.aplicar_preferencia(
 			puntuacion_descanso,
 			CreatureUtilityAIScript.leer_numero(personalidad, "preferencia_descanso", 0.0)
@@ -1399,7 +1401,6 @@ func _aplicar_prioridad_necesidades() -> void:
 			umbral_hambre,
 			CreatureUtilityAIScript.leer_numero(necesidades, "peso_prioridad_hambre", 1.0)
 		)
-		var personalidad := _obtener_personalidad_individual()
 		puntuaciones["alimentarse"] = CreatureUtilityAIScript.aplicar_preferencia(
 			puntuacion_comida,
 			CreatureUtilityAIScript.leer_numero(personalidad, "preferencia_alimentacion", 0.0)
