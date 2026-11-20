@@ -112,11 +112,6 @@ func _run() -> void:
 	}):
 		errores.append("Se aceptó equipamiento con fichas de tipo incorrecto.")
 
-	var inventario_legacy := {"items": [], "hotbar": [6, -1, 8]}
-	if not game_state._datos_partida_cargables("save_contract", {
-		"id": "save_contract", "estado": {"flags": {"inventario_estado": inventario_legacy}}
-	}):
-		errores.append("Se rechazó la estructura legacy de hotbar.")
 
 	game_state.free()
 	_finalizar(errores)
