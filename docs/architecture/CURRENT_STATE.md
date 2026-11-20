@@ -1456,4 +1456,4 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 
 - Los Garumis se excluyen de estos recuerdos. La memoria no persiste entre sesiones ni se comparte entre criaturas.
 - `CreatureAITargetPolicy` cubre acumulación, aislamiento entre actores, decaimiento, expiración y efecto optativo en la respuesta de la criatura.
-- CI de esta integración pendiente.
+- Regresión completa y GDScript Quality aprobados para el commit de pruebas `d130202` (run `44695492033` y `44695492008`). La documentación posterior vuelve a ejecutar la regresión.
