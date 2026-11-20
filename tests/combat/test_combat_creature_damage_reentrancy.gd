@@ -42,12 +42,14 @@ func _run() -> void:
 			)
 	)
 
-	criatura.take_damage_desde(
+	var danio_externo := criatura.take_damage_desde(
 		atacante_externo,
 		10,
 		"Prueba/Externo"
 	)
 
+	if danio_externo != 10:
+		errores.append("La solicitud externa recibió daño reentrante en su cantidad de retorno.")
 	if criatura.health != 85:
 		errores.append("El daño anidado no se aplicó exactamente una vez por solicitud.")
 	if eventos.size() != 2:
