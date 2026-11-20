@@ -661,6 +661,20 @@ jobs:
             echo "Full GameState restart test did not report PASS."
             exit 1
           fi
+      - name: Run local world entity save restart across independent processes
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 60s godot --headless --path . res://tests/persistence/test_local_world_entity_process_restart.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|LocalWorldEntityRestart: FAIL:' <<<"$output"; then
+            echo "Local world entity process restart reported errors."
+            exit 1
+          fi
+          if ! grep -q 'LocalWorldEntityRestart: PASS' <<<"$output"; then
+            echo "Local world entity process restart did not report PASS."
+            exit 1
+          fi
       - name: Run local procedural world entity persistence contract
         shell: bash
         run: |
