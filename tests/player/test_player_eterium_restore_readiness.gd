@@ -46,11 +46,7 @@ func _run() -> void:
 	runtime_orden.aplicar_especie(regla_especie, "species-a")
 	if runtime_orden.max_mana() != 50 or runtime_orden.mana() != 20:
 		errores.append("La regla de especie no prevaleció después de aplicar runtime general.")
-	runtime_orden.free()
-	vital.free()
 
-	coordinator.free()
-	runtime.free()
 	_finalizar(errores)
 
 
