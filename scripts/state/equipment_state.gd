@@ -23,8 +23,12 @@ func obtener(slot: String) -> Dictionary:
 
  
 ## La ranura y la ficha del objeto deben coincidir antes de cualquier transacción.
+static func es_ranura_valida(slot: String) -> bool:
+	return slot in ["cabeza", "torso", "pies"]
+
+
 static func es_objeto_compatible(slot: String, item: Dictionary) -> bool:
-	if item.is_empty() or slot not in ["cabeza", "torso", "pies"]:
+	if item.is_empty() or not es_ranura_valida(slot):
 		return false
 	if str(item.get("tipo", "")).strip_edges().to_lower() != "armadura":
 		return false
