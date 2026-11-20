@@ -248,6 +248,8 @@ func _al_recibir_objetivo_de_ataque(
 	objetivo: Node,
 	ataque: CombatAttackArea
 ) -> void:
+	if not CombatTargeting.es_atacante_valido(player):
+		return
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
 
@@ -387,7 +389,7 @@ func _al_detectar_contacto_proyectil(
 ) -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
-	if ataque == null:
+	if ataque == null or not CombatTargeting.es_atacante_valido(ataque.attacker):
 		return
 	contacto_efectivo.emit(
 		ataque.attacker,
@@ -401,6 +403,8 @@ func _al_recibir_impacto_proyectil(
 	ataque: CombatAttack
 ) -> void:
 	if objetivo == null or ataque == null:
+		return
+	if not CombatTargeting.es_atacante_valido(ataque.attacker):
 		return
 
 	var arma := ataque.object_data
