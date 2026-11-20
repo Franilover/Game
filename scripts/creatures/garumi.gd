@@ -84,8 +84,10 @@ func configurar(datos_garumi: Dictionary) -> void:
 
 
 ## Inmunidad estructural: un Garumi nunca recibe daño del sistema de criaturas.
-func take_damage(_cantidad: int, _origen: String = "desconocido") -> void:
-	return
+func take_damage(_cantidad: int, _origen: String = "desconocido") -> int:
+	# Conserva la inmunidad estructural del Garumi y el contrato de retorno
+	# de Entity/Creature sin introducir salud ni estado de combate.
+	return 0
 
 
 func activar_como_proxy() -> void:
