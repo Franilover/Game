@@ -264,3 +264,8 @@ Ruta: GameStateService.capturar_estado_desde_juego() → PlayerState → JSON lo
 ### Contrato del archivo de partida
 
 Antes de depurar una partida que no aparece o no carga, separar dos capas: SaveFileRepository comprueba que el archivo sea JSON Dictionary recuperable; GameStateService._datos_partida_cargables valida ID, versión compatible y estructura estado/player/flags. Versiones legacy sin version se interpretan como versión 1; versiones futuras o snapshots con tipos incorrectos se rechazan sin aplicar estado parcial. Contrato: tests/persistence/test_game_state_save_payload_contract.gd.
+
+
+### Save carga vida/Eterium con máximos equivocados
+
+Comprobar el orden `Main._inicializar_runtime_de_zona()` → `Player.configurar_dependencias()` → configuración de personaje/especie → runtime Eterium → `GameStateService._revisar_escena_actual()`. La restauración debe esperar `Player.esta_listo_para_restaurar_estado()`; si no se emite `configuracion_eterium_lista`, revisar la carga de `eterium_runtime_cargado` y `especie_eterium_game_cargado` en SupabaseClient. No mover la normalización de reservas antes de resolver capacidades y fisiología.
