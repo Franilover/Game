@@ -1159,3 +1159,13 @@ Cuando una criatura se registra sin `runtime_instance_key`, el administrador usa
 - El tombstone sólo actualiza una entrada DATA existente; si todavía no hay datos preparados, permanece en el estado runtime sin crear una lista parcial que impida generar los demás props del chunk.
 - Si la recolección ya había solicitado `queue_free` cuando comienza la descarga, el administrador guarda el tombstone en vez de registrar el objeto como intacto. La misma protección se aplica si el guardado global captura el mundo antes de que se procese `tree_exiting`.
 - Regresión: `tests/entities/test_world_prop_persistence.tscn`.
+
+
+## Persistencia de vida de Garumis — 2026-11-19
+
+- Los registros de amistad y de vínculo incluyen `health` además de experiencia, nivel y Eterium.
+- La configuración reconstruye la vida actual después de calcular las estadísticas de nivel; no reemplaza la vida guardada por la máxima.
+- Los registros antiguos sin `health` mantienen compatibilidad y comienzan con vida máxima.
+- Una instancia guardada con cero vida se restaura derrotada, no como viva.
+- La recuperación de vida y el daño en combate vinculado persisten el estado actualizado.
+- Regresión: `tests/creatures/test_garumi_health_persistence.tscn`.
