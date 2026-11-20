@@ -22,6 +22,13 @@ func _run() -> void:
 	await get_tree().process_frame
 	hotbar.configurar_inventario(inventory)
 
+	if inventory.establecer_hotbar_slot(0, 0):
+		errors.append("La hotbar permitió asignar un espacio de mano.")
+	if inventory.establecer_hotbar_slot(0, 12):
+		errors.append("La hotbar permitió asignar un espacio adicional fuera de la mochila.")
+	if not inventory.establecer_hotbar_slot(0, 7):
+		errors.append("La hotbar rechazó un espacio válido de mochila.")
+
 	inventory.seleccionar_hotbar(4)
 	if hotbar.obtener_indice_seleccionado() != 4:
 		errors.append("La hotbar no reflejó la selección restaurada desde InventoryRuntime.")
