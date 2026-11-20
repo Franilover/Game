@@ -183,6 +183,41 @@ func _run() -> void:
 		_fail("La conducta agresiva debe traducirse en perseguir.")
 		return
 
+	# Los avistamientos repetidos generan familiaridad, no confianza ni hostilidad.
+	memoria.limpiar()
+	memoria.registrar_avistamiento(player, 0.25, 120.0, 4.0)
+	if not is_equal_approx(memoria.obtener_familiaridad(player), 0.25):
+		_fail("La memoria no registró familiaridad por un primer avistamiento.")
+		return
+	memoria.registrar_avistamiento(player, 0.25, 120.0, 4.0)
+	if not is_equal_approx(memoria.obtener_familiaridad(player), 0.25):
+		_fail("La memoria acumuló familiaridad varias veces dentro del mismo intervalo.")
+		return
+	memoria.actualizar(4.0, 0.0)
+	memoria.registrar_avistamiento(player, 0.25, 120.0, 4.0)
+	if not is_equal_approx(memoria.obtener_familiaridad(player), 0.46):
+		_fail("La familiaridad no decayó ni permitió un nuevo avistamiento tras el intervalo.")
+		return
+	memoria.limpiar()
+	memoria.registrar_avistamiento(garumi_recordado, 1.0, 120.0)
+	if memoria.obtener_familiaridad(garumi_recordado) != 0.0:
+		_fail("La memoria registró familiaridad con un Garumi.")
+		return
+	memoria.limpiar()
+
+	# La percepción cercana alimenta familiaridad sólo si la memoria está activa.
+	ai.configuracion_ia = {"memoria_interaccion": {
+		"activo": true,
+		"familiaridad_por_avistamiento": 0.25,
+		"duracion_familiaridad": 120.0,
+		"intervalo_avistamiento": 4.0
+	}}
+	ai._registrar_avistamientos_cercanos(150.0)
+	if not is_equal_approx(ai._memoria_interaccion.obtener_familiaridad(player), 0.25):
+		_fail("La percepción no registró un avistamiento dentro del radio.")
+		return
+	ai._memoria_interaccion.limpiar()
+
 	# La memoria optativa modifica sólo la respuesta hacia quien agredió.
 	ai.configuracion_ia = {"memoria_interaccion": {
 		"activo": true,
