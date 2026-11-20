@@ -14,6 +14,8 @@ static func aplicar(
 ) -> bool:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
+	if not objetivo.is_inside_tree() or objetivo.is_queued_for_deletion():
+		return false
 	# El resolver es la última frontera: ningún llamador puede convertir
 	# una entidad no combatiente en objetivo por omitir CombatTargeting.
 	if not objetivo.is_in_group("damageable"):
