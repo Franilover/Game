@@ -403,7 +403,6 @@ func romper_vinculo() -> bool:
 	remove_meta("tipo_vinculo")
 	datos["vinculado"] = false
 	datos.erase("tipo_vinculo")
-	actualizar_estado_en_hud()
 	print("Garumi: vínculo roto; ", criatura_nombre, " queda libre y ya no ocupa un espacio.")
 	return true
 
