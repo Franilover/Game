@@ -27,6 +27,31 @@ func _run() -> void:
 	if FileAccess.file_exists(ruta + ".bak") or FileAccess.file_exists(ruta + ".tmp"):
 		errores.append("Una escritura correcta dejó restos temporales.")
 
+	# Los tipos usados por el estado del mundo deben sobrevivir al JSON anidado.
+	var valores_tipados := {
+		"posicion": Vector2(12.5, 8.25),
+		"tile": Vector2i(3, 4),
+		"limites": Rect2(Vector2(1.0, 2.0), Vector2(30.0, 40.0)),
+		"tono": Color(0.2, 0.4, 0.6, 1.0),
+		"anidado": [{"desplazamiento": Vector2(-2.5, 7.25)}]
+	}
+	var valores_restaurados: Variant = store._decodificar_variante(store._serializar_variante(valores_tipados))
+	if not valores_restaurados is Dictionary:
+		errores.append("No restauró el contenedor de tipos del mundo.")
+	else:
+		var tipos := valores_restaurados as Dictionary
+		if tipos.get("posicion") != Vector2(12.5, 8.25):
+			errores.append("Vector2 no sobrevivió a la serialización del mundo.")
+		if tipos.get("tile") != Vector2i(3, 4):
+			errores.append("Vector2i no sobrevivió a la serialización del mundo.")
+		if tipos.get("limites") != Rect2(Vector2(1.0, 2.0), Vector2(30.0, 40.0)):
+			errores.append("Rect2 no sobrevivió a la serialización del mundo.")
+		if tipos.get("tono") != Color(0.2, 0.4, 0.6, 1.0):
+			errores.append("Color no sobrevivió a la serialización del mundo.")
+		var anidado: Array = tipos.get("anidado", [])
+		if anidado.is_empty() or (anidado[0] as Dictionary).get("desplazamiento") != Vector2(-2.5, 7.25):
+			errores.append("Un tipo anidado dentro de un array no sobrevivió al roundtrip.")
+
 	# Un destino de respaldo bloqueado debe impedir la escritura sin borrar el final.
 	var ruta_backup := ruta + ".bak"
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ruta_backup))
