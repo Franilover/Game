@@ -215,8 +215,8 @@ func _run() -> void:
 	if not is_equal_approx(memoria.obtener_confianza(player), 0.75):
 		_fail("La memoria no registró una interacción positiva explícita.")
 		return
-	if memoria.obtener_tipo_relacion(player) != "desconocido":
-		_fail("Una interacción positiva inferior al umbral creó confianza prematura.")
+	if memoria.obtener_tipo_relacion(player) != "conocido":
+		_fail("La confianza baja no conservó la familiaridad como relación conocida.")
 		return
 	memoria.registrar_interaccion_positiva(player, 0.5, 180.0)
 	if memoria.obtener_tipo_relacion(player) != "confiable":
