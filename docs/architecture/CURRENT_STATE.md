@@ -1134,3 +1134,8 @@ Al salir una criatura o un prop del árbol, WorldEntityManager elimina también 
 ## Reinicio completo del administrador de entidades — 2026-11-19
 
 `WorldEntityManager.limpiar_todo()` vacía ahora también los registros de réplicas de red y los estados runtime de criaturas y props, además de las entidades, índices activos y datos preparados por chunk. Esto evita reutilizar referencias o estados de una sesión anterior tras un reinicio completo. Regresión: tests/entities/test_world_entity_manager_reset.tscn.
+
+
+## Reanudación de posición por zona — 2026-11-19
+
+La posición global del jugador sólo se reutiliza al cargar la misma zona persistida. Si la zona de destino difiere, se conserva su punto de aparición normal; los retornos explícitos de expedición y viaje exterior siguen aplicándose después del spawn. La regla se comparte entre mundo procedural, reinos de escena fija e Historia, evitando que una partida reanude siempre en el spawn inicial o que una transición herede coordenadas de otra zona. Regresión: tests/world/test_zone_spawn_resume_contract.tscn.
