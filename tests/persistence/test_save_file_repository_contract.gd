@@ -48,6 +48,35 @@ func _run() -> void:
 	if not _estado_coincide(repository.leer_partida(id), estado_inicial):
 		errores.append("La recuperación no restauró un archivo final legible.")
 
+	# Un respaldo sin .json principal debe seguir apareciendo en el selector.
+	# Un temporal o un respaldo corrupto no representan una partida confirmada.
+	var ruta_backup_only := repository.ruta_partida("backup_only")
+	_escribir_texto(ruta_backup_only + ".bak", JSON.stringify({
+		"id": "backup_only",
+		"version": 11,
+		"estado": {"vida": 33}
+	}))
+	_escribir_texto(repository.ruta_partida("uncommitted") + ".tmp", JSON.stringify({
+		"id": "uncommitted",
+		"version": 99
+	}))
+	_escribir_texto(repository.ruta_partida("corrupt_backup") + ".bak", "{ JSON roto")
+	var ids_listados := repository.listar_ids_partidas()
+	if not ids_listados.has("backup_only"):
+		errores.append("El selector ocultó una partida recuperable que sólo tenía .bak.")
+	if ids_listados.has("uncommitted"):
+		errores.append("El selector mostró un temporal que nunca se confirmó.")
+	if ids_listados.has("corrupt_backup"):
+		errores.append("El selector mostró un respaldo corrupto como partida recuperable.")
+	var estado_backup_only := repository.leer_partida("backup_only")
+	if int(estado_backup_only.get("version", 0)) != 11:
+		errores.append("No se pudo recuperar la partida descubierta sólo mediante .bak.")
+	if not FileAccess.file_exists(ruta_backup_only):
+		errores.append("La recuperación del respaldo no restauró el archivo principal.")
+	repository.eliminar_partida("backup_only")
+	repository.eliminar_partida("uncommitted")
+	repository.eliminar_partida("corrupt_backup")
+
 	if not repository.ruta_partida("../fuera").is_empty():
 		errores.append("Se aceptó un ID de partida con traversal de rutas.")
 	if repository.escribir_partida("", estado_nuevo):
