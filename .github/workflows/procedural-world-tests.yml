@@ -661,6 +661,20 @@ jobs:
             echo "Full GameState restart test did not report PASS."
             exit 1
           fi
+      - name: Run real procedural world entity materialization contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 90s godot --headless --path . res://tests/persistence/test_procedural_world_entity_materialization.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|ProceduralWorldEntityMaterialization: FAIL:' <<<"$output"; then
+            echo "Real procedural world entity materialization reported errors."
+            exit 1
+          fi
+          if ! grep -q 'ProceduralWorldEntityMaterialization: PASS' <<<"$output"; then
+            echo "Real procedural world entity materialization did not report PASS."
+            exit 1
+          fi
       - name: Run local world entity save restart across independent processes
         shell: bash
         run: |
