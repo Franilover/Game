@@ -2555,6 +2555,11 @@ func _procesar_adherido(delta: float) -> void:
 			_cambiar_estado(Estado.HUYENDO)
 		return
 
+	var entidad_objetivo := objetivo as Entity
+	if not CombatTargeting.es_objetivo_valido(criatura, entidad_objetivo):
+		_desprender_rancrodeen()
+		return
+
 	_tiempo_danio_adherido -= delta
 
 	if _tiempo_danio_adherido <= 0.0:
