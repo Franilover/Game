@@ -148,12 +148,12 @@ func obtener_tipo_relacion(actor: Node, umbral_hostilidad: float = 1.0, umbral_c
 	var agresion := obtener_agresion(actor)
 	var confianza := obtener_confianza(actor)
 	var familiaridad := obtener_familiaridad(actor)
-	if agresion >= maxf(umbral_hostilidad, 0.0) and agresion >= confianza:
+	if agresion >= maxf(umbral_hostilidad, 0.0):
 		return "hostil"
-	if confianza >= maxf(umbral_confianza, 0.0):
-		return "confiable"
 	if agresion > 0.0:
 		return "desconfiado"
+	if confianza >= maxf(umbral_confianza, 0.0):
+		return "confiable"
 	if familiaridad >= maxf(umbral_familiaridad, 0.0):
 		return "conocido"
 	return "desconocido"
