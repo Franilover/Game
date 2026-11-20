@@ -291,13 +291,6 @@ func _leer_json_dictionary(ruta: String) -> Dictionary:
 	var resultado := (parser.data as Dictionary).duplicate(true)
 	return resultado
 
-
-func _eliminar_guardado_global(ruta: String) -> bool:
-	if not FileAccess.file_exists(ruta):
-		return true
-	return DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta)) == OK
-
-
 func _process(delta: float) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado():
 		return
@@ -311,6 +304,8 @@ func _process(delta: float) -> void:
 
 
 func guardar_y_pausar() -> void:
-	guardar_desde_runtime()
+	if not guardar_desde_runtime():
+		push_error("GlobalWorldStore: no se pausó el mundo porque el guardado no pudo confirmarse.")
+		return
 	get_tree().paused = true
 	print("GlobalWorldStore: no quedan jugadores; mundo guardado y pausado.")
