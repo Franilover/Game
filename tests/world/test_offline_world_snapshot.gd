@@ -22,7 +22,7 @@ func _run() -> void:
 	if not bundled.esta_cargado():
 		_fail("WorldData no cargó el snapshot incluido sin depender de Supabase.")
 		return
-	if not ValidatorScript.is_valid(bundled.mundo):
+	if not ValidatorScript.es_valido(bundled.mundo):
 		_fail("El snapshot incluido no supera el validador canónico.")
 		return
 	if bundled.get("_supabase_client") != null:
