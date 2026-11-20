@@ -203,7 +203,7 @@ func _worker_read() -> void:
 	var inventory: GarliaInventory = null
 	while frames < 420:
 		main = get_tree().current_scene
-		if is_instance_valid(main) and str(main.scene_file_path) == "res://scenes/world/main.tscn":
+		if is_instance_valid(main) and is_instance_valid(main.get_node_or_null("World/ZoneManager")):
 			player = main.get_node_or_null("Entities/Player") as Player
 			inventory = main.get_node_or_null("UI/Inventory") as GarliaInventory
 			if is_instance_valid(player) and is_instance_valid(inventory):
