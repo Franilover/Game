@@ -794,9 +794,9 @@ func _registrar_avistamientos_cercanos(radio: float, candidatos: Array[Node2D] =
 	var memoria := _obtener_config_memoria_interaccion()
 	if not bool(memoria.get("activo", false)) or criatura == null:
 		return
-	var intensidad := CreatureUtilityAIScript.leer_numero(memoria, "familiaridad_por_avistamiento", 0.25)
+	var intensidad := CreatureUtilityAIScript.leer_numero(memoria, "familiaridad_por_encuentro", CreatureUtilityAIScript.leer_numero(memoria, "familiaridad_por_avistamiento", 0.25))
 	var duracion := CreatureUtilityAIScript.leer_numero(memoria, "duracion_familiaridad", 120.0)
-	var intervalo := CreatureUtilityAIScript.leer_numero(memoria, "intervalo_avistamiento", 4.0)
+	var intervalo := CreatureUtilityAIScript.leer_numero(memoria, "intervalo_encuentro", CreatureUtilityAIScript.leer_numero(memoria, "intervalo_avistamiento", 4.0))
 	var entidades := candidatos if usar_candidatos_provistos else _obtener_candidatos_entidad()
 	for candidato in entidades:
 		if candidato == null or not is_instance_valid(candidato) or candidato == criatura:
@@ -807,7 +807,7 @@ func _registrar_avistamientos_cercanos(radio: float, candidatos: Array[Node2D] =
 			continue
 		if criatura.global_position.distance_squared_to(candidato.global_position) > radio * radio:
 			continue
-		_memoria_interaccion.registrar_avistamiento(
+		_memoria_interaccion.registrar_encuentro_cercano(
 			candidato,
 			intensidad,
 			duracion,
@@ -1200,6 +1200,30 @@ func _obtener_respuesta_memoria(candidato: Node2D) -> String:
 	return ""
 
 
+func _obtener_respuesta_familiaridad(candidato: Node2D) -> String:
+	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
+		return ""
+	var memoria := _obtener_config_memoria_interaccion()
+	if not bool(memoria.get("activo", false)):
+		return ""
+	var respuesta := str(memoria.get("respuesta_familiaridad", "")).strip_edges().to_lower()
+	# La familiaridad sólo puede provocar curiosidad/investigación; nunca combate.
+	if respuesta != "investigar":
+		return ""
+	var personalidad := _obtener_personalidad_individual()
+	var curiosidad := CreatureUtilityAIScript.leer_numero(personalidad, "curiosidad", 0.0)
+	var umbral := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_familiaridad", 1.0), 0.0)
+	umbral *= 1.0 - clampf(curiosidad, -0.5, 0.5) * 0.5
+	var peso := maxf(CreatureUtilityAIScript.leer_numero(memoria, "peso_respuesta_familiaridad", 0.5), 0.0)
+	var puntuacion := CreatureUtilityAIScript.puntuar_urgencia(
+		_memoria_interaccion.obtener_familiaridad(candidato),
+		umbral,
+		peso
+	)
+	puntuacion = CreatureUtilityAIScript.aplicar_preferencia(puntuacion, curiosidad)
+	return "investigar" if puntuacion > 0.0 else ""
+
+
 func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 	if candidato == null or not is_instance_valid(candidato):
 		return ""
@@ -1228,6 +1252,10 @@ func _obtener_respuesta_para_objetivo(candidato: Node2D) -> String:
 		var respuesta_ecologica := _obtener_respuesta_ecologica(relacion)
 		if not respuesta_ecologica.is_empty():
 			return respuesta_ecologica
+
+	var respuesta_familiaridad := _obtener_respuesta_familiaridad(candidato)
+	if not respuesta_familiaridad.is_empty():
+		return respuesta_familiaridad
 
 	match perfil:
 		Perfil.DRAMARIAS:
