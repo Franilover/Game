@@ -9,7 +9,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
-	var manager: Node = WorldEntityManagerScript.new()
+	var manager: Variant = WorldEntityManagerScript.new()
 	var replica_criatura := Node.new()
 	var replica_prop := Node.new()
 	var replica_conservada := Node.new()
