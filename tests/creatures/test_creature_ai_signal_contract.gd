@@ -2,6 +2,7 @@ extends Node
 
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
+const EntityScript = preload("res://scripts/characters/entity.gd")
 
 
 func _ready() -> void:
@@ -57,7 +58,7 @@ func _run() -> void:
 			evento_danio["atacante"] = atacante
 	)
 
-	var atacante := Node2D.new()
+	var atacante := EntityScript.new() as Entity
 	get_tree().root.add_child(atacante)
 	var salud_antes := criatura.health
 	var danio_aplicado := CombatDamageScript.aplicar(
