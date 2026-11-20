@@ -222,6 +222,29 @@ func _obtener_definicion_uso(objeto: Dictionary) -> Dictionary:
 
 
 
+## Valida la definición estática que usa la interfaz para mostrar el botón.
+## La aplicabilidad real sigue dependiendo de los recursos actuales del actor.
+func tiene_uso_valido(objeto: Dictionary) -> bool:
+	var uso := _obtener_definicion_uso(objeto)
+	if uso.is_empty():
+		return false
+	var efectos_variant: Variant = uso.get("efectos", null)
+	if efectos_variant is Array:
+		for efecto_variant in efectos_variant as Array:
+			if efecto_variant is Dictionary and _efecto_tiene_recurso_valido(efecto_variant as Dictionary):
+				return true
+		return false
+	return _efecto_tiene_recurso_valido(uso)
+
+
+func _efecto_tiene_recurso_valido(efecto: Dictionary) -> bool:
+	var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).strip_edges().to_lower()
+	var magnitud: Variant = efecto.get("magnitud", efecto.get("cantidad", 0))
+	if not (magnitud is int or magnitud is float) or float(magnitud) <= 0.0:
+		return false
+	return recurso in ["vida", "salud", "health", "stamina", "eterium", "mana"]
+
+
 func _uso_tiene_efecto_aplicable(uso: Dictionary, actor: Player) -> bool:
 	var efectos_variant: Variant = uso.get("efectos", null)
 	if efectos_variant is Array:
