@@ -99,6 +99,11 @@ func configurar(
 	_area.body_entered.connect(_al_entrar_cuerpo)
 
 
+func _physics_process(_delta: float) -> void:
+	if not CombatTargeting.es_atacante_valido(atacante):
+		queue_free()
+
+
 func _ready() -> void:
 	if _area == null:
 		return
@@ -136,6 +141,10 @@ func _ready() -> void:
 			)
 
 	await get_tree().physics_frame
+	if not is_instance_valid(self) or not CombatTargeting.es_atacante_valido(atacante):
+		if is_instance_valid(self):
+			queue_free()
+		return
 	_revisar_areas_existentes()
 
 	await get_tree().create_timer(duracion).timeout
@@ -182,6 +191,9 @@ func _procesar_hurtbox(hurtbox: Area2D) -> void:
 
 
 func _procesar_objetivo(objetivo: Node) -> void:
+	if not CombatTargeting.es_atacante_valido(atacante):
+		queue_free()
+		return
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
 
