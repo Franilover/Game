@@ -465,3 +465,17 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Corrección de gameplay: `CombatProjectile._physics_process()` consulta el segmento recorrido con `PhysicsRayQueryParameters2D` antes de mover el proyectil; excluye al atacante y procesa hurtboxes/entidades mediante la ruta existente de impacto único.
 - Pruebas físicas: `CombatAttackExecutor` detecta un hurtbox real en melee; `CombatProjectileContract` confirma un impacto contra un hurtbox de 12 px atravesado en un solo paso de 100 px.
 - Estado: implementado y validado por Godot 4.7 CI; pendiente revisión visual y de balance dentro de partida.
+
+## T2 — extracción inicial de percepción de criaturas (2026-11-20)
+
+- Hallazgo: CreatureAI mezclaba descubrimiento de candidatos con política ecológica y decisiones de estado.
+- Cambio: nuevo CreaturePerception concentra el descubrimiento del jugador explícito, jugadores conectados y entidades activas del WorldEntityManager. La IA conserva la política de selección; percepción no equivale a hostilidad.
+- Seguridad: se excluyen nodos inválidos, muertos, fuera del árbol o pendientes de queue_free(). Garumis pueden ser percibidos como habitantes, pero siguen excluidos de objetivos hostiles por la política existente.
+- Regresión: CreatureAITargetPolicy cubre descubrimiento, presencia perceptible de Garumis y descarte de entidades pendientes.
+- Estado: implementado; CI en ejecución. La extracción de selección de objetivos, decisión y ejecución queda pendiente.
+
+## Corrección del bloqueo de CI de restauración Eterium (2026-11-20)
+
+- PlayerEteriumRestoreReadiness llamaba free() a cuatro instancias que extienden RefCounted (PlayerEteriumRuntime, PlayerEteriumCoordinator y VitalState).
+- Se retiró la liberación manual inválida; su vida se gestiona por referencias.
+- Estado: corregido en el test; CI pendiente de confirmar el resultado.
