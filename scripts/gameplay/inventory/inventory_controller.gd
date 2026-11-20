@@ -498,7 +498,7 @@ func limpiar() -> void:
 	inventario_cambio.emit()
 
 func robar_objeto_equipado(slot: String) -> Dictionary:
-	if not puede_interactuar():
+	if not puede_interactuar() or not EquipmentState.es_ranura_valida(slot):
 		return {}
 	var objeto := runtime.robar_equipamiento(slot)
 	if objeto.is_empty():
