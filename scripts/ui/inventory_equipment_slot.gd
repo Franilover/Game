@@ -68,28 +68,4 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _es_compatible(objeto: Dictionary) -> bool:
-	if objeto.is_empty():
-		return false
-
-	# La mano es un contenedor de uso, no una categoría de objeto.
-	# Cualquier objeto del inventario puede ocuparla: armas, herramientas,
-	# consumibles u otros objetos que el sistema de uso pueda reconocer.
-	if clave_equipo == "mano_secundaria":
-		return true
-
-	var tipo: String = str(
-		objeto.get(
-			"tipo",
-			""
-		)
-	).strip_edges().to_lower()
-
-	if tipo != "armadura":
-		return false
-
-	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
-	if not propiedades_variant is Dictionary:
-		return false
-
-	var propiedades := propiedades_variant as Dictionary
-	return str(propiedades.get("ranura_equipamiento", "")).strip_edges().to_lower() == clave_equipo
+	return EquipmentState.es_objeto_compatible(clave_equipo, objeto)
