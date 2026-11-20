@@ -291,3 +291,13 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] Regresión completa Godot 4.7 aprobada en [44750715923](https://github.com/Franilover/Game/actions/runs/44750715923), commit `ccd2ee7773`.
 - [~] Esta prueba cubre la escena principal y su orden de inicialización con un snapshot de prueba en memoria; todavía no simula cerrar y volver a abrir dos procesos independientes ni valida el archivo real desde el arranque de `main.tscn`.
 - [ ] Mantener pendientes el reinicio real del proceso, la migración exhaustiva de saves antiguos y la continuidad integrada de interiores/offline.
+
+
+### Normalización de saves legacy — 2026-11-20
+
+- [x] Centralizada la migración de partidas en `_migrar_datos_partida()`: valida primero el contrato, trabaja sobre una copia profunda, preserva campos desconocidos y normaliza la versión.
+- [x] Añade semilla y `generador_version` cuando faltan, sin regenerar una semilla ya guardada.
+- [x] `iniciar_partida()` aplica la normalización antes de restaurar el estado y persiste el archivo migrado; si falla la escritura, avisa y permite abrir los datos normalizados en memoria.
+- [x] Pruebas para versión 1 sin campo `version`, preservación de progreso desconocido, no mutación del original y rechazo de versiones futuras.
+- [x] CI Godot 4.7 y calidad GDScript aprobadas: [regresión 44751938817](https://github.com/Franilover/Game/actions/runs/44751938817), [calidad 44751938797](https://github.com/Franilover/Game/actions/runs/44751938797).
+- [~] La compatibilidad explícita cubierta es la forma legacy conocida (v1 sin versión, stamina antigua y ausencia de semilla). No se inventaron transformaciones para campos históricos cuya semántica no está documentada.
