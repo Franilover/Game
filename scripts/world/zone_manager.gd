@@ -603,6 +603,12 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		return
 
 	if is_instance_valid(zona_actual):
+		# El WorldEntityManager pertenece a la escena de zona y se destruye con
+		# ella. Capturar el runtime antes de queue_free conserva sus cambios
+		# aunque la transición no venga del menú de viaje multijugador.
+		if GarliaMultiplayer.es_servidor_dedicado():
+			if not GlobalWorldStore.guardar_desde_runtime():
+				push_warning("ZoneManager: no se pudo confirmar el estado global antes de descargar la zona.")
 		if tipo_actual == TIPO_HOGAR and zona_actual.has_method("obtener_estado_guardado"):
 			var estado_hogar: Dictionary = zona_actual.call("obtener_estado_guardado")
 			var jugador_hogar := _obtener_jugador_principal()
