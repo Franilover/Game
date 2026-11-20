@@ -675,6 +675,20 @@ jobs:
             echo "Real procedural world entity materialization did not report PASS."
             exit 1
           fi
+      - name: Run naturally generated creature restart across independent processes
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 180s godot --headless --path . res://tests/persistence/test_natural_entity_process_restart.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NaturalEntityRestart: FAIL:' <<<"$output"; then
+            echo "Natural creature process restart reported errors."
+            exit 1
+          fi
+          if ! grep -q 'NaturalEntityRestart: PASS' <<<"$output"; then
+            echo "Natural creature process restart did not report PASS."
+            exit 1
+          fi
       - name: Run local world entity save restart across independent processes
         shell: bash
         run: |
