@@ -63,6 +63,15 @@ func _run() -> void:
 	if UtilityAIScript.seleccionar_accion({"descansar": 0.8, "alimentarse": 0.8}) != "descansar":
 		_fail("Utility AI no resolvió el empate de forma determinista.")
 		return
+	if not is_equal_approx(UtilityAIScript.leer_numero({"peso": 1.5}, "peso", 1.0), 1.5):
+		_fail("Utility AI no leyó un peso numérico válido.")
+		return
+	if not is_equal_approx(UtilityAIScript.leer_numero({"peso": "alto"}, "peso", 1.0), 1.0):
+		_fail("Utility AI no aplicó el valor por defecto ante un peso mal formado.")
+		return
+	if not is_equal_approx(UtilityAIScript.leer_numero({"peso": true}, "peso", 1.0), 1.0):
+		_fail("Utility AI convirtió un booleano en un peso numérico.")
+		return
 
 	# Un jugador cercano no debe ser un objetivo implícito de una criatura
 	# neutral sin una respuesta definida.
@@ -434,6 +443,17 @@ func _run() -> void:
 	if ai._descanso_por_fatiga:
 		_fail("La histéresis de descanso no se liberó al alcanzar el umbral de salida.")
 		return
+
+	# Una configuración mal formada debe usar valores seguros, no detener la IA.
+	ai.configuracion_ia["necesidades"]["peso_prioridad_hambre"] = "urgente"
+	ai._fatiga_actual = 95.0
+	ai._hambre_actual = 60.0
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "reposar":
+		_fail("Un peso de hambre mal formado impidió evaluar la fatiga con el valor seguro.")
+		return
+	ai._descanso_por_fatiga = false
 
 	# Seguir una especie no debe convertirse automáticamente en un ataque al contacto.
 	ai.configuracion_ia = {"respuestas_ecologicas": {"competencia": "perseguir"}}
