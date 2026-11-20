@@ -175,11 +175,10 @@ func _procesar_curacion_eterium(delta: float) -> void:
 	if not eterium.aplicar_curacion(curacion, costo):
 		return
 
-	# Si hubo gasto, el runtime ya emitió mana_changed y el adaptador sincronizó
-	# el snapshot. En fisiología compartida también notificó la vida.
+	# La curación automática sólo se permite con vida y Eterium separados.
+	# El gasto emite mana_changed; sincronizamos también la salud modificada.
 	_sync_desde_vital()
-	if not eterium.vida_eterium_compartidos() or costo <= 0:
-		health_changed.emit(health, max_health)
+	health_changed.emit(health, max_health)
 
 
 func _actualizar_recuperacion_eterium(delta: float) -> void:
