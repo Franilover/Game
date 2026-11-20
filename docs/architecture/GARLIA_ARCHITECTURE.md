@@ -603,3 +603,10 @@ Debe ser posible contestar:
 - qué archivos revisar ante un fallo
 
 Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arquitectura todavía no está terminada.
+
+
+### Reaparición y animación de muerte
+
+- `Player` conserva la referencia del tween de muerte para poder cancelarlo al reaparecer.
+- Las rutas local y de red cancelan cualquier animación de muerte anterior antes de restaurar vida, movimiento y presentación. Un tween de una vida anterior no puede seguir escribiendo sobre el jugador ya reaparecido.
+- `test_combat_temporal_contract` verifica reaparición inmediata, restauración de procesamiento/estado/cooldowns y estabilidad visual después de superar la duración de la animación anterior.
