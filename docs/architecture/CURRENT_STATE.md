@@ -1447,3 +1447,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Los umbrales de hambre/fatiga, la salida de histéresis y los pesos de prioridad ya no convierten directamente valores arbitrarios de configuración.
 - `CreatureAITargetPolicy` añade pruebas para pesos válidos, cadenas y booleanos, además de comprobar que una configuración mal formada no interrumpe la selección de necesidades.
 - La regresión de este endurecimiento está pendiente de CI.
+
+## Memoria temporal de interacciones de criaturas (2026-11-20)
+
+- Nuevo `CreatureInteractionMemory`: recuerdos locales por instancia de actor, con referencia débil, intensidad acumulable limitada, decaimiento gradual y expiración temporal.
+- `CreatureAI` registra agresiones recibidas sólo cuando `memoria_interaccion.activo=true`; una regla optativa puede traducir el recuerdo en `atacar`, `huir`, `perseguir` o `investigar` hacia ese actor concreto.
+- Los Garumis se excluyen de estos recuerdos. La memoria no persiste entre sesiones ni se comparte entre criaturas.
+- `CreatureAITargetPolicy` cubre acumulación, aislamiento entre actores, decaimiento, expiración y efecto optativo en la respuesta de la criatura.
+- CI de esta integración pendiente.
