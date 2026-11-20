@@ -690,3 +690,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - La integración descubrió que la versión JSON podía volver como `float` y el validador solo aceptaba `int`. Corregido para admitir valores numéricos enteros y rechazar fracciones; el contrato de payload cubre ambos casos.
 - Las tres pruebas de persistencia (payload, reinicio completo y repositorio entre procesos) pasan. CI Godot 4.7 completa: [44756242924](https://github.com/Franilover/Game/actions/runs/44756242924). Calidad GDScript: [44756242844](https://github.com/Franilover/Game/actions/runs/44756242844).
 - Pendiente siguiente: interiores, reanudación de mundo procedural y recuperación offline/reconexión. El test de reinicio usa snapshot controlado y evita depender de servicios remotos.
+
+
+## Hogar e interior — continuidad del estado — 2026-11-20
+
+- Se conectó HogarZone.restaurar_estado_guardado() al contrato de restauración de GameState. Antes solo existía cargar_estado_guardado(), por lo que la zona no exponía el método que el runtime busca al reanudar.
+- Si el snapshot indica que el interior estaba abierto, la reapertura se programa después de cargar los muebles y decoraciones; no depende del call_deferred inicial de _ready, que puede ejecutarse antes de aplicar el snapshot.
+- tests/persistence/test_home_interior_persistence.tscn valida estado exterior e interior, cofres y contenido, identidad, muebles y contador de cofres. El contrato pasó en CI Godot 4.7: [44757104913](https://github.com/Franilover/Game/actions/runs/44757104913).
+- Pendiente: ciclo real entre procesos para Torres → Hogar → guardar/cerrar → menú → cargar Hogar, verificando jugador y posición dentro del interior.
