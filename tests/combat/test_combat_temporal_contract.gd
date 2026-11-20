@@ -21,6 +21,7 @@ func _run() -> void:
 	_probar_durabilidad_en_mano_correcta(errores)
 	await _probar_direccion_de_ataque_recibida(errores)
 	await _probar_contacto_independiente_del_danio(errores)
+	await _probar_cancelacion_al_morir_atacante(errores)
 	await _probar_danio_jugador_con_armadura(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
@@ -230,6 +231,83 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	atacante.queue_free()
 	objetivo.queue_free()
 	combate.queue_free()
+	await get_tree().process_frame
+
+
+func _probar_cancelacion_al_morir_atacante(errores: Array[String]) -> void:
+	var atacante := EntityScript.new() as Entity
+	var objetivo := EntityScript.new() as Entity
+	atacante.name = "CombatTemporalDeadAttacker"
+	objetivo.name = "CombatTemporalDeadAttackerTarget"
+	get_tree().root.add_child(atacante)
+	get_tree().root.add_child(objetivo)
+	await get_tree().process_frame
+
+	var contactos_melee := {"cantidad": 0}
+	var area_melee := CombatAttackAreaScript.new() as CombatAttackArea
+	area_melee.configurar(
+		atacante,
+		Vector2.RIGHT,
+		32.0,
+		24.0,
+		{},
+		0.5,
+		Color.WHITE
+	)
+	area_melee.objetivo_detectado.connect(
+		func(_objetivo: Entity) -> void:
+			contactos_melee["cantidad"] = int(contactos_melee["cantidad"]) + 1
+	)
+	get_tree().root.add_child(area_melee)
+	await get_tree().process_frame
+
+	var ataque := CombatAttackScript.new() as CombatAttack
+	ataque.configurar(
+		atacante,
+		Vector2.RIGHT,
+		{},
+		"distancia",
+		8,
+		"Prueba/AtacanteMuerto"
+	)
+	var proyectil := CombatProjectileScript.new() as CombatProjectile
+	proyectil.configurar(ataque, Vector2.RIGHT, 100.0, 2.0, 2.0)
+	get_tree().root.add_child(proyectil)
+	var contactos_proyectil := {"cantidad": 0}
+	var impactos_proyectil := {"cantidad": 0}
+	proyectil.contacto_detectado.connect(
+		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
+			contactos_proyectil["cantidad"] = int(contactos_proyectil["cantidad"]) + 1
+	)
+	proyectil.objetivo_impactado.connect(
+		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
+			impactos_proyectil["cantidad"] = int(impactos_proyectil["cantidad"]) + 1
+	)
+
+	var salud_inicial := objetivo.health
+	atacante.restaurar_estado_vital(0, false)
+	area_melee._physics_process(0.016)
+	area_melee._procesar_objetivo(objetivo)
+	proyectil._physics_process(0.016)
+	proyectil._procesar_objetivo(objetivo)
+
+	if not area_melee.is_queued_for_deletion():
+		errores.append("El hitbox melee no se canceló al morir su atacante.")
+	if int(contactos_melee["cantidad"]) != 0:
+		errores.append("El hitbox melee emitió contacto después de morir su atacante.")
+	if not proyectil.is_queued_for_deletion():
+		errores.append("El proyectil no se canceló al morir su atacante.")
+	if int(contactos_proyectil["cantidad"]) != 0:
+		errores.append("El proyectil emitió contacto después de morir su atacante.")
+	if int(impactos_proyectil["cantidad"]) != 0:
+		errores.append("El proyectil emitió impacto confirmado después de morir su atacante.")
+	if objetivo.health != salud_inicial:
+		errores.append("Un ataque pendiente aplicó daño después de morir su atacante.")
+
+	area_melee.queue_free()
+	proyectil.queue_free()
+	atacante.queue_free()
+	objetivo.queue_free()
 	await get_tree().process_frame
 
 
