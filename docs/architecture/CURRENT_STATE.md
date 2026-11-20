@@ -1322,3 +1322,12 @@ En servidor dedicado, la transición ahora también se cancela si `GlobalWorldSt
 ## Rechazo de entidades pendientes de eliminación en combate — 2026-11-20
 
 Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_free()` todavía no lo haya retirado del árbol. `CombatTargeting` rechaza atacantes y objetivos pendientes de eliminación; `CombatDamage` repite la protección para daño directo; `CombatSystem` y `CombatWeaponAttackValidator` devuelven `objetivo_invalido` antes de emitir contacto. Se ampliaron los contratos de daño de entidad y ataque con arma para cubrir esa ventana síncrona. Ejecución Godot/CI pendiente; no se declara validación.
+
+
+## Defensa de criaturas en el resolver de combate (2026-11-20)
+
+- `Creature._aplicar_danio_recibido()` aplica ahora `CombatDefense.aplicar()` usando `stats_dnd.defensa` cuando el valor es numérico. La mitigación ocurre antes de la reducción vital y antes de emitir `danio_recibido`, por lo que la IA recibe la cantidad efectiva y conserva al atacante de esa invocación.
+- La defensa del jugador sigue dependiendo del equipamiento; no se mezcla con la defensa propia de cada especie.
+- `CreatureAISignalContract` comprueba que 7 puntos de daño con defensa 3 reduzcan 4 puntos de salud y publiquen ese mismo valor.
+- No se añadió una clasificación inventada de daño elemental: los ataques aún no transportan un campo canónico de tipo de daño, así que resistencias e inmunidades tipadas quedan pendientes de definir.
+- Código y regresión añadidos; ejecución Godot/CI de esta revisión pendiente.
