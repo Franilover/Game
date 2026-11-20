@@ -570,7 +570,12 @@ func solicitar_danio_desde_entidad(
 ) -> CombatAttackResult:
 	if not CombatTargeting.es_atacante_valido(atacante):
 		return COMBAT_ATTACK_RESULT.rechazado(&"atacante_invalido")
-	if objetivo == null or not is_instance_valid(objetivo):
+	if (
+		objetivo == null
+		or not is_instance_valid(objetivo)
+		or not objetivo.is_inside_tree()
+		or objetivo.is_queued_for_deletion()
+	):
 		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_invalido")
 	if not CombatTargeting.es_objetivo_valido(atacante, objetivo):
 		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_no_daniable")
