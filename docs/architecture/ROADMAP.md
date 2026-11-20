@@ -24,7 +24,7 @@
 - [~] Unificar restauración de salud/maná, Eterium compartido, reaparición y máximos administrativos mediante `VitalState`; falta auditar todos los efectos secundarios.
 - [~] Añadir contratos de daño/restauración, absorción y agotamiento para fisiología compartida; falta auditar curación, regeneración y límites de todos los caminos.
 - [ ] Detectar escrituras directas que omitan al dueño del estado.
-- [ ] Impedir operaciones sobre entidades eliminadas o inválidas.
+- [~] Impedir operaciones sobre entidades eliminadas o inválidas: las rutas de combate rechazan nodos pendientes de `queue_free()`; falta auditar operaciones ajenas al combate.
 
 ### 1.2 Guardado y restauración
 - [x] Mantener snapshots separados: `PlayerState`, `WorldState` y `DiscoveryState`.
