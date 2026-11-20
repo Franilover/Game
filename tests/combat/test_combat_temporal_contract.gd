@@ -20,6 +20,7 @@ func _run() -> void:
 	var errores: Array[String] = []
 	_probar_durabilidad_en_mano_correcta(errores)
 	await _probar_direccion_de_ataque_recibida(errores)
+	await _probar_rechazo_de_atacante_derrotado(errores)
 	await _probar_contacto_independiente_del_danio(errores)
 	await _probar_cancelacion_al_morir_atacante(errores)
 	await _probar_impactos_simultaneos_y_atacante_invalido(errores)
@@ -34,6 +35,33 @@ func _run() -> void:
 
 	print("CombatTemporalContract: PASS")
 	get_tree().quit(0)
+
+
+func _probar_rechazo_de_atacante_derrotado(errores: Array[String]) -> void:
+	var jugador := PlayerScene.instantiate() as Player
+	var combate := CombatSystemScript.new() as CombatSystem
+	get_tree().root.add_child(jugador)
+	get_tree().root.add_child(combate)
+	await get_tree().process_frame
+	combate.player = jugador
+	jugador.restaurar_estado_vital(0, false)
+
+	if combate.procesar_accion_primaria():
+		errores.append("El jugador derrotado pudo solicitar un ataque primario.")
+	if combate.procesar_accion_secundaria():
+		errores.append("El jugador derrotado pudo solicitar un ataque secundario.")
+
+	# También se protege la señal del controlador: no debe crear un hitbox
+	# aunque un consumidor externo emita una solicitud tardía.
+	combate._al_ataque_solicitado(Vector2.RIGHT, {}, "desarmado")
+	for hijo in jugador.get_children():
+		if hijo is CombatAttackArea:
+			errores.append("CombatSystem creó un hitbox para un jugador derrotado.")
+			break
+
+	combate.queue_free()
+	jugador.queue_free()
+	await get_tree().process_frame
 
 
 func _probar_direccion_de_ataque_recibida(errores: Array[String]) -> void:
