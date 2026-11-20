@@ -59,6 +59,49 @@ func _run() -> void:
 	}):
 		errores.append("Se aceptó un snapshot de flags con tipo incorrecto.")
 
+	var inventario_valido := {
+		"items": [{"id": "item_a", "cantidad": 2}],
+		"hotbar_indices": [6, 7, -1],
+		"equipo": {"torso": {"id": "armor_a", "tipo": "armadura"}},
+		"mano_izquierda_activa": 0,
+		"mano_derecha_activa": 1
+	}
+	if not game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3,
+		"estado": {"player": {}, "flags": {"inventario_estado": inventario_valido}}
+	}):
+		errores.append("Se rechazó un inventario persistido válido.")
+
+	var inventario_corrupto := inventario_valido.duplicate(true)
+	inventario_corrupto["items"] = [{"id": "item_a"}, "item_roto"]
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3,
+		"estado": {"flags": {"inventario_estado": inventario_corrupto}}
+	}):
+		errores.append("Se aceptó un inventario con elementos que no son Dictionary.")
+
+	inventario_corrupto = inventario_valido.duplicate(true)
+	inventario_corrupto["hotbar_indices"] = "indices_invalidos"
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3,
+		"estado": {"flags": {"inventario_estado": inventario_corrupto}}
+	}):
+		errores.append("Se aceptó una hotbar con estructura incorrecta.")
+
+	inventario_corrupto = inventario_valido.duplicate(true)
+	inventario_corrupto["equipo"] = {"torso": "armadura_rota"}
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3,
+		"estado": {"flags": {"inventario_estado": inventario_corrupto}}
+	}):
+		errores.append("Se aceptó equipamiento con fichas de tipo incorrecto.")
+
+	var inventario_legacy := {"items": [], "hotbar": [6, -1, 8]}
+	if not game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "estado": {"flags": {"inventario_estado": inventario_legacy}}
+	}):
+		errores.append("Se rechazó la estructura legacy de hotbar.")
+
 	game_state.free()
 	_finalizar(errores)
 
