@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/persistence/test_procedural_world_entity_materialization.gd" id="1"]
+
+[node name="ProceduralWorldEntityMaterialization" type="Node"]
+script = ExtResource("1")
