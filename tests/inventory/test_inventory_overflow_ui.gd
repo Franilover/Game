@@ -46,6 +46,16 @@ func _run() -> void:
 		get_tree().quit(1)
 		return
 
+	if str(inventory.obtener_objeto(29).get("id", "")) != "saved_item_29":
+		push_error("InventoryOverflowUI: el objeto de la última ranura no quedó accesible.")
+		get_tree().quit(1)
+		return
+	var scroll := inventory.get_node_or_null("Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InventoryScroll")
+	if not scroll is ScrollContainer:
+		push_error("InventoryOverflowUI: la cuadrícula no está dentro de un contenedor desplazable.")
+		get_tree().quit(1)
+		return
+
 	for indice in range(30):
 		var slot := inventory.slot_nodes[indice]
 		if int(slot.get_meta("inventory_index", -1)) != indice:
