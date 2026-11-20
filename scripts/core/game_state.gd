@@ -157,6 +157,8 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 func guardar_progreso_historia() -> bool:
 	if not _historia_reserva_activa or _guardado_en_curso:
 		return false
+	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
+		return false
 	var jugador: Player = _player
 	if jugador == null or not is_instance_valid(jugador) or jugador.get("is_alive") == false:
 		return false
@@ -479,6 +481,8 @@ func guardar_partida() -> bool:
 	if _historia_reserva_activa:
 		return false
 	if _guardado_en_curso:
+		return false
+	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
 		return false
 
 	if active_save_id.is_empty():
