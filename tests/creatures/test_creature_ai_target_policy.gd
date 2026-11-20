@@ -172,6 +172,7 @@ func _run() -> void:
 		_fail("La respuesta de memoria no volvió al comportamiento base tras decaer.")
 		return
 	# Las reacciones ecológicas/específicas de especie prevalecen sobre recuerdos genéricos.
+	actor.criatura_nombre = "Lignianos"
 	ai.perfil = AIScript.Perfil.LIGNIANOS
 	ai.configuracion_ia = {"memoria_interaccion": {
 		"activo": true,
@@ -181,6 +182,7 @@ func _run() -> void:
 	if ai._obtener_respuesta_para_objetivo(player) != "":
 		_fail("La memoria genérica sobrescribió la política específica de Lignianos.")
 		return
+	actor.criatura_nombre = "Criatura neutral"
 	ai.perfil = AIScript.Perfil.GENERICO
 	ai.configuracion_ia = {}
 	ai._memoria_interaccion = InteractionMemoryScript.new()
