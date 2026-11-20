@@ -1438,4 +1438,12 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - El descanso conserva histéresis: una vez elegido, continúa hasta alcanzar umbral_fatiga_salida. No se cambia la rutina ni se inventan necesidades en especies sin configuración.
 - La regresión CreatureAITargetPolicy cubre umbrales, acciones, empates, competencia hambre/fatiga y salida de histéresis.
 - Alcance deliberadamente acotado: Utility AI todavía no elige entre exploración, socialización, huida, defensa o curiosidad; no sustituye las reglas ecológicas ni los estados existentes.
-- Código y pruebas añadidos; CI pendiente.
+- Código y pruebas añadidos; la regresión completa `Garlia Godot 4.7 Regression Tests` y `GDScript Quality (Advisory)` pasan en el commit `81c56d4` (run `44694059864`).
+
+
+## Lectura robusta de configuración Utility AI (2026-11-20)
+
+- `CreatureUtilityAI.leer_numero()` acepta únicamente valores numéricos finitos y usa el valor por defecto ante cadenas, booleanos, tipos inesperados o valores no finitos.
+- Los umbrales de hambre/fatiga, la salida de histéresis y los pesos de prioridad ya no convierten directamente valores arbitrarios de configuración.
+- `CreatureAITargetPolicy` añade pruebas para pesos válidos, cadenas y booleanos, además de comprobar que una configuración mal formada no interrumpe la selección de necesidades.
+- La regresión de este endurecimiento está pendiente de CI.
