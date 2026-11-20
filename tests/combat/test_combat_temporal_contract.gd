@@ -22,6 +22,7 @@ func _run() -> void:
 	await _probar_direccion_de_ataque_recibida(errores)
 	await _probar_contacto_independiente_del_danio(errores)
 	await _probar_cancelacion_al_morir_atacante(errores)
+	await _probar_impactos_simultaneos_y_atacante_invalido(errores)
 	await _probar_danio_jugador_con_armadura(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
@@ -306,6 +307,88 @@ func _probar_cancelacion_al_morir_atacante(errores: Array[String]) -> void:
 
 	area_melee.queue_free()
 	proyectil.queue_free()
+	atacante.queue_free()
+	objetivo.queue_free()
+	await get_tree().process_frame
+
+
+func _probar_impactos_simultaneos_y_atacante_invalido(errores: Array[String]) -> void:
+	var atacante := EntityScript.new() as Entity
+	var objetivo := EntityScript.new() as Entity
+	atacante.name = "CombatSimultaneousAttacker"
+	objetivo.name = "CombatSimultaneousTarget"
+	get_tree().root.add_child(atacante)
+	get_tree().root.add_child(objetivo)
+	await get_tree().process_frame
+
+	objetivo.restaurar_estado_vital(5, true)
+	var combate := CombatSystemScript.new() as CombatSystem
+	get_tree().root.add_child(combate)
+	var contactos := {"cantidad": 0}
+	var impactos := {"cantidad": 0}
+	combate.contacto_efectivo.connect(
+		func(_atacante: Node, _objetivo: Entity, _origen: String) -> void:
+			contactos["cantidad"] = int(contactos["cantidad"]) + 1
+	)
+	combate.ataque_realizado.connect(
+		func(_atacante: Node, _objetivo: Entity, _danio: int) -> void:
+			impactos["cantidad"] = int(impactos["cantidad"]) + 1
+	)
+
+	var proyectiles: Array[CombatProjectile] = []
+	for indice in range(2):
+		var ataque := CombatAttackScript.new() as CombatAttack
+		ataque.configurar(
+			atacante,
+			Vector2.RIGHT,
+			{},
+			"distancia",
+			5,
+			"Prueba/ImpactoSimultaneo" + str(indice)
+		)
+		var proyectil := CombatProjectileScript.new() as CombatProjectile
+		proyectil.configurar(ataque, Vector2.RIGHT, 100.0, 1.0, 2.0)
+		proyectil.contacto_detectado.connect(combate._al_detectar_contacto_proyectil)
+		proyectil.objetivo_impactado.connect(combate._al_recibir_impacto_proyectil)
+		get_tree().root.add_child(proyectil)
+		proyectiles.append(proyectil)
+
+	proyectiles[0]._procesar_objetivo(objetivo)
+	proyectiles[1]._procesar_objetivo(objetivo)
+	if objetivo.is_alive or objetivo.health != 0:
+		errores.append("Los impactos simultáneos no dejaron al objetivo derrotado.")
+	if int(contactos["cantidad"]) != 1:
+		errores.append("Un segundo proyectil registró contacto contra un objetivo ya derrotado.")
+	if int(impactos["cantidad"]) != 1:
+		errores.append("Los efectos confirmados se ejecutaron más de una vez para una sola derrota.")
+
+	var salud_antes := objetivo.health
+	var contactos_antes := int(contactos["cantidad"])
+	var impactos_antes := int(impactos["cantidad"])
+	atacante.restaurar_estado_vital(0, false)
+	var resultado := combate.solicitar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		10,
+		"Prueba/AtacanteDerrotado"
+	)
+	if resultado.solicitud_aceptada:
+		errores.append("La IA pudo solicitar daño con un atacante derrotado.")
+	if objetivo.health != salud_antes:
+		errores.append("Un atacante derrotado modificó la salud del objetivo.")
+	if int(contactos["cantidad"]) != contactos_antes or int(impactos["cantidad"]) != impactos_antes:
+		errores.append("Un atacante derrotado generó contacto o efectos.")
+
+	var atacante_fuera_arbol := EntityScript.new() as Entity
+	if CombatTargeting.es_atacante_valido(atacante_fuera_arbol):
+		errores.append("Se aceptó un atacante Entity que todavía no pertenece al árbol.")
+	if CombatTargeting.es_objetivo_valido(atacante_fuera_arbol, objetivo):
+		errores.append("La validación de objetivo ignoró un atacante fuera del árbol.")
+	atacante_fuera_arbol.free()
+
+	for proyectil in proyectiles:
+		proyectil.queue_free()
+	combate.queue_free()
 	atacante.queue_free()
 	objetivo.queue_free()
 	await get_tree().process_frame
