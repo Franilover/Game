@@ -246,7 +246,7 @@ Los caminos de entrada dependen del tipo de acción:
 - Proyectiles: `CombatSystem → CombatAttackExecutor → CombatProjectile → CombatDamage`. El proyectil ejecuta el impacto y notifica el resultado; no implementa otra fórmula de daño.
 - IA e IUM: solicitan daño a `CombatSystem.solicitar_danio_desde_entidad()`, que valida la solicitud y delega en `CombatDamage`.
 
-La API de daño de entidad exige que el objetivo pertenezca al grupo `damageable`; una entidad fuera de ese contrato se rechaza antes de emitir contacto o efectos. Garumis no pertenecen a ese grupo y la IA tampoco los selecciona como objetivos de respuestas hostiles. No basta con que un nodo herede de `Entity` o conserve `is_alive=true` para convertirlo en combatiente.
+La API de daño de entidad exige que el objetivo pertenezca al grupo `damageable`; una entidad fuera de ese contrato se rechaza antes de emitir contacto o efectos. Garumis no pertenecen a ese grupo. `CreatureAI` los excluye de selección de objetivos, persecución y relaciones ecológicas, incluso con políticas generales como `objetivos="todo"`; tampoco pueden convertirse en objetivo hostil por referencias especiales de liberación o por búsquedas de amenazas. No basta con que un nodo herede de `Entity` o `Creature`, ni que conserve `is_alive=true`, para convertirlo en combatiente.
 
 `CombatDamage.aplicar()` repite la validación de `damageable` como última frontera antes de modificar el estado vital. Así, una llamada directa desde un sistema nuevo no puede saltarse accidentalmente la política de objetivos que aplican `CombatTargeting` y `CombatSystem`.
 
