@@ -22,6 +22,10 @@ static func aplicar(
 		return false
 	if not objetivo.is_alive:
 		return false
+	# Si se atribuye el golpe a una entidad, también debe ser un atacante
+	# operativo. null queda reservado para daño ambiental o sin atribución.
+	if atacante != null and not CombatTargeting.es_atacante_valido(atacante):
+		return false
 
 	var dano := maxi(cantidad, 0)
 	if modificador.is_valid():
@@ -37,6 +41,8 @@ static func aplicar(
 	if not objetivo.is_inside_tree() or objetivo.is_queued_for_deletion():
 		return false
 	if not objetivo.is_in_group("damageable") or not objetivo.is_alive:
+		return false
+	if atacante != null and not CombatTargeting.es_atacante_valido(atacante):
 		return false
 
 	var salud_antes: int = objetivo.health
