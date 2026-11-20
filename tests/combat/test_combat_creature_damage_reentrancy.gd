@@ -22,7 +22,7 @@ func _run() -> void:
 	await process_frame
 
 	var eventos: Array[Dictionary] = []
-	var dano_reentrante_iniciado := false
+	var control_reentrada := {"iniciado": false}
 	criatura.danio_recibido.connect(
 		func(cantidad: int, atacante: Node) -> void:
 			eventos.append({
@@ -32,9 +32,9 @@ func _run() -> void:
 	)
 	criatura.health_changed.connect(
 		func(_actual: int, _maximo: int) -> void:
-			if dano_reentrante_iniciado:
+			if bool(control_reentrada["iniciado"]):
 				return
-			dano_reentrante_iniciado = true
+			control_reentrada["iniciado"] = true
 			criatura.take_damage_desde(
 				atacante_reentrante,
 				5,
