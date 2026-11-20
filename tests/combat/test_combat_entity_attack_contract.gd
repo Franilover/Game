@@ -2,6 +2,8 @@ extends Node
 
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
+const IUMManagerScript = preload("res://scripts/gameplay/ium_manager.gd")
+const IUMRepositoryScript = preload("res://scripts/core/ium_repository.gd")
 
 
 func _ready() -> void:
@@ -11,6 +13,7 @@ func _ready() -> void:
 func _run() -> void:
 	var errores: Array[String] = []
 	await _probar_solicitud_generica(errores)
+	await _probar_danio_ium_por_combate(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -133,6 +136,49 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	if int(contactos["cantidad"]) != contactos_antes_rechazo:
 		errores.append("Una solicitud rechazada emitió contacto.")
 
+	combate.queue_free()
+	atacante.queue_free()
+	objetivo.queue_free()
+	await get_tree().process_frame
+
+
+
+func _probar_danio_ium_por_combate(errores: Array[String]) -> void:
+	var atacante := EntityScript.new() as Entity
+	var objetivo := EntityScript.new() as Entity
+	var combate := CombatSystemScript.new() as CombatSystem
+	var repositorio := IUMRepositoryScript.new() as IUMRepository
+	var manager := IUMManagerScript.new() as IUMManager
+	atacante.name = "IUMContractAttacker"
+	objetivo.name = "IUMContractTarget"
+	get_tree().root.add_child(atacante)
+	get_tree().root.add_child(objetivo)
+	get_tree().root.add_child(combate)
+	get_tree().root.add_child(repositorio)
+	get_tree().root.add_child(manager)
+	await get_tree().process_frame
+
+	manager.configurar(repositorio, atacante, combate)
+	manager.proceso_equipado = {
+		"nombre": "Proceso de prueba",
+		"efecto_tipo": "daño",
+		"magnitud": 7.0
+	}
+	var contactos := {"cantidad": 0}
+	combate.contacto_efectivo.connect(
+		func(_atacante: Node, _objetivo: Entity, origen: String) -> void:
+			if origen.begins_with("IUM/Proceso:"):
+				contactos["cantidad"] = int(contactos["cantidad"]) + 1
+	)
+	var salud_inicial := objetivo.health
+	manager.usar_proceso_equipado(objetivo)
+	if objetivo.health != salud_inicial - 7:
+		errores.append("El proceso IUM no aplicó daño mediante CombatSystem.")
+	if int(contactos["cantidad"]) != 1:
+		errores.append("El proceso IUM no registró un único contacto centralizado.")
+
+	manager.queue_free()
+	repositorio.queue_free()
 	combate.queue_free()
 	atacante.queue_free()
 	objetivo.queue_free()
