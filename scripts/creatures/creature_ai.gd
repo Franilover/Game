@@ -1165,7 +1165,13 @@ func _obtener_respuesta_memoria(candidato: Node2D) -> String:
 		if respuesta_agresion in ["atacar", "huir", "perseguir", "investigar"]:
 			return respuesta_agresion
 	var umbral_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_confianza", 1.0), 0.0)
-	if _memoria_interaccion.obtener_confianza(candidato) >= umbral_confianza and bool(memoria.get("aceptar_interacciones_positivas", false)):
+	var peso_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "peso_respuesta_confianza", 0.5), 0.0)
+	var puntuacion_confianza := CreatureUtilityAIScript.puntuar_urgencia(
+		_memoria_interaccion.obtener_confianza(candidato),
+		umbral_confianza,
+		peso_confianza
+	)
+	if puntuacion_confianza > 0.0 and bool(memoria.get("aceptar_interacciones_positivas", false)):
 		var respuesta_confianza := str(memoria.get("respuesta_confianza", "investigar")).strip_edges().to_lower()
 		# La confianza sólo puede habilitar aproximación/investigación, nunca agresión.
 		if respuesta_confianza == "investigar":
