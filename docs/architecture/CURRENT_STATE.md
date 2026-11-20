@@ -1149,3 +1149,12 @@ En servidor dedicado, ZoneManager solicita a GlobalWorldStore capturar el runtim
 ## Clave runtime de criaturas sin metadatos — 2026-11-19
 
 Cuando una criatura se registra sin `runtime_instance_key`, el administrador usa su ID natural como clave de instancia y añade las coordenadas del chunk una sola vez. Antes se añadían las coordenadas al fallback y nuevamente al construir la clave final, por lo que la recuperación por ID natural no encontraba el estado. La regresión `tests/entities/test_world_entity_runtime_key.tscn` verifica clave, posición, vida, velocidad y registro DATA.
+
+
+## Persistencia de props recolectados — 2026-11-19
+
+- La salida de un `WorldProp` por recolección registra un tombstone `is_present=false` bajo su clave runtime y actualiza los datos del chunk.
+- Los materializadores DATA y FULL consultan ese estado antes de crear el prop; una recolección confirmada no vuelve a aparecer al regenerar el chunk.
+- La descarga normal del chunk marca la entidad como retirada por el administrador y conserva `is_present=true`, diferenciando una descarga de una recolección.
+- Si la recolección ya había solicitado `queue_free` cuando comienza la descarga, el administrador guarda el tombstone en vez de registrar el objeto como intacto.
+- Regresión: `tests/entities/test_world_prop_persistence.tscn`.
