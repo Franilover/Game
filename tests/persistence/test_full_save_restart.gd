@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const SAVE_DIRECTORY := "user://partidas"
 const CONTRACT_DIRECTORY := "user://contracts/full_restart"
@@ -6,7 +6,7 @@ const MANIFEST_PATH := CONTRACT_DIRECTORY + "/save_id.txt"
 const SAVE_ID_PREFIX := "full_restart_probe_"
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -43,14 +43,14 @@ func _run_parent() -> void:
 		var save_id := manifest.get_as_text().strip_edges()
 		manifest.close()
 		if not save_id.is_empty():
-			var game_state: Node = root.get_node("GameState")
+			var game_state: Node = get_tree().root.get_node("GameState")
 			var repository: Variant = game_state.get("save_repository")
 			repository.call("eliminar_partida", save_id)
 	var manifest_absolute := ProjectSettings.globalize_path(MANIFEST_PATH)
 	if FileAccess.file_exists(MANIFEST_PATH):
 		DirAccess.remove_absolute(manifest_absolute)
 	print("FullSaveRestart: PASS (real GameState + save selector + main scene across independent processes)")
-	quit(0)
+	get_tree().quit(0)
 
 
 func _run_child(mode: String, output: Array) -> int:
@@ -58,7 +58,7 @@ func _run_child(mode: String, output: Array) -> int:
 	var project_path := ProjectSettings.globalize_path("res://")
 	return OS.execute(executable, [
 		"--headless", "--path", project_path,
-		"--script", "res://tests/persistence/test_full_save_restart.gd",
+		"res://tests/persistence/test_full_save_restart.tscn",
 		"--", mode
 	], output, true)
 
@@ -66,7 +66,7 @@ func _run_child(mode: String, output: Array) -> int:
 func _worker_write() -> void:
 	var stamp := str(Time.get_unix_time_from_system()).replace(".", "_")
 	var save_id := SAVE_ID_PREFIX + stamp
-	var game_state: Node = root.get_node("GameState")
+	var game_state: Node = get_tree().root.get_node("GameState")
 	var repository: Variant = game_state.get("save_repository")
 	var created_id := str(game_state.call("crear_partida", "Restart integration", "7348291", {
 		"nombre": "Restart probe",
@@ -131,7 +131,7 @@ func _worker_write() -> void:
 	manifest.store_string(save_id)
 	manifest.close()
 	print("FullSaveRestart: WRITE PASS id=%s pid=%d" % [save_id, OS.get_process_id()])
-	quit(0)
+	get_tree().quit(0)
 
 
 func _worker_read() -> void:
@@ -147,9 +147,9 @@ func _worker_read() -> void:
 
 	# Mantener la prueba offline y evitar materialización de NPCs dependientes
 	# del catálogo remoto. Torres es una zona local y debe reanudarse igualmente.
-	var world_data: Node = root.get_node("WorldData")
+	var world_data: Node = get_tree().root.get_node("WorldData")
 	world_data.set("cargado", false)
-	var game_state: Node = root.get_node("GameState")
+	var game_state: Node = get_tree().root.get_node("GameState")
 	var menu_scene := load("res://scenes/ui/start_menu.tscn") as PackedScene
 	if menu_scene == null:
 		_fail("No se pudo cargar el menú real.")
@@ -158,14 +158,14 @@ func _worker_read() -> void:
 	if menu == null:
 		_fail("No se pudo instanciar el menú real.")
 		return
-	root.add_child(menu)
-	current_scene = menu
-	await process_frame
+	get_tree().root.add_child(menu)
+	get_tree().current_scene = menu
+	await get_tree().process_frame
 
 	# Abrir el selector real desde el menú y usar el mismo callback que el
 	# botón Jugar de cada partida guardada.
 	menu.call("_abrir_selector_partidas")
-	await process_frame
+	await get_tree().process_frame
 	var selector := menu.get_node_or_null("LocalSaveSelector")
 	if selector == null:
 		_fail("El menú no creó el selector de partidas.")
@@ -177,13 +177,13 @@ func _worker_read() -> void:
 	var player: Player = null
 	var inventory: GarliaInventory = null
 	while frames < 420:
-		main = current_scene
+		main = get_tree().current_scene
 		if is_instance_valid(main) and str(main.scene_file_path) == "res://scenes/world/main.tscn":
 			player = main.get_node_or_null("Entities/Player") as Player
 			inventory = main.get_node_or_null("UI/Inventory") as GarliaInventory
 			if is_instance_valid(player) and is_instance_valid(inventory):
 				break
-		await process_frame
+		await get_tree().process_frame
 		frames += 1
 	if not is_instance_valid(player) or not is_instance_valid(inventory):
 		_fail("La selección de partida no llegó al runtime Main con Player e inventario.")
@@ -207,7 +207,7 @@ func _worker_read() -> void:
 		not bool(game_state.get("_partida_aplicada_en_escena"))
 		or not bool(game_state.get("_estado_vital_restaurado_en_escena"))
 	):
-		await process_frame
+		await get_tree().process_frame
 		frames += 1
 
 	var errors: Array[String] = []
@@ -234,7 +234,7 @@ func _worker_read() -> void:
 		errors.append("GameState no marcó la aplicación del estado.")
 	if not bool(game_state.get("_estado_vital_restaurado_en_escena")):
 		errors.append("La restauración vital no terminó.")
-	var mission_manager: Node = root.get_node("MissionManager")
+	var mission_manager: Node = get_tree().root.get_node("MissionManager")
 	var mission_state: Dictionary = mission_manager.call("serializar_estado_partida") as Dictionary
 	var mission_status: Dictionary = mission_state.get("estado", {}) as Dictionary
 	var mission_progress: Dictionary = mission_state.get("progreso", {}) as Dictionary
@@ -251,7 +251,7 @@ func _worker_read() -> void:
 		_fail("\n".join(errors))
 		return
 	print("FullSaveRestart: READ PASS id=%s pid=%d" % [save_id, OS.get_process_id()])
-	quit(0)
+	get_tree().quit(0)
 
 
 func _contains(output: Array, needle: String) -> bool:
@@ -260,4 +260,4 @@ func _contains(output: Array, needle: String) -> bool:
 
 func _fail(message: String) -> void:
 	push_error("FullSaveRestart: FAIL: " + message)
-	quit(1)
+	get_tree().quit(1)
