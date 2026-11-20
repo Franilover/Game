@@ -1,6 +1,7 @@
 extends Node
 
 const RuntimeScript = preload("res://scripts/gameplay/inventory/inventory_runtime.gd")
+const ControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const CombatDefenseScript = preload("res://scripts/gameplay/combat/combat_defense.gd")
 
 
@@ -115,7 +116,7 @@ func _run() -> void:
 		errors.append("No retiró la armadura al agotar su durabilidad.")
 
 	# El controlador expone la misma sustitución al flujo de carga de la UI.
-	var controller := InventoryController.new()
+	var controller := ControllerScript.new() as InventoryController
 	controller.runtime.equipar("pies", _crear_armadura("boots_stale", "Botas anteriores", "pies", 2))
 	controller.establecer_equipamiento({"cabeza": _crear_armadura("helmet_controller", "Casco", "cabeza", 1)})
 	if not controller.obtener_equipo("pies").is_empty():
