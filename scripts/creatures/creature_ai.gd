@@ -933,6 +933,7 @@ func _es_objetivo_permitido(candidato: Node2D) -> bool:
 			return _es_objetivo_ecologico_valido(candidato)
 
 
+func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
 	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
 		return false
 	if not candidato is Creature:
@@ -941,6 +942,7 @@ func _es_objetivo_permitido(candidato: Node2D) -> bool:
 	return not _obtener_respuesta_ecologica(tipo_relacion).is_empty()
 
 
+func _es_seguimiento_ecologico(candidato: Node2D) -> bool:
 	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
 		return false
 	if not candidato is Creature:
