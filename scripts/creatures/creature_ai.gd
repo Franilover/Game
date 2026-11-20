@@ -754,7 +754,13 @@ func _procesar_recuperando(delta: float) -> void:
 
 func _actualizar_percepcion() -> void:
 	var candidatos := _obtener_candidatos_entidad()
-	_refrescar_objetivo(candidatos)
+	_refrescar_objetivo(candidatos, true)
+	# La familiaridad no depende de que exista un objetivo hostil seleccionado.
+	_registrar_avistamientos_cercanos(
+		_obtener_distancia_deteccion(),
+		candidatos,
+		true
+	)
 
 	objetivo_detectado = false
 
@@ -781,17 +787,17 @@ func _actualizar_percepcion() -> void:
 		ultima_posicion_objetivo = objetivo.global_position
 		_hay_ultima_posicion_objetivo = true
 
-	_registrar_avistamientos_cercanos(deteccion, candidatos)
 
 
-func _registrar_avistamientos_cercanos(radio: float, candidatos: Array[Node2D] = []) -> void:
+
+func _registrar_avistamientos_cercanos(radio: float, candidatos: Array[Node2D] = [], usar_candidatos_provistos: bool = false) -> void:
 	var memoria := _obtener_config_memoria_interaccion()
 	if not bool(memoria.get("activo", false)) or criatura == null:
 		return
 	var intensidad := CreatureUtilityAIScript.leer_numero(memoria, "familiaridad_por_avistamiento", 0.25)
 	var duracion := CreatureUtilityAIScript.leer_numero(memoria, "duracion_familiaridad", 120.0)
 	var intervalo := CreatureUtilityAIScript.leer_numero(memoria, "intervalo_avistamiento", 4.0)
-	var entidades := candidatos if not candidatos.is_empty() else _obtener_candidatos_entidad()
+	var entidades := candidatos if usar_candidatos_provistos else _obtener_candidatos_entidad()
 	for candidato in entidades:
 		if candidato == null or not is_instance_valid(candidato) or candidato == criatura:
 			continue
@@ -816,7 +822,7 @@ func _obtener_candidatos_entidad() -> Array[Node2D]:
 		entity_manager
 	)
 
-func _refrescar_objetivo(candidatos: Array[Node2D] = []) -> void:
+func _refrescar_objetivo(candidatos: Array[Node2D] = [], usar_candidatos_provistos: bool = false) -> void:
 	# Los Lesfleeng liberados por un Ligniano protegen al objetivo que lo atacó.
 	var objetivo_liberacion: Variant = null
 	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
@@ -847,7 +853,7 @@ func _refrescar_objetivo(candidatos: Array[Node2D] = []) -> void:
 			objetivo = refugio
 			return
 
-	var entidades := candidatos if not candidatos.is_empty() else _obtener_candidatos_entidad()
+	var entidades := candidatos if usar_candidatos_provistos else _obtener_candidatos_entidad()
 	objetivo = CreatureTargetSelectorScript.seleccionar_mas_cercano(
 		criatura,
 		entidades,
