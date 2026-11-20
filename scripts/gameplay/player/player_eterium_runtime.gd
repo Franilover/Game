@@ -211,6 +211,7 @@ func aplicar_curacion(curacion: int, costo_eterium: int) -> bool:
 		or not vital_state.is_alive
 		or vida_eterium_compartidos()
 		or curacion <= 0
+		or costo_eterium < 0
 		or (costo_eterium > 0 and mana() < costo_eterium)
 	):
 		return false
