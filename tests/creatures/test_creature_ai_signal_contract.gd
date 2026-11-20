@@ -61,15 +61,15 @@ func _run() -> void:
 	var atacante := EntityScript.new() as Entity
 	get_tree().root.add_child(atacante)
 	var salud_antes := criatura.health
-	var danio_aplicado := CombatDamageScript.aplicar(
+	var danio_aplicado := CombatDamageScript.aplicar_y_obtener_danio(
 		criatura,
 		7,
 		"Prueba/SenalDanio",
 		Callable(),
 		atacante
 	)
-	if not danio_aplicado:
-		errores.append("CombatDamage no confirmó la reducción real de salud de Creature.")
+	if danio_aplicado != 4:
+		errores.append("CombatDamage no devolvió el daño efectivo posterior a defensa de Creature.")
 
 	if criatura.health != salud_antes - 4:
 		errores.append("Creature no aplicó su defensa antes de reducir la salud.")
