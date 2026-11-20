@@ -2,7 +2,6 @@ extends Node
 
 const WORLD_SCENE: PackedScene = preload("res://scenes/world/mundo_abierto.tscn")
 const CHUNK := Vector2i.ZERO
-const RUNTIME_KEY := "persistence_probe"
 
 
 func _ready() -> void:
@@ -17,15 +16,6 @@ func _run() -> void:
 		frames += 1
 	if not WorldData.esta_cargado():
 		_fail(["WorldData no cargó el catálogo local; el contrato necesita datos reales para crear una criatura."])
-		return
-
-	var catalogo: Array[Dictionary] = WorldData.obtener_criaturas()
-	if catalogo.is_empty():
-		_fail(["El catálogo local no contiene criaturas para probar el spawner real."])
-		return
-	var criatura_id := str(catalogo[0].get("id", catalogo[0].get("criatura_id", ""))).strip_edges()
-	if criatura_id.is_empty():
-		_fail(["La primera criatura del catálogo no tiene ID utilizable."])
 		return
 
 	var world_instance := WORLD_SCENE.instantiate() as Node2D
@@ -50,8 +40,6 @@ func _run() -> void:
 	player.global_position = Vector2(512.0, 512.0)
 	entities_root.add_child(player)
 
-	# Registrar los servicios antes de configurar el spawner: éste valida
-	# WorldDataService durante su configuración inicial.
 	generator.configurar_dependencias(WorldData, GameState)
 	generator.configurar_entidades(entities_root, player)
 	frames = 0
@@ -72,58 +60,95 @@ func _run() -> void:
 		return
 
 	var manager := generator.entity_manager
-	var estado_guardado := {
-		"criaturas": {
-			"0:0:" + RUNTIME_KEY: {
-				"criatura_id": criatura_id,
-				"runtime_instance_key": RUNTIME_KEY,
-				"position": Vector2(384.5, 448.25),
-				"velocity": Vector2(2.25, -1.5),
-				"health": 7,
-				"is_alive": true,
-				"necesidades_runtime": {"hambre": 0.73}
-			}
-		},
-		"props": {}
-	}
-	manager.restaurar_estado_persistente_mundo(estado_guardado)
-	var data := {
-		"criatura_id": criatura_id,
-		"runtime_instance_key": RUNTIME_KEY,
-		"position": Vector2(320.0, 320.0),
-		"habitat_clave": "general"
-	}
-	manager.guardar_dato_chunk(CHUNK, "criaturas", data)
-	if not generator.entity_spawner.materializar_criaturas_datos_chunk(CHUNK):
-		_fail(["El spawner real no materializó la criatura de prueba en el chunk cargado."])
+	var spawner := generator.entity_spawner
+
+	# Generación DATA auténtica: el spawner elige especies y posiciones a
+	# partir del ecosistema, bioma y semilla del chunk. No se inyectan
+	# criaturas ni registros runtime de prueba.
+	spawner.preparar_datos_criaturas_chunk(CHUNK)
+	var datos_generados := manager.obtener_datos_chunk(CHUNK, "criaturas")
+	var datos_criatura: Dictionary = {}
+	for dato_variant in datos_generados:
+		if not dato_variant is Dictionary:
+			continue
+		var dato := dato_variant as Dictionary
+		if str(dato.get("categoria_entidad", "criatura")).to_lower() == "garumi":
+			continue
+		if str(dato.get("criatura_id", "")).strip_edges().is_empty():
+			continue
+		datos_criatura = dato.duplicate(true)
+		break
+	if datos_criatura.is_empty():
+		_fail(["La semilla fija no produjo una criatura natural en el chunk de prueba; no se puede verificar la persistencia sin fixture."])
 		return
 
-	var entidades := manager.obtener_por_chunk(CHUNK)
-	var encontrada: Creature = null
-	for entidad_variant in entidades:
-		if entidad_variant is Creature and str((entidad_variant as Creature).get_meta("runtime_instance_key", "")) == RUNTIME_KEY:
-			encontrada = entidad_variant as Creature
-			break
-	if not is_instance_valid(encontrada):
-		errors.append("La criatura materializada no quedó registrada en el chunk.")
-	else:
-		if encontrada.global_position != Vector2(384.5, 448.25):
-			errors.append("El spawner no aplicó la posición guardada.")
-		if encontrada.velocity != Vector2(2.25, -1.5):
-			errors.append("El spawner no aplicó la velocidad guardada.")
-		if encontrada.health != mini(7, encontrada.max_health):
-			errors.append("El spawner no aplicó la salud guardada.")
-		var necesidades: Variant = encontrada.datos.get("necesidades_runtime", {})
-		if not necesidades is Dictionary or not is_equal_approx(float((necesidades as Dictionary).get("hambre", 0.0)), 0.73):
-			errors.append("El spawner no transfirió las necesidades runtime al Creature.")
+	var criatura_id := str(datos_criatura.get("criatura_id", ""))
+	var runtime_key := str(datos_criatura.get("runtime_instance_key", ""))
+	if runtime_key.is_empty():
+		_fail(["El spawn natural no recibió una clave de instancia estable."])
+		return
+	if not spawner.materializar_criaturas_datos_chunk(CHUNK):
+		_fail(["El spawner real no materializó los datos naturales del chunk."])
+		return
+
+	var criatura := _buscar_criatura(manager.obtener_por_chunk(CHUNK), runtime_key)
+	if not is_instance_valid(criatura):
+		_fail(["La criatura natural no quedó registrada tras materializar DATA."])
+		return
+
+	# Simula cambios runtime del juego sobre la instancia natural y captura
+	# el snapshot usando el mismo contrato que GameState utiliza al guardar.
+	var posicion_modificada := criatura.global_position + Vector2(37.5, -19.25)
+	var velocidad_modificada := Vector2(2.25, -1.5)
+	criatura.global_position = posicion_modificada
+	criatura.velocity = velocidad_modificada
+	var snapshot := manager.capturar_estado_persistente_mundo()
+	var clave_estado := "0:0:" + runtime_key
+	var estado_criatura: Dictionary = (snapshot.get("criaturas", {}) as Dictionary).get(clave_estado, {}) as Dictionary
+	if estado_criatura.is_empty():
+		_fail(["El manager no capturó el estado de la criatura generada naturalmente."])
+		return
+	if estado_criatura.get("position") != posicion_modificada or estado_criatura.get("velocity") != velocidad_modificada:
+		_fail(["El snapshot no conservó la posición y velocidad runtime de la criatura."])
+		return
+
+	# Simula descarga y reentrada al chunk: la instancia se elimina, pero el
+	# estado guardado debe aplicarse a la misma aparición determinista.
+	manager.despawn_criaturas_chunk(CHUNK)
+	manager.restaurar_estado_persistente_mundo(snapshot)
+	if not spawner.materializar_criaturas_datos_chunk(CHUNK):
+		_fail(["No se pudo rematerializar el spawn natural después de restaurar el snapshot."])
+		return
+
+	var restaurada := _buscar_criatura(manager.obtener_por_chunk(CHUNK), runtime_key)
+	if not is_instance_valid(restaurada):
+		_fail(["La criatura natural no reapareció tras restaurar el estado."])
+		return
+	if restaurada.global_position != posicion_modificada:
+		errors.append("La posición runtime no sobrevivió a descarga y rematerialización.")
+	if restaurada.velocity != velocidad_modificada:
+		errors.append("La velocidad runtime no sobrevivió a descarga y rematerialización.")
+	if manager.obtener_por_chunk(CHUNK).filter(func(entidad: Variant) -> bool:
+		return entidad is Creature and str((entidad as Creature).get_meta("runtime_instance_key", "")) == runtime_key
+	).size() != 1:
+		errors.append("La rematerialización duplicó la criatura del mismo spawn.")
 
 	if not errors.is_empty():
 		_fail(errors)
 		return
-	print("ProceduralWorldEntityMaterialization: PASS seed=%d chunk=%s creature=%s" % [generator.map_seed, str(CHUNK), criatura_id])
+	print("ProceduralWorldEntityMaterialization: PASS seed=%d chunk=%s creature=%s runtime=%s" % [generator.map_seed, str(CHUNK), criatura_id, runtime_key])
 	world_instance.queue_free()
 	await get_tree().process_frame
 	get_tree().quit(0)
+
+
+func _buscar_criatura(entidades: Array, runtime_key: String) -> Creature:
+	for entidad_variant in entidades:
+		if entidad_variant is Creature and is_instance_valid(entidad_variant):
+			var criatura := entidad_variant as Creature
+			if str(criatura.get_meta("runtime_instance_key", "")) == runtime_key:
+				return criatura
+	return null
 
 
 func _fail(errors: Array[String]) -> void:
