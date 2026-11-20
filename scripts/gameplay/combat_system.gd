@@ -518,14 +518,14 @@ func _aplicar_danio(
 	if not CombatTargeting.es_objetivo_valido(actor, objetivo):
 		return false
 
-	var aplicado := CombatDamage.aplicar(
+	var danio_real := CombatDamage.aplicar_y_obtener_danio(
 		objetivo,
 		danio,
 		"Jugador/CombatSystem:" + origen,
 		Callable(),
 		actor
 	)
-	if not aplicado:
+	if danio_real <= 0:
 		return false
 
 	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
@@ -533,14 +533,14 @@ func _aplicar_danio(
 		player,
 		actor,
 		objetivo,
-		danio,
+		danio_real,
 		arma
 	)
 
 	ataque_realizado.emit(
 		actor,
 		objetivo,
-		danio
+		danio_real
 	)
 
 	print(
@@ -595,15 +595,14 @@ func solicitar_danio_desde_entidad(
 	if danio <= 0:
 		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
-	var salud_objetivo_antes: int = objetivo.health
-	var aplicado := CombatDamage.aplicar(
+	var danio_real := CombatDamage.aplicar_y_obtener_danio(
 		objetivo,
 		danio,
 		origen,
 		Callable(),
 		atacante
 	)
-	if not aplicado:
+	if danio_real <= 0:
 		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
 	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
@@ -611,12 +610,12 @@ func solicitar_danio_desde_entidad(
 		player,
 		atacante,
 		objetivo,
-		danio
+		danio_real
 	)
 
-	# Robo de vida canónico: sólo cura al vampiro que acaba de infligir
-	# daño real; CombatDamage ya confirmó que la salud del objetivo bajó.
-	if atacante is Creature:
+	# Robo de vida: usa el daño efectivo devuelto por esta invocación,
+	# no la diferencia global de salud, que puede incluir daño reentrante.
+	if is_instance_valid(atacante) and not atacante.is_queued_for_deletion() and atacante is Creature:
 		var criatura_atacante := atacante as Creature
 		if criatura_atacante.get_nombre().strip_edges().to_lower() == "vampiro":
 			var config_ia := criatura_atacante.obtener_config_ia()
@@ -625,12 +624,12 @@ func solicitar_danio_desde_entidad(
 				var robo_variant: Variant = (combate_variant as Dictionary).get("robo_vida", {})
 				if robo_variant is Dictionary and bool((robo_variant as Dictionary).get("activo", false)):
 					var fraccion: float = float((robo_variant as Dictionary).get("fraccion_curacion", 0.5))
-					var danio_real := maxi(salud_objetivo_antes - objetivo.health, 0)
-					if fraccion > 0.0 and danio_real > 0:
+					if fraccion > 0.0:
 						var curacion := maxi(1, int(ceil(float(danio_real) * clampf(fraccion, 0.0, 1.0))))
 						criatura_atacante.heal(curacion)
 
-	ataque_realizado.emit(atacante, objetivo, danio)
+	if is_instance_valid(atacante) and not atacante.is_queued_for_deletion():
+		ataque_realizado.emit(atacante, objetivo, danio_real)
 	return COMBAT_ATTACK_RESULT.aceptado(true, true)
 
 
