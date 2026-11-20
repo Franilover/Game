@@ -236,3 +236,8 @@ Si el daño recibido ignora armadura: revisar la ruta de equipamiento defensivo 
 ### Reentrada durante contacto de IA/melee
 
 Si el contacto se registra pero el daño no debe continuar, inspeccionar los listeners de `contacto_efectivo` y el contrato de revalidación posterior en `CombatSystem.solicitar_danio_desde_entidad()` y `CombatSystem._aplicar_danio()`. No mover esta regla a `CreatureAI`: cubre también melee y Cambiaformas. Para Rancrodeen adherido, comprobar `CombatTargeting.es_objetivo_valido()` antes de cada pulso.
+
+
+### Reentrada al recibir daño de criaturas
+
+Si `danio_recibido` informa un atacante incorrecto durante varios impactos en el mismo frame, revisar `Creature._aplicar_danio_recibido()`. El atacante debe permanecer local a cada invocación; no reintroducir un campo temporal compartido. La regresión está en `tests/combat/test_combat_creature_damage_reentrancy.gd`.
