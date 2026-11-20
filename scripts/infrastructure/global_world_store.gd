@@ -49,7 +49,7 @@ func configurar_runtime(main: Node) -> void:
 func restaurar_en_game_state(game_state: Node) -> bool:
 	if game_state == null or not is_instance_valid(game_state):
 		return false
-	if not FileAccess.file_exists(_save_path):
+	if not FileAccess.file_exists(_save_path) and not FileAccess.file_exists(_save_path + ".bak"):
 		var rng := RandomNumberGenerator.new()
 		rng.randomize()
 		game_state.world_state.world_seed = rng.randi()
