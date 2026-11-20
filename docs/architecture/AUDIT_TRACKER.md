@@ -546,4 +546,4 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 
 - No persiste recuerdos, no modifica el canon y no incluye Garumis.
 - Pruebas ampliadas para identidad individual, acumulación, decaimiento, expiración y retorno al comportamiento base.
-- Estado: implementación realizada; CI pendiente.
+- Estado: implementación realizada; regresión completa y GDScript Quality aprobados en los commits de pruebas `d130202` (runs `44695492033` y `44695492008`).
