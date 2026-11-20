@@ -1455,5 +1455,6 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Las pruebas de memoria cubren aislamiento entre actores, límite de intensidad, exclusión de Garumis, expiración y limpieza de referencias débiles cuando el actor se libera.
 
 - Los Garumis se excluyen de estos recuerdos. La memoria no persiste entre sesiones ni se comparte entre criaturas.
-- `CreatureAITargetPolicy` cubre acumulación, aislamiento entre actores, decaimiento, expiración y efecto optativo en la respuesta de la criatura.
+- `CreatureAITargetPolicy` cubre acumulación, aislamiento entre actores, decaimiento, expiración, límite de intensidad, exclusión de Garumis, limpieza de actores liberados y efecto optativo en la respuesta de la criatura.
+- La memoria actual sólo registra agresiones y es temporal. Las acciones positivas todavía no generan recuerdos de criatura; `RelationshipSystem` administra relaciones de personajes con `personaje_game_id` y no está conectado a `CreatureAI`. Reutilizar esa autoridad cuando corresponda, sin duplicar un sistema de amistad.
 - Regresión completa y GDScript Quality aprobados para el commit de pruebas `d130202` (run `44695492033` y `44695492008`). La documentación posterior vuelve a ejecutar la regresión.
