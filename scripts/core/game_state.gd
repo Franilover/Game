@@ -1480,7 +1480,10 @@ func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 	var id_guardado := str(datos.get("id", id)).strip_edges()
 	if id_guardado != id:
 		return false
-	var version := int(datos.get("version", 1))
+	var version_variant: Variant = datos.get("version", 1)
+	if not version_variant is int:
+		return false
+	var version := int(version_variant)
 	if version < 1 or version > SAVE_VERSION:
 		return false
 	if datos.has("mundo") and not datos.get("mundo") is Dictionary:
@@ -1506,7 +1509,7 @@ func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 			return false
 	if estado.has("scene") and not estado.get("scene") is String:
 		return false
-	if estado.has("player") and not estado.get("player") is Dictionary:
+	if estado.has("player") and not _player_guardado_valido(estado.get("player")):
 		return false
 	if estado.has("flags") and not estado.get("flags") is Dictionary:
 		return false
@@ -1514,6 +1517,32 @@ func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 	var flags := flags_variant as Dictionary
 	if flags.has("inventario_estado") and not _inventario_guardado_valido(flags.get("inventario_estado")):
 		return false
+	return true
+
+
+func _player_guardado_valido(valor: Variant) -> bool:
+	if not valor is Dictionary:
+		return false
+	var jugador := valor as Dictionary
+	for clave in ["health", "mana", "stamina"]:
+		if jugador.has(clave):
+			var reserva: Variant = jugador.get(clave)
+			if not (reserva is int or reserva is float):
+				return false
+	for clave in ["position_valid", "tile_valid"]:
+		if jugador.has(clave) and not jugador.get(clave) is bool:
+			return false
+	for clave in ["position", "tile", "facing"]:
+		if jugador.has(clave):
+			var vector_variant: Variant = jugador.get(clave)
+			if not vector_variant is Dictionary:
+				return false
+			var vector := vector_variant as Dictionary
+			for componente in ["x", "y"]:
+				if vector.has(componente):
+					var numero: Variant = vector.get(componente)
+					if not (numero is int or numero is float):
+						return false
 	return true
 
 
