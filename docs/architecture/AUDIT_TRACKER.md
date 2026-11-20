@@ -472,10 +472,17 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Cambio: nuevo CreaturePerception concentra el descubrimiento del jugador explícito, jugadores conectados y entidades activas del WorldEntityManager. La IA conserva la política de selección; percepción no equivale a hostilidad.
 - Seguridad: se excluyen nodos inválidos, muertos, fuera del árbol o pendientes de queue_free(). Garumis pueden ser percibidos como habitantes, pero siguen excluidos de objetivos hostiles por la política existente.
 - Regresión: CreatureAITargetPolicy cubre descubrimiento, presencia perceptible de Garumis y descarte de entidades pendientes.
-- Estado: implementado; CI en ejecución. La extracción de selección de objetivos, decisión y ejecución queda pendiente.
+- Estado: implementado y validado en Godot 4.7 CI. La extracción de selección de objetivos, decisión y ejecución queda pendiente.
 
 ## Corrección del bloqueo de CI de restauración Eterium (2026-11-20)
 
 - PlayerEteriumRestoreReadiness llamaba free() a cuatro instancias que extienden RefCounted (PlayerEteriumRuntime, PlayerEteriumCoordinator y VitalState).
 - Se retiró la liberación manual inválida; su vida se gestiona por referencias.
-- Estado: corregido en el test; CI pendiente de confirmar el resultado.
+- Estado: corregido y validado en CI; `PlayerEteriumRestoreReadiness` vuelve a pasar.
+
+## Recuperación de CI completo y corrección de test de inventario (2026-11-20)
+
+- `PlayerEteriumRestoreReadiness` pasó después de retirar las llamadas `free()` inválidas sobre `RefCounted`.
+- El siguiente bloqueo fue un error de compilación en `test_inventory_equipment_transaction.gd`: el arreglo se declaraba como `errors`, pero cuatro aserciones escribían en `errores`. Se corrigió el nombre sin alterar la lógica de producción.
+- La suite completa `Garlia Godot 4.7 Regression Tests` terminó en success; `GDScript Quality (Advisory)` también pasó.
+- Ejecución: https://github.com/Franilover/Game/actions/runs/44690270664.
