@@ -1310,3 +1310,5 @@ Se añadió `test_inventory_overflow_ui`, que instancia la escena real, carga 30
 ## Transiciones de zona — preparación segura del destino — 2026-11-20
 
 `ZoneManager._cambiar_zona()` ahora carga e instancia la escena destino antes de retirar la zona activa. Si la ruta no existe o la escena no puede instanciarse, cancela la transición y libera el bloqueo `_transicionando`, conservando la zona actual. Se amplió `test_zone_manager_torres_fallback` para probar una ruta inexistente con una zona previa activa y luego comprobar que Torres sigue siendo accesible sin catálogo remoto. El contrato está en el workflow de pruebas de mundo; ejecución pendiente.
+
+En servidor dedicado, la transición ahora también se cancela si `GlobalWorldStore.guardar_desde_runtime()` no confirma el snapshot de la zona saliente. La escena destino ya preinstanciada se libera y la zona actual permanece activa; no se continúa descargando mundo tras un fallo de persistencia global.
