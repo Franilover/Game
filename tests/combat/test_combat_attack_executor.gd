@@ -225,6 +225,7 @@ func _probar_colision_melee_fisica(errores: Array[String]) -> void:
 		0.2,
 		Color(0.8, 0.6, 0.4, 0.5)
 	)
+	area.objeto_ataque["_damage_override"] = combate.danio_desarmado
 	area.objetivo_detectado.connect(
 		func(entidad: Entity) -> void:
 			combate._al_recibir_objetivo_de_ataque(entidad, area)
