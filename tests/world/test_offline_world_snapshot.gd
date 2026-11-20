@@ -29,7 +29,7 @@ func _run() -> void:
 		_fail("La prueba offline conectó accidentalmente un cliente remoto.")
 		return
 
-	var biomas := bundled.mundo.get("biomas", [])
+	var biomas: Array = bundled.mundo.get("biomas", []) as Array
 	var ecosistemas := 0
 	var criaturas := 0
 	for bioma_variant in biomas:
