@@ -90,8 +90,8 @@ func _run() -> void:
 	movimiento._ultima_posicion_seguro = npc_a.global_position
 	movimiento._tiempo_sin_progreso = 1.0
 	movimiento._direccion_base_atasco = Vector2.RIGHT
-	var desvio_atasco := movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
-	var desvio_repetido := movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
+	var desvio_atasco := movimiento._aplicar_seguro_atasco(Vector2.RIGHT, 0.1)
+	var desvio_repetido := movimiento._aplicar_seguro_atasco(Vector2.RIGHT, 0.1)
 	if desvio_atasco.length_squared() <= 0.01 or desvio_repetido.distance_to(desvio_atasco) > 0.01:
 		errores.append("El seguro de atasco no mantiene un desvío estable.")
 
@@ -125,9 +125,39 @@ func _run() -> void:
 	movimiento._tiempo_sin_progreso = 0.0
 	var direccion_recuperacion := Vector2.RIGHT
 	for _i in range(10):
-		direccion_recuperacion = movimiento._aplicar_seguro_atasco_npc(Vector2.RIGHT, 0.1)
+		direccion_recuperacion = movimiento._aplicar_seguro_atasco(Vector2.RIGHT, 0.1)
 	if absf(direccion_recuperacion.y) <= absf(direccion_recuperacion.x):
 		errores.append("El seguro de atasco no activa un rodeo lateral tras perder progreso.")
+
+	# La recuperación de atasco también debe servir a criaturas normales,
+	# no sólo a los NPC de Torres. Se fuerza un obstáculo delante del cuerpo.
+	npc_a.remove_from_group("torres_game_npc")
+	npc_a.collision_mask = 1
+	var pared := StaticBody2D.new()
+	pared.collision_layer = 1
+	pared.position = npc_a.global_position + Vector2(26.0, -12.0)
+	var forma_pared := CollisionShape2D.new()
+	var rectangulo := RectangleShape2D.new()
+	rectangulo.size = Vector2(4.0, 80.0)
+	forma_pared.shape = rectangulo
+	pared.add_child(forma_pared)
+	get_tree().root.add_child(pared)
+	await get_tree().physics_frame
+	movimiento._seguro_inicializado = true
+	movimiento._ultima_posicion_seguro = npc_a.global_position
+	movimiento._tiempo_sin_progreso = 0.7
+	movimiento._direccion_base_atasco = Vector2.RIGHT
+	movimiento._direccion_desvio_atasco = Vector2.ZERO
+	var desvio_criatura := movimiento._aplicar_seguro_atasco(Vector2.RIGHT, 0.2)
+	if desvio_criatura.length_squared() <= 0.01 or absf(desvio_criatura.y) < 0.2:
+		errores.append("Una criatura normal no encontró un desvío al quedar bloqueada por una pared.")
+	var desvio_criatura_repetido := movimiento._aplicar_seguro_atasco(Vector2.RIGHT, 0.1)
+	if desvio_criatura_repetido.distance_to(desvio_criatura) > 0.01:
+		errores.append("La criatura cambió de desvío repetidamente frente al mismo obstáculo.")
+	pared.queue_free()
+	npc_a.collision_mask = 0
+	npc_a.add_to_group("torres_game_npc")
+	await get_tree().process_frame
 
 	# Un NPC oculto dentro de un edificio no puede participar en la
 	# separación exterior ni desplazar a quienes esperan en la puerta.
