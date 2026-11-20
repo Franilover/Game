@@ -53,9 +53,8 @@ func _run() -> void:
 		garumi_sprite_test.queue_free()
 
 	print("GarumiWorldPresence: sprites loaded")
-	var salud_antes := int(garumi_node.get("health"))
+	_expect(garumi_node.get_node_or_null("Hurtbox") == null, "Un Garumi no debe exponer una hitbox de daño.")
 	garumi_node.call("take_damage", 999, "test")
-	_expect(int(garumi_node.get("health")) == salud_antes and bool(garumi_node.get("is_alive")), "El daño común debe dejar vivo al Garumi hasta tener absorción específica.")
 
 	garumi_node.call("configurar_entorno", "bosque")
 	garumi_node.set_meta("runtime_instance_key", "garumi:0:g-scene")
@@ -71,6 +70,8 @@ func _run() -> void:
 		_expect(str(estado_guardado.get("nombre", "")) == "Garumi scene test", "El streaming debe conservar el nombre visible del Garumi.")
 		_expect(bool(estado_guardado.get("garumi_debug_preview", false)), "El streaming debe conservar que la instancia es sólo un prototipo de depuración.")
 		_expect(str(estado_guardado.get("habitat_clave", "")) == "tierra", "El streaming debe conservar el entorno de tierra del Garumi.")
+		for campo_combate in ["health", "max_health", "is_alive", "nivel", "experiencia_total"]:
+			_expect(not estado_guardado.has(campo_combate), "El snapshot Garumi no debe guardar el campo de combate %s." % campo_combate)
 
 	# Al abandonar Mundo Abierto se eliminan las entidades de chunks que viven
 	# bajo Entities, pero los personajes globales/persistentes deben sobrevivir.
