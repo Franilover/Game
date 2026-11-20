@@ -673,3 +673,8 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - La restauración de Entity recibe vivo = (salud_guardada > 0); un snapshot sin salud no puede revivir al jugador durante la carga.
 - Los guardados normales y narrativos rechazan al jugador muerto; la muerte no se serializa como un checkpoint nuevo. El archivo anterior permanece hasta que el jugador reaparezca y pueda guardarse de nuevo.
 - La estructura JSON y la versión de save no cambian; la stamina legacy conserva su conversión existente. test_player_state_vital_persistence_contract cubre la normalización del snapshot.
+
+
+### Validación del contrato de persistencia
+
+SaveFileRepository valida integridad de archivo JSON y recuperación transaccional; GameStateService valida el contrato de dominio antes de listar o iniciar una partida (ID, versión soportada y estructura de estado). La ausencia de version se interpreta como versión legacy 1; una versión futura o tipos estructurales incorrectos se rechazan antes de mutar el estado activo.
