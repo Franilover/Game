@@ -344,7 +344,7 @@ func _guardar_tombstone_prop_recolectado(prop: WorldProp, chunk_coord: Vector2i)
 			continue
 		if str((dato_variant as Dictionary).get("runtime_instance_key", "")) != prop_key:
 			continue
-		var dato_actualizado := datos_prop.duplicate(true)
+		var dato_actualizado := (dato_variant as Dictionary).duplicate(true)
 		dato_actualizado["is_present"] = false
 		datos_chunk[indice] = dato_actualizado
 		actualizado = true
