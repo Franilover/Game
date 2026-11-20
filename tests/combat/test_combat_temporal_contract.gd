@@ -245,7 +245,8 @@ func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
 	var armadura := {
 		"id": "armor_test",
 		"tipo": "armadura",
-		"propiedades_game": {"ranura_equipamiento": "torso"},
+		"propiedades_game": {"ranura_equipamiento": "torso", "durabilidad": 5},
+		"durabilidad_actual": 5,
 		"estadisticas": {"defensa": 3}
 	}
 	inventario.inventory_controller.runtime.equipar("torso", armadura)
@@ -260,6 +261,9 @@ func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
 		errores.append("Player no aplicó la defensa equipada al daño normal.")
 	if int(muertes_normales["cantidad"]) != 0:
 		errores.append("Un impacto no letal emitió la muerte del jugador.")
+	var armadura_despues_golpe := inventario.inventory_controller.runtime.obtener_equipo("torso")
+	if int(armadura_despues_golpe.get("durabilidad_actual", -1)) != 5:
+		errores.append("Recibir daño consumió durabilidad de la armadura.")
 
 	# Un golpe letal debe sincronizar el estado y emitir la muerte una sola vez.
 	jugador.restaurar_estado_vital(4, true)
