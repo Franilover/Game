@@ -31,6 +31,7 @@ var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
 var _esperando_configuracion_eterium_jugador: bool = false
+var _estado_vital_restaurado_en_escena: bool = false
 var _inventory: GarliaInventory = null
 var _player: Player = null
 var _world_context: WorldContext = null
@@ -58,6 +59,7 @@ func configurar_dependencias(
 	_inventory = inventory
 	if _player != player:
 		_esperando_configuracion_eterium_jugador = false
+		_estado_vital_restaurado_en_escena = false
 	_player = player
 	_world_context = world_context
 	_world_atmosphere = world_atmosphere
@@ -128,6 +130,7 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 	_historia_requiere_aplicar = false
 	_guardado_rapido_conectado = false
 	_partida_aplicada_en_escena = false
+	_estado_vital_restaurado_en_escena = false
 	_autosave_timer = 0.0
 
 	if nueva:
@@ -319,6 +322,7 @@ func iniciar_partida(id: String) -> bool:
 
 	world_state.current_scene = MAIN_SCENE_PATH
 	_partida_aplicada_en_escena = false
+	_estado_vital_restaurado_en_escena = false
 	_autosave_timer = 0.0
 
 	_abrir_escena_principal()
@@ -1265,10 +1269,6 @@ func _revisar_escena_actual() -> void:
 	elif active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
 
-	# Las capacidades/fisiología deben estar resueltas antes de normalizar reservas.
-	# Main inyecta el Player y éste avisa cuando terminó de cargar runtime y especie.
-	if not jugador_listo_para_restaurar():
-		return
 	_aplicar_estado_al_juego()
 
 
@@ -1294,7 +1294,38 @@ func jugador_listo_para_restaurar() -> bool:
 
 func _al_estar_lista_configuracion_eterium() -> void:
 	_esperando_configuracion_eterium_jugador = false
-	call_deferred("_revisar_escena_actual")
+	call_deferred("_restaurar_estado_vital_pendiente")
+
+
+func _restaurar_estado_vital_pendiente() -> void:
+	if _estado_vital_restaurado_en_escena or not _partida_aplicada_en_escena:
+		return
+	if not jugador_listo_para_restaurar():
+		return
+	_restaurar_estado_vital_jugador(_player)
+
+
+func _restaurar_estado_vital_jugador(jugador: Player) -> void:
+	if (
+		_estado_vital_restaurado_en_escena
+		or jugador == null
+		or not is_instance_valid(jugador)
+	):
+		return
+	var reservas_guardadas := player_state.normalizar_reservas_vitales(
+		int(jugador.get("max_health")),
+		int(jugador.get("max_mana")),
+		jugador.eterium.vida_eterium_compartidos()
+	)
+	var vida_guardada := int(reservas_guardadas.get("health", 0))
+	var mana_guardado := int(reservas_guardadas.get("mana", 0))
+	# Un snapshot con salud cero nunca se restaura como vivo.
+	jugador.restaurar_estado_vital(
+		vida_guardada,
+		vida_guardada > 0,
+		mana_guardado
+	)
+	_estado_vital_restaurado_en_escena = true
 
 
 func _aplicar_estado_al_juego() -> void:
@@ -1316,20 +1347,8 @@ func _aplicar_estado_al_juego() -> void:
 			if is_instance_valid(zona) and zona.has_method("restaurar_estado_guardado") and estado_zona is Dictionary:
 				zona.call("restaurar_estado_guardado", (estado_zona as Dictionary).duplicate(true))
 
-	var reservas_guardadas := player_state.normalizar_reservas_vitales(
-		int(jugador.get("max_health")),
-		int(jugador.get("max_mana")),
-		jugador.eterium.vida_eterium_compartidos()
-	)
-	var vida_guardada := int(reservas_guardadas.get("health", 0))
-	var mana_guardado := int(reservas_guardadas.get("mana", 0))
-	# Un snapshot con salud cero nunca se restaura como vivo, aunque el save
-	# sea antiguo o haya sido manipulado y no incluya un indicador de muerte.
-	jugador.restaurar_estado_vital(
-		vida_guardada,
-		vida_guardada > 0,
-		mana_guardado
-	)
+	if jugador_listo_para_restaurar():
+		_restaurar_estado_vital_jugador(jugador)
 
 	if jugador.get("stamina") != null:
 		var stamina_guardada := clampf(
@@ -1433,6 +1452,7 @@ func _abrir_escena_principal() -> void:
 
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
+	_estado_vital_restaurado_en_escena = false
 	var escena := get_tree().current_scene
 	if escena != null:
 		world_state.current_scene = str(escena.scene_file_path)
