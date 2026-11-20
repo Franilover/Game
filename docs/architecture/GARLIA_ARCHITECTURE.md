@@ -678,3 +678,8 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 ### Validación del contrato de persistencia
 
 SaveFileRepository valida integridad de archivo JSON y recuperación transaccional; GameStateService valida el contrato de dominio antes de listar o iniciar una partida (ID, versión soportada y estructura de estado). La ausencia de version se interpreta como versión legacy 1; una versión futura o tipos estructurales incorrectos se rechazan antes de mutar el estado activo.
+
+
+### Barrera de restauración de Eterium
+
+La configuración persistida del personaje se aplica después de inyectar GameState, porque Player._ready() ocurre antes de que Main llame a configurar_dependencias(). La restauración del snapshot vital no puede ejecutarse hasta que el runtime general y la resolución de reglas de especie hayan terminado. PlayerEteriumCoordinator expresa esa condición; Player publica la señal de disponibilidad y GameStateService reintenta la restauración. Una regla de especie ausente también cuenta como resuelta cuando el catálogo termina de cargar; no equivale a usar máximos por defecto mientras la consulta sigue pendiente.
