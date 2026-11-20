@@ -136,6 +136,23 @@ func _run() -> void:
 	otro_actor.queue_free()
 	garumi_recordado.queue_free()
 
+	# La memoria tiene un límite por criatura y conserva recuerdos más intensos.
+	var actores_memoria: Array[Node2D] = []
+	for indice in range(17):
+		var actor_memoria := Node2D.new()
+		get_tree().root.add_child(actor_memoria)
+		actores_memoria.append(actor_memoria)
+		memoria.registrar_agresion(actor_memoria, 5.0 if indice == 0 else 1.0, 30.0)
+	if memoria.cantidad_recuerdos() != InteractionMemoryScript.MAX_RECUERDOS:
+		_fail("La memoria superó su límite de actores recordados.")
+		return
+	if not is_equal_approx(memoria.obtener_agresion(actores_memoria[0]), 5.0):
+		_fail("La memoria expulsó un recuerdo intenso antes que los débiles.")
+		return
+	memoria.limpiar()
+	for actor_memoria in actores_memoria:
+		actor_memoria.queue_free()
+
 	# Los actores liberados se eliminan mediante WeakRef en la siguiente actualización.
 	var actor_liberado := Node2D.new()
 	get_tree().root.add_child(actor_liberado)
