@@ -300,6 +300,8 @@ func equipar_desde_inventario(slot: String, indice: int, _item: Dictionary = {})
 	return true
 
 func desequipar_a_inventario(slot: String) -> bool:
+	if not EquipmentState.es_ranura_valida(slot):
+		return false
 	var objeto := equipment.obtener(slot)
 	if objeto.is_empty():
 		return false
@@ -361,6 +363,8 @@ func robar_equipamiento(slot: String) -> Dictionary:
 	return objeto
 
 func consumir_durabilidad_equipo(slot: String) -> bool:
+	if not EquipmentState.es_ranura_valida(slot):
+		return false
 	var objeto := equipment.obtener(slot)
 	if not _consumir_durabilidad_objeto(objeto):
 		return false
