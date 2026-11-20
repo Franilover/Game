@@ -924,7 +924,7 @@ func _actualizar_slots_equipamiento() -> void:
 func obtener_equipamiento() -> Dictionary:
 	return inventory_controller.obtener_equipamiento()
 
-func obtener_objeto_equipado(clave: String = "mano_secundaria") -> Dictionary:
+func obtener_objeto_equipado(clave: String = "torso") -> Dictionary:
 	return inventory_controller.obtener_objeto_equipado(clave)
 
 func consumir_durabilidad_equipo(clave: String = "torso") -> bool:
@@ -934,77 +934,6 @@ func consumir_durabilidad_equipo(clave: String = "torso") -> bool:
 		_actualizar_slots_equipamiento()
 		inventory_changed.emit()
 	return resultado
-
-
-func obtener_estadistica_equipo(
-	clave: String,
-	valor_por_defecto: float = 0.0
-) -> float:
-	var buscada: String = clave.strip_edges()
-	if buscada.is_empty():
-		return valor_por_defecto
-
-	var total: float = valor_por_defecto
-
-	for objeto_variant in equipo.values():
-		if not objeto_variant is Dictionary:
-			continue
-
-		var objeto := objeto_variant as Dictionary
-		var propiedades_variant: Variant = objeto.get(
-			"propiedades_game",
-			{}
-		)
-
-		if not propiedades_variant is Dictionary:
-			continue
-
-		var propiedades := propiedades_variant as Dictionary
-		var valor: Variant = propiedades.get(
-			buscada,
-			null
-		)
-
-		if valor is int or valor is float:
-			total += float(valor)
-
-	return total
-
-
-func obtener_estadisticas_equipo() -> Dictionary:
-	var estadisticas: Dictionary = {}
-
-	for objeto_variant in equipo.values():
-		if not objeto_variant is Dictionary:
-			continue
-
-		var objeto := objeto_variant as Dictionary
-		var propiedades_variant: Variant = objeto.get(
-			"propiedades_game",
-			{}
-		)
-
-		if not propiedades_variant is Dictionary:
-			continue
-
-		var propiedades := propiedades_variant as Dictionary
-
-		for clave_variant in propiedades.keys():
-			var clave: String = str(clave_variant)
-			var valor: Variant = propiedades.get(
-				clave_variant,
-				null
-			)
-
-			if not (valor is int or valor is float):
-				continue
-
-			estadisticas[clave] = (
-				float(estadisticas.get(clave, 0.0))
-				+ float(valor)
-			)
-
-	return estadisticas
 
 
 func _buscar_indice_objeto(objeto: Dictionary) -> int:
