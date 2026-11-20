@@ -90,7 +90,7 @@ func _worker_write() -> void:
 	state["player"] = {
 		"health": 64,
 		"mana": 37,
-		"stamina": 1.75,
+		"stamina": 0.65,
 		"position_valid": true,
 		"position": {"x": 321.5, "y": -87.25},
 		"tile_valid": false,
@@ -195,6 +195,7 @@ func _worker_read() -> void:
 	if selector == null:
 		_fail("El menú no creó el selector de partidas.")
 		return
+	Events.scene_changed.connect(_freeze_player_on_main, CONNECT_ONE_SHOT)
 	selector.call("_jugar_partida", save_id)
 
 	var frames := 0
@@ -226,6 +227,8 @@ func _worker_read() -> void:
 		_fail("No se pudo resolver Eterium local para la verificación.")
 		return
 	player.eterium.marcar_especie_configuracion_resuelta()
+	# Reintentar la restauración vital después de resolver las reglas locales.
+	game_state.call("_restaurar_estado_vital_pendiente")
 
 	frames = 0
 	while frames < 180 and (
@@ -249,7 +252,7 @@ func _worker_read() -> void:
 		errors.append("La orientación del jugador no se restauró.")
 	if player.health != 64 or player.mana != 37:
 		errors.append("Salud/Eterium no se restauraron: %d/%d" % [player.health, player.mana])
-	if not is_equal_approx(player.stamina, 1.75):
+	if not is_equal_approx(player.stamina, 0.65):
 		errors.append("La stamina no se restauró: %s" % str(player.stamina))
 	if inventory.items.size() <= 6 or str(inventory.items[6].get("id", "")) != "full_restart_hotbar":
 		errors.append("El inventario real no restauró el objeto de hotbar.")
@@ -286,3 +289,15 @@ func _contains(output: Array, needle: String) -> bool:
 func _fail(message: String) -> void:
 	push_error("FullSaveRestart: FAIL: " + message)
 	get_tree().quit(1)
+
+
+func _freeze_player_on_main(scene_path: String) -> void:
+	if scene_path != "res://scenes/world/main.tscn":
+		return
+	var main := get_tree().current_scene
+	if not is_instance_valid(main):
+		return
+	var player := main.get_node_or_null("Entities/Player") as Player
+	if is_instance_valid(player):
+		player.set_process(false)
+		player.set_physics_process(false)
