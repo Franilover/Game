@@ -405,6 +405,95 @@ jobs:
             exit 1
           fi
 
+      - name: Run combat temporal contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . res://tests/combat/test_combat_temporal_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatTemporalContract: FAIL:' <<<"$output"; then
+            echo "Combat temporal contract test reported script or assertion errors."
+            exit 1
+          fi
+
+      - name: Run combat item resolver regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_item_resolver.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatItemResolver: FAIL:' <<<"$output"; then
+            echo "Combat item resolver regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat attack executor regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . res://tests/combat/test_combat_attack_executor.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatAttackExecutor: FAIL:' <<<"$output"; then
+            echo "Combat attack executor regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat projectile contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_projectile_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatProjectileContract: FAIL:' <<<"$output"; then
+            echo "Combat projectile contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat impact effects regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_impact_effects.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatImpactEffects: FAIL:' <<<"$output"; then
+            echo "Combat impact effects regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat weapon attack contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_weapon_attack_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatWeaponAttackContract: FAIL:' <<<"$output"; then
+            echo "Combat weapon attack contract regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat entity attack contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_entity_attack_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEntityAttackContract: FAIL:' <<<"$output"; then
+            echo "Combat entity attack contract regression test reported errors."
+            exit 1
+          fi
+
+      - name: Run combat event queue contract regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          printf '%s\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEventQueueContract: FAIL:' <<<"$output"; then
+            echo "Combat event queue contract test reported script or assertion errors."
+            exit 1
+          fi
+
+
       - name: Run player Eterium restore readiness contract test
         shell: bash
         run: |
@@ -600,94 +689,6 @@ jobs:
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerVitalStateContract: FAIL:' <<<"$output"; then
             echo "Player VitalState contract test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat temporal contract regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(godot --headless --path . res://tests/combat/test_combat_temporal_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatTemporalContract: FAIL:' <<<"$output"; then
-            echo "Combat temporal contract test reported script or assertion errors."
-            exit 1
-          fi
-
-      - name: Run combat item resolver regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/combat/test_combat_item_resolver.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatItemResolver: FAIL:' <<<"$output"; then
-            echo "Combat item resolver regression test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat attack executor regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(godot --headless --path . res://tests/combat/test_combat_attack_executor.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatAttackExecutor: FAIL:' <<<"$output"; then
-            echo "Combat attack executor regression test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat projectile contract regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_projectile_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
-          printf '%s\\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatProjectileContract: FAIL:' <<<"$output"; then
-            echo "Combat projectile contract test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat impact effects regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_impact_effects.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatImpactEffects: FAIL:' <<<"$output"; then
-            echo "Combat impact effects regression test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat weapon attack contract regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_weapon_attack_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatWeaponAttackContract: FAIL:' <<<"$output"; then
-            echo "Combat weapon attack contract regression test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat entity attack contract regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(timeout 30s godot --headless --path . res://tests/combat/test_combat_entity_attack_contract.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEntityAttackContract: FAIL:' <<<"$output"; then
-            echo "Combat entity attack contract regression test reported errors."
-            exit 1
-          fi
-
-      - name: Run combat event queue contract regression test
-        shell: bash
-        run: |
-          set -euo pipefail
-          output="$(godot --headless --path . --script res://tests/combat/test_combat_event_queue.gd 2>&1)" || { printf '%s\n' "$output"; exit 1; }
-          printf '%s\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CombatEventQueueContract: FAIL:' <<<"$output"; then
-            echo "Combat event queue contract test reported script or assertion errors."
             exit 1
           fi
 
