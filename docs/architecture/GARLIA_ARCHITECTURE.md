@@ -244,9 +244,11 @@ Ruta única:
 
 CombatDamage es el único camino de resolución de daño.
 
+Los procesos IUM con efecto de daño solicitan la ejecución a `CombatSystem.solicitar_danio_desde_entidad()`; no llaman `Entity.take_damage()` directamente.
+
 CombatFeedback sólo muestra el resultado.
 
-CreatureAI no puede tener otro DamageSystem.
+CreatureAI e IUMManager no pueden tener otro DamageSystem.
 
 ---
 
@@ -449,8 +451,8 @@ Debe recibir una dependencia de Equipment/Inventory runtime.
 ### DialogueSystem consulta directamente MissionManager y RelationshipSystem
 Debe recibir servicios/runtime explícitos.
 
-### IUMManager hace HTTP directo a Supabase
-Esto rompe la frontera Infrastructure → Runtime. Debe migrarse a un adaptador/repositorio Supabase común.
+### IUMManager y su repositorio IUM
+`IUMManager` ya delega las consultas a `IUMRepository`. El manager conserva reglas y estado runtime; el repositorio conserva transporte y adaptación de respuestas. Los efectos de daño se solicitan a `CombatSystem`, no se aplican desde el manager.
 
 ### WorldData mezcla snapshot local, cache y sincronización
 Es útil como runtime actual, pero su responsabilidad debe separarse posteriormente en:
