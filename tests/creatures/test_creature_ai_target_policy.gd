@@ -3,6 +3,7 @@ extends Node
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const GarumiScript = preload("res://scripts/creatures/garumi.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
+const PerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
 const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
@@ -174,6 +175,36 @@ func _run() -> void:
 	if not refugio_manager.registrar_global(garumi):
 		_fail("No se pudo registrar el Garumi de prueba.")
 		return
+
+	# La percepción descubre entidades vivas, pero no decide cuáles son
+	# objetivos hostiles. Garumis pueden estar presentes en la percepción.
+	var criatura_percibida := CreatureScript.new() as Creature
+	criatura_percibida.criatura_id = "target-policy-perceived"
+	criatura_percibida.criatura_nombre = "Criatura percibida"
+	if not refugio_manager.registrar_global(criatura_percibida):
+		_fail("No se pudo registrar la criatura percibida.")
+		return
+	var candidatos_percibidos := PerceptionScript.obtener_candidatos(actor, player, refugio_manager)
+	if player not in candidatos_percibidos or criatura_percibida not in candidatos_percibidos:
+		_fail("La percepción no descubrió al jugador y a una criatura activa.")
+		return
+	if garumi not in candidatos_percibidos:
+		_fail("La percepción omitió al Garumi como entidad presente en el mundo.")
+		return
+	ai.entity_manager = refugio_manager
+	if garumi in ai._obtener_candidatos_entidad() and ai._es_objetivo_ecologico_valido(garumi):
+		_fail("La separación percepción/política permitió al Garumi como objetivo ecológico.")
+		return
+
+	var criatura_pendiente := CreatureScript.new() as Creature
+	if not refugio_manager.registrar_global(criatura_pendiente):
+		_fail("No se pudo registrar la criatura pendiente de eliminación.")
+		return
+	criatura_pendiente.queue_free()
+	if criatura_pendiente in PerceptionScript.obtener_candidatos(actor, player, refugio_manager):
+		_fail("La percepción conservó una entidad pendiente de queue_free().")
+		return
+
 	player.position = Vector2(1000.0, 0.0)
 	ai.entity_manager = refugio_manager
 	ai.configuracion_ia = {"objetivos": "todo"}
@@ -196,6 +227,7 @@ func _run() -> void:
 	ai.entity_manager = null
 	refugio_root.queue_free()
 	refugio_manager.free()
+	criatura_percibida.free()
 
 	var alimento := WorldItemScript.new() as WorldItem
 	alimento.configurar({"item_id": "recurso-test", "cantidad": 1})
