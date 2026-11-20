@@ -2,6 +2,8 @@ extends Node
 
 const PlayerScene = preload("res://scenes/characters/player.tscn")
 const Executor = preload("res://scripts/gameplay/combat/combat_attack_executor.gd")
+const EntityScript = preload("res://scripts/characters/entity.gd")
+const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
 
 
 func _ready() -> void:
@@ -12,6 +14,7 @@ func _run() -> void:
 	var errores: Array[String] = []
 	await _probar_creacion_melee(errores)
 	await _probar_creacion_proyectil(errores)
+	await _probar_melee_con_multiples_objetivos(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -120,6 +123,59 @@ func _probar_creacion_proyectil(errores: Array[String]) -> void:
 
 	jugador.queue_free()
 	raiz_proyectiles.queue_free()
+	await get_tree().process_frame
+
+
+func _probar_melee_con_multiples_objetivos(errores: Array[String]) -> void:
+	var jugador := PlayerScene.instantiate() as Player
+	var combate := CombatSystemScript.new() as CombatSystem
+	var objetivo_a := EntityScript.new() as Entity
+	var objetivo_b := EntityScript.new() as Entity
+	jugador.name = "MeleeMultiTargetAttacker"
+	objetivo_a.name = "MeleeMultiTargetA"
+	objetivo_b.name = "MeleeMultiTargetB"
+	combate.player = jugador
+	get_tree().root.add_child(jugador)
+	get_tree().root.add_child(combate)
+	get_tree().root.add_child(objetivo_a)
+	get_tree().root.add_child(objetivo_b)
+	await get_tree().process_frame
+
+	var arma := {
+		"tipo": "arma",
+		"nombre": "Espada de prueba",
+		"propiedades_game": {"danio": 7}
+	}
+	var area := CombatAttackArea.new()
+	area.configurar(
+		jugador,
+		Vector2.RIGHT,
+		64.0,
+		40.0,
+		arma,
+		0.1,
+		Color(0.8, 0.6, 0.4, 0.5)
+	)
+	area.objetivo_detectado.connect(combate._al_recibir_objetivo_de_ataque)
+	jugador.add_child(area)
+
+	var salud_a := objetivo_a.health
+	var salud_b := objetivo_b.health
+	area._procesar_objetivo(objetivo_a)
+	area._procesar_objetivo(objetivo_b)
+	area._procesar_objetivo(objetivo_a)
+
+	if objetivo_a.health != salud_a - 7:
+		errores.append("El ataque melee no dañó exactamente una vez al primer objetivo.")
+	if objetivo_b.health != salud_b - 7:
+		errores.append("El mismo ataque melee no pudo afectar a un segundo objetivo válido.")
+	if area._afectados.size() != 2:
+		errores.append("El hitbox no deduplicó objetivos sin bloquear objetivos distintos.")
+
+	combate.queue_free()
+	jugador.queue_free()
+	objetivo_a.queue_free()
+	objetivo_b.queue_free()
 	await get_tree().process_frame
 
 
