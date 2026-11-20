@@ -776,9 +776,9 @@ func _obtener_direccion_accion() -> Vector2:
 # COMBATE / DAÑO
 # ============================================================
 
-func take_damage(cantidad: int, origen: String = "desconocido") -> void:
+func take_damage(cantidad: int, origen: String = "desconocido") -> int:
 	if not is_alive or state == State.DASH:
-		return
+		return 0
 
 	var dano_recibido := maxi(cantidad, 0)
 	var inventario: GarliaInventory = _inventory_ref
@@ -790,21 +790,26 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> void:
 				CombatDefense.obtener_defensa(equipo_variant as Dictionary)
 			)
 
+	var danio_real := 0
 	if _eterium_vida_compartida():
+		var eterium_antes := eterium.mana()
 		if dano_recibido > 0:
 			eterium.establecer_mana(
-				maxi(eterium.mana() - dano_recibido, 0)
+				maxi(eterium_antes - dano_recibido, 0)
 			)
-		print(name, " recibió ", dano_recibido, " de daño. Reserva compartida: ", mana, "/", max_mana)
+			danio_real = mini(dano_recibido, eterium_antes)
+		print(name, " recibió ", danio_real, " de daño. Reserva compartida: ", mana, "/", max_mana)
 		if health <= 0:
 			_die()
 	else:
-		super.take_damage(dano_recibido, origen)
+		danio_real = super.take_damage(dano_recibido, origen)
 
 	if not is_alive:
 		_morir_jugador()
-	elif dano_recibido > 0:
+	elif danio_real > 0:
 		_recibir_golpe_visual()
+
+	return danio_real
 
 
 func _recibir_golpe_visual() -> void:
