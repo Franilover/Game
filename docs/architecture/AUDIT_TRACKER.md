@@ -626,3 +626,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Recogida atómica, drop, transacciones de inventario, persistencia de misión y rollback de recompensa siguen cubiertos por contratos.
 - CI Godot 4.7 y GDScript Quality aprobados en commit `320c07251f`.
 - Límite no cerrado: aplicación completa del snapshot a una escena real, continuidad de gameplay tras reanudar, migración de saves antiguos y arranque/reconexión offline end-to-end.
+
+
+## Aplicación de snapshot a Player en árbol de escenas — 2026-11-20
+
+- Se añadió `tests/persistence/test_game_state_scene_restore.gd` y su escena `.tscn`.
+- El contrato instancia `scenes/characters/player.tscn`, añade `GameStateService` al árbol y aplica el snapshot al Player real.
+- Verifica salud, Eterium, stamina, posición, orientación y flags de restauración. La primera ejecución detectó un defecto del harness (el servicio estaba fuera del árbol); se corrigió y la nueva ejecución pasó.
+- Añadido al workflow Godot 4.7. Ejecución [44701475641](https://github.com/Franilover/Game/actions/runs/44701475641): job de regresión **success**.
+- Alcance parcial: no sustituye la integración con `main.tscn`, ZoneManager, inventario real ni la continuación de una sesión tras reinicio.
