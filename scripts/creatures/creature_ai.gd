@@ -1106,6 +1106,7 @@ func _registrar_agresion_interaccion(atacante: Node) -> void:
 func _actualizar_memoria_interaccion(delta: float) -> void:
 	var memoria := _obtener_config_memoria_interaccion()
 	if not bool(memoria.get("activo", false)):
+		_memoria_interaccion.limpiar()
 		return
 	_memoria_interaccion.actualizar(
 		delta,
