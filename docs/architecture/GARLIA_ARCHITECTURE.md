@@ -664,3 +664,12 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - Los costes pendientes de sprint no se calculan ni confirman con el jugador muerto; si la confirmación pierde validez, el acumulador se descarta. El coordinador también rechaza procesar sprint sin un estado vital vivo.
 - Las reapariciones local y de red reinician los acumuladores de recuperación, sprint y curación. Ningún tiempo o coste pendiente de una vida anterior se traslada a la siguiente.
 - El cálculo de curación rechaza tasas de coste/curación no positivas y la aplicación rechaza costes negativos.
+
+
+## Persistencia de Player / VitalState
+
+- GameStateService coordina la captura y aplicación del snapshot; PlayerState conserva únicamente salud, Eterium, stamina y datos de posición/orientación persistibles. Los máximos y la fisiología siguen perteneciendo al runtime/especie.
+- PlayerState.normalizar_reservas_vitales() limita salud y Eterium a las capacidades actuales. Si la fisiología es compartida, normaliza ambas reservas al menor valor guardado, evitando crear vida o Eterium por discrepancias en un archivo viejo/corrupto.
+- La restauración de Entity recibe vivo = (salud_guardada > 0); un snapshot sin salud no puede revivir al jugador durante la carga.
+- Los guardados normales y narrativos rechazan al jugador muerto; la muerte no se serializa como un checkpoint nuevo. El archivo anterior permanece hasta que el jugador reaparezca y pueda guardarse de nuevo.
+- La estructura JSON y la versión de save no cambian; la stamina legacy conserva su conversión existente. test_player_state_vital_persistence_contract cubre la normalización del snapshot.
