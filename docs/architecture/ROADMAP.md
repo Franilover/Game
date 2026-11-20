@@ -217,3 +217,7 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 
 
 - [x] Escalado opcional de respuesta por agresiones repetidas, con umbral y memoria temporal acotada.
+
+
+- [x] Preferencias de personalidad individuales opcionales ponderan necesidades y curiosidad en Utility AI, con límites y pruebas.
+- [ ] Definir si el juego necesita persistencia de cambios de personalidad aprendidos; por ahora sólo se leen rasgos existentes en los datos individuales.
