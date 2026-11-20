@@ -136,6 +136,9 @@ func _run() -> void:
 		errores.append("Main no restauró los objetos en el inventario real.")
 	if inventory.hotbar_indices.size() != 6 or inventory.hotbar_indices[0] != 6:
 		errores.append("Main no restauró la selección de hotbar.")
+	var input_gate := inventory.inventory_controller.input_gate
+	if not is_instance_valid(input_gate) or input_gate.get_parent() != inventory.inventory_controller:
+		errores.append("InventoryController no es dueño del GameplayInputGate.")
 	if not GameState._partida_aplicada_en_escena:
 		errores.append("GameState no marcó la aplicación del snapshot en Main.")
 	if not GameState._estado_vital_restaurado_en_escena:
