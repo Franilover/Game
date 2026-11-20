@@ -152,6 +152,25 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 		errores.append("CombatDamage aceptó un atacante Entity fuera del árbol.")
 	atacante_fuera_arbol.free()
 
+	# El modificador también puede invalidar al atacante; el resolver debe
+	# detener la operación antes de entregar daño a la entidad.
+	var atacante_modificador := EntityScript.new() as Entity
+	get_tree().root.add_child(atacante_modificador)
+	await get_tree().process_frame
+	var salud_antes_modificador_atacante := objetivo.health
+	var danio_modificador_atacante := CombatDamageScript.aplicar(
+		objetivo,
+		5,
+		"Prueba/CombatDamage/AtacanteInvalidado",
+		func(_danio: int) -> int:
+			atacante_modificador.restaurar_estado_vital(0, false)
+			return 5,
+		atacante_modificador
+	)
+	if danio_modificador_atacante or objetivo.health != salud_antes_modificador_atacante:
+		errores.append("CombatDamage aplicó daño después de que el modificador derrotó al atacante.")
+	atacante_modificador.queue_free()
+
 	# Las señales de contacto son síncronas: un listener puede derrotar
 	# al atacante antes de que CombatSystem llegue a resolver el daño.
 	atacante.restaurar_estado_vital(100, true)
