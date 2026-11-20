@@ -276,3 +276,8 @@ Comprobar el orden `Main._inicializar_runtime_de_zona()` → `Player.configurar_
 Revisar `GameStateService._datos_partida_cargables()` y `_inventario_guardado_valido()` antes de inspeccionar el runtime. La carga usa `GarliaInventory.cargar_estado_partida()` → `InventoryController.establecer_equipamiento()` → `InventoryRuntime.establecer_equipamiento()`; esta última operación reemplaza las ranuras y solo acepta armaduras compatibles. Si persiste una pieza vieja, comprobar que el flujo de carga invoca el setter y que la señal de actualización de equipamiento se procesa. Si hay objetos invisibles, revisar INV-03: el arreglo puede superar `slot_count` y la UI crea exactamente esa cantidad de controles.
 
 Si una partida falla al aparecer en el selector, revisar primero `GameStateService._datos_partida_cargables()`: además de JSON, comprueba tipos de `mundo`, semilla, versión, tiempo, escena, reservas y vectores del jugador. No relajar la validación sin añadir un caso legacy concreto al contrato.
+
+
+### Objetos guardados que no aparecen en inventario
+
+La cuadrícula visible se reconstruye en `GarliaInventory.cargar_estado_partida()` después de normalizar la capacidad. Comprueba `max(slot_count, items.size())`, el nodo `InventoryScroll/Grid` y los grupos `RESERVA N`. Los índices de cada botón se guardan en el metadata `inventory_index`; no recortar `items` al tamaño base de 18. El contrato `InventoryOverflowUI` cubre una carga de 30 ranuras.
