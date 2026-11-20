@@ -375,7 +375,6 @@ func _mostrar_menu_contextual(jugador: Node) -> void:
 	margen.add_child(acciones)
 	PIXEL_UI_THEME.apply(panel_menu, false)
 
-	_agregar_boton_menu_garumi(acciones, "Enfrentarte", OPCION_ENFRENTAR, jugador)
 	_agregar_boton_menu_garumi(acciones, "Vincular", OPCION_OFRECER_VINCULO, jugador)
 	if not _es_amigo_del_jugador():
 		_agregar_boton_menu_garumi(acciones, "Amistad", OPCION_OFRECER_AMISTAD, jugador)
@@ -554,87 +553,33 @@ func ofrecer_vinculo_en_combate(jugador: Node) -> bool:
 	return _establecer_vinculo(jugador, "voluntario")
 
 
-func iniciar_enfrentamiento(jugador: Node) -> bool:
-	if _vinculado or _enfrentamiento_activo:
-		return false
-	if jugador == null or not is_instance_valid(jugador):
-		return false
-
-	_jugador_del_encuentro = jugador
-	_enfrentamiento_activo = true
-	var game_state := get_node_or_null("/root/GameState")
-	if game_state != null and game_state.has_method("registrar_garumi_descubierto"):
-		var id_catalogo := str(datos.get("id", datos.get("entidad_id", criatura_id))).strip_edges()
-		if not id_catalogo.is_empty():
-			game_state.call("registrar_garumi_descubierto", id_catalogo)
-	max_health = maxi(1, int(estadisticas_combate.get("vida", datos.get("salud_combate", salud_combate_predeterminada))))
-	vital_state.configurar(max_health, max_mana)
-	restaurar_estado_vital(max_health, true)
-	add_to_group("damageable")
-	salud_combate_cambiada.emit(health, max_health)
-	encuentro_iniciado.emit(self, jugador)
-	var escena_principal := get_tree().current_scene
-	if escena_principal != null and escena_principal.has_method("iniciar_arena_garumi"):
-		escena_principal.call("iniciar_arena_garumi", self, jugador)
-		if escena_principal.has_method("iniciar_combate_garumi"):
-			escena_principal.call("iniciar_combate_garumi", self, jugador)
-	return true
+## Compatibilidad temporal con llamadas antiguas. Los Garumis no entran en combate.
+func iniciar_enfrentamiento(_jugador: Node) -> bool:
+	return false
 
 
 
 ## Activa un rival adicional de un encuentro múltiple sin reiniciar arena ni HUD.
-func iniciar_enfrentamiento_secundario(jugador: Node) -> bool:
-	if _vinculado or _enfrentamiento_activo or jugador == null or not is_instance_valid(jugador):
-		return false
-	_jugador_del_encuentro = jugador
-	_enfrentamiento_activo = true
-	var game_state := get_node_or_null("/root/GameState")
-	if game_state != null and game_state.has_method("registrar_garumi_descubierto"):
-		var id_catalogo := str(datos.get("id", datos.get("entidad_id", criatura_id))).strip_edges()
-		if not id_catalogo.is_empty():
-			game_state.call("registrar_garumi_descubierto", id_catalogo)
-	max_health = maxi(1, int(estadisticas_combate.get("vida", datos.get("salud_combate", salud_combate_predeterminada))))
-	vital_state.configurar(max_health, max_mana)
-	restaurar_estado_vital(max_health, true)
-	add_to_group("damageable")
-	salud_combate_cambiada.emit(health, max_health)
-	encuentro_iniciado.emit(self, jugador)
-	return true
+## Compatibilidad temporal: los encuentros Garumi ya no tienen variantes de combate.
+func iniciar_enfrentamiento_secundario(_jugador: Node) -> bool:
+	return false
 
 
+## Se conserva el método por compatibilidad con interfaces antiguas; siempre es falso.
 func puede_forzar_vinculo() -> bool:
-	if _vinculado or not _enfrentamiento_activo or max_health <= 0:
-		return false
-	return float(health) / float(max_health) <= umbral_vinculo_forzado
+	return false
 
 
 ## El daño común sigue sin afectar a los Garumis. Solo el daño durante un
 ## enfrentamiento explícito reduce su salud y nunca puede matarlos.
-func take_damage(cantidad: int, origen: String = "desconocido") -> void:
-	if not _enfrentamiento_activo or _vinculado or not is_alive:
-		return
-	if cantidad <= 0:
-		return
-
-	var dano_real := calcular_danio_recibido(cantidad)
-	var salud_anterior := health
-	# El combate termina en el umbral de vínculo. Un Garumi salvaje no muere
-	# por recibir golpes durante el proceso de captura.
-	var salud_minima_vinculo := maxi(1, ceili(float(max_health) * umbral_vinculo_forzado))
-	health = maxi(salud_minima_vinculo, health - dano_real)
-	vital_state.health = health
-	vital_state.is_alive = true
-	_sync_desde_vital()
-	if health != salud_anterior:
-		health_changed.emit(health, max_health)
-		salud_combate_cambiada.emit(health, max_health)
-		print("Garumi: ", criatura_nombre, " recibe ", salud_anterior - health, " de daño tras defensa (", origen, ") | ", health, "/", max_health)
+## Los Garumis no son objetivos de daño. La salud/daño pertenece a Creature normal.
+func take_damage(_cantidad: int, _origen: String = "desconocido") -> void:
+	return
 
 
-func forzar_vinculo(jugador: Node) -> bool:
-	if not puede_forzar_vinculo() or jugador == null or not is_instance_valid(jugador):
-		return false
-	return _establecer_vinculo(jugador, "forzado")
+## Los vínculos se establecen por interacción voluntaria, nunca debilitando al Garumi.
+func forzar_vinculo(_jugador: Node) -> bool:
+	return false
 
 
 func _establecer_vinculo(jugador: Node, tipo: String) -> bool:
