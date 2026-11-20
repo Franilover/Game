@@ -1251,3 +1251,10 @@ Además, Lignianos no aplica ralentización si alguno de los participantes ya mu
 ## Reentrada al recibir daño de criaturas — 2026-11-20
 
 Se eliminó el atacante temporal compartido de `Creature`. Ahora `take_damage_desde()` y `take_damage()` convergen en una operación común que conserva el atacante como dato local. Esto evita que un listener síncrono de `health_changed` provoque un segundo golpe y sobrescriba la atribución del primero. Se mantiene la protección de sparring y la señal `danio_recibido` sólo se emite cuando la salud realmente disminuye. Se añadió `test_combat_creature_damage_reentrancy` para comprobar dos golpes anidados, sus cantidades y sus atacantes. La prueba está añadida, pero aún no se ha ejecutado en Godot.
+
+
+## Recuperación y curación de Eterium — 2026-11-20
+
+Se cerraron las rutas de recuperación después de la muerte: `gastar()`, `establecer_mana()`, recuperación pasiva y curación automática respetan el estado vital. El acumulador pasivo se descarta al detectar muerte; el setter ya no puede reanimar al jugador por accidente. La curación automática estaba implementada en el runtime, pero no conectada al ciclo de juego: ahora se procesa cuando el jugador permanece quieto en `IDLE`, junto con la recuperación pasiva.
+
+La curación automática se limita a fisiologías con vida y Eterium separados. En fisiología compartida, sumar vida y luego pagar el coste desde la misma reserva sustituía la curación por un gasto neto; el runtime ahora rechaza esa ruta. La reserva compartida sigue recuperándose por restauración y absorción válidas. Se amplió `test_player_vital_state_contract` para comprobar el ciclo idle, sincronización y límites post-muerte/compartidos. Ejecución de Godot pendiente de confirmación local/CI.
