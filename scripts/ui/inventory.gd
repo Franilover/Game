@@ -931,7 +931,7 @@ func obtener_equipamiento() -> Dictionary:
 func obtener_objeto_equipado(clave: String = "mano_secundaria") -> Dictionary:
 	return inventory_controller.obtener_objeto_equipado(clave)
 
-func consumir_durabilidad_equipo(clave: String = "mano_secundaria") -> bool:
+func consumir_durabilidad_equipo(clave: String = "torso") -> bool:
 	var resultado: bool = inventory_controller.consumir_durabilidad_equipo(clave)
 	if resultado:
 		actualizar()
