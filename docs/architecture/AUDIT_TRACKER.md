@@ -368,3 +368,5 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 
 | SAVE-03 | Alta | Integridad del payload | La validación comprueba ahora que la versión sea entera, metadata `mundo/semilla/generador` tenga tipos válidos, `elapsed_time/scene` sean compatibles y los campos numéricos/vectoriales de Player no contengan tipos arbitrarios. | Corregido pendiente de prueba | Ejecutar `GameStateSavePayloadContract` y probar listado/carga de un JSON con metadata corrupta. |
 
+
+| ZONE-01 | Alta | Transiciones de zona | El destino se carga e instancia antes de descargar la zona actual; fallos de ruta/instanciación cancelan la transición sin dejar el manager bloqueado. | Corregido pendiente de ejecución | Ejecutar `test_zone_manager_torres_fallback.tscn` y probar navegación real entre Torres, Hogar y Mundo Abierto. |
