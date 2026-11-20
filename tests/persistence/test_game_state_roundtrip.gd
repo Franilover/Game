@@ -4,6 +4,7 @@ const GameStateScript = preload("res://scripts/core/game_state.gd")
 const MissionManagerScript = preload("res://scripts/gameplay/mission_manager.gd")
 const RelationshipSystemScript = preload("res://scripts/gameplay/relationship_system.gd")
 const PlayerStateScript = preload("res://scripts/state/player_state.gd")
+const SaveRepositoryScript = preload("res://scripts/infrastructure/save_file_repository.gd")
 
 
 func _ready() -> void:
@@ -81,6 +82,32 @@ func _run() -> void:
 
 	origen._capturar_estado_misiones()
 	var snapshot := origen._serializar_estado()
+
+	# El roundtrip atraviesa el archivo real, no solo dos objetos en memoria.
+	# Simula cerrar la sesión y volver a abrir el save antes de restaurar misiones.
+	var repositorio := SaveRepositoryScript.new() as SaveFileRepository
+	var directorio_contrato := "user://contracts/game_state_roundtrip"
+	repositorio.configurar(directorio_contrato)
+	repositorio.asegurar_directorio()
+	repositorio.eliminar_partida("roundtrip_contract")
+	var archivo_snapshot := {
+		"id": "roundtrip_contract",
+		"version": 1,
+		"estado": snapshot
+	}
+	if not repositorio.escribir_partida("roundtrip_contract", archivo_snapshot):
+		errores.append("No pudo persistir el snapshot completo en el contrato de roundtrip.")
+	var archivo_reabierto := repositorio.leer_partida("roundtrip_contract")
+	if archivo_reabierto.is_empty():
+		errores.append("No pudo reabrir el snapshot persistido desde disco.")
+	else:
+		var estado_reabierto: Variant = archivo_reabierto.get("estado", {})
+		if not estado_reabierto is Dictionary:
+			errores.append("El archivo reabierto no contiene un estado de partida válido.")
+		else:
+			snapshot = (estado_reabierto as Dictionary).duplicate(true)
+	if not repositorio.eliminar_partida("roundtrip_contract"):
+		errores.append("No pudo limpiar el archivo temporal del contrato de roundtrip.")
 
 	var destino := GameStateScript.new() as GameStateService
 	var misiones_destino := MissionManagerScript.new() as MissionManagerService
