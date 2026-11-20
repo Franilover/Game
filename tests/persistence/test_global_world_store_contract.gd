@@ -47,13 +47,14 @@ func _run() -> void:
 
 	# La carga debe recuperar un backup incluso si el archivo principal falta.
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta))
-	_escribir_texto(ruta_backup, JSON.stringify({
+	var respaldo_sin_final := {
 		"version": 5,
 		"world_seed": 555,
 		"world_seed_valida": true,
 		"elapsed_time": 12.5,
 		"flags": {"zona_actual_tipo": "bosque"}
-	}))
+	}
+	_escribir_texto(ruta_backup, JSON.stringify(respaldo_sin_final))
 	var game_state: Variant = get_node_or_null("/root/GameState")
 	if game_state == null or not store.restaurar_en_game_state(game_state):
 		errores.append("No restauró el mundo cuando sólo quedaba un backup válido.")
@@ -65,7 +66,7 @@ func _run() -> void:
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(ruta_temporal))
 	if store.guardar_desde_runtime():
 		errores.append("Consideró exitoso el guardado con el temporal bloqueado.")
-	if not _diccionario_coincide(store._leer_json_dictionary(ruta), respaldo):
+	if not _diccionario_coincide(store._leer_json_dictionary(ruta), respaldo_sin_final):
 		errores.append("El guardado fallido alteró el archivo principal.")
 	store.guardar_y_pausar()
 	if get_tree().paused:
