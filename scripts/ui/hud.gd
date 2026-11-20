@@ -1615,7 +1615,7 @@ func _preparar_menu_garumis_movil() -> void:
 		boton.pressed.connect(_usar_don_desde_menu_movil.bind(i))
 		fila_habilidades.add_child(boton)
 	var titulo_companeros := Label.new()
-	titulo_companeros.text = "Compañero"
+	titulo_companeros.text = "Garumis vinculados"
 	titulo_companeros.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	contenido.add_child(titulo_companeros)
 	_garumi_mobile_companions = HBoxContainer.new()
@@ -1650,7 +1650,7 @@ func _actualizar_menu_garumis_movil() -> void:
 			continue
 		cantidad += 1
 		var boton := Button.new()
-		boton.name = "Companero%d" % (i + 1)
+		boton.name = "Garumi%d" % (i + 1)
 		boton.custom_minimum_size = Vector2(48.0, 44.0)
 		boton.tooltip_text = ""
 		var textura := _buscar_textura_garumi(garumi)
@@ -1834,26 +1834,17 @@ func _seleccionar_companero(garumi: Node) -> void:
 
 
 func _establecer_companero(garumi: Node) -> void:
+	# Seleccionar un Garumi solo cambia la fuente de dones; nunca lo invoca.
 	if not is_instance_valid(garumi) or not _garumis_vinculados_nodos.has(garumi):
 		return
-	if is_instance_valid(_garumi_companero_actual) and _garumi_companero_actual != garumi:
-		if _garumi_companero_actual.has_method("establecer_estado_companero"):
-			_garumi_companero_actual.call("establecer_estado_companero", player, false)
 	_garumi_companero_actual = garumi
-	if is_instance_valid(player) and garumi.has_method("establecer_estado_companero"):
-		garumi.call("establecer_estado_companero", player, true)
 	_actualizar_selector_companero()
 
 
 func _alternar_companero_actual() -> void:
-	if not is_instance_valid(_garumi_companero_actual) or not is_instance_valid(player):
-		if not _garumis_vinculados_nodos.is_empty():
-			_establecer_companero(_garumis_vinculados_nodos[0])
-		return
-	var guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
-	if _garumi_companero_actual.has_method("establecer_estado_companero"):
-		_garumi_companero_actual.call("establecer_estado_companero", player, guardado)
-	_actualizar_selector_companero()
+	# R ya no invoca/guarda seres. El selector se abre manteniendo la tecla.
+	if not is_instance_valid(_garumi_companero_actual) and not _garumis_vinculados_nodos.is_empty():
+		_establecer_companero(_garumis_vinculados_nodos[0])
 
 
 func _actualizar_selector_companero() -> void:
@@ -1889,7 +1880,7 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 	return null
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
-	# 1, 2 y 3 quedan reservadas para los tres dones equipados del compañero.
+	# 1, 2 y 3 activan dones de la fuente Garumi seleccionada.
 	if _combate_garumi_activo:
 		return false
 	for nodo_inventario in get_tree().get_nodes_in_group("inventory"):
@@ -1915,9 +1906,6 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 
 func _usar_don_companero(indice: int) -> void:
 	if not is_instance_valid(_garumi_companero_actual):
-		return
-	var companero_guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
-	if companero_guardado:
 		return
 	if _garumi_companero_actual.has_method("usar_don_por_slot"):
 		_garumi_companero_actual.call("usar_don_por_slot", indice)
