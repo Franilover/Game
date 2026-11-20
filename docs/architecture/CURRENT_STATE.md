@@ -1260,3 +1260,16 @@ Se cerraron las rutas de recuperación después de la muerte: `gastar()`, `estab
 La curación automática se limita a fisiologías con vida y Eterium separados. En fisiología compartida, sumar vida y luego pagar el coste desde la misma reserva sustituía la curación por un gasto neto; el runtime ahora rechaza esa ruta. La reserva compartida sigue recuperándose por restauración y absorción válidas. Se amplió `test_player_vital_state_contract` para comprobar la ruta de curación no compartida, sincronización y límites post-muerte/compartidos. El test no simula el paso físico del jugador. Ejecución de Godot pendiente de confirmación local/CI.
 
 Además, se cerró el ciclo de temporizadores: el sprint no acumula coste con el jugador muerto, el coordinador no procesa sprint en ese estado y cualquier fallo al confirmar el gasto descarta el coste pendiente. Las reapariciones local y de red reinician los acumuladores de recuperación, sprint y curación. La curación rechaza configuraciones sin coste/curación positivos y costes negativos.
+
+
+## Persistencia del estado vital del jugador — 2026-11-20
+
+Se auditó la ruta GameStateService → PlayerState → Player.restaurar_estado_vital() desde captura hasta aplicación en escena.
+
+- El save conserva salud y Eterium actuales; las capacidades máximas siguen derivándose del runtime/especie y no se duplican en el JSON.
+- PlayerState.normalizar_reservas_vitales() limita ambas reservas a sus máximos runtime. En fisiología compartida, normaliza ambas al menor valor guardado para impedir que un save inconsistente otorgue salud/Eterium adicionales.
+- La aplicación de un snapshot con salud cero restaura al jugador como muerto; no fuerza vivo=true por el mero hecho de cargar una partida.
+- Los saves antiguos conservan sus campos y conversión de stamina 0..100; no se introdujo una nueva versión de formato.
+- test_player_state_vital_persistence_contract cubre migración legacy, límites, reservas compartidas inconsistentes, salud cero y serialización de ida y vuelta. La prueba está añadida, pero aún no se ha ejecutado en Godot.
+
+Límite de esta pasada: no se ha validado todavía el orden de carga completo con datos reales de especie/Supabase, ni la recuperación ante interrupciones reales del proceso. La muerte sigue sin ser un snapshot guardable: guardar_partida() y el guardado de Historia rechazan al jugador muerto.
