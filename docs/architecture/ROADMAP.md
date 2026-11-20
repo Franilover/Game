@@ -321,3 +321,12 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] El callback de readiness vital se reintenta tras resolver reglas locales de Eterium en la prueba offline; el jugador se congela en `Events.scene_changed` para evitar que la física altere la muestra antes de verificarla.
 - [x] Pruebas de payload, reinicio completo y reinicio de repositorio entre procesos aprobadas. Regresión completa Godot 4.7: [run 44756242924](https://github.com/Franilover/Game/actions/runs/44756242924). Calidad GDScript: [run 44756242844](https://github.com/Franilover/Game/actions/runs/44756242844).
 - [~] El reinicio ahora queda cubierto desde el menú hasta Main para el snapshot de contrato. Aún faltan escenarios reales de interiores, reanudación de mundo procedural y recuperación offline/reconexión.
+
+
+### Hogar e interior — continuidad del estado — 2026-11-20
+
+- [x] HogarZone implementa restaurar_estado_guardado() para cumplir el contrato que usa GameState al reanudar la zona activa.
+- [x] La carga de estado ahora programa la reapertura del interior después de aplicar decoraciones y muebles; evita que el call_deferred inicial de _ready ocurra antes de recibir el snapshot.
+- [x] Nuevo contrato tests/persistence/test_home_interior_persistence.tscn: verifica decoraciones exteriores, identidad y contenido de cofres exteriores/interiores, muebles, contador de cofres y restauración del interior abierto.
+- [x] CI Godot 4.7 del contrato de hogar: [run 44757104913](https://github.com/Franilover/Game/actions/runs/44757104913), prueba de hogar aprobada. La regresión completa del commit de integración de guardado anterior también está aprobada: [run 44756242924](https://github.com/Franilover/Game/actions/runs/44756242924).
+- [~] Falta comprobar el viaje completo Torres → Hogar → cerrar proceso → abrir menú → reanudar Hogar con el jugador dentro del interior. El contrato actual verifica la restauración real de la escena Hogar, sin todavía repetir el ciclo de proceso completo para esta zona.
