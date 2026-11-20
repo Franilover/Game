@@ -329,7 +329,9 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] La carga de estado ahora programa la reapertura del interior después de aplicar decoraciones y muebles; evita que el call_deferred inicial de _ready ocurra antes de recibir el snapshot.
 - [x] Nuevo contrato tests/persistence/test_home_interior_persistence.tscn: verifica decoraciones exteriores, identidad y contenido de cofres exteriores/interiores, muebles, contador de cofres y restauración del interior abierto.
 - [x] CI Godot 4.7 del contrato de hogar: [run 44757104913](https://github.com/Franilover/Game/actions/runs/44757104913), prueba de hogar aprobada. La regresión completa del commit de integración de guardado anterior también está aprobada: [run 44756242924](https://github.com/Franilover/Game/actions/runs/44756242924).
-- [~] Falta comprobar el viaje completo Torres → Hogar → cerrar proceso → abrir menú → reanudar Hogar con el jugador dentro del interior. El contrato actual verifica la restauración real de la escena Hogar, sin todavía repetir el ciclo de proceso completo para esta zona.
+- [x] Nuevo contrato tests/persistence/test_home_process_restart.tscn ejecuta escritor y lector en procesos Godot independientes. El lector entra por el menú/selector real, carga Main, reanuda Hogar con el interior abierto y verifica posición del jugador, muebles, identidad/contenido de cofres exteriores e interiores y contador de cofres.
+- [x] Integrado en CI. Regresión completa Godot 4.7 aprobada: [run 44811784110](https://github.com/Franilover/Game/actions/runs/44811784110); calidad GDScript aprobada: [run 44811757973](https://github.com/Franilover/Game/actions/runs/44811757973).
+- [~] Continúan pendientes la continuidad del mundo procedural tras reinicio y la recuperación offline/reconexión de extremo a extremo.
 
 ### Reanudación de posición en Hogar — 2026-11-20
 
