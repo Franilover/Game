@@ -400,3 +400,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Regresión añadida a `CombatAttackExecutor`: un solo hitbox daña una vez a dos entidades distintas y no vuelve a dañar la primera al detectarla de nuevo.
 - El workflow `procedural-world-tests.yml` ya ejecuta esa escena; no se añadió un paso duplicado.
 - Estado: prueba añadida, pendiente de CI. La prueba invoca la detección del hitbox directamente; no sustituye la validación de colisiones físicas en una escena de juego.
+
+
+## Rechazo temprano de acciones tras la derrota del jugador (2026-11-20)
+
+- Hallazgo: las entradas de combate comprobaban `is_alive` en algunos puntos, pero las rutas de creación y la señal del controlador no compartían la validación completa de árbol/cola de eliminación.
+- Corrección: las acciones primaria/secundaria, solicitudes tardías, uso de objeto activo y creación de melee/proyectil utilizan `CombatTargeting.es_atacante_valido()`.
+- Regresión: `CombatTemporalContract` comprueba que un jugador derrotado no pueda iniciar ninguna de las dos entradas ni crear un hitbox mediante una señal tardía.
+- Estado: implementado; pendiente de CI y ejecución local.
