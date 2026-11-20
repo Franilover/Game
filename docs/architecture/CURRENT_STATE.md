@@ -1401,11 +1401,13 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 
 ## Inicio de T2 — percepción de criaturas (2026-11-20)
 
-- Se extrajo CreaturePerception como componente puro de descubrimiento de candidatos. CreatureAI conserva la política ecológica y la selección de objetivos, pero delega el inventario de entidades activas.
+- Se extrajo CreaturePerception como componente puro de descubrimiento de candidatos. CreatureAI conserva la política ecológica y delega el inventario de entidades activas.
+- Se extrajo CreatureTargetSelector para escoger el candidato válido más cercano. La política específica de cada especie permanece en CreatureAI y se entrega al selector mediante un callback, sin duplicar reglas ecológicas.
 - La percepción reúne al jugador explícito, jugadores del grupo y entidades activas del WorldEntityManager; descarta entidades inválidas, muertas, fuera del árbol o pendientes de queue_free().
 - La percepción no decide hostilidad: puede incluir Garumis como habitantes presentes; la política de objetivos de CreatureAI continúa excluyéndolos de persecución y combate.
-- CreatureAITargetPolicy amplía la regresión para comprobar percepción, Garumis perceptibles y descarte de entidades pendientes de eliminación. El contrato pasa en Godot 4.7 CI.
+- CreatureAITargetPolicy amplía la regresión para comprobar percepción, Garumis perceptibles, descarte de entidades pendientes y selección del objetivo elegible más cercano al cambiar distancias. El contrato pasa en Godot 4.7 CI.
 - Se corrigió PlayerEteriumRestoreReadiness: sus cuatro llamadas a free() sobre RefCounted se retiraron; estos objetos se liberan al perder sus referencias. El contrato vuelve a pasar en CI.
 - El contrato de equipamiento fallaba por usar el nombre `errores` en vez de `errors`; se corrigió la referencia en el test. El contrato y el workflow completo vuelven a pasar.
 - La ejecución completa `Garlia Godot 4.7 Regression Tests` terminó en success en el commit `7137f82`; `GDScript Quality (Advisory)` también pasó.
+- La extracción adicional de CreatureTargetSelector y su regresión pasan en la suite completa del commit `3f47549`; GDScript Quality también pasó. Ejecución: https://github.com/Franilover/Game/actions/runs/44690720916.
 - La comprobación visual y el balance del combate P1 siguen pendientes de una partida real; no se consideran cerrados por CI.
