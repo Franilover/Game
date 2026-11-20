@@ -41,7 +41,9 @@ func _run() -> void:
 	if jugador.mana != 80 or jugador.vital_state.mana != 80:
 		errores.append("Restaurar Eterium no sincronizó Player y VitalState.")
 
-	jugador.take_damage(10, "Prueba/PlayerVitalState")
+	var danio_normal := jugador.take_damage(10, "Prueba/PlayerVitalState")
+	if danio_normal != 10:
+		errores.append("El daño normal no devolvió su cantidad efectiva.")
 	if jugador.health != jugador.max_health - 10:
 		errores.append("El daño normal no redujo la vida esperada.")
 	if jugador.vital_state.health != jugador.health:
@@ -122,7 +124,9 @@ func _run() -> void:
 	if jugador.max_health != 120 or jugador.max_mana != 120:
 		errores.append("La fisiología compartida no sincronizó ambas capacidades.")
 
-	jugador.take_damage(25, "Prueba/DañoCompartido")
+	var danio_compartido := jugador.take_damage(25, "Prueba/DañoCompartido")
+	if danio_compartido != 25:
+		errores.append("El daño compartido no devolvió su cantidad efectiva.")
 	if (
 		jugador.health != 95
 		or jugador.mana != 95
