@@ -57,7 +57,7 @@ Los acentos se normalizan para resolver identificadores como `juguetón` y `acom
 - `elementos` se lee como una lista de códigos y queda disponible mediante `GarumiBrain.obtener_elementos()`.
 - `comportamiento` aporta rasgos como curiosidad, temor y sociabilidad.
 - `movimiento` define la primitiva ejecutable y sus distancias/intervalos.
-- Los elementos todavía no modifican el daño ni las efectividades en este cerebro. La resolución elemental debe conectarse al sistema de combate y a las tablas canónicas de asignaciones/efectividades antes de afectar el balance.
+- Los elementos describen capacidades y afinidades del Garumi; este cerebro no los ejecuta como daño ni como efectividades. Su eventual préstamo al jugador debe integrarse con las acciones existentes, sin convertir al Garumi en combatiente ni inventar poderes a partir del nombre del elemento.
 - No se asignan elementos a especies por inferencia automática ni se cambian estados de documentación en Supabase.
 
 ## Límites y prioridades
