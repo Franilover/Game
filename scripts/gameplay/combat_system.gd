@@ -248,24 +248,22 @@ func _al_recibir_objetivo_de_ataque(
 	objetivo: Node,
 	ataque: CombatAttackArea
 ) -> void:
-	if not CombatTargeting.es_atacante_valido(player):
-		return
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
-
 	if ataque == null or not is_instance_valid(ataque):
 		return
-	if not CombatTargeting.es_atacante_valido(ataque.atacante):
+	var atacante := ataque.atacante
+	if not CombatTargeting.es_atacante_valido(atacante):
 		return
 
 	var objeto := ataque.objeto_ataque
 	var entidad_objetivo := objetivo as Entity
 	if entidad_objetivo == null:
 		return
-	if not CombatTargeting.es_objetivo_valido(player, entidad_objetivo):
+	if not CombatTargeting.es_objetivo_valido(atacante, entidad_objetivo):
 		return
 	contacto_efectivo.emit(
-		player,
+		atacante,
 		entidad_objetivo,
 		"Jugador/Combate:" + str(objeto.get("nombre", "Objeto"))
 	)
