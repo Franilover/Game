@@ -6,6 +6,7 @@ const INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_in
 
 signal stamina_changed(current: float, maximum: float)
 signal fisiologia_changed(vida_eterium_compartidos: bool)
+signal configuracion_eterium_lista
 
 
 @export_category("Movimiento")
@@ -74,6 +75,9 @@ var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
 var _muerte_visual_procesada: bool = false
+var _eterium_runtime_resuelto: bool = false
+var _eterium_especie_resuelta: bool = false
+var _configuracion_eterium_notificada: bool = false
 var _death_tween: Tween = null
 var _terrain_query_timer: float = 0.0
 var _terrain_speed_multiplier: float = 1.0
@@ -124,8 +128,10 @@ func configurar_dependencias(
 	_entity_manager_ref = entity_manager
 	_supabase_client_ref = supabase_client
 	_game_state_ref = game_state
+	_aplicar_configuracion_personaje()
 	_configurar_eterium_desde_supabase()
 	_configurar_especie_eterium_game_desde_supabase()
+	_actualizar_disponibilidad_restauracion_eterium()
 
 
 func get_jugador_id() -> String:
@@ -552,12 +558,21 @@ func _configurar_especie_eterium_game_desde_supabase() -> void:
 	_supabase_especie_configurada = true
 	if not _supabase_client_ref.especie_eterium_game_cargado.is_connected(_al_especie_eterium_game_cargado):
 		_supabase_client_ref.especie_eterium_game_cargado.connect(_al_especie_eterium_game_cargado)
-	if _supabase_client_ref.tiene_especie_eterium_game():
+	if personaje_especie.is_empty() or str(personaje_especie.get("id", "")).strip_edges().is_empty():
+		_eterium_especie_resuelta = true
+		eterium.marcar_especie_configuracion_resuelta()
+	elif _supabase_client_ref.tiene_especie_eterium_game():
 		_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
+		_eterium_especie_resuelta = true
+		eterium.marcar_especie_configuracion_resuelta()
 
 
+	
 func _al_especie_eterium_game_cargado(reglas: Array) -> void:
 	_aplicar_especie_eterium_game(reglas)
+	_eterium_especie_resuelta = true
+	eterium.marcar_especie_configuracion_resuelta()
+	_actualizar_disponibilidad_restauracion_eterium()
 
 
 func _configurar_eterium_desde_supabase() -> void:
@@ -606,7 +621,9 @@ func _al_eterium_runtime_cargado(
 
 func _aplicar_eterium_runtime(reglas: Dictionary, organismos: Array) -> void:
 	eterium.aplicar_runtime(reglas, organismos)
+	_eterium_runtime_resuelto = eterium.esta_listo()
 	_sync_vital_desde_eterium()
+	_actualizar_disponibilidad_restauracion_eterium()
 
 
 func _aplicar_especie_eterium_game(reglas: Array) -> void:
@@ -629,6 +646,17 @@ func _aplicar_especie_eterium_game(reglas: Array) -> void:
 			_sync_vital_desde_eterium()
 			fisiologia_changed.emit(eterium.vida_eterium_compartidos())
 		return
+
+
+func esta_listo_para_restaurar_estado() -> bool:
+	return eterium.esta_listo_para_restaurar()
+
+
+func _actualizar_disponibilidad_restauracion_eterium() -> void:
+	if _configuracion_eterium_notificada or not _eterium_runtime_resuelto or not _eterium_especie_resuelta:
+		return
+	_configuracion_eterium_notificada = true
+	configuracion_eterium_lista.emit()
 
 
 func _eterium_vida_compartida() -> bool:
