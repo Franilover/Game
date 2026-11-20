@@ -15,6 +15,8 @@ static func es_objetivo_valido(
 	atacante: Node,
 	objetivo: Entity
 ) -> bool:
+	if not es_atacante_valido(atacante):
+		return false
 	if objetivo == null or not is_instance_valid(objetivo):
 		return false
 	if objetivo == atacante:
