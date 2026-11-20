@@ -4,6 +4,7 @@ const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const GarumiScript = preload("res://scripts/creatures/garumi.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const PerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
+const TargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
 const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
@@ -190,6 +191,26 @@ func _run() -> void:
 		return
 	if garumi not in candidatos_percibidos:
 		_fail("La percepción omitió al Garumi como entidad presente en el mundo.")
+		return
+	criatura_percibida.position = Vector2(20.0, 0.0)
+	var selector_cercano := TargetSelectorScript.seleccionar_mas_cercano(
+		actor,
+		candidatos_percibidos,
+		func(candidato: Node2D) -> bool:
+			return candidato == player or candidato == criatura_percibida
+	)
+	if selector_cercano != player:
+		_fail("El selector no escogió al candidato permitido más cercano.")
+		return
+	player.position = Vector2(1000.0, 0.0)
+	selector_cercano = TargetSelectorScript.seleccionar_mas_cercano(
+		actor,
+		candidatos_percibidos,
+		func(candidato: Node2D) -> bool:
+			return candidato == player or candidato == criatura_percibida
+	)
+	if selector_cercano != criatura_percibida:
+		_fail("El selector no actualizó el objetivo al cambiar las distancias.")
 		return
 	ai.entity_manager = refugio_manager
 	if garumi in ai._obtener_candidatos_entidad() and ai._es_objetivo_ecologico_valido(garumi):
