@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/combat/test_combat_creature_damage_reentrancy.gd" id="1"]
+
+[node name="CreatureDamageReentrancy" type="Node"]
+script = ExtResource("1")
