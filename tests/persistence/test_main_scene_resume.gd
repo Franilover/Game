@@ -41,6 +41,7 @@ func _run() -> void:
 
 	var main := MainScene.instantiate()
 	if main == null:
+		await _limpiar_estado_global()
 		_finalizar(["No se pudo instanciar scenes/world/main.tscn."])
 		return
 	get_tree().root.add_child(main)
@@ -72,11 +73,17 @@ func _run() -> void:
 	if not is_instance_valid(inventory):
 		errores.append("Main no conservó la instancia real del inventario.")
 	if not errores.is_empty():
+		await _limpiar_main(main)
+		await _limpiar_estado_global()
 		_finalizar(errores)
 		return
 
-	# Aislar la restauración de la red: se resuelve la configuración de Eterium
-	# con los mismos contratos locales usados por la prueba de Player.
+	# Detener movimiento/regeneración mientras se inspecciona la aplicación del
+	# snapshot: el test mide el valor restaurado, no su evolución posterior.
+	player.set_process(false)
+	player.set_physics_process(false)
+
+	# Resolver Eterium localmente para no depender de credenciales ni red.
 	player.eterium.aplicar_runtime({
 		"limite_estable_s": 100.0,
 		"escala_runtime": 1.0
@@ -93,19 +100,20 @@ func _run() -> void:
 		errores.append("No se pudo resolver la configuración local de Eterium.")
 	player.eterium.marcar_especie_configuracion_resuelta()
 
-	frames = 0
-	while frames < 120 and not GameState._estado_vital_restaurado_en_escena:
-		await get_tree().process_frame
-		frames += 1
+	# Reaplicar mediante las dependencias que Main ya conectó. Esto permite
+	# medir el snapshot sin que la regeneración de dash o la física lo alteren.
+	GameState._partida_aplicada_en_escena = false
+	GameState._estado_vital_restaurado_en_escena = false
+	GameState._aplicar_estado_al_juego()
 
 	if str(zone_manager.call("obtener_tipo_actual")) != "reino_torres":
 		errores.append("La zona cambió inesperadamente durante la restauración.")
 	if player.global_position != Vector2(321.5, -87.25):
-		errores.append("Main no restauró la posición guardada después del spawn de Torres.")
+		errores.append("Main no restauró la posición guardada después del spawn de Torres: %s." % str(player.global_position))
 	if player.facing != Vector2.LEFT:
 		errores.append("Main no restauró la orientación del Player.")
 	if not is_equal_approx(player.stamina, 0.65):
-		errores.append("Main no restauró la stamina.")
+		errores.append("Main no restauró la stamina del snapshot: %s." % str(player.stamina))
 	if player.health != 64:
 		errores.append("Main no restauró la salud.")
 	if player.mana != 37:
@@ -119,7 +127,25 @@ func _run() -> void:
 	if not GameState._estado_vital_restaurado_en_escena:
 		errores.append("La restauración vital no terminó dentro de Main.")
 
+	await _limpiar_main(main)
+	await _limpiar_estado_global()
 	_finalizar(errores)
+
+
+func _limpiar_main(main: Node) -> void:
+	if is_instance_valid(main):
+		get_tree().current_scene = self
+		main.queue_free()
+		await get_tree().process_frame
+
+
+func _limpiar_estado_global() -> void:
+	GameState.active_save_id = ""
+	GameState.active_save_name = ""
+	GameState._partida_aplicada_en_escena = false
+	GameState._estado_vital_restaurado_en_escena = false
+	GameState.configurar_dependencias(null, null, null, null, null, null)
+	await get_tree().process_frame
 
 
 func _finalizar(errores: Array[String]) -> void:
