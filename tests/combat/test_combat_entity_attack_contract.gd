@@ -137,6 +137,21 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	if int(ataques_con_danio["cantidad"]) != 2:
 		errores.append("El wrapper de compatibilidad no conservó el evento de daño.")
 
+	# CombatDamage también debe rechazar un atacante Entity que nunca entró
+	# al árbol, aunque el objetivo sí sea válido y dañable.
+	var atacante_fuera_arbol := EntityScript.new() as Entity
+	var salud_antes_atacante_invalido := objetivo.health
+	var danio_atacante_invalido := CombatDamageScript.aplicar(
+		objetivo,
+		5,
+		"Prueba/CombatDamage/AtacanteFueraArbol",
+		Callable(),
+		atacante_fuera_arbol
+	)
+	if danio_atacante_invalido or objetivo.health != salud_antes_atacante_invalido:
+		errores.append("CombatDamage aceptó un atacante Entity fuera del árbol.")
+	atacante_fuera_arbol.free()
+
 	# Las señales de contacto son síncronas: un listener puede derrotar
 	# al atacante antes de que CombatSystem llegue a resolver el daño.
 	atacante.restaurar_estado_vital(100, true)
