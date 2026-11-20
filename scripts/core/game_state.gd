@@ -1483,10 +1483,29 @@ func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 	var version := int(datos.get("version", 1))
 	if version < 1 or version > SAVE_VERSION:
 		return false
+	if datos.has("mundo") and not datos.get("mundo") is Dictionary:
+		return false
+	if datos.has("mundo_version"):
+		var mundo_version: Variant = datos.get("mundo_version")
+		if not (mundo_version is int or mundo_version is float):
+			return false
+	var mundo_variant: Variant = datos.get("mundo", {})
+	if mundo_variant is Dictionary:
+		var mundo := mundo_variant as Dictionary
+		if mundo.has("semilla") and not (mundo.get("semilla") is int or mundo.get("semilla") is float):
+			return false
+		if mundo.has("generador_version") and not (mundo.get("generador_version") is int or mundo.get("generador_version") is float):
+			return false
 	var estado_variant: Variant = datos.get("estado", null)
 	if not estado_variant is Dictionary:
 		return false
 	var estado := estado_variant as Dictionary
+	if estado.has("elapsed_time"):
+		var tiempo: Variant = estado.get("elapsed_time")
+		if not (tiempo is int or tiempo is float):
+			return false
+	if estado.has("scene") and not estado.get("scene") is String:
+		return false
 	if estado.has("player") and not estado.get("player") is Dictionary:
 		return false
 	if estado.has("flags") and not estado.get("flags") is Dictionary:
