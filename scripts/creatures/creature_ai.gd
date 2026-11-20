@@ -1167,6 +1167,14 @@ func _obtener_respuesta_memoria(candidato: Node2D) -> String:
 	var umbral := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_agresion", 1.0), 0.0)
 	var agresion := _memoria_interaccion.obtener_agresion(candidato)
 	if agresion >= umbral:
+		var umbral_repetido := maxf(
+			CreatureUtilityAIScript.leer_numero(memoria, "umbral_agresion_repetida", INF),
+			umbral
+		)
+		if agresion >= umbral_repetido:
+			var respuesta_repetida := str(memoria.get("respuesta_agresion_repetida", "")).strip_edges().to_lower()
+			if respuesta_repetida in ["atacar", "huir", "perseguir", "investigar"]:
+				return respuesta_repetida
 		var respuesta_agresion := str(memoria.get("respuesta_agresion", "huir")).strip_edges().to_lower()
 		if respuesta_agresion in ["atacar", "huir", "perseguir", "investigar"]:
 			return respuesta_agresion
