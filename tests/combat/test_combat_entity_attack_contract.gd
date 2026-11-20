@@ -231,9 +231,45 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	if int(contactos["cantidad"]) != contactos_antes_rechazo:
 		errores.append("Una solicitud rechazada emitió contacto.")
 
+	# queue_free() difiere la eliminación hasta el final del frame: durante
+	# esa ventana el nodo aún es válido y pertenece al árbol, pero no debe
+	# poder atacar ni recibir daño.
+	objetivo.restaurar_estado_vital(100, true)
+	var salud_antes_baja := objetivo.health
+	objetivo.queue_free()
+	var danio_objetivo_en_baja := CombatDamageScript.aplicar(
+		objetivo,
+		5,
+		"Prueba/ObjetivoEnBaja"
+	)
+	if danio_objetivo_en_baja or objetivo.health != salud_antes_baja:
+		errores.append("CombatDamage aplicó daño a un objetivo pendiente de eliminación.")
+
+	var atacante_pendiente := EntityScript.new() as Entity
+	atacante_pendiente.name = "EntityAttackContractQueuedAttacker"
+	get_tree().root.add_child(atacante_pendiente)
+	await get_tree().process_frame
+	atacante_pendiente.queue_free()
+	var contactos_antes_atacante_en_baja := int(contactos["cantidad"])
+	var resultado_atacante_en_baja: CombatAttackResult = combate.solicitar_danio_desde_entidad(
+		atacante_pendiente,
+		objetivo,
+		5,
+		"Prueba/AtacanteEnBaja"
+	)
+	if resultado_atacante_en_baja.solicitud_aceptada:
+		errores.append("CombatSystem aceptó un atacante pendiente de eliminación.")
+	if resultado_atacante_en_baja.motivo_rechazo != &"atacante_invalido":
+		errores.append("El atacante pendiente de eliminación no se rechazó como inválido.")
+	if int(contactos["cantidad"]) != contactos_antes_atacante_en_baja:
+		errores.append("Un atacante pendiente de eliminación emitió contacto.")
+
 	combate.queue_free()
 	atacante.queue_free()
-	objetivo.queue_free()
+	if not objetivo.is_queued_for_deletion():
+		objetivo.queue_free()
+	if not atacante_pendiente.is_queued_for_deletion():
+		atacante_pendiente.queue_free()
 	garumi.queue_free()
 	await get_tree().process_frame
 
