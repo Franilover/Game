@@ -1477,7 +1477,12 @@ func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 	if id_guardado != id:
 		return false
 	var version_variant: Variant = datos.get("version", 1)
-	if not version_variant is int:
+	if not (version_variant is int or version_variant is float):
+		return false
+	if version_variant is float and not is_equal_approx(
+		float(version_variant),
+		roundf(float(version_variant))
+	):
 		return false
 	var version := int(version_variant)
 	if version < 1 or version > SAVE_VERSION:
