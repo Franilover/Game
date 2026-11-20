@@ -1,6 +1,7 @@
 extends Node
 
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
+const GarumiScript = preload("res://scripts/creatures/garumi.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const WorldItemScript = preload("res://scripts/world/world_item.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
@@ -162,6 +163,34 @@ func _run() -> void:
 	if not ai._es_objetivo_refugio():
 		_fail("La IA no reconoció el WorldProp como destino de refugio.")
 		return
+	ai.objetivo = null
+
+	# Garumis nunca son objetivos de combate ni de persecución, incluso si
+	# la especie tiene objetivos="todo" o una respuesta ecológica agresiva.
+	var garumi := GarumiScript.new() as Garumi
+	garumi.criatura_id = "target-policy-garumi"
+	garumi.criatura_nombre = "Garumi de prueba"
+	garumi.position = Vector2(1.0, 0.0)
+	if not refugio_manager.registrar_global(garumi):
+		_fail("No se pudo registrar el Garumi de prueba.")
+		return
+	player.position = Vector2(1000.0, 0.0)
+	ai.entity_manager = refugio_manager
+	ai.configuracion_ia = {"objetivos": "todo"}
+	ai.perfil = AIScript.Perfil.CAMBIAFORMAS
+	ai._refrescar_objetivo()
+	if ai.objetivo == garumi:
+		_fail("Una criatura agresiva seleccionó un Garumi para perseguirlo.")
+		return
+	if ai._es_objetivo_ecologico_valido(garumi) or ai._es_seguimiento_ecologico(garumi):
+		_fail("Un Garumi fue aceptado como objetivo ecológico o de seguimiento.")
+		return
+	actor.set_meta("garlia_objetivo_liberacion", garumi)
+	ai._refrescar_objetivo()
+	if ai.objetivo == garumi or actor.has_meta("garlia_objetivo_liberacion"):
+		_fail("La protección de liberación conservó un Garumi como objetivo hostil.")
+		return
+
 	ai.objetivo = null
 	ai.entity_manager = null
 	refugio_root.queue_free()
