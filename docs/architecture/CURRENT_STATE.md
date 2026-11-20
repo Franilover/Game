@@ -1419,3 +1419,12 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - CreatureAI ejecuta las intenciones y conserva las particularidades de cada estado, incluyendo el control de alcance antes de iniciar un ataque.
 - Exploración, investigación y recuperación comparten el despachador; cada estado mantiene sus respuestas permitidas. Las respuestas desconocidas o no admitidas no generan conductas.
 - La regresión CreatureAITargetPolicy cubre normalización y restricciones de la política. Esta revisión está pendiente de CI; no se declara validada todavía.
+
+
+## Recuperación de obstáculos en movimiento de criaturas (2026-11-20)
+
+- La IA de criaturas seguía enviando direcciones directas al controlador compartido; no hay NavigationAgent2D integrado en este flujo. Las rutinas de NPC de Torres sí conservan su navegación AStarGrid2D independiente.
+- Se amplió el seguro de atasco de CreatureMovement: ahora puede recuperar criaturas normales además de NPC de Torres cuando detecta falta de progreso durante 0.8 s.
+- La recuperación reutiliza test_move para probar un desvío lateral estable y conserva el rumbo elegido mientras siga libre. No añade consultas de colisión por frame en movimiento normal.
+- La regresión CreatureMovementNPCSafety añade un obstáculo físico y verifica que una criatura fuera del grupo torres_game_npc encuentre y mantenga un desvío.
+- Implementación y prueba añadidas; CI pendiente. Esto mejora la recuperación local, no sustituye un pathfinder global ni resuelve todavía laberintos o rutas largas.
