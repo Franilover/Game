@@ -22,8 +22,6 @@ var _dialogue_system: DialogueSystem = null
 @onready var _debug_console: Node = $UI/DebugConsole
 var _world_entity_spawner: WorldEntitySpawner = null
 var _eterium_radial_menu: Control = null
-var _garumi_combat_arena: Node2D = null
-var _garumi_battle_party: Node = null
 @onready var _supabase_client: GarliaSupabaseClient = get_node_or_null("/root/SupabaseClient") as GarliaSupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
@@ -34,8 +32,6 @@ var _world_generator: WorldGenerator = null
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
 const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_radial_menu.tscn")
-const GARUMI_COMBAT_ARENA_SCRIPT = preload("res://scripts/gameplay/garumi_combat_arena.gd")
-const GARUMI_BATTLE_PARTY_SCRIPT = preload("res://scripts/gameplay/garumi_battle_party.gd")
 const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
 const NPC_SCHEDULE_SYSTEM_SCRIPT = preload("res://scripts/world/npc_schedule_system.gd")
 const HABITANTES_LOCALES: Array[Dictionary] = [
@@ -1562,70 +1558,12 @@ func _seguir_jugador() -> void:
 		return
 	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo():
 		return
-	if is_instance_valid(_garumi_combat_arena) and _garumi_combat_arena.call("esta_activa"):
-		_camera.global_position = _garumi_combat_arena.call("obtener_centro")
-		_ultima_posicion_camara = _camera.global_position
-		return
-
 	var posicion: Vector2 = _player.global_position
 	if posicion == _ultima_posicion_camara:
 		return
 
 	_camera.global_position = posicion
 	_ultima_posicion_camara = posicion
-
-
-func iniciar_arena_garumi(garumi: Node, jugador: Node) -> void:
-	if not garumi is Node2D or not jugador is Node2D:
-		return
-	if is_instance_valid(_garumi_combat_arena):
-		_garumi_combat_arena.call("terminar")
-	_garumi_combat_arena = Node2D.new()
-	_garumi_combat_arena.name = "GarumiCombatArena"
-	_garumi_combat_arena.set_script(GARUMI_COMBAT_ARENA_SCRIPT)
-	add_child(_garumi_combat_arena)
-	_garumi_combat_arena.call("iniciar", jugador, garumi)
-	_ultima_posicion_camara = Vector2.INF
-	_seguir_jugador()
-	print("Main: arena de combate iniciada; cámara fijada y perímetro activado.")
-
-
-func iniciar_combate_garumi(garumi: Node, jugador: Node) -> void:
-	if not garumi is Garumi or not jugador is Node2D:
-		return
-	if is_instance_valid(_garumi_battle_party):
-		_garumi_battle_party.call("finalizar")
-	# Instanciar directamente el script evita dejar un CanvasLayer sin script
-	# si set_script no llega a aplicarlo durante la creación dinámica.
-	_garumi_battle_party = GARUMI_BATTLE_PARTY_SCRIPT.new() as CanvasLayer
-	if not is_instance_valid(_garumi_battle_party):
-		push_error("Main: no se pudo instanciar GarumiBattleParty.")
-		return
-	_garumi_battle_party.name = "GarumiBattleParty"
-	add_child(_garumi_battle_party)
-	if not _garumi_battle_party.has_method("iniciar"):
-		push_error("Main: GarumiBattleParty no expone iniciar(); se cancela el HUD.")
-		_garumi_battle_party.queue_free()
-		_garumi_battle_party = null
-		return
-	_garumi_battle_party.call("iniciar", jugador, garumi)
-
-
-func terminar_arena_garumi(garumi: Node = null) -> void:
-	if is_instance_valid(_garumi_combat_arena):
-		if garumi != null and _garumi_combat_arena.get("garumi") != garumi:
-			return
-	elif not is_instance_valid(_garumi_battle_party):
-		return
-	if is_instance_valid(_garumi_battle_party):
-		_garumi_battle_party.call("finalizar")
-		_garumi_battle_party = null
-	if is_instance_valid(_garumi_combat_arena):
-		_garumi_combat_arena.call("terminar")
-	_garumi_combat_arena = null
-	_ultima_posicion_camara = Vector2.INF
-	_seguir_jugador()
-	print("Main: arena de combate cerrada; cámara liberada.")
 
 
 func _configurar_hud(world_context: WorldContext, world_gen: WorldGenerator = null) -> void:

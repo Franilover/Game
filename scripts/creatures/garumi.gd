@@ -6,8 +6,6 @@ const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 
 signal vinculo_establecido(garumi: Garumi, jugador: Node, tipo: String)
 signal propuesta_vinculo_rechazada(garumi: Garumi, jugador: Node)
-signal salud_combate_cambiada(actual: int, maxima: int)
-signal encuentro_iniciado(garumi: Garumi, jugador: Node)
 signal nivel_cambiado(nivel_anterior: int, nivel_actual: int)
 signal experiencia_cambiada(total: int, nivel: int)
 signal eterium_cambiado(actual: int, maximo: int)
@@ -301,7 +299,7 @@ func es_garumi() -> bool:
 
 
 func es_dialogable() -> bool:
-	return not _vinculado
+	return true
 
 
 func can_interact(_jugador: Node) -> bool:
@@ -317,13 +315,7 @@ func get_interaction_distance() -> float:
 
 
 func get_interaction_text() -> String:
-	if _vinculado:
-		return "Gestionar vínculo con " + (criatura_nombre if not criatura_nombre.is_empty() else name)
-	if _enfrentamiento_activo and puede_forzar_vinculo():
-		return "Garumi debilitado: interactuar"
-	if _enfrentamiento_activo:
-		return "Enfrentamiento: interactuar"
-	return "Interactuar con " + (criatura_nombre if not criatura_nombre.is_empty() else name)
+	return "Hablar con " + (criatura_nombre if not criatura_nombre.is_empty() else name)
 
 
 ## Se invoca desde InteractionSystem al acercarse y usar la acción contextual.
@@ -584,30 +576,21 @@ func forzar_vinculo(_jugador: Node) -> bool:
 
 func _establecer_vinculo(jugador: Node, tipo: String) -> bool:
 	if not _vinculado and not _puede_establecer_otro_vinculo():
-		push_warning("Garumi: límite de 3 vínculos alcanzado; rompe un vínculo antes de aceptar otro.")
+		push_warning("Garumi: límite de 3 vínculos alcanzado; establece una relación antes de crear otra.")
 		_notificar_resultado_vinculo(false, "limite_alcanzado")
 		return false
-	if _enfrentamiento_activo:
-		var escena_principal := get_tree().current_scene
-		if escena_principal != null and escena_principal.has_method("terminar_arena_garumi"):
-			escena_principal.call("terminar_arena_garumi", self)
 	_vinculado = true
 	_jugador_vinculado = jugador
-	_guardado = false
+	_guardado = true
 	_tipo_vinculo = tipo
-	_enfrentamiento_activo = false
-	_jugador_del_encuentro = null
-	remove_from_group("damageable")
 	datos["vinculado"] = true
 	datos["tipo_vinculo"] = tipo
 	set_meta("vinculado", true)
 	set_meta("tipo_vinculo", tipo)
 	vinculo_establecido.emit(self, jugador, tipo)
-	if has_method("iniciar_seguimiento_jugador"):
-		iniciar_seguimiento_jugador(jugador)
 	_notificar_resultado_vinculo(true, tipo)
 	_persistir_estado_vinculo()
-	print("Garumi: vínculo ", tipo, " establecido con ", jugador.name)
+	print("Garumi: relación ", tipo, " establecida con ", jugador.name)
 	return true
 
 
@@ -644,27 +627,18 @@ func _persistir_estado_vinculo() -> void:
 		game_state.call("guardar_garumi_vinculado", registro)
 
 
-func restaurar_vinculo_persistido(jugador: Node, guardado: bool, posicion: Vector2) -> void:
+func restaurar_vinculo_persistido(jugador: Node, _guardado: bool, posicion: Vector2) -> void:
 	if not is_instance_valid(jugador) or not jugador is Node2D:
 		return
 	_vinculado = true
 	_jugador_vinculado = jugador
-	_guardado = false
+	_guardado = true
 	_tipo_vinculo = str(datos.get("tipo_vinculo", _tipo_vinculo))
 	_garumi_instancia_id = str(datos.get("garumi_instancia_id", _garumi_instancia_id))
-	_enfrentamiento_activo = false
-	_jugador_del_encuentro = null
 	global_position = posicion
 	set_meta("vinculado", true)
 	set_meta("tipo_vinculo", _tipo_vinculo)
 	_normalizar_grupos_garumi()
-	if guardado:
-		_guardar_garumi()
-	else:
-		_guardado = false
-		activar_como_proxy()
-		if has_method("iniciar_seguimiento_jugador"):
-			iniciar_seguimiento_jugador(jugador)
 	actualizar_estado_en_hud()
 
 
@@ -714,76 +688,6 @@ func guardar_para_seleccion_combate() -> void:
 	if not _vinculado or _combate_vinculado_activo or _guardado:
 		return
 	_guardar_garumi()
-
-
-func entrar_combate_vinculado(jugador: Node, rival: Garumi) -> void:
-	if not _vinculado or not is_instance_valid(jugador) or not jugador is Node2D or not is_instance_valid(rival):
-		return
-	if _guardado:
-		_guardado = false
-		if has_method("activar_como_proxy"):
-			activar_como_proxy()
-		visible = true
-		set_physics_process(true)
-		set_process(true)
-	_jugador_vinculado = jugador
-	_combate_vinculado_activo = true
-	if has_method("detener_seguimiento_jugador"):
-		detener_seguimiento_jugador()
-	var direccion_hacia_rival := (rival.global_position - (jugador as Node2D).global_position).normalized()
-	if direccion_hacia_rival == Vector2.ZERO:
-		direccion_hacia_rival = Vector2.RIGHT
-	global_position = (jugador as Node2D).global_position + direccion_hacia_rival * 28.0
-	velocity = Vector2.ZERO
-	add_to_group("garumi_combat_ally")
-	_normalizar_grupos_garumi()
-	actualizar_estado_en_hud()
-
-
-func recibir_danio_combate(cantidad: int, atacante: Node = null) -> void:
-	if not _combate_vinculado_activo or not _vinculado or not is_alive or cantidad <= 0:
-		return
-	var danio_real := calcular_danio_recibido(cantidad)
-	health = maxi(0, health - danio_real)
-	vital_state.health = health
-	vital_state.is_alive = health > 0
-	_sync_desde_vital()
-	health_changed.emit(health, max_health)
-	salud_combate_cambiada.emit(health, max_health)
-	print("Garumi: ", criatura_nombre, " recibe ", danio_real, " de daño en combate | ", health, "/", max_health)
-	_persistir_estado_vinculo()
-	if health <= 0:
-		print("Garumi: ", criatura_nombre, " fue derrotado en combate.")
-
-
-func salir_combate_vinculado(derrotado: bool = false) -> void:
-	_combate_vinculado_activo = false
-	remove_from_group("garumi_combat_ally")
-	if has_method("detener_seguimiento_jugador"):
-		detener_seguimiento_jugador()
-	if derrotado:
-		health = 0
-		vital_state.health = 0
-		vital_state.is_alive = false
-		_sync_desde_vital()
-		health_changed.emit(health, max_health)
-		_guardar_garumi()
-	else:
-		if is_instance_valid(_jugador_vinculado) and has_method("iniciar_seguimiento_jugador"):
-			iniciar_seguimiento_jugador(_jugador_vinculado)
-		_persistir_estado_vinculo()
-	actualizar_estado_en_hud()
-
-
-func finalizar_enfrentamiento(solicitar_limpieza: bool = true) -> void:
-	if _enfrentamiento_activo and solicitar_limpieza:
-		var escena_principal := get_tree().current_scene
-		if escena_principal != null and escena_principal.has_method("terminar_arena_garumi"):
-			escena_principal.call("terminar_arena_garumi", self)
-	_enfrentamiento_activo = false
-	_jugador_del_encuentro = null
-	remove_from_group("damageable")
-	restaurar_estado_vital(max_health, true)
 
 
 func esta_vinculado() -> bool:

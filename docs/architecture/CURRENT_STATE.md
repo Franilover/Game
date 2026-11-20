@@ -1176,3 +1176,11 @@ Cuando una criatura se registra sin `runtime_instance_key`, el administrador usa
 Los Garumis son seres autónomos de exploración, misterio y relación. No son criaturas capturables ni unidades de combate. El jugador puede conocerlos, conversar, investigar, negociar y construir vínculos; sus habilidades se habilitan como capacidades del jugador, nunca como ataques ejecutados por un compañero invocado. No tienen vida, daño, defensa, nivel ni experiencia de combate. Los encuentros Garumi no abren arenas ni usan barras de salud. El combate físico del juego pertenece al jugador y a las criaturas/enemigos normales, mediante el sistema general de armas y daño.
 
 La implementación heredada aún conserva dependencias de `Creature` y UI/arena antiguas. La retirada debe hacerse por capas: primero bloquear las rutas de combate y captura por debilitamiento; después desacoplar el modelo Garumi de la vitalidad de `Creature`; finalmente retirar HUD, arena, party y persistencia de compañero sin tocar amistad, descubrimiento, diálogo, presencia en mundo ni habilidades prestadas.
+
+
+## Retirada de combate y seguimiento Garumi — 2026-11-19
+
+- Main ya no compone la arena Garumi, el HUD de grupo de batalla ni el seguimiento de cámara asociado.
+- Se retiraron de Garumi las APIs de combate como aliado vinculado y el vínculo ya no activa seguimiento físico: es una relación, no una invocación.
+- Los Garumis vinculados siguen siendo dialogables y el texto de interacción refleja conversación.
+- La progresión de combate heredada y la salud compartida con Creature siguen pendientes de desacoplar en una pasada separada.
