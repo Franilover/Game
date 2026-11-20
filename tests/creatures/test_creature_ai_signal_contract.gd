@@ -34,7 +34,7 @@ func _run() -> void:
 	criatura.configurar({
 		"id": "creature-ai-signal-test",
 		"nombre": "Espiritu Estelar",
-		"stats_dnd": {"hp_max": 140},
+		"stats_dnd": {"hp_max": 140, "defensa": 3},
 		"ia_config": config_ia
 	})
 
@@ -61,15 +61,18 @@ func _run() -> void:
 	var salud_antes := criatura.health
 	criatura.take_damage_desde(atacante, 7, "Prueba/SenalDanio")
 
-	if criatura.health != salud_antes - 7:
-		errores.append("Entity/Creature no conservó la reducción de salud esperada.")
-	if int(evento_danio["cantidad"]) != 7:
-		errores.append("Creature no emitió la cantidad real de daño.")
+	if criatura.health != salud_antes - 4:
+		errores.append("Creature no aplicó su defensa antes de reducir la salud.")
+	if int(evento_danio["cantidad"]) != 4:
+		errores.append("Creature no emitió la cantidad de daño posterior a defensa.")
 	if evento_danio["atacante"] != atacante:
 		errores.append("Creature no conservó el atacante al emitir el evento.")
 	if ai._tiempo_teleport <= 0.0:
 		errores.append("CreatureAI no reaccionó al evento de daño recibido.")
 
+	# La defensa no puede convertir el daño entrante en daño negativo ni
+	# impedir que un golpe letal derrote a la criatura.
+	criatura.stats_dnd["defensa"] = 0
 	var muertes := {"cantidad": 0}
 	criatura.died.connect(
 		func() -> void:
