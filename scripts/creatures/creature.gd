@@ -761,24 +761,24 @@ func take_damage_desde(
 	atacante: Node,
 	cantidad: int,
 	origen: String = "desconocido"
-) -> void:
-	_aplicar_danio_recibido(cantidad, origen, atacante)
+) -> int:
+	return _aplicar_danio_recibido(cantidad, origen, atacante)
 
 
 func take_damage(
 	cantidad: int,
 	origen: String = "desconocido"
-) -> void:
-	_aplicar_danio_recibido(cantidad, origen, null)
+) -> int:
+	return _aplicar_danio_recibido(cantidad, origen, null)
 
 
 func _aplicar_danio_recibido(
 	cantidad: int,
 	origen: String,
 	atacante: Node
-) -> void:
+) -> int:
 	if not is_alive:
-		return
+		return 0
 
 	# La defensa propia de la criatura se aplica en el mismo punto para todos
 	# los atacantes. La armadura equipada del jugador sigue resolviéndose en
@@ -787,27 +787,23 @@ func _aplicar_danio_recibido(
 	var defensa_propia := float(defensa_variant) if defensa_variant is int or defensa_variant is float else 0.0
 	cantidad = COMBAT_DEFENSE_SCRIPT.aplicar(cantidad, defensa_propia)
 	if cantidad <= 0:
-		return
+		return 0
 
 	# Los sparrings del Cuartel nunca pueden morir: conservan 1 HP y
 	# recuperan su estado original al cerrar la sesión.
 	if bool(get_meta("barracks_training_target", false)):
 		cantidad = mini(cantidad, maxi(health - 1, 0))
 		if cantidad <= 0:
-			return
+			return 0
 
-	var salud_anterior := health
 	var atacante_evento := atacante if is_instance_valid(atacante) else null
+	var danio_real := super.take_damage(cantidad, origen)
+	if danio_real > 0:
+		# Se informa el daño de esta invocación, sin incluir golpes anidados
+		# que puedan ejecutarse desde health_changed.
+		danio_recibido.emit(danio_real, atacante_evento)
 
-	super.take_damage(cantidad, origen)
-
-	if health < salud_anterior:
-		# El atacante pertenece a esta invocación. No se guarda en estado
-		# compartido: health_changed puede disparar daño reentrante.
-		danio_recibido.emit(
-			salud_anterior - health,
-			atacante_evento
-		)
+	return danio_real
 
 
 func establecer_colision(activa: bool) -> void:
