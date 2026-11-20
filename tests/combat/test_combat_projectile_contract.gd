@@ -129,6 +129,7 @@ func _probar_barrido_fisico(errores: Array[String]) -> void:
 	objetivo.name = "ProjectileSweepTarget"
 
 	var colision := CollisionShape2D.new()
+	colision.name = "CollisionShape2D"
 	var forma := RectangleShape2D.new()
 	forma.size = Vector2(12.0, 12.0)
 	colision.shape = forma
@@ -159,7 +160,6 @@ func _probar_barrido_fisico(errores: Array[String]) -> void:
 	)
 	consulta_prueba.collide_with_areas = true
 	consulta_prueba.collide_with_bodies = true
-	print("ProjectileSweep debug: hurtbox=", hurtbox, " layer=", hurtbox.collision_layer if hurtbox != null else -1, " ray=", get_viewport().world_2d.direct_space_state.intersect_ray(consulta_prueba))
 	# El proyectil recorre 100 px en un solo paso: el volumen de colisión del
 	# objetivo mide 12 px. Sin barrido, el movimiento discreto lo atravesaría.
 	proyectil._physics_process(0.1)
