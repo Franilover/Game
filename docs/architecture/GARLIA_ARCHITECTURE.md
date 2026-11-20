@@ -610,3 +610,11 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - `Player` conserva la referencia del tween de muerte para poder cancelarlo al reaparecer.
 - Las rutas local y de red cancelan cualquier animación de muerte anterior antes de restaurar vida, movimiento y presentación. Un tween de una vida anterior no puede seguir escribiendo sobre el jugador ya reaparecido.
 - `test_combat_temporal_contract` verifica reaparición inmediata, restauración de procesamiento/estado/cooldowns y estabilidad visual después de superar la duración de la animación anterior.
+
+
+### Cancelación de ataques por muerte del atacante
+
+- `CombatTargeting.es_atacante_valido()` centraliza la condición de ejecución: el atacante debe ser una `Entity` válida, dentro del árbol y viva.
+- Los hitboxes melee y los proyectiles cancelan su ejecución si el atacante deja de cumplir esa condición; vuelven a comprobarla justo antes de procesar un objetivo.
+- El ejecutor evita crear ataques para jugadores muertos y `CombatSystem` vuelve a validar al atacante antes de registrar contacto o efectos de impacto.
+- `test_combat_temporal_contract` comprueba que la muerte durante un ataque pendiente cancela ambos medios y no emite contacto, impacto ni daño.
