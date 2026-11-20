@@ -237,6 +237,17 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	objetivo.restaurar_estado_vital(100, true)
 	var salud_antes_baja := objetivo.health
 	objetivo.queue_free()
+	var contactos_antes_objetivo_en_baja := int(contactos["cantidad"])
+	var resultado_objetivo_en_baja: CombatAttackResult = combate.solicitar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		5,
+		"Prueba/ObjetivoEnBaja/CombatSystem"
+	)
+	if resultado_objetivo_en_baja.solicitud_aceptada or resultado_objetivo_en_baja.motivo_rechazo != &"objetivo_invalido":
+		errores.append("CombatSystem no rechazó como inválido un objetivo pendiente de eliminación.")
+	if int(contactos["cantidad"]) != contactos_antes_objetivo_en_baja:
+		errores.append("Un objetivo pendiente de eliminación emitió contacto.")
 	var danio_objetivo_en_baja := CombatDamageScript.aplicar(
 		objetivo,
 		5,
