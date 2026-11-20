@@ -1296,3 +1296,5 @@ La carga de equipamiento ahora reemplaza el conjunto anterior en vez de añadir 
 GameState valida ahora la estructura interna de `inventario_estado` antes de aceptar una partida: arreglo de objetos con diccionarios, hotbar con índices numéricos, equipo con diccionarios y selectores de mano/hotbar numéricos. Se mantiene el alias legacy `hotbar` como alternativa a `hotbar_indices`. Los contratos de equipamiento y payload cubren estos casos y ya están incluidos en el workflow; ejecución pendiente de confirmación.
 
 Queda abierto el hallazgo INV-03: un save puede contener más objetos que los slots visibles de la UI. No se recortan ni descartan esos objetos automáticamente; falta decidir una migración/presentación que los conserve accesibles.
+
+La validación estructural se amplió también a metadata superior (versión, mundo, semilla, versión del generador), tiempo/escena y campos numéricos/vectoriales del Player. Un tipo incorrecto se rechaza antes de convertir o aplicar el snapshot, reduciendo errores de conversión durante el listado y carga. El contrato incluye versiones y reservas mal tipadas; ejecución pendiente.
