@@ -144,7 +144,7 @@ func _worker_write() -> void:
 	if parts.is_empty():
 		_fail("No se pudo iniciar el mundo procedural real.")
 		return
-	var natural := await _generar_criatura_natural(parts)
+	var natural := _generar_criatura_natural(parts)
 	if natural.is_empty():
 		_fail("La semilla fija no generó una criatura natural en el chunk.")
 		return
@@ -195,7 +195,6 @@ func _worker_read() -> void:
 		return
 	var state: Dictionary = data.get("estado", {}) as Dictionary
 	GameState.call("_aplicar_estado_memoria", state)
-	var world_data: Node = get_tree().root.get_node("WorldData")
 	if not await _esperar_catalogo():
 		_fail("El catálogo local no se cargó en el segundo proceso.")
 		return
@@ -211,7 +210,7 @@ func _worker_read() -> void:
 	var expected_position: Dictionary = expected.get("position", {}) as Dictionary
 	var expected_velocity: Dictionary = expected.get("velocity", {}) as Dictionary
 	var expected_key := str(expected.get("runtime_key", ""))
-	var natural := await _generar_criatura_natural(parts, restored)
+	var natural := _generar_criatura_natural(parts, restored)
 	if natural.is_empty():
 		_fail("El spawn natural no se rematerializó tras el reinicio.")
 		return
