@@ -71,8 +71,15 @@ func _run() -> void:
 	store.guardar_y_pausar()
 	if get_tree().paused:
 		errores.append("Pausó el mundo pese a no poder confirmar el guardado.")
-	get_tree().paused = false
+	if not bool(store._pause_after_save_pending):
+		errores.append("No dejó pendiente el reintento del guardado fallido.")
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta_temporal))
+	store.guardar_y_pausar()
+	if not get_tree().paused:
+		errores.append("No pausó el mundo después de confirmar el reintento.")
+	if bool(store._pause_after_save_pending):
+		errores.append("Mantuvo un reintento pendiente después de guardar correctamente.")
+	get_tree().paused = false
 
 	store.queue_free()
 	await get_tree().process_frame
