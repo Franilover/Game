@@ -1,6 +1,7 @@
 extends Node
 
 const ValidatorScript = preload("res://scripts/state/world_snapshot_validator.gd")
+const WorldDataScript = preload("res://scripts/world/world_data.gd")
 
 
 func _ready() -> void:
@@ -73,7 +74,43 @@ func _run() -> void:
 			"ecosistemas": []
 		}]
 	}
+
 	_comprobar(errores, "jerarquía válida sin hijos", jerarquia_vacia, true)
+
+	# Verifica la lectura offline de ambos formatos de caché soportados:
+	# envoltorio actual {"mundo": ...} y snapshot directo legado.
+	var world_data := WorldDataScript.new() as WorldDataService
+	var ruta_cache_prueba := "user://world_data_cache_contract.json"
+	var archivo_cache := FileAccess.open(ruta_cache_prueba, FileAccess.WRITE)
+	if archivo_cache == null:
+		errores.append("No pudo crear el archivo temporal de caché offline.")
+	else:
+		archivo_cache.store_string(JSON.stringify({"mundo": valido}))
+		archivo_cache.close()
+		var cache_actual := world_data._leer_mundo_local(ruta_cache_prueba, true)
+		if cache_actual != valido:
+			errores.append("No pudo leer el caché offline con envoltorio actual.")
+			
+		archivo_cache = FileAccess.open(ruta_cache_prueba, FileAccess.WRITE)
+		if archivo_cache == null:
+			errores.append("No pudo reescribir el archivo temporal de caché offline.")
+		else:
+			archivo_cache.store_string(JSON.stringify(valido))
+			archivo_cache.close()
+			var cache_legacy := world_data._leer_mundo_local(ruta_cache_prueba, true)
+			if cache_legacy != valido:
+				errores.append("No conservó compatibilidad con el caché offline legado.")
+			
+		archivo_cache = FileAccess.open(ruta_cache_prueba, FileAccess.WRITE)
+		if archivo_cache == null:
+			errores.append("No pudo preparar el caché corrupto de prueba.")
+		else:
+			archivo_cache.store_string(JSON.stringify({"mundo": sin_biomas}))
+			archivo_cache.close()
+			if not world_data._leer_mundo_local(ruta_cache_prueba, true).is_empty():
+				errores.append("Aceptó un caché offline con jerarquía inválida.")
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta_cache_prueba))
+	world_data.free()
 
 	if not errores.is_empty():
 		for error in errores:
