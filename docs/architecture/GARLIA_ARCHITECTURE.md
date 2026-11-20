@@ -642,3 +642,11 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - Las señales de contacto son síncronas. Tras emitir `contacto_efectivo`, las APIs centrales vuelven a validar atacante y objetivo antes del daño. Una señal que derrote o retire al atacante/objetivo cancela el daño pendiente. El resolver melee `_aplicar_danio()` aplica la misma validación, cubriendo la ruta del jugador y armas de entidades.
 - Los efectos posteriores al contacto no deben ejecutarse sobre participantes derrotados. Lignianos sólo aplica ralentización si atacante y jugador siguen vivos; Rancrodeen se desprende cuando el objetivo deja de ser una entidad válida para combate.
 - Las pruebas de contrato cubren interrupción en solicitudes genéricas, melee y armas; conservan el contacto ya emitido, pero no registran daño ni `ataque_realizado` cuando la acción fue interrumpida.
+
+
+### Reentrada durante recepción de daño de criaturas
+
+- `Creature.take_damage_desde()` conserva el atacante como dato local de esa invocación; no lo guarda en una variable compartida temporal.
+- `health_changed` y otras señales pueden ejecutar listeners síncronos que soliciten un segundo daño antes de terminar el primero. Cada `danio_recibido` debe conservar la cantidad y el atacante del golpe que lo originó, incluso bajo esa reentrada.
+- `Creature.take_damage()` sigue siendo la ruta compatible para daño sin atacante explícito; ambos caminos comparten la misma aplicación de daño, protección de sparring y publicación del resultado.
+- `test_combat_creature_damage_reentrancy` reproduce daño anidado desde `health_changed` y verifica atribución y cantidades de ambos golpes.
