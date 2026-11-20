@@ -637,6 +637,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run GameState snapshot application to live Player regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/persistence/test_game_state_scene_restore.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|GameStateSceneRestore: FAIL:' <<<"$output"; then
+            echo "GameState live Player restoration test reported errors."
+            exit 1
+          fi
+
       - name: Run NPC mind core regression test
         shell: bash
         run: |
