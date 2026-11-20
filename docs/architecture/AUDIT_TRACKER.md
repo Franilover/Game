@@ -698,3 +698,10 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Si el snapshot indica que el interior estaba abierto, la reapertura se programa después de cargar los muebles y decoraciones; no depende del call_deferred inicial de _ready, que puede ejecutarse antes de aplicar el snapshot.
 - tests/persistence/test_home_interior_persistence.tscn valida estado exterior e interior, cofres y contenido, identidad, muebles y contador de cofres. El contrato pasó en CI Godot 4.7: [44757104913](https://github.com/Franilover/Game/actions/runs/44757104913).
 - Pendiente: ciclo real entre procesos para Torres → Hogar → guardar/cerrar → menú → cargar Hogar, verificando jugador y posición dentro del interior.
+
+## Restauración de posición local al volver a Hogar — 2026-11-20
+
+- Hallazgo de integración: _cambiar_zona() guardaba hogar_estado.jugador al abandonar Hogar, pero no aplicaba esas coordenadas al cargar de nuevo la zona. Se añadía la escena y se restauraban muebles/interior, pero la posición local no tenía consumidor explícito.
+- Se añadió _restaurar_posicion_jugador_hogar() después de incorporar la escena al árbol. Solo aplica x/y numéricos y finitos; no modifica el jugador si el snapshot es incompleto o inválido.
+- El contrato test_zone_manager_home_position.tscn comprueba restauración correcta y rechazo de strings/INF. CI completa Godot 4.7 aprobada: [44811300461](https://github.com/Franilover/Game/actions/runs/44811300461); GDScript Quality (Advisory): [44811288159](https://github.com/Franilover/Game/actions/runs/44811288159).
+- El reinicio completo desde el menú y la prueba de muebles/interior también pasan en esa regresión. Aún no está cerrado el reinicio de dos procesos guardando y reabriendo mientras el jugador permanece dentro del interior de Hogar.
