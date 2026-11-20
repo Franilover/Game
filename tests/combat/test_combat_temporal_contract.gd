@@ -398,6 +398,61 @@ func _probar_impactos_simultaneos_y_atacante_invalido(errores: Array[String]) ->
 		errores.append("Un atacante fuera del árbol alteró la salud del objetivo.")
 	atacante_fuera_arbol.free()
 
+	# Un listener de contacto puede derrotar al atacante en la misma emisión.
+	atacante.restaurar_estado_vital(100, true)
+	var ataque_interrumpido := CombatAttackScript.new() as CombatAttack
+	ataque_interrumpido.configurar(
+		atacante,
+		Vector2.RIGHT,
+		{},
+		"distancia",
+		5,
+		"Prueba/MuerteDuranteContacto"
+	)
+	var proyectil_interrumpido := CombatProjectileScript.new() as CombatProjectile
+	proyectil_interrumpido.configurar(ataque_interrumpido, Vector2.RIGHT, 100.0, 1.0, 2.0)
+	proyectil_interrumpido.contacto_detectado.connect(
+		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
+			atacante.restaurar_estado_vital(0, false)
+	)
+	var impactos_interrumpidos := {"cantidad": 0}
+	proyectil_interrumpido.objetivo_impactado.connect(
+		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
+			impactos_interrumpidos["cantidad"] = int(impactos_interrumpidos["cantidad"]) + 1
+	)
+	get_tree().root.add_child(proyectil_interrumpido)
+	var salud_antes_interrupcion := objetivo.health
+	proyectil_interrumpido._procesar_objetivo(objetivo)
+	if objetivo.health != salud_antes_interrupcion:
+		errores.append("El proyectil aplicó daño después de que el atacante murió durante el contacto.")
+	if int(impactos_interrumpidos["cantidad"]) != 0:
+		errores.append("El proyectil emitió impacto confirmado tras morir el atacante durante el contacto.")
+	if not proyectil_interrumpido.is_queued_for_deletion():
+		errores.append("El proyectil interrumpido no finalizó su ciclo de vida.")
+
+	# La expiración también debe cerrar el proyectil y bloquear colisiones tardías.
+	atacante.restaurar_estado_vital(100, true)
+	var ataque_expirado := CombatAttackScript.new() as CombatAttack
+	ataque_expirado.configurar(
+		atacante,
+		Vector2.RIGHT,
+		{},
+		"distancia",
+		5,
+		"Prueba/Expiracion"
+	)
+	var proyectil_expirado := CombatProjectileScript.new() as CombatProjectile
+	proyectil_expirado.configurar(ataque_expirado, Vector2.RIGHT, 100.0, 0.05, 2.0)
+	get_tree().root.add_child(proyectil_expirado)
+	proyectil_expirado._physics_process(0.1)
+	if not proyectil_expirado.is_queued_for_deletion():
+		errores.append("El proyectil no se liberó al expirar su vida útil.")
+	proyectil_expirado._procesar_objetivo(objetivo)
+	if objetivo.health != salud_antes_interrupcion:
+		errores.append("Un proyectil expirado todavía pudo aplicar daño.")
+
+	proyectil_interrumpido.queue_free()
+	proyectil_expirado.queue_free()
 	for proyectil in proyectiles:
 		proyectil.queue_free()
 	combate.queue_free()
