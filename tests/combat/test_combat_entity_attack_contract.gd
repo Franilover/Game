@@ -277,9 +277,9 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 
 	combate.queue_free()
 	atacante.queue_free()
-	if not objetivo.is_queued_for_deletion():
+	if is_instance_valid(objetivo) and not objetivo.is_queued_for_deletion():
 		objetivo.queue_free()
-	if not atacante_pendiente.is_queued_for_deletion():
+	if is_instance_valid(atacante_pendiente) and not atacante_pendiente.is_queued_for_deletion():
 		atacante_pendiente.queue_free()
 	garumi.queue_free()
 	await get_tree().process_frame
