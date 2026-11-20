@@ -1347,3 +1347,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Los tres caminos que inician intervalo (melee, arma/proyectil y pala) usan un único helper que limita el valor a cero o más.
 - `CombatTemporalContract` cubre el rechazo durante cooldown y un valor de configuración negativo.
 - Implementado; pendiente ejecución Godot 4.7/CI.
+
+
+## Validación del atacante en CombatDamage (2026-11-20)
+
+- El resolver central rechazaba objetivos inválidos, pero una llamada directa con un atacante no nulo fuera del árbol aún podía llegar a `take_damage`.
+- Ahora `CombatDamage.aplicar()` exige que cualquier atacante atribuido pase `CombatTargeting.es_atacante_valido()`, tanto antes como después del modificador. `null` sigue permitido para daño ambiental/sin atribución.
+- `CombatEntityAttackContract` comprueba el rechazo de un atacante `Entity` fuera del árbol; `CreatureAISignalContract` utiliza una entidad atacante válida al verificar la mitigación.
+- Implementado; pendiente de ejecución Godot 4.7/CI.
