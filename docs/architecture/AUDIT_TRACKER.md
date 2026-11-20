@@ -416,3 +416,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Normalización: melee, arma/proyectil y pala inicializan el cooldown con el mismo helper y no admiten duraciones negativas.
 - Regresión: `CombatTemporalContract` cubre la entrada durante cooldown, el handler tardío y la configuración negativa.
 - Estado: implementado; pendiente de CI y prueba en partida.
+
+
+## Frontera de atacante en CombatDamage (2026-11-20)
+
+- Hallazgo: las rutas de alto nivel validaban al atacante, pero una llamada directa al resolver central podía atribuir daño a una entidad que nunca entró al árbol o ya no era operativa.
+- Corrección: `CombatDamage.aplicar()` valida al atacante no nulo antes y después del modificador mediante `CombatTargeting.es_atacante_valido()`. El daño ambiental sin atacante explícito conserva `null`.
+- Regresión: `CombatEntityAttackContract` cubre atacante fuera del árbol; el contrato de Creature ahora usa una entidad atacante válida.
+- Estado: implementado; pendiente de CI.
