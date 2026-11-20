@@ -1452,6 +1452,8 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 
 - Nuevo `CreatureInteractionMemory`: recuerdos locales por instancia de actor, con referencia débil, intensidad acumulable limitada, decaimiento gradual y expiración temporal.
 - `CreatureAI` registra agresiones recibidas sólo cuando `memoria_interaccion.activo=true`; una regla optativa puede traducir el recuerdo en `atacar`, `huir`, `perseguir` o `investigar` hacia ese actor concreto.
+- Las pruebas de memoria cubren aislamiento entre actores, límite de intensidad, exclusión de Garumis, expiración y limpieza de referencias débiles cuando el actor se libera.
+
 - Los Garumis se excluyen de estos recuerdos. La memoria no persiste entre sesiones ni se comparte entre criaturas.
 - `CreatureAITargetPolicy` cubre acumulación, aislamiento entre actores, decaimiento, expiración y efecto optativo en la respuesta de la criatura.
 - CI de esta integración pendiente.
