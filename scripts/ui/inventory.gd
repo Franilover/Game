@@ -74,7 +74,7 @@ var _player: Player = null
 var _world_items: GarliaWorldItems = null
 
 
-@onready var grid: HBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/Grid
+@onready var grid: GridContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InventoryScroll/Grid
 var _slot_grids: Array[GridContainer] = []
 @onready var item_name: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/ItemName
 @onready var item_category: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/MetadataRow/CategoryStatsRow/ItemCategory
@@ -250,6 +250,9 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	var hotbar: Array = hotbar_variant as Array if hotbar_variant is Array else []
 	inventory_controller.configurar_items(items, hotbar)
 	_normalizar_capacidades_runtime()
+	# Los saves antiguos pueden conservar más ranuras que la capacidad base
+	# visible. Reconstruir la cuadrícula permite acceder a todos los objetos.
+	_crear_slots()
 
 	var indice_activo := int(datos.get("indice_hotbar_activo", 0))
 	if indice_activo >= 0 and indice_activo < hotbar_indices.size():
@@ -620,7 +623,9 @@ func _crear_slots() -> void:
 	_slot_grids.clear()
 
 	var nombres_grupo := ["MANO IZQUIERDA", "MOCHILA", "MANO DERECHA"]
-	for grupo in range(3):
+	var capacidad_visible := maxi(maxi(slot_count, 0), items.size())
+	var cantidad_grupos := ceili(float(capacidad_visible) / 6.0)
+	for grupo in range(cantidad_grupos):
 		var panel_grupo := INVENTORY_GROUP_SCENE.instantiate() as VBoxContainer
 		if panel_grupo == null:
 			continue
@@ -639,10 +644,13 @@ func _crear_slots() -> void:
 		if titulo == null or rejilla == null:
 			push_error("Inventory: inventory_group.tscn no contiene Title y Slots.")
 			continue
-		titulo.text = nombres_grupo[grupo]
+		if grupo < nombres_grupo.size():
+			titulo.text = nombres_grupo[grupo]
+		else:
+			titulo.text = "RESERVA " + str(grupo - 2)
 		_slot_grids.append(rejilla)
 
-	for visual_index in range(slot_count):
+	for visual_index in range(capacidad_visible):
 		var slot_node := SLOT_SCENE.instantiate()
 		if not slot_node is Button:
 			continue
