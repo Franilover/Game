@@ -1425,6 +1425,6 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 
 - La IA de criaturas seguía enviando direcciones directas al controlador compartido; no hay NavigationAgent2D integrado en este flujo. Las rutinas de NPC de Torres sí conservan su navegación AStarGrid2D independiente.
 - Se amplió el seguro de atasco de CreatureMovement: ahora puede recuperar criaturas normales además de NPC de Torres cuando detecta falta de progreso durante 0.8 s.
-- La recuperación reutiliza test_move para probar un desvío lateral estable y conserva el rumbo elegido mientras siga libre. No añade consultas de colisión por frame en movimiento normal.
+- La recuperación consulta la geometría estática mediante PhysicsShapeQueryParameters2D para probar un desvío lateral estable, sin depender de collision_mask del cuerpo y conserva el rumbo elegido mientras siga libre. No añade consultas de colisión por frame en movimiento normal.
 - La regresión CreatureMovementNPCSafety añade un obstáculo físico y verifica que una criatura fuera del grupo torres_game_npc encuentre y mantenga un desvío.
-- Implementación y prueba añadidas; CI pendiente. Esto mejora la recuperación local, no sustituye un pathfinder global ni resuelve todavía laberintos o rutas largas.
+- Implementación y prueba añadidas; CI pendiente. Las escenas de Creature y Garumi conservan collision_mask=0; la consulta explícita usa la capa estática 1 sin modificar esa autoridad física. Esto mejora la recuperación local, no sustituye un pathfinder global ni resuelve todavía laberintos o rutas largas.
