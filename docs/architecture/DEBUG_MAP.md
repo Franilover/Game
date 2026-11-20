@@ -241,3 +241,8 @@ Si el contacto se registra pero el daño no debe continuar, inspeccionar los lis
 ### Reentrada al recibir daño de criaturas
 
 Si `danio_recibido` informa un atacante incorrecto durante varios impactos en el mismo frame, revisar `Creature._aplicar_danio_recibido()`. El atacante debe permanecer local a cada invocación; no reintroducir un campo temporal compartido. La regresión está en `tests/combat/test_combat_creature_damage_reentrancy.gd`.
+
+
+### Recuperación y curación de Eterium
+
+Si el jugador no recupera Eterium, revisar `Player._aplicar_movimiento_normal()`, `PlayerEteriumCoordinator` y `PlayerEteriumRuntime.actualizar_recuperacion()`. La recuperación pasiva y la curación automática se procesan sólo durante quietud en `IDLE`. Si una entidad muerta altera sus reservas, revisar las guardas de `is_alive` en `PlayerEteriumRuntime`. La curación automática debe rechazarse cuando `vida_eterium_compartidos()` sea true; no convertirla en gasto de la misma reserva que representa la vida.
