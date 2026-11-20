@@ -1166,16 +1166,15 @@ Cuando una criatura se registra sin `runtime_instance_key`, el administrador usa
 - Los registros de amistad y de vínculo incluyen `health` además de experiencia, nivel y Eterium.
 - La configuración reconstruye la vida actual después de calcular las estadísticas de nivel; no reemplaza la vida guardada por la máxima.
 - Los registros antiguos sin `health` mantienen compatibilidad y comienzan con vida máxima.
-- Una instancia guardada con cero vida se restaura derrotada, no como viva.
-- La recuperación de vida y el daño en combate vinculado persisten el estado actualizado.
-- Regresión: `tests/creatures/test_garumi_health_persistence.tscn`.
+- Este contrato de salud fue retirado al eliminar la vida y el combate de Garumis.
+- Su reemplazo es `GarumiNonCombatContract`: comprueba ausencia de APIs de combate, inmunidad al daño y exclusión de salud/nivel/experiencia de los registros sociales.
 
 
 ## Dogma de diseño Garumi — 2026-11-19
 
 Los Garumis son seres autónomos de exploración, misterio y relación. No son criaturas capturables ni unidades de combate. El jugador puede conocerlos, conversar, investigar, negociar y construir vínculos; sus habilidades se habilitan como capacidades del jugador, nunca como ataques ejecutados por un compañero invocado. No tienen vida, daño, defensa, nivel ni experiencia de combate. Los encuentros Garumi no abren arenas ni usan barras de salud. El combate físico del juego pertenece al jugador y a las criaturas/enemigos normales, mediante el sistema general de armas y daño.
 
-La implementación heredada aún conserva dependencias de `Creature` y UI/arena antiguas. La retirada debe hacerse por capas: primero bloquear las rutas de combate y captura por debilitamiento; después desacoplar el modelo Garumi de la vitalidad de `Creature`; finalmente retirar HUD, arena, party y persistencia de compañero sin tocar amistad, descubrimiento, diálogo, presencia en mundo ni habilidades prestadas.
+La implementación conserva la base técnica `Creature` para movimiento y representación, pero los Garumis están fuera de `damageable`, anulan el daño y no exponen vitalidad como mecánica. El desacoplamiento físico completo de la clase base sigue pendiente; no debe confundirse con una vida o combate disponibles en gameplay.
 
 
 ## Retirada de combate y seguimiento Garumi — 2026-11-19
@@ -1189,3 +1188,8 @@ La implementación heredada aún conserva dependencias de `Creature` y UI/arena 
 ## Contrato no combatiente Garumi — 2026-11-19
 
 La regresión de salud de Garumi se reemplazó por un contrato de no combate: verifica que el modelo no exponga APIs de arena, daño, derrota, curación o progresión de combate; que no pertenezca al grupo `damageable`; y que los registros sociales y de vínculo no persistan salud, nivel ni experiencia de combate. La energía Eterium se conserva como recurso separado para futuras habilidades prestadas.
+
+
+## Interacción Garumi conversacional — 2026-11-19
+
+La interacción principal de Garumi ahora deriva al diálogo heredado de Creature mediante `abrir_dialogo()`. Se retiró el menú contextual de acciones de vínculo/amistad que sustituía la conversación. El vínculo persistente queda como relación para habilitar habilidades, no como invocación física; los Garumis vinculados continúan como entidades del mundo.
