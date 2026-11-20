@@ -61,3 +61,7 @@ func actualizar(delta: float, decaimiento_por_segundo: float = 0.2) -> void:
 
 func cantidad_recuerdos() -> int:
 	return _recuerdos.size()
+
+
+func limpiar() -> void:
+	_recuerdos.clear()
