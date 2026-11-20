@@ -244,6 +244,34 @@ func _run() -> void:
 		return
 	player.position = Vector2.ZERO
 
+	# Si el objetivo desaparece durante la persecución, la criatura investiga
+	# la última posición conocida en vez de abandonar la pista inmediatamente.
+	var objetivo_memoria := CreatureScript.new() as Creature
+	get_tree().root.add_child(objetivo_memoria)
+	objetivo_memoria.position = Vector2(64.0, 0.0)
+	ai.objetivo = objetivo_memoria
+	ai.objetivo_detectado = true
+	ai.ultima_posicion_objetivo = objetivo_memoria.global_position
+	ai._hay_ultima_posicion_objetivo = true
+	ai.estado = AIScript.Estado.PERSIGUIENDO
+	objetivo_memoria.queue_free()
+	await get_tree().process_frame
+	ai.objetivo_detectado = false
+	ai._procesar_persiguiendo()
+	if ai.estado != AIScript.Estado.INVESTIGANDO:
+		_fail("La pérdida del objetivo no conservó la investigación de su última posición.")
+		return
+	ai._procesar_investigando()
+	if ai.estado != AIScript.Estado.INVESTIGANDO:
+		_fail("La criatura abandonó la última posición conocida antes de llegar.")
+		return
+	actor.position = Vector2(64.0, 0.0)
+	ai._procesar_investigando()
+	if ai.estado != AIScript.Estado.EXPLORANDO or ai._hay_ultima_posicion_objetivo:
+		_fail("La criatura no cerró la investigación al alcanzar la última posición.")
+		return
+	actor.position = Vector2.ZERO
+
 	ai.objetivo = null
 	ai.entity_manager = null
 	refugio_root.queue_free()
