@@ -33,6 +33,11 @@ func _run() -> void:
 	manager.configurar(entities_root, factory)
 
 	var chunk_recoleccion := Vector2i(2, -3)
+	manager.registrar_dato_chunk(chunk_recoleccion, "props", {
+		"runtime_instance_key": "prop:0:recurso_a",
+		"id": "recurso_a",
+		"position": Vector2(64.0, 32.0)
+	})
 	var recolectado := _crear_prop(manager, chunk_recoleccion, "prop:0:recurso_a")
 	if recolectado == null:
 		errores.append("No se pudo registrar el prop de recolección.")
@@ -51,6 +56,19 @@ func _run() -> void:
 					tombstone_en_chunk = not bool(dato.get("is_present", true))
 		if not tombstone_en_chunk:
 			errores.append("Los datos DATA del chunk todavía permiten regenerar el prop recolectado.")
+
+	# Si el chunk aún no tenía datos DATA, el tombstone runtime no debe
+	# convertirse en el único registro y bloquear la generación del resto.
+	var chunk_sin_datos := Vector2i(-2, 5)
+	var recolectado_sin_datos := _crear_prop(manager, chunk_sin_datos, "prop:0:recurso_sin_datos")
+	if recolectado_sin_datos == null:
+		errores.append("No se pudo registrar el prop sin datos DATA previos.")
+	else:
+		recolectado_sin_datos.queue_free()
+		await get_tree().process_frame
+		var datos_sin_datos: Array = manager.obtener_datos_chunk(chunk_sin_datos, "props")
+		if not datos_sin_datos.is_empty():
+			errores.append("El tombstone aislado bloqueó la preparación DATA del resto del chunk.")
 
 	var chunk_descarga := Vector2i(4, 1)
 	var prop_descargado := _crear_prop(manager, chunk_descarga, "prop:0:recurso_b")
