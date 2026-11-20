@@ -477,8 +477,6 @@ func romper_vinculo() -> bool:
 	_tipo_vinculo = ""
 	_guardado = false
 	_jugador_vinculado = null
-	_jugador_del_encuentro = null
-	_enfrentamiento_activo = false
 	remove_from_group("damageable")
 	remove_meta("vinculado")
 	remove_meta("tipo_vinculo")
