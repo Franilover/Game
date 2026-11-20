@@ -248,3 +248,14 @@ Si `danio_recibido` informa un atacante incorrecto durante varios impactos en el
 Si el jugador no recupera Eterium, revisar `Player._aplicar_movimiento_normal()`, `PlayerEteriumCoordinator` y `PlayerEteriumRuntime.actualizar_recuperacion()`. La recuperación pasiva y la curación automática se procesan sólo durante quietud en `IDLE`. Si una entidad muerta altera sus reservas, revisar las guardas de `is_alive` en `PlayerEteriumRuntime`. La curación automática debe rechazarse cuando `vida_eterium_compartidos()` sea true; no convertirla en gasto de la misma reserva que representa la vida.
 
 Si el primer movimiento tras reaparecer consume Eterium acumulado de la vida anterior, revisar `Player.reaparecer()`, `Player.reaparecer_en_red()` y `PlayerEteriumRuntime.reiniciar_temporizadores()`. El coordinador de sprint debe rechazar jugadores muertos y limpiar cualquier coste pendiente inválido.
+
+
+## Guardado y restauración de vida/Eterium
+
+Ruta: GameStateService.capturar_estado_desde_juego() → PlayerState → JSON local → PlayerState.normalizar_reservas_vitales() → Entity.restaurar_estado_vital().
+
+- Si salud/Eterium aparecen fuera de rango, revisar la normalización de PlayerState; las capacidades máximas vienen del Player/runtime actual, no del save.
+- Si una especie usa reserva compartida, ambas reservas deben terminar iguales. Ante un snapshot inconsistente se conserva el menor valor para no crear recursos.
+- Si un snapshot llega con salud cero, debe restaurarse como muerto. No cambiar el argumento vivo a true sin comprobar la salud efectiva.
+- Los guardados normales e Historia no persisten al jugador muerto; el último snapshot vivo se conserva hasta el respawn y el siguiente guardado válido.
+- Contrato: tests/state/test_player_state_vital_persistence_contract.gd. Aún pendiente de ejecución local/CI.
