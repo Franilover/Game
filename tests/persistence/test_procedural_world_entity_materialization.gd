@@ -50,8 +50,10 @@ func _run() -> void:
 	player.global_position = Vector2(512.0, 512.0)
 	entities_root.add_child(player)
 
-	generator.configurar_entidades(entities_root, player)
+	# Registrar los servicios antes de configurar el spawner: éste valida
+	# WorldDataService durante su configuración inicial.
 	generator.configurar_dependencias(WorldData, GameState)
+	generator.configurar_entidades(entities_root, player)
 	frames = 0
 	while not generator.is_world_ready() and frames < 300:
 		await get_tree().process_frame
