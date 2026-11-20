@@ -187,7 +187,7 @@ func obtener_partidas() -> Array[Dictionary]:
 
 	for id in save_repository.listar_ids_partidas():
 		var datos := _leer_archivo_partida(id)
-		if datos.is_empty():
+		if not _datos_partida_cargables(id, datos):
 			continue
 		resultado.append(_extraer_metadata_partida(datos))
 
@@ -258,11 +258,8 @@ func crear_partida(
 func iniciar_partida(id: String) -> bool:
 	var datos := _leer_archivo_partida(id)
 
-	if datos.is_empty():
-		print(
-			"GameState: partida no encontrada → ",
-			id
-		)
+	if not _datos_partida_cargables(id, datos):
+		push_warning("GameState: partida ausente, incompatible o con estructura inválida → " + id)
 		return false
 
 	_historia_reserva_activa = false
@@ -1423,6 +1420,28 @@ func _al_cambiar_escena() -> void:
 
 func _leer_archivo_partida(id: String) -> Dictionary:
 	return save_repository.leer_partida(id)
+
+
+## El repositorio garantiza JSON válido; GameState valida el contrato del save.
+## Versiones antiguas sin campo version se interpretan como versión 1.
+func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
+	if id.strip_edges().is_empty() or datos.is_empty():
+		return false
+	var id_guardado := str(datos.get("id", id)).strip_edges()
+	if id_guardado != id:
+		return false
+	var version := int(datos.get("version", 1))
+	if version < 1 or version > SAVE_VERSION:
+		return false
+	var estado_variant: Variant = datos.get("estado", null)
+	if not estado_variant is Dictionary:
+		return false
+	var estado := estado_variant as Dictionary
+	if estado.has("player") and not estado.get("player") is Dictionary:
+		return false
+	if estado.has("flags") and not estado.get("flags") is Dictionary:
+		return false
+	return true
 
 
 func _escribir_archivo_partida(
