@@ -131,6 +131,16 @@ func _run() -> void:
 	otro_actor.queue_free()
 	garumi_recordado.queue_free()
 
+	# Los actores liberados se eliminan mediante WeakRef en la siguiente actualización.
+	var actor_liberado := Node2D.new()
+	get_tree().root.add_child(actor_liberado)
+	memoria.registrar_agresion(actor_liberado, 1.0, 8.0)
+	actor_liberado.free()
+	memoria.actualizar(0.1, 0.0)
+	if memoria.cantidad_recuerdos() != 0:
+		_fail("La memoria conservó una referencia a un actor liberado.")
+		return
+
 	# Un jugador cercano no debe ser un objetivo implícito de una criatura
 	# neutral sin una respuesta definida.
 	ai._refrescar_objetivo()
