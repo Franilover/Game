@@ -104,7 +104,7 @@
 - [x] Verificar el contrato de soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo; la ruta de fallo conserva el objeto y usa el dato actual del runtime, no una copia de arrastre obsoleta.
 - [ ] Auditar identidad por ID, apilamiento, límites y capacidad.
 - [ ] Probar durabilidad, consumibles, transferencia entre manos y equipamiento.
-- [~] Verificar restauración completa del inventario y compatibilidad con saves antiguos; carga de equipo ahora reemplaza y valida ranuras, falta ejecutar contratos y resolver slots guardados que superen la capacidad visible.
+- [~] Verificar restauración completa del inventario y compatibilidad con saves antiguos; carga de equipo reemplaza y valida ranuras, y los slots guardados extra ya son visibles mediante grupos de reserva. Falta ejecutar contratos y probar scroll en ventana real.
 - [ ] Unificar validaciones para recoger, soltar, intercambiar, usar y equipar.
 
 ### 3.3 Datos y modo sin conexión
