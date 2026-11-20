@@ -561,7 +561,7 @@ func _configurar_especie_eterium_game_desde_supabase() -> void:
 	if personaje_especie.is_empty() or str(personaje_especie.get("id", "")).strip_edges().is_empty():
 		_eterium_especie_resuelta = true
 		eterium.marcar_especie_configuracion_resuelta()
-	elif _supabase_client_ref.tiene_especie_eterium_game():
+	elif _supabase_client_ref.especie_eterium_game_esta_cargado():
 		_aplicar_especie_eterium_game(_supabase_client_ref.obtener_especie_eterium_game())
 		_eterium_especie_resuelta = true
 		eterium.marcar_especie_configuracion_resuelta()
