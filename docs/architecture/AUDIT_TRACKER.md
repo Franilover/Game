@@ -604,3 +604,16 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - La curiosidad individual modula ese umbral; la familiaridad no puede ordenar atacar, huir ni perseguir.
 - La evaluación de familiaridad se realiza después de las reglas ecológicas explícitas, que conservan prioridad.
 - Pruebas cubren investigación optativa y rechazo de respuestas agresivas. Pendiente CI de este cambio y validación visual.
+
+
+## Reconciliación de hoja de ruta P0/P1/P1-P2 — 2026-11-20
+
+- Revisión alineada con `docs/architecture/ROADMAP.md`; no se marcan fases completas por el mero hecho de que varios contratos pasen.
+- CI completo Godot 4.7: **success**, run [44699447898](https://github.com/Franilover/Game/actions/runs/44699447898), commit `49a25d51`; todos los pasos del workflow, incluida importación/compilación, terminaron correctamente.
+- P0: quedan verificados los contratos de repositorio de guardado/recuperación, snapshot roundtrip, normalización/restauración vital y ciclo de vida. Siguen abiertos la reanudación integral en escena, migraciones antiguas, interrupción real de filesystem y rutas de autosave/cierre.
+- P1 combate: contratos completos de las rutas auditadas pasan; siguen pendientes balance y prueba visual integrada.
+- P1 criaturas: percepción, memoria temporal individual, confianza opt-in, Utility AI, personalidad, escalado por agresión, familiaridad y recuperación local de obstáculos pasan CI. Siguen pendientes navegación global, validación visual, simulación fuera de rango y profiling.
+- P1 misiones: persistencia de progreso, finalización, entrega idempotente y rollback de recompensas pasan CI. Falta continuidad real de partida después de reclamar y recargar.
+- P1/P2 mundo: contratos de persistencia de props/keys, reset/registro de entidades, spawn/resume, viaje/retorno, terreno y kernel procedural pasan CI. Falta prueba de estrés de streaming, sesiones largas y reinos/interiores completos.
+- P1/P2 inventario: contratos de recogida, uso, crafting, equipamiento, overflow, hotbar, drops y roundtrip pasan CI. Saves antiguos, durabilidad/transferencia entre manos y verificación visual de scroll siguen abiertos.
+- La verificación CI es headless/contractual; no sustituye la comprobación visual en PC/Android ni una sesión real completa.
