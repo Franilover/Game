@@ -56,10 +56,10 @@
 - [x] Separar interpretación de objetos, construcción de ataques y efectos posteriores al impacto.
 - [x] Mantener `CombatDamage` como dueño de la reducción de salud en las rutas auditadas.
 - [x] Distinguir solicitud aceptada, contacto y daño real mediante `CombatAttackResult`.
-- [~] Defensa plana: Player aplica armadura equipada y Creature aplica `stats_dnd.defensa` antes de reducir salud; contrato de Creature ampliado. Resistencias/inmunidades por tipo siguen pendientes porque el contrato de ataque todavía no define tipos de daño.
-- [x] Ruta de daño IUM verificada mediante `CombatSystem.solicitar_danio_desde_entidad()` y el contrato de entidad; no se alteraron fórmulas IUM.
-- [~] Proyectiles de impacto único, objetivos derrotados e impactos simultáneos sobre un mismo objetivo están cubiertos. Se añadió una regresión de hitbox melee contra dos objetivos distintos y deduplicación del mismo objetivo; falta ejecutar CI y validar colisiones físicas en escena real.
-- [~] Cooldown, cancelación por atacante inválido (incluido jugador derrotado), interrupciones síncronas y atribución de daño tienen cobertura parcial en los contratos temporal, de entidad y de criatura; falta validación integrada en partida.
+- [~] Defensa plana: Player aplica armadura equipada y Creature aplica `stats_dnd.defensa`; los contratos de ambos pasan en Godot 4.7. Resistencias/inmunidades por tipo siguen pendientes porque el contrato de ataque todavía no define tipos de daño.
+- [x] Ruta de daño IUM verificada mediante `CombatSystem.solicitar_danio_desde_entidad()` y `CombatEntityAttackContract` en Godot 4.7; no se alteraron fórmulas IUM.
+- [~] Proyectiles de impacto único, objetivos derrotados, impactos simultáneos y melee contra varios objetivos pasan sus contratos en Godot 4.7. Falta validar colisiones físicas y barridos en escenas reales.
+- [~] Cooldown, cancelación por atacante inválido (incluido jugador derrotado), interrupciones síncronas y atribución de daño pasan sus contratos en Godot 4.7; falta validación integrada y balance en partida.
 - [~] Cubrir fisiología compartida, absorción y muerte al agotar Eterium en `PlayerVitalStateContract`; falta ampliar a todos los caminos.
 - [ ] Mantener el balance separado de la infraestructura.
 
