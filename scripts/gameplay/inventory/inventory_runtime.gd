@@ -47,6 +47,8 @@ func establecer_equipamiento(equipamiento: Dictionary) -> void:
 			equipment.equipar(clave, item_variant as Dictionary)
 
 func equipar(slot: String, item: Dictionary) -> void:
+	if not EquipmentState.es_objeto_compatible(slot, item):
+		return
 	equipment.equipar(slot, item)
 
 func desequipar(slot: String) -> Dictionary:
@@ -283,15 +285,13 @@ func _puede_apilar_con(a: Dictionary, b: Dictionary) -> bool:
 	return not nombre_a.is_empty() and nombre_a == nombre_b
 
 func equipar_desde_inventario(slot: String, indice: int, _item: Dictionary = {}) -> bool:
-	if slot.strip_edges().is_empty():
-		return false
 	if indice < 0 or indice >= state.items.size():
 		return false
 
 	# El slot del runtime es la fuente de verdad. La copia que entrega la UI
 	# puede haber quedado obsoleta durante un arrastre o una actualización.
 	var seleccionado: Dictionary = state.items[indice].duplicate(true)
-	if seleccionado.is_empty():
+	if not EquipmentState.es_objeto_compatible(slot, seleccionado):
 		return false
 
 	var anterior := equipment.obtener(slot)
