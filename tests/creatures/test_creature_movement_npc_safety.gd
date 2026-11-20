@@ -132,7 +132,6 @@ func _run() -> void:
 	# La recuperación de atasco también debe servir a criaturas normales,
 	# no sólo a los NPC de Torres. Se fuerza un obstáculo delante del cuerpo.
 	npc_a.remove_from_group("torres_game_npc")
-	npc_a.collision_mask = 1
 	var pared := StaticBody2D.new()
 	pared.collision_layer = 1
 	pared.position = npc_a.global_position + Vector2(24.0, -12.0)
@@ -155,7 +154,6 @@ func _run() -> void:
 	if desvio_criatura_repetido.distance_to(desvio_criatura) > 0.01:
 		errores.append("La criatura cambió de desvío repetidamente frente al mismo obstáculo.")
 	pared.queue_free()
-	npc_a.collision_mask = 0
 	npc_a.add_to_group("torres_game_npc")
 	await get_tree().process_frame
 
