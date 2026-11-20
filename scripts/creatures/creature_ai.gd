@@ -780,6 +780,32 @@ func _actualizar_percepcion() -> void:
 		ultima_posicion_objetivo = objetivo.global_position
 		_hay_ultima_posicion_objetivo = true
 
+	_registrar_avistamientos_cercanos(deteccion)
+
+
+func _registrar_avistamientos_cercanos(radio: float) -> void:
+	var memoria := _obtener_config_memoria_interaccion()
+	if not bool(memoria.get("activo", false)) or criatura == null:
+		return
+	var intensidad := CreatureUtilityAIScript.leer_numero(memoria, "familiaridad_por_avistamiento", 0.25)
+	var duracion := CreatureUtilityAIScript.leer_numero(memoria, "duracion_familiaridad", 120.0)
+	var intervalo := CreatureUtilityAIScript.leer_numero(memoria, "intervalo_avistamiento", 4.0)
+	for candidato in _obtener_candidatos_entidad():
+		if candidato == null or not is_instance_valid(candidato) or candidato == criatura:
+			continue
+		if not candidato.is_inside_tree() or candidato.is_queued_for_deletion():
+			continue
+		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
+			continue
+		if criatura.global_position.distance_squared_to(candidato.global_position) > radio * radio:
+			continue
+		_memoria_interaccion.registrar_avistamiento(
+			candidato,
+			intensidad,
+			duracion,
+			intervalo
+		)
+
 
 func _obtener_candidatos_entidad() -> Array[Node2D]:
 	return CreaturePerceptionScript.obtener_candidatos(
