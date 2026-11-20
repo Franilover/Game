@@ -1273,3 +1273,8 @@ Se auditó la ruta GameStateService → PlayerState → Player.restaurar_estado_
 - test_player_state_vital_persistence_contract cubre migración legacy, límites, reservas compartidas inconsistentes, salud cero y serialización de ida y vuelta. La prueba está añadida, pero aún no se ha ejecutado en Godot.
 
 Límite de esta pasada: no se ha validado todavía el orden de carga completo con datos reales de especie/Supabase, ni la recuperación ante interrupciones reales del proceso. La muerte sigue sin ser un snapshot guardable: guardar_partida() y el guardado de Historia rechazan al jugador muerto.
+
+
+### Validación estructural de partidas
+
+Se añadió validación del contrato de save en GameState, separada de la validación JSON de SaveFileRepository. Al listar o iniciar una partida se rechazan IDs internos que no coinciden, estructuras de estado no Dictionary, snapshots anidados con tipos incorrectos y versiones futuras. Los saves legacy sin campo version se interpretan como versión 1. Se añadió test_game_state_save_payload_contract; pendiente de ejecución.
