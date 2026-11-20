@@ -661,6 +661,20 @@ jobs:
             echo "Full GameState restart test did not report PASS."
             exit 1
           fi
+      - name: Run full Hogar interior restart across independent processes
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 180s godot --headless --path . res://tests/persistence/test_home_process_restart.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|HomeProcessRestart: FAIL:' <<<"$output"; then
+            echo "Hogar process restart integration reported errors."
+            exit 1
+          fi
+          if ! grep -q 'HomeProcessRestart: PASS' <<<"$output"; then
+            echo "Hogar process restart integration did not report PASS."
+            exit 1
+          fi
       - name: Run independent process save restart contract test
         run: |
           output="$(timeout 45s godot --headless --path . --script res://tests/persistence/test_save_process_restart.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
