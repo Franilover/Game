@@ -55,6 +55,7 @@
 ### 2.1 Combate
 - [x] Separar interpretación de objetos, construcción de ataques y efectos posteriores al impacto.
 - [x] Mantener `CombatDamage` como dueño de la reducción de salud en las rutas auditadas.
+- [~] Cada impacto devuelve daño efectivo aislado de señales reentrantes; CombatSystem, proyectiles, feedback y robo de vida consumen el resultado real. Contratos añadidos a CI, pendiente validar el workflow.
 - [x] Distinguir solicitud aceptada, contacto y daño real mediante `CombatAttackResult`.
 - [~] Defensa plana: Player aplica armadura equipada y Creature aplica `stats_dnd.defensa`; los contratos de ambos pasan en Godot 4.7. Resistencias/inmunidades por tipo siguen pendientes porque el contrato de ataque todavía no define tipos de daño.
 - [x] Ruta de daño IUM verificada mediante `CombatSystem.solicitar_danio_desde_entidad()` y `CombatEntityAttackContract` en Godot 4.7; no se alteraron fórmulas IUM.
