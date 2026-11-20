@@ -471,6 +471,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run inventory overflow UI restoration contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/inventory/test_inventory_overflow_ui.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|InventoryOverflowUI: FAIL:' <<<"$output"; then
+            echo "Inventory overflow UI test reported errors."
+            exit 1
+          fi
+
       - name: Run hotbar runtime selection synchronization regression
         shell: bash
         run: |
