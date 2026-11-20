@@ -176,6 +176,8 @@ func confirmar_costo_carrera(cantidad: int) -> bool:
 	return true
 
 func calcular_curacion(delta: float) -> Dictionary:
+	# En fisiología compartida, salud y Eterium son la misma reserva:
+	# cobrar Eterium para curar consumiría la propia vida.
 	if (
 		not runtime_ready
 		or vital_state == null
