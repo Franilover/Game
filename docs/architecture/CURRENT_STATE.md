@@ -1477,3 +1477,16 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Los Garumis siguen excluidos de esta memoria; no se conectó `RelationshipSystem` ni se cambió el canon.
 - `CreatureAITargetPolicy` añade pruebas de acumulación limitada por intervalo, decaimiento, exclusión de Garumis e integración del avistamiento con la percepción.
 - CI de esta ampliación pendiente; todavía falta validar visualmente el ritmo de familiaridad en una partida con varias criaturas.
+
+
+## Relaciones individuales de criaturas: confianza y Utility AI (2026-11-20)
+
+- `CreatureInteractionMemory` ahora mantiene tres dimensiones separadas por individuo: agresión recibida, familiaridad por avistamientos e interacciones positivas explícitas.
+- La relación se deriva de esos valores (`desconocido`, `conocido`, `desconfiado`, `hostil`, `confiable`); no se persiste como etiqueta global y la agresión prevalece ante confianza contradictoria.
+- La confianza sólo puede aumentar mediante `registrar_interaccion_positiva`, y el punto de entrada de `CreatureAI` exige `memoria_interaccion.activo` y `aceptar_interacciones_positivas=true`. No se conecta a proximidad ni a diálogo automáticamente.
+- Utility AI puntúa la confianza y, si la especie lo habilita, sólo puede traducirla en `investigar`. No permite que la confianza ordene atacar o perseguir. Los recuerdos hostiles conservan prioridad.
+- Agresión, familiaridad y confianza tienen límites, decaimiento/expiración y comparten un máximo de 16 individuos por criatura.
+- La percepción reutiliza la lista de candidatos para registrar avistamientos, evitando una segunda consulta al gestor de entidades en el mismo tick cuando hay candidatos.
+- Pruebas ampliadas para relaciones derivadas, confianza explícita, precedencia de hostilidad, respuesta `investigar` y rechazo de respuestas agresivas por confianza.
+- Límite: todavía no existe un evento de juego confirmado que deba llamar a `registrar_interaccion_positiva`; el punto de integración queda preparado, pero no se finge que hablar o estar cerca sea una interacción positiva. Tampoco se han añadido vínculos entre grupos, parentesco ni memoria persistente.
+- CI de la serie de cambios en curso; un run anterior falló por una expectativa de prueba corregida en el commit `38a90f8`. Validación visual y medición de rendimiento en partida siguen pendientes.
