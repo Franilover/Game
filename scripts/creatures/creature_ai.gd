@@ -2,6 +2,7 @@ extends Node
 class_name CreatureAI
 
 const CreaturePerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
+const CreatureTargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
 
 
 signal estado_cambiado(anterior: int, nuevo: int)
@@ -805,33 +806,22 @@ func _refrescar_objetivo() -> void:
 			objetivo = refugio
 			return
 
-	var candidatos: Array[Node2D] = []
-	for candidato in _obtener_candidatos_entidad():
-		# Los Garumis no participan en relaciones depredador/presa ni en
-		# persecuciones hostiles: son entidades sociales autónomas.
-		if candidato.is_in_group("garumis"):
-			continue
-		var es_jugador_conectado := candidato.is_in_group("player") or candidato == jugador
-		if not es_jugador_conectado and not _es_objetivo_permitido(candidato):
-			continue
-		if "is_alive" in candidato and not bool(candidato.get("is_alive")):
-			continue
+	objetivo = CreatureTargetSelectorScript.seleccionar_mas_cercano(
+		criatura,
+		_obtener_candidatos_entidad(),
+		Callable(self, "_es_candidato_objetivo_valido")
+	)
 
-		# Ser visible no convierte a una entidad en objetivo. Sólo se eligen
-		# candidatos para los que la especie tiene una respuesta ejecutable.
-		var respuesta := _obtener_respuesta_para_objetivo(candidato)
-		if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
-			continue
-		candidatos.append(candidato)
 
-	var mejor: Node2D = null
-	var mejor_distancia: float = INF
-	for candidato in candidatos:
-		var distancia := criatura.global_position.distance_to(candidato.global_position)
-		if distancia < mejor_distancia:
-			mejor_distancia = distancia
-			mejor = candidato
-	objetivo = mejor
+
+func _es_candidato_objetivo_valido(candidato: Node2D) -> bool:
+	# La percepción puede incluir Garumis, pero la política hostil nunca.
+	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
+		return false
+	var es_jugador_conectado := candidato.is_in_group("player") or candidato == jugador
+	if not es_jugador_conectado and not _es_objetivo_permitido(candidato):
+		return false
+	return _obtener_respuesta_para_objetivo(candidato) in ["atacar", "huir", "perseguir", "investigar"]
 
 
 func _es_reactivo_bosque() -> bool:
