@@ -143,6 +143,7 @@ func curar_con_eterium(cantidad: int) -> int:
 	if recuperada > 0:
 		health_changed.emit(health, max_health)
 		salud_combate_cambiada.emit(health, max_health)
+		_persistir_estado_vinculo()
 	return recuperada
 
 
@@ -275,8 +276,13 @@ func configurar(datos_garumi: Dictionary) -> void:
 	datos["nivel"] = nivel
 	datos["experiencia_total"] = experiencia_total
 	datos["eterium_actual"] = eterium_actual
+	var salud_guardada := clampi(
+		int(datos_separados.get("health", max_health)),
+		0,
+		max_health
+	)
 	vital_state.configurar(max_health, max_mana)
-	_sync_desde_vital()
+	restaurar_estado_vital(salud_guardada, salud_guardada > 0)
 	_configurar_cerebro_garumi()
 
 
@@ -490,6 +496,7 @@ func obtener_datos_amistad() -> Dictionary:
 	registro["nivel"] = nivel
 	registro["experiencia_total"] = experiencia_total
 	registro["eterium_actual"] = eterium_actual
+	registro["health"] = health
 	registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", criatura_nombre)))
 	return registro
 
@@ -675,6 +682,7 @@ func obtener_datos_persistencia_vinculo() -> Dictionary:
 	registro["nivel"] = nivel
 	registro["experiencia_total"] = experiencia_total
 	registro["eterium_actual"] = eterium_actual
+	registro["health"] = health
 	registro["position_x"] = global_position.x
 	registro["position_y"] = global_position.y
 	registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", criatura_nombre)))
@@ -799,6 +807,7 @@ func recibir_danio_combate(cantidad: int, atacante: Node = null) -> void:
 	health_changed.emit(health, max_health)
 	salud_combate_cambiada.emit(health, max_health)
 	print("Garumi: ", criatura_nombre, " recibe ", danio_real, " de daño en combate | ", health, "/", max_health)
+	_persistir_estado_vinculo()
 	if health <= 0:
 		print("Garumi: ", criatura_nombre, " fue derrotado en combate.")
 
