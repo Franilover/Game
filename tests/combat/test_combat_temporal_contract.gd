@@ -385,6 +385,17 @@ func _probar_impactos_simultaneos_y_atacante_invalido(errores: Array[String]) ->
 		errores.append("Se aceptó un atacante Entity que todavía no pertenece al árbol.")
 	if CombatTargeting.es_objetivo_valido(atacante_fuera_arbol, objetivo):
 		errores.append("La validación de objetivo ignoró un atacante fuera del árbol.")
+	objetivo.restaurar_estado_vital(5, true)
+	var resultado_fuera_arbol := combate.solicitar_danio_desde_entidad(
+		atacante_fuera_arbol,
+		objetivo,
+		5,
+		"Prueba/AtacanteFueraDelArbol"
+	)
+	if resultado_fuera_arbol.solicitud_aceptada:
+		errores.append("La ruta de IA aceptó un atacante fuera del árbol.")
+	if objetivo.health != 5:
+		errores.append("Un atacante fuera del árbol alteró la salud del objetivo.")
 	atacante_fuera_arbol.free()
 
 	for proyectil in proyectiles:
