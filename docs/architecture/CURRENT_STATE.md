@@ -1305,3 +1305,8 @@ La validación estructural se amplió también a metadata superior (versión, mu
 Se corrigió INV-03 sin recortar ni migrar destructivamente el snapshot. La UI ahora aloja la cuadrícula dentro de un `ScrollContainer` y organiza los grupos de seis ranuras en una cuadrícula de tres columnas. Al cargar una partida, calcula los grupos visibles con `max(slot_count, items.size())`: conserva las tres secciones originales (mano izquierda, mochila, mano derecha) y añade grupos `RESERVA N` para las ranuras adicionales. Así, objetos en índices superiores a 17 permanecen accesibles, seleccionables y movibles sin alterar el formato del save ni la prioridad de inserción del runtime.
 
 Se añadió `test_inventory_overflow_ui`, que instancia la escena real, carga 30 ranuras y comprueba que existan 30 controles y cinco grupos con índices visuales consecutivos. El test quedó integrado en el workflow; ejecución pendiente de confirmación.
+
+
+## Transiciones de zona — preparación segura del destino — 2026-11-20
+
+`ZoneManager._cambiar_zona()` ahora carga e instancia la escena destino antes de retirar la zona activa. Si la ruta no existe o la escena no puede instanciarse, cancela la transición y libera el bloqueo `_transicionando`, conservando la zona actual. Se amplió `test_zone_manager_torres_fallback` para probar una ruta inexistente con una zona previa activa y luego comprobar que Torres sigue siendo accesible sin catálogo remoto. El contrato está en el workflow de pruebas de mundo; ejecución pendiente.
