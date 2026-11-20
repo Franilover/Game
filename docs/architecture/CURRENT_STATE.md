@@ -1215,3 +1215,8 @@ La interacción principal de Garumi ahora deriva al diálogo heredado de Creatur
 - `test_creature_ai_target_policy` cubre selección hostil, seguimiento ecológico y objetivo de liberación con un Garumi real.
 - `test_combat_entity_attack_contract` verifica el rechazo explícito de un Garumi tanto desde `CombatSystem` como mediante una llamada directa a `CombatDamage`, sin contacto ni alteración vital.
 - La IA de criaturas continúa usando el mismo resolver central; los ataques especializados no aplican daño directamente.
+
+
+## Interrupción de muerte al reaparecer — 2026-11-20
+
+Se corrigió una carrera temporal: la animación de muerte podía seguir activa después de una reaparición rápida y volver a modificar la transparencia o escala del jugador. `Player` ahora conserva y cancela el tween anterior tanto en reaparición local como en reaparición de red. La regresión de `test_combat_temporal_contract` comprueba vida, procesamiento físico, estado IDLE, acción/cooldown reiniciados y presentación estable tras 0,4 s.
