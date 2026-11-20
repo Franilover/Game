@@ -57,3 +57,19 @@ func from_dictionary(data: Dictionary) -> void:
 			float((facing_data as Dictionary).get("x", 0.0)),
 			float((facing_data as Dictionary).get("y", 1.0))
 		)
+
+## Limita las reservas a las capacidades runtime.
+## En fisiología compartida conserva la menor reserva para no conceder
+## salud o Eterium extra cuando un save antiguo/corrupto contiene valores distintos.
+func normalizar_reservas_vitales(
+	max_health: int,
+	max_mana: int,
+	vida_eterium_compartidos: bool
+) -> Dictionary:
+	var vida_segura := clampi(health, 0, maxi(max_health, 0))
+	var mana_seguro := clampi(mana, 0, maxi(max_mana, 0))
+	if vida_eterium_compartidos:
+		var reserva_compartida := mini(vida_segura, mana_seguro)
+		vida_segura = reserva_compartida
+		mana_seguro = reserva_compartida
+	return {"health": vida_segura, "mana": mana_seguro}
