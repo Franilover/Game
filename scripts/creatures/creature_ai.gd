@@ -1179,11 +1179,16 @@ func _obtener_respuesta_memoria(candidato: Node2D) -> String:
 		if respuesta_agresion in ["atacar", "huir", "perseguir", "investigar"]:
 			return respuesta_agresion
 	var umbral_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "umbral_confianza", 1.0), 0.0)
+	var personalidad := _obtener_personalidad_individual()
 	var peso_confianza := maxf(CreatureUtilityAIScript.leer_numero(memoria, "peso_respuesta_confianza", 0.5), 0.0)
 	var puntuacion_confianza := CreatureUtilityAIScript.puntuar_urgencia(
 		_memoria_interaccion.obtener_confianza(candidato),
 		umbral_confianza,
 		peso_confianza
+	)
+	puntuacion_confianza = CreatureUtilityAIScript.aplicar_preferencia(
+		puntuacion_confianza,
+		CreatureUtilityAIScript.leer_numero(personalidad, "curiosidad", 0.0)
 	)
 	if puntuacion_confianza > 0.0 and bool(memoria.get("aceptar_interacciones_positivas", false)):
 		var respuesta_confianza := str(memoria.get("respuesta_confianza", "investigar")).strip_edges().to_lower()
@@ -1323,6 +1328,12 @@ func _publicar_actividad_rutina() -> void:
 	_actualizar_atraccion_refugio(actividad_horaria in ["proteger", "atraer"])
 
 
+func _obtener_personalidad_individual() -> Dictionary:
+	if criatura == null or not is_instance_valid(criatura):
+		return {}
+	var personalidad: Variant = criatura.datos.get("personalidad", {})
+	return personalidad if personalidad is Dictionary else {}
+
 func _obtener_config_necesidades() -> Dictionary:
 	var valor: Variant = configuracion_ia.get("necesidades", {})
 	return valor.duplicate(true) if valor is Dictionary else {}
@@ -1372,16 +1383,26 @@ func _aplicar_prioridad_necesidades() -> void:
 	# Los pesos permiten modular urgencias sin cambiar sus umbrales fisiológicos.
 	var puntuaciones: Dictionary = {}
 	if puede_recuperar and actividad_descanso in ["reposar", "dormir"] and _fatiga_actual >= umbral_fatiga:
-		puntuaciones["descansar"] = CreatureUtilityAIScript.puntuar_urgencia(
+		var puntuacion_descanso := CreatureUtilityAIScript.puntuar_urgencia(
 			_fatiga_actual,
 			umbral_fatiga,
 			CreatureUtilityAIScript.leer_numero(necesidades, "peso_prioridad_fatiga", 1.0)
 		)
+		var personalidad := _obtener_personalidad_individual()
+		puntuaciones["descansar"] = CreatureUtilityAIScript.aplicar_preferencia(
+			puntuacion_descanso,
+			CreatureUtilityAIScript.leer_numero(personalidad, "preferencia_descanso", 0.0)
+		)
 	if actividad_comida == "alimentarse" and not _obtener_ids_alimento().is_empty() and _hambre_actual >= umbral_hambre:
-		puntuaciones["alimentarse"] = CreatureUtilityAIScript.puntuar_urgencia(
+		var puntuacion_comida := CreatureUtilityAIScript.puntuar_urgencia(
 			_hambre_actual,
 			umbral_hambre,
 			CreatureUtilityAIScript.leer_numero(necesidades, "peso_prioridad_hambre", 1.0)
+		)
+		var personalidad := _obtener_personalidad_individual()
+		puntuaciones["alimentarse"] = CreatureUtilityAIScript.aplicar_preferencia(
+			puntuacion_comida,
+			CreatureUtilityAIScript.leer_numero(personalidad, "preferencia_alimentacion", 0.0)
 		)
 
 	match CreatureUtilityAIScript.seleccionar_accion(puntuaciones):
