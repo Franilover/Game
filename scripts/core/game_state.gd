@@ -30,6 +30,7 @@ var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
+var _esperando_configuracion_eterium_jugador: bool = false
 var _inventory: GarliaInventory = null
 var _player: Player = null
 var _world_context: WorldContext = null
@@ -1262,12 +1263,35 @@ func _revisar_escena_actual() -> void:
 	elif active_save_id.is_empty() or _partida_aplicada_en_escena:
 		return
 
-	# GameState no depende del generador de mundo.
-	# Main configura esta dependencia después de que el mundo está listo.
+	# Las capacidades/fisiología deben estar resueltas antes de normalizar reservas.
+	# Main inyecta el Player y éste avisa cuando terminó de cargar runtime y especie.
+	if not jugador_listo_para_restaurar():
+		return
 	_aplicar_estado_al_juego()
 
 
 func _al_mundo_generado_para_aplicar() -> void:
+	call_deferred("_revisar_escena_actual")
+
+
+func jugador_listo_para_restaurar() -> bool:
+	if _player == null or not is_instance_valid(_player):
+		return false
+	if not _player.has_method("esta_listo_para_restaurar_estado"):
+		return true
+	if bool(_player.call("esta_listo_para_restaurar_estado")):
+		_esperando_configuracion_eterium_jugador = false
+		return true
+	if not _esperando_configuracion_eterium_jugador and _player.has_signal("configuracion_eterium_lista"):
+		_esperando_configuracion_eterium_jugador = true
+		var callback := Callable(self, "_al_estar_lista_configuracion_eterium")
+		if not _player.is_connected("configuracion_eterium_lista", callback):
+			_player.connect("configuracion_eterium_lista", callback, CONNECT_ONE_SHOT)
+	return false
+
+
+func _al_estar_lista_configuracion_eterium() -> void:
+	_esperando_configuracion_eterium_jugador = false
 	call_deferred("_revisar_escena_actual")
 
 
