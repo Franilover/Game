@@ -1210,6 +1210,7 @@ La interacción principal de Garumi ahora deriva al diálogo heredado de Creatur
 ## Frontera de objetivos de combate — 2026-11-20
 
 - `CombatSystem.solicitar_danio_desde_entidad()` rechaza objetivos fuera del grupo `damageable` antes de registrar contacto; heredar de `Entity` o conservar `is_alive=true` no concede permiso de combate.
+- `CombatDamage.aplicar()` vuelve a comprobar `damageable` como última frontera, incluso si un llamador omite `CombatTargeting`.
 - `CreatureAI` excluye a los Garumis de respuestas hostiles aunque aparezcan en el registro general de entidades o tengan relaciones ecológicas configuradas.
-- `test_combat_entity_attack_contract` verifica el rechazo explícito de un Garumi, sin evento de contacto ni daño.
+- `test_combat_entity_attack_contract` verifica el rechazo explícito de un Garumi tanto desde `CombatSystem` como mediante una llamada directa a `CombatDamage`, sin contacto ni alteración vital.
 - La IA de criaturas continúa usando el mismo resolver central; los ataques especializados no aplican daño directamente.
