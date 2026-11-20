@@ -128,6 +128,11 @@ func _run() -> void:
 	if memoria.cantidad_recuerdos() != 0:
 		_fail("La memoria conservó recuerdos después de expirar.")
 		return
+	memoria.registrar_agresion(player, 1.0, 8.0)
+	memoria.limpiar()
+	if memoria.cantidad_recuerdos() != 0:
+		_fail("La limpieza explícita no eliminó los recuerdos.")
+		return
 	otro_actor.queue_free()
 	garumi_recordado.queue_free()
 
@@ -196,9 +201,10 @@ func _run() -> void:
 	actor.criatura_nombre = "Criatura neutral"
 	ai.perfil = AIScript.Perfil.GENERICO
 	ai.configuracion_ia = {}
-	ai._memoria_interaccion = InteractionMemoryScript.new()
+	ai._actualizar_memoria_interaccion(0.1)
+	ai.configuracion_ia = {"memoria_interaccion": {"activo": true, "respuesta_agresion": "huir"}}
 	if ai._obtener_respuesta_para_objetivo(player) != "perseguir":
-		_fail("La memoria cambió el comportamiento cuando estaba desactivada.")
+		_fail("Una memoria desactivada volvió a influir al reactivar la función.")
 		return
 
 	# Lignianos debe fallar de forma segura: si Supabase/snapshot no
