@@ -6,6 +6,7 @@ const CombatProjectileScript = preload("res://scripts/gameplay/combat/combat_pro
 const CombatAttackAreaScript = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
 const PlayerScene = preload("res://scenes/characters/player.tscn")
+const InventoryScene = preload("res://scenes/ui/inventory.tscn")
 const InventoryControllerScript = preload("res://scripts/gameplay/inventory/inventory_controller.gd")
 const EteriumRuntimeScript = preload("res://scripts/gameplay/player/player_eterium_runtime.gd")
 const VitalStateScript = preload("res://scripts/state/vital_state.gd")
@@ -20,6 +21,7 @@ func _run() -> void:
 	_probar_durabilidad_en_mano_correcta(errores)
 	await _probar_direccion_de_ataque_recibida(errores)
 	await _probar_contacto_independiente_del_danio(errores)
+	await _probar_danio_jugador_con_armadura(errores)
 	_probar_pausa_recuperacion_eterium(errores)
 
 	if not errores.is_empty():
@@ -228,6 +230,95 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 	atacante.queue_free()
 	objetivo.queue_free()
 	combate.queue_free()
+	await get_tree().process_frame
+
+
+func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
+	# La escena real de inventario alimenta el mismo contrato que usa Player.
+	var jugador := PlayerScene.instantiate() as Player
+	var inventario := InventoryScene.instantiate() as GarliaInventory
+	get_tree().root.add_child(jugador)
+	get_tree().root.add_child(inventario)
+	await get_tree().process_frame
+	jugador.configurar_dependencias(inventario)
+
+	var armadura := {
+		"id": "armor_test",
+		"tipo": "armadura",
+		"propiedades_game": {"ranura_equipamiento": "torso"},
+		"estadisticas": {"defensa": 3}
+	}
+	inventario.inventory_controller.runtime.equipar("torso", armadura)
+
+	var muertes_normales := {"cantidad": 0}
+	jugador.died.connect(func() -> void:
+		muertes_normales["cantidad"] = int(muertes_normales["cantidad"]) + 1
+	)
+
+	jugador.take_damage(10, "Prueba/Armadura")
+	if jugador.health != 93:
+		errores.append("Player no aplicó la defensa equipada al daño normal.")
+	if int(muertes_normales["cantidad"]) != 0:
+		errores.append("Un impacto no letal emitió la muerte del jugador.")
+
+	# Un golpe letal debe sincronizar el estado y emitir la muerte una sola vez.
+	jugador.restaurar_estado_vital(4, true)
+	jugador.take_damage(10, "Prueba/MuerteNormal")
+	jugador.take_damage(10, "Prueba/MuerteRepetida")
+	if jugador.health != 0 or jugador.is_alive:
+		errores.append("El daño letal no dejó al jugador normal en estado muerto.")
+	if int(muertes_normales["cantidad"]) != 1:
+		errores.append("La ruta de vida normal emitió la muerte más de una vez.")
+
+	jugador.queue_free()
+	inventario.queue_free()
+	await get_tree().process_frame
+
+	# Repetir el recorrido con vida y Eterium compartidos.
+	var jugador_compartido := PlayerScene.instantiate() as Player
+	var inventario_compartido := InventoryScene.instantiate() as GarliaInventory
+	get_tree().root.add_child(jugador_compartido)
+	get_tree().root.add_child(inventario_compartido)
+	await get_tree().process_frame
+	jugador_compartido.configurar_dependencias(inventario_compartido)
+	jugador_compartido.eterium.aplicar_runtime(
+		{"limite_estable_s": 100.0, "escala_runtime": 1.0},
+		[]
+	)
+	if not jugador_compartido.eterium.aplicar_especie(
+		{
+			"especie_eterium_v1": {
+				"especie_id": "shared_test",
+				"capacidad_base": 100
+			},
+			"vida_eterium_compartidos": true
+		},
+		"shared_test"
+	):
+		errores.append("No pudo configurar la fisiología de vida/Eterium compartidos.")
+		jugador_compartido.queue_free()
+		inventario_compartido.queue_free()
+		await get_tree().process_frame
+		return
+
+	inventario_compartido.inventory_controller.runtime.equipar("torso", armadura)
+	jugador_compartido.eterium.establecer_mana(4)
+	var muertes_compartidas := {"cantidad": 0}
+	jugador_compartido.died.connect(func() -> void:
+		muertes_compartidas["cantidad"] = int(muertes_compartidas["cantidad"]) + 1
+	)
+
+	jugador_compartido.take_damage(10, "Prueba/MuerteEterium")
+	jugador_compartido.take_damage(10, "Prueba/MuerteEteriumRepetida")
+	if jugador_compartido.mana != 0 or jugador_compartido.health != 0:
+		errores.append("La ruta compartida no sincronizó Eterium y vida al recibir daño.")
+	if jugador_compartido.is_alive:
+		errores.append("La ruta compartida no marcó muerto al agotar Eterium.")
+	if int(muertes_compartidas["cantidad"]) != 1:
+		errores.append("La ruta compartida emitió la muerte más de una vez.")
+
+	jugador_compartido.queue_free()
+	inventario_compartido.queue_free()
 	await get_tree().process_frame
 
 
