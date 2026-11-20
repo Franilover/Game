@@ -45,7 +45,7 @@ func _run() -> void:
 		errores.append("limpiar_todo dejó entidades globales registradas.")
 
 	manager.free()
-	replica_criatura.free()
+	await get_tree().process_frame
 	replica_prop.free()
 
 	if not errores.is_empty():
