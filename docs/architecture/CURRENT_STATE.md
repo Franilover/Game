@@ -1220,3 +1220,8 @@ La interacción principal de Garumi ahora deriva al diálogo heredado de Creatur
 ## Interrupción de muerte al reaparecer — 2026-11-20
 
 Se corrigió una carrera temporal: la animación de muerte podía seguir activa después de una reaparición rápida y volver a modificar la transparencia o escala del jugador. `Player` ahora conserva y cancela el tween anterior tanto en reaparición local como en reaparición de red. La regresión de `test_combat_temporal_contract` comprueba vida, procesamiento físico, estado IDLE, acción/cooldown reiniciados y presentación estable tras 0,4 s.
+
+
+## Cancelación de ataques tras la muerte del atacante — 2026-11-20
+
+La ejecución melee y a distancia ahora depende de `CombatTargeting.es_atacante_valido()`: atacante de tipo Entity, válido, dentro del árbol y vivo. Hitboxes y proyectiles se cancelan al detectar que el atacante murió, y vuelven a validar antes de procesar un objetivo. CombatSystem protege también los callbacks de contacto/impacto, evitando efectos posteriores de un ataque interrumpido. `test_combat_temporal_contract` comprueba cancelación melee/proyectil, ausencia de señales y ausencia de daño.
