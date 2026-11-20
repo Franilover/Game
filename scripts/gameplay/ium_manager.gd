@@ -17,11 +17,17 @@ var proceso_equipado: Dictionary = {}
 var _jugador_id: String = ""
 var _repository: IUMRepository = null
 var _player: Node = null
+var _combat_system: CombatSystem = null
 
 
-func configurar(repository: IUMRepository, jugador: Node = null) -> void:
+func configurar(
+	repository: IUMRepository,
+	jugador: Node = null,
+	combat_system: CombatSystem = null
+) -> void:
 	_repository = repository
 	_player = jugador
+	_combat_system = combat_system
 	if _repository == null:
 		push_error("IUMManager: IUMRepository no configurado.")
 		return
@@ -121,13 +127,33 @@ func usar_proceso_equipado(objetivo: Node = null) -> void:
 
 	match efecto:
 		"daño", "damage":
-			if objetivo != null and objetivo.has_method("take_damage"):
-				objetivo.call("take_damage", int(magnitud))
+			if _combat_system == null or not is_instance_valid(_combat_system):
+				error_ium.emit("El sistema de combate no está disponible para resolver el proceso.")
+				return
+			if _player == null or not is_instance_valid(_player) or not objetivo is Entity:
+				error_ium.emit("El proceso necesita un objetivo válido.")
+				return
+			var resultado := _combat_system.solicitar_danio_desde_entidad(
+				_player,
+				objetivo as Entity,
+				int(magnitud),
+				"IUM/Proceso:" + nombre
+			)
+			if not resultado.solicitud_aceptada:
+				error_ium.emit("No se pudo aplicar el proceso al objetivo.")
+				return
 		"curar", "heal":
-			if _player != null and _player.has_method("heal"):
-				_player.call("heal", int(magnitud))
+			if _player == null or not is_instance_valid(_player) or not _player.has_method("heal"):
+				error_ium.emit("El jugador no puede recibir curación.")
+				return
+			_player.call("heal", int(magnitud))
 		"slow":
-			if objetivo != null and objetivo.has_method("aplicar_efecto_slow"):
-				objetivo.call("aplicar_efecto_slow", magnitud)
+			if objetivo == null or not is_instance_valid(objetivo) or not objetivo.has_method("aplicar_efecto_slow"):
+				error_ium.emit("El objetivo no admite este efecto.")
+				return
+			objetivo.call("aplicar_efecto_slow", magnitud)
+		_:
+			error_ium.emit("Efecto IUM no compatible: " + efecto)
+			return
 
 	Events.notification_pushed.emit("Proceso usado: " + nombre)
