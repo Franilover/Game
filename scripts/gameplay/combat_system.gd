@@ -512,7 +512,10 @@ func _aplicar_danio(
 	atacante: Node = null,
 	arma: Dictionary = {}
 ) -> bool:
-	if objetivo == null or not is_instance_valid(objetivo):
+	var actor: Node = atacante
+	if actor == null:
+		actor = player
+	if not CombatTargeting.es_objetivo_valido(actor, objetivo):
 		return false
 
 	var aplicado := CombatDamage.aplicar(
@@ -520,14 +523,10 @@ func _aplicar_danio(
 		danio,
 		"Jugador/CombatSystem:" + origen,
 		Callable(),
-		atacante
+		actor
 	)
 	if not aplicado:
 		return false
-
-	var actor: Node = atacante
-	if actor == null:
-		actor = player
 
 	COMBAT_IMPACT_EFFECTS.procesar_impacto_confirmado(
 		game_state,
@@ -579,6 +578,11 @@ func solicitar_danio_desde_entidad(
 	# La IA llama esta API después de confirmar su contacto. El evento se
 	# registra incluso si el daño resultante es cero.
 	contacto_efectivo.emit(atacante, objetivo, origen)
+
+	# El contacto emite señales síncronas: sus listeners pueden derrotar al
+	# atacante o al objetivo antes de que esta solicitud aplique daño.
+	if not CombatTargeting.es_objetivo_valido(atacante, objetivo):
+		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 	if danio <= 0:
 		return COMBAT_ATTACK_RESULT.aceptado(true, false)
 
