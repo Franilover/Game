@@ -1,6 +1,7 @@
 extends Node
 
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
+const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
 
 
 func _ready() -> void:
@@ -59,7 +60,15 @@ func _run() -> void:
 	var atacante := Node2D.new()
 	get_tree().root.add_child(atacante)
 	var salud_antes := criatura.health
-	criatura.take_damage_desde(atacante, 7, "Prueba/SenalDanio")
+	var danio_aplicado := CombatDamageScript.aplicar(
+		criatura,
+		7,
+		"Prueba/SenalDanio",
+		Callable(),
+		atacante
+	)
+	if not danio_aplicado:
+		errores.append("CombatDamage no confirmó la reducción real de salud de Creature.")
 
 	if criatura.health != salud_antes - 4:
 		errores.append("Creature no aplicó su defensa antes de reducir la salud.")
