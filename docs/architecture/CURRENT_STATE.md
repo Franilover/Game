@@ -194,15 +194,13 @@ La hotbar continúa siendo selección independiente del equipamiento. Equipar un
 
 El Player también es una dependencia inyectada en la UI de inventario para usos de objetos y pestañas administrativas; ya no se descubre mediante grupos.
 
-## Cuarta etapa — Combat ↔ Equipment
+## Cuarta etapa — Combat ↔ Inventory hands
 
-CombatSystem ya consume el arma desde InventoryController.obtener_objeto_equipado().
+La implementación actual lee el objeto de la mano izquierda (slots 0–5) para la acción primaria y de la mano derecha (slots 12–17) para la secundaria. La hotbar (slots 6–11) no decide qué arma se usa.
 
-La selección de hotbar ya no define el arma utilizada por el ataque primario.
+La durabilidad de las herramientas se descuenta del slot de mano que ejecutó la acción.
 
-La durabilidad de las herramientas usadas por combate se descuenta desde el equipamiento.
-
-El slot actual de combate es mano_secundaria, coincidiendo con el slot de equipamiento existente en la UI.
+Las ranuras de Equipment visibles en la UI son cabeza, torso y pies; CreatureAI consulta esas ranuras para la armadura. El código de combate conserva todavía una ruta privada antigua para consultar armas equipadas que no participa en el flujo activo y debe eliminarse sólo después de verificar todos sus consumidores.
 
 
 ### Limpieza estructural
