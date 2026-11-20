@@ -117,6 +117,28 @@ func _run() -> void:
 	if not is_equal_approx(defensa_catalogo, 6.0):
 		errors.append("No resolvió defensa por ranura o contó una ranura de mano antigua.")
 
+	# La conversión de defensa a daño entero debe ser estable y nunca negativa.
+	if CombatDefenseScript.aplicar(10, defensa_catalogo) != 4:
+		errors.append("No restó la defensa al daño recibido.")
+	if CombatDefenseScript.aplicar(6, defensa_catalogo) != 0:
+		errors.append("No bloqueó el daño cuando la defensa igualó el impacto.")
+	if CombatDefenseScript.aplicar(0, defensa_catalogo) != 0:
+		errors.append("Un impacto nulo produjo daño.")
+	if CombatDefenseScript.aplicar(5, -2.0) != 5:
+		errors.append("Una defensa negativa aumentó el daño recibido.")
+	if CombatDefenseScript.aplicar(5, 1.5) != 4:
+		errors.append("No redondeó de forma conservadora el daño fraccionario.")
+
+	# Una fuente mal formada no debe ocultar una fuente posterior válida.
+	var defensa_fallback := CombatDefenseScript.obtener_defensa({
+		"torso": {
+			"estadisticas": {"defensa": "invalida"},
+			"propiedades_game": {"defensa": 2}
+		}
+	})
+	if not is_equal_approx(defensa_fallback, 2.0):
+		errors.append("Una estadística mal formada ocultó la defensa válida de respaldo.")
+
 	if not errors.is_empty():
 		for error in errors:
 			push_error("InventoryEquipmentTransaction: FAIL: " + error)
