@@ -90,7 +90,7 @@ func _ready() -> void:
 
 
 func procesar_accion_primaria() -> bool:
-	if player == null or not player.is_alive:
+	if not CombatTargeting.es_atacante_valido(player):
 		return false
 
 	# El router ya resolvió la prioridad de interacción.
@@ -128,7 +128,7 @@ func _al_ataque_solicitado(
 	objeto: Dictionary,
 	modo: String
 ) -> void:
-	if player == null or _tiempo_desde_ataque > 0.0:
+	if not CombatTargeting.es_atacante_valido(player) or _tiempo_desde_ataque > 0.0:
 		return
 	var nombre_objeto := str(objeto.get("nombre", "")).strip_edges().to_lower()
 	if nombre_objeto.contains("espada") and not bool(GameState.world_state.flags.get("licencia_espadas", false)):
@@ -218,7 +218,7 @@ func _crear_ataque_melee(
 	objeto: Dictionary,
 	danio_directo: int = -1
 ) -> void:
-	if player == null:
+	if not CombatTargeting.es_atacante_valido(player):
 		return
 
 	var ataque: CombatAttackArea = COMBAT_ATTACK_EXECUTOR.crear_ataque_melee(
@@ -293,7 +293,7 @@ func _al_recibir_objetivo_de_ataque(
 	)
 
 func usar_objeto_activo() -> void:
-	if player == null:
+	if not CombatTargeting.es_atacante_valido(player):
 		return
 
 	var objeto_activo := _obtener_objeto_mano_activa("derecha")
@@ -345,7 +345,7 @@ func _disparar_proyectil(
 	arma: Dictionary,
 	direccion: Vector2
 ) -> void:
-	if player == null:
+	if not CombatTargeting.es_atacante_valido(player):
 		return
 
 	var velocidad := _obtener_float_propiedad(
