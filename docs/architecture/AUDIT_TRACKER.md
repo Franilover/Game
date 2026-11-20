@@ -584,3 +584,14 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - La respuesta de escalado sólo se activa cuando la agresión acumulada supera el umbral configurado; la memoria mantiene límites, decaimiento y expiración, por lo que la adaptación no es permanente ni ilimitada.
 - Sin esos campos, se conserva exactamente la respuesta de agresión existente. No se modifica la política ecológica ni se introduce aprendizaje de especie.
 - `CreatureAITargetPolicy` cubre respuesta inicial y escalado después de agresiones repetidas. La regresión completa y GDScript Quality pasaron para el commit `521b694` (runs `44698006887` y `44698006898`); los cambios posteriores de percepción y escalado están en nueva validación.
+
+
+## Personalidad individual y ponderación de Utility AI (2026-11-20)
+
+- `CreatureAI` lee `criatura.datos.personalidad` de forma opcional; no requiere una columna nueva ni cambia datos canónicos.
+- Rasgos soportados en esta primera capa: `curiosidad`, `preferencia_descanso` y `preferencia_alimentacion`.
+- `CreatureUtilityAI.aplicar_preferencia` limita cada rasgo a +/- 50%; un valor ausente o inválido equivale a neutral (0), y las necesidades fisiológicas siguen siendo candidatas ejecutables.
+- La curiosidad ajusta moderadamente el umbral de confianza para investigar; la confianza nunca habilita atacar/perseguir.
+- Pruebas cubren límites del modificador, umbrales de curiosidad y competencia descanso/alimentación entre individuos con rasgos opuestos.
+- Esto es personalidad configurada por individuo, no evolución genética ni aprendizaje permanente. No se generan rasgos al azar ni se persisten cambios automáticamente.
+- Validación de los commits de personalidad en curso; la suite anterior pasó hasta el bloque de confianza y memoria. La última modificación de expectativas de test requiere su propio CI.
