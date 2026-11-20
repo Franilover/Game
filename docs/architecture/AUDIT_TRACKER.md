@@ -368,3 +368,5 @@ La rama de trabajo recibió correcciones adicionales de persistencia que todaví
 Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las nuevas pruebas están integradas en pasos ya existentes del workflow; no hay confirmación de ejecución en esta sesión.
 
 | SAVE-03 | Alta | Integridad del payload | La validación comprueba ahora que la versión sea entera, metadata `mundo/semilla/generador` tenga tipos válidos, `elapsed_time/scene` sean compatibles y los campos numéricos/vectoriales de Player no contengan tipos arbitrarios. | Corregido pendiente de prueba | Ejecutar `GameStateSavePayloadContract` y probar listado/carga de un JSON con metadata corrupta. |
+
+| INV-03 | Media | Capacidad visible del inventario | Resuelto sin pérdida: ScrollContainer y grupos de reserva muestran todas las ranuras guardadas por encima de 18; se añadió contrato de UI con 30 ranuras. | Corregido pendiente de prueba | Ejecutar `test_inventory_overflow_ui.tscn` en Godot 4.7/CI y verificar scroll/selección visual en ventana real. |
