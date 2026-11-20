@@ -1491,6 +1491,48 @@ func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 		return false
 	if estado.has("flags") and not estado.get("flags") is Dictionary:
 		return false
+	var flags_variant: Variant = estado.get("flags", {})
+	var flags := flags_variant as Dictionary
+	if flags.has("inventario_estado") and not _inventario_guardado_valido(flags.get("inventario_estado")):
+		return false
+	return true
+
+
+func _inventario_guardado_valido(valor: Variant) -> bool:
+	if not valor is Dictionary:
+		return false
+	var inventario := valor as Dictionary
+	var items_variant: Variant = inventario.get("items", [])
+	if not items_variant is Array:
+		return false
+	for item_variant in items_variant as Array:
+		if not item_variant is Dictionary:
+			return false
+
+	# "hotbar" se conserva como alias de lectura para snapshots antiguos.
+	var hotbar_variant: Variant = inventario.get(
+		"hotbar_indices",
+		inventario.get("hotbar", [])
+	)
+	if not hotbar_variant is Array:
+		return false
+	for indice_variant in hotbar_variant as Array:
+		if not (indice_variant is int or indice_variant is float):
+			return false
+
+	if inventario.has("equipo"):
+		var equipo_variant: Variant = inventario.get("equipo")
+		if not equipo_variant is Dictionary:
+			return false
+		for item_equipo_variant in (equipo_variant as Dictionary).values():
+			if not item_equipo_variant is Dictionary:
+				return false
+
+	for clave in ["mano_izquierda_activa", "mano_derecha_activa", "indice_hotbar_activo"]:
+		if inventario.has(clave):
+			var indice: Variant = inventario.get(clave)
+			if not (indice is int or indice is float):
+				return false
 	return true
 
 
