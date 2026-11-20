@@ -24,6 +24,13 @@ static func puntuar_urgencia(valor: float, umbral: float, peso: float = 1.0) -> 
 	return clampf(urgencia, 0.0, 1.01) * peso_seguro
 
 
+## Aplica una preferencia individual sin anular una necesidad fisiológica.
+## El rasgo se limita a +/- 50%; 0 conserva exactamente la puntuación original.
+static func aplicar_preferencia(puntuacion: float, rasgo: float) -> float:
+	var puntuacion_segura := maxf(puntuacion, 0.0) if is_finite(puntuacion) else 0.0
+	var rasgo_seguro := clampf(rasgo, -0.5, 0.5) if is_finite(rasgo) else 0.0
+	return puntuacion_segura * (1.0 + rasgo_seguro)
+
 ## Selecciona la acción con mayor puntuación. En empate conserva la primera
 ## entrada del diccionario para que la política sea determinista.
 static func seleccionar_accion(puntuaciones: Dictionary, accion_respaldo: String = "") -> String:
