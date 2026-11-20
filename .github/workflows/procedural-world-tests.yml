@@ -831,6 +831,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run offline Torres entry integration contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 60s godot --headless --path . res://tests/world/test_offline_torres_entry.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|OfflineTorresEntry: FAIL:' <<<"$output"; then
+            echo "Offline Torres entry reported errors."
+            exit 1
+          fi
+          if ! grep -q 'OfflineTorresEntry: PASS' <<<"$output"; then
+            echo "Offline Torres entry did not report PASS."
+            exit 1
+          fi
+
       - name: Run world snapshot validator contract test
         shell: bash
         run: |
