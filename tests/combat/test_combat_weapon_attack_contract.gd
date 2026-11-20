@@ -109,6 +109,36 @@ func _probar_resultados_de_ejecucion(errores: Array[String]) -> void:
 	if int(ataques_con_danio["cantidad"]) != 1:
 		errores.append("El ataque con daño real no publicó exactamente un evento de daño.")
 
+	# La solicitud de arma también publica contacto antes del daño.
+	# Si un listener derrota al atacante, la validación central debe detenerla.
+	atacante.restaurar_estado_vital(100, true)
+	objetivo.restaurar_estado_vital(100, true)
+	combate.contacto_efectivo.connect(
+		func(_emisor: Node, _receptor: Entity, origen: String) -> void:
+			if origen == "Entidad/Arma:Interrumpida":
+				atacante.restaurar_estado_vital(0, false)
+	)
+	var salud_antes_interrupcion := objetivo.health
+	var ataques_antes_interrupcion := int(ataques_con_danio["cantidad"])
+	var resultado_interrumpido: CombatAttackResult = combate.solicitar_ataque_con_arma(
+		atacante,
+		objetivo,
+		{
+			"tipo": "arma",
+			"nombre": "Interrumpida",
+			"propiedades_game": {"danio": 7}
+		}
+	)
+	if not resultado_interrumpido.contacto_registrado:
+		errores.append("La solicitud interrumpida perdió el contacto ya emitido.")
+	if resultado_interrumpido.danio_aplicado:
+		errores.append("El ataque de arma aplicó daño después de morir el atacante.")
+	if objetivo.health != salud_antes_interrupcion:
+		errores.append("El ataque de arma alteró salud tras la interrupción.")
+	if int(ataques_con_danio["cantidad"]) != ataques_antes_interrupcion:
+		errores.append("El ataque de arma interrumpido emitió daño confirmado.")
+
+	atacante.restaurar_estado_vital(100, true)
 	objetivo.restaurar_estado_vital(0, false)
 	var contactos_antes_objetivo_derrotado := int(contactos["cantidad"])
 	var resultado_derrotado: CombatAttackResult = combate.solicitar_ataque_con_arma(atacante, objetivo, arma_daniadora)
