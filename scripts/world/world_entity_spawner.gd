@@ -192,9 +192,9 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			if not estado_runtime.is_empty():
 				for clave in estado_runtime.keys():
 					dato[clave] = estado_runtime[clave]
-		if not bool(dato.get("is_alive", true)):
-			continue
 		var categoria_entidad := str(dato.get("categoria_entidad", "criatura")).strip_edges().to_lower()
+		if categoria_entidad != "garumi" and not bool(dato.get("is_alive", true)):
+			continue
 		var criatura_data: Dictionary
 		if categoria_entidad == "garumi":
 			if bool(dato.get("garumi_debug_preview", false)):
@@ -215,10 +215,9 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if categoria_entidad == "garumi":
 			criatura_data["categoria_entidad"] = "garumi"
 			criatura_data["asset_key"] = str(criatura_data.get("asset_key", criatura_data.get("nombre", "")))
-			# La fila canónica define la forma; el estado runtime conserva su progreso.
-			for clave_progresion in ["nivel", "experiencia_total", "eterium_actual"]:
-				if dato.has(clave_progresion):
-					criatura_data[clave_progresion] = dato[clave_progresion]
+			# La forma viene del catálogo; sólo se restaura el recurso propio del Garumi.
+			if dato.has("eterium_actual"):
+				criatura_data["eterium_actual"] = dato["eterium_actual"]
 		var criatura_variant: Variant = _entity_factory.crear_criatura(criatura_data)
 		if not criatura_variant is Creature:
 			continue
@@ -237,11 +236,12 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			creature_node.configurar_entorno(str(dato.get("habitat_clave", "general")).strip_edges().to_lower())
 			if bool(dato.get("garumi_debug_preview", false)):
 				print("WorldEntitySpawner: Garumi prototipo DEBUG materializado desde DATA -> chunk=", chunk_coord, " | sprite=", "cargado" if not bool(criatura.get_meta("garumi_sprite_missing", false)) else "pendiente")
-			var health := int(dato.get("health", creature_node.health))
-			creature_node.restaurar_estado_vital(
-				clampi(health, 0, creature_node.max_health),
-				bool(dato.get("is_alive", true))
-			)
+			if not creature_node is Garumi:
+				var health := int(dato.get("health", creature_node.health))
+				creature_node.restaurar_estado_vital(
+					clampi(health, 0, creature_node.max_health),
+					bool(dato.get("is_alive", true))
+				)
 			if dato.has("velocity") and dato["velocity"] is Vector2:
 				creature_node.velocity = dato["velocity"]
 
