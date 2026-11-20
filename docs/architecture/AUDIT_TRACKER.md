@@ -663,3 +663,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - La primera ejecución imprimió `MainSceneResume: PASS`, pero CI detectó errores de limpieza: un GameplayInputGate dinámico y recursos/nodos huérfanos al salir. Se corrigió la liberación de los gates y se difirió el desmontaje de Main.
 - La regresión completa del commit `ccd2ee7773` pasó: [Godot 4.7 CI](https://github.com/Franilover/Game/actions/runs/44750715923). Calidad GDScript asociada: [run 44750715897](https://github.com/Franilover/Game/actions/runs/44750715897).
 - Alcance: es una integración de la escena principal con snapshot de prueba en memoria. No equivale todavía a reiniciar dos procesos, leer el save real durante el arranque, ni reanudar interiores y sesión offline de extremo a extremo.
+
+
+## Migración centralizada de partidas legacy — 2026-11-20
+
+- Se incorporó `_migrar_datos_partida()` en GameState. Valida, copia profundamente, conserva campos desconocidos, normaliza a SAVE_VERSION y completa la semilla/versión de generador cuando faltan.
+- `iniciar_partida()` ahora aplica la migración antes de cargar metadata/estado y persiste el documento normalizado. Si no puede escribirlo, informa la condición y abre la copia normalizada en memoria.
+- Se añadieron pruebas de v1 sin `version`, conservación de progreso no reconocido, inmutabilidad del original y rechazo de una versión futura.
+- CI completa aprobada en [44751938817](https://github.com/Franilover/Game/actions/runs/44751938817); calidad GDScript aprobada en [44751938797](https://github.com/Franilover/Game/actions/runs/44751938797).
+- No se atribuyen migraciones a versiones anteriores que no estén respaldadas por contratos o datos históricos conocidos.
