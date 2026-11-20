@@ -1428,3 +1428,14 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - La recuperación consulta la geometría estática mediante PhysicsShapeQueryParameters2D para probar un desvío lateral estable, sin depender de collision_mask del cuerpo y conserva el rumbo elegido mientras siga libre. No añade consultas de colisión por frame en movimiento normal.
 - La regresión CreatureMovementNPCSafety añade un obstáculo físico y verifica que una criatura fuera del grupo torres_game_npc encuentre y mantenga un desvío.
 - Implementación y prueba añadidas; CI pendiente. Las escenas de Creature y Garumi conservan collision_mask=0; la consulta explícita usa la capa estática 1 sin modificar esa autoridad física. Esto mejora la recuperación local, no sustituye un pathfinder global ni resuelve todavía laberintos o rutas largas.
+
+
+## Utility AI inicial para necesidades de criaturas (2026-11-20)
+
+- Nuevo helper puro CreatureUtilityAI: puntúa urgencias sobre 0..100 y selecciona la acción de mayor puntuación con desempate determinista.
+- CreatureAI lo integra en la prioridad entre alimentación y descanso. Sólo compiten acciones habilitadas por la configuración real de la especie: dieta declarada y recuperación de fatiga válida.
+- Se admiten pesos opcionales peso_prioridad_hambre y peso_prioridad_fatiga; por defecto ambos valen 1.0. Los umbrales fisiológicos siguen siendo obligatorios y separados de la puntuación.
+- El descanso conserva histéresis: una vez elegido, continúa hasta alcanzar umbral_fatiga_salida. No se cambia la rutina ni se inventan necesidades en especies sin configuración.
+- La regresión CreatureAITargetPolicy cubre umbrales, acciones, empates, competencia hambre/fatiga y salida de histéresis.
+- Alcance deliberadamente acotado: Utility AI todavía no elige entre exploración, socialización, huida, defensa o curiosidad; no sustituye las reglas ecológicas ni los estados existentes.
+- Código y pruebas añadidos; CI pendiente.
