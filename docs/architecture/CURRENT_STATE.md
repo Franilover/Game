@@ -1119,3 +1119,9 @@ Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_tran
 - Si falla la publicación o la validación final, intenta restaurar el respaldo. La carga también recupera un `.bak` válido si el archivo principal está corrupto.
 - El servidor sólo pausa el mundo cuando el guardado se confirmó correctamente; ante un fallo permanece activo para no perder progreso en memoria.
 - Regresión: `tests/persistence/test_global_world_store_contract.tscn`.
+
+## Restauración de estado del jugador — 2026-11-19
+
+- `PlayerState.from_dictionary()` conserva la stamina fraccionaria dentro de su escala actual `0..3`; ya no redondea a enteros durante la carga.
+- Los saves antiguos en escala `0..100` se convierten proporcionalmente a `0..3`, conservando también sus fracciones.
+- `test_game_state_roundtrip` cubre un roundtrip con stamina `1.5` y la migración de un valor antiguo `50.0`.
