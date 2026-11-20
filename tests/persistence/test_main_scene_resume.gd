@@ -1,10 +1,17 @@
 extends Node
 
+var _world_data_cargado_original: bool = false
+
+
 func _ready() -> void:
 	call_deferred("_run")
 
 
 func _run() -> void:
+	# Main no necesita materializar NPCs para verificar la restauración del
+	# jugador. Evitar ese trabajo lateral mantiene aislado el contrato.
+	_world_data_cargado_original = WorldData.cargado
+	WorldData.cargado = false
 	GameState.active_save_id = "main_scene_resume_integration_probe"
 	GameState.active_save_name = "Main scene resume integration"
 	GameState._partida_aplicada_en_escena = false
@@ -155,6 +162,7 @@ func _limpiar_estado_global() -> void:
 	GameState._partida_aplicada_en_escena = false
 	GameState._estado_vital_restaurado_en_escena = false
 	GameState.configurar_dependencias(null, null, null, null, null, null)
+	WorldData.cargado = _world_data_cargado_original
 	await get_tree().process_frame
 
 
