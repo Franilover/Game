@@ -319,14 +319,14 @@ func _atacar_desarmado(direccion: Vector2) -> void:
 		danio_desarmado
 	)
 
-	_tiempo_desde_ataque = enfriamiento_arma
+	_iniciar_cooldown_ataque()
 
 func _atacar_con_arma(
 	arma: Dictionary,
 	direccion: Vector2
 ) -> void:
 	var modo := _obtener_modo_ataque(arma)
-	_tiempo_desde_ataque = enfriamiento_arma
+	_iniciar_cooldown_ataque()
 
 	if modo == "distancia":
 		_disparar_proyectil(arma, direccion)
