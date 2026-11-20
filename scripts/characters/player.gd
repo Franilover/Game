@@ -839,6 +839,7 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 	_cancelar_animacion_muerte()
 	_muerte_visual_procesada = false
 	restaurar_estado_vital(max_health, true, max_mana)
+	eterium.reiniciar()
 	stamina_controller.reiniciar()
 	global_position = posicion
 	velocity = Vector2.ZERO
@@ -864,6 +865,7 @@ func reaparecer() -> void:
 	_cancelar_animacion_muerte()
 	_muerte_visual_procesada = false
 	restaurar_estado_vital(max_health, true, max_mana)
+	eterium.reiniciar()
 	stamina_controller.reiniciar()
 
 	velocity = Vector2.ZERO
