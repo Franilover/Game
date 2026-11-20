@@ -41,7 +41,30 @@ func _physics_process(delta: float) -> void:
 	if attack == null or not CombatTargeting.es_atacante_valido(attack.attacker):
 		_cancelar_por_atacante_invalido()
 		return
-	global_position += velocity * delta
+	var desplazamiento := velocity * delta
+	if desplazamiento.length_squared() > 0.0001:
+		# El movimiento manual de Area2D puede atravesar hurtboxes pequeñas
+		# cuando una propiedad de arma eleva mucho la velocidad. El barrido
+		# consulta el segmento completo antes de mover el proyectil.
+		var consulta := PhysicsRayQueryParameters2D.create(
+			global_position,
+			global_position + desplazamiento,
+			collision_mask
+		)
+		consulta.collide_with_areas = true
+		consulta.collide_with_bodies = true
+		if attack.attacker is CollisionObject2D:
+			consulta.exclude = [(attack.attacker as CollisionObject2D).get_rid()]
+		var impacto := get_world_2d().direct_space_state.intersect_ray(consulta)
+		if not impacto.is_empty():
+			var collider: Variant = impacto.get("collider")
+			if collider is Area2D:
+				_al_entrar_area(collider as Area2D)
+			elif collider is Node:
+				_procesar_objetivo(collider as Node)
+			if _impactado:
+				return
+		global_position += desplazamiento
 	lifetime -= delta
 	if lifetime <= 0.0:
 		_finalizar()
