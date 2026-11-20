@@ -124,6 +124,7 @@ var perfil: Perfil = Perfil.GENERICO
 
 var ultima_posicion_objetivo: Vector2 = Vector2.ZERO
 var objetivo_detectado: bool = false
+var _hay_ultima_posicion_objetivo: bool = false
 
 
 var _tiempo_pensamiento: float = 0.0
@@ -347,6 +348,7 @@ func _entrar_estado(nuevo_estado: Estado) -> void:
 			criatura.detener_movimiento()
 
 		Estado.EXPLORANDO:
+			_hay_ultima_posicion_objetivo = false
 			_establecer_velocidad(_velocidad_normal)
 			criatura.liberar_control_movimiento()
 
@@ -542,11 +544,10 @@ func _procesar_investigando() -> void:
 
 		return
 
-	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
-		return
-
-	if _tiempo_estado >= duracion_investigacion:
+	# La memoria espacial sobrevive a la desaparición del nodo objetivo.
+	# La criatura investiga la última posición conocida aunque el objetivo
+	# haya muerto, salido del chunk o sido liberado del árbol.
+	if not _hay_ultima_posicion_objetivo or _tiempo_estado >= duracion_investigacion:
 		_cambiar_estado(Estado.EXPLORANDO)
 		return
 
@@ -564,7 +565,9 @@ func _procesar_investigando() -> void:
 
 func _procesar_persiguiendo() -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
-		_cambiar_estado(Estado.EXPLORANDO)
+		_cambiar_estado(
+			Estado.INVESTIGANDO if _hay_ultima_posicion_objetivo else Estado.EXPLORANDO
+		)
 		return
 
 	if not objetivo_detectado:
@@ -577,6 +580,7 @@ func _procesar_persiguiendo() -> void:
 		return
 	if respuesta == "investigar":
 		ultima_posicion_objetivo = objetivo.global_position
+		_hay_ultima_posicion_objetivo = true
 		_cambiar_estado(Estado.INVESTIGANDO)
 		return
 	if respuesta not in ["atacar", "perseguir"]:
@@ -766,6 +770,7 @@ func _actualizar_percepcion() -> void:
 	if distancia <= deteccion:
 		objetivo_detectado = true
 		ultima_posicion_objetivo = objetivo.global_position
+		_hay_ultima_posicion_objetivo = true
 
 
 func _obtener_candidatos_entidad() -> Array[Node2D]:
