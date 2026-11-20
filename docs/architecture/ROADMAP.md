@@ -58,7 +58,7 @@
 - [x] Distinguir solicitud aceptada, contacto y daño real mediante `CombatAttackResult`.
 - [~] Defensa plana: Player aplica armadura equipada y Creature aplica `stats_dnd.defensa` antes de reducir salud; contrato de Creature ampliado. Resistencias/inmunidades por tipo siguen pendientes porque el contrato de ataque todavía no define tipos de daño.
 - [x] Ruta de daño IUM verificada mediante `CombatSystem.solicitar_danio_desde_entidad()` y el contrato de entidad; no se alteraron fórmulas IUM.
-- [~] Proyectiles de impacto único, objetivos derrotados e impactos simultáneos sobre un mismo objetivo están cubiertos. Falta una regresión específica de melee contra varios objetivos y colisiones en escena real.
+- [~] Proyectiles de impacto único, objetivos derrotados e impactos simultáneos sobre un mismo objetivo están cubiertos. Se añadió una regresión de hitbox melee contra dos objetivos distintos y deduplicación del mismo objetivo; falta ejecutar CI y validar colisiones físicas en escena real.
 - [~] Cooldown, cancelación por atacante inválido, interrupciones síncronas y atribución de daño tienen cobertura parcial en los contratos temporal, de entidad y de criatura; falta validación integrada en partida.
 - [~] Cubrir fisiología compartida, absorción y muerte al agotar Eterium en `PlayerVitalStateContract`; falta ampliar a todos los caminos.
 - [ ] Mantener el balance separado de la infraestructura.
