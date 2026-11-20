@@ -3,6 +3,7 @@ extends Node
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const GarumiScript = preload("res://scripts/creatures/garumi.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
+const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
 const IUMManagerScript = preload("res://scripts/gameplay/ium_manager.gd")
 const IUMRepositoryScript = preload("res://scripts/core/ium_repository.gd")
 
@@ -66,6 +67,14 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 		errores.append("CombatSystem aceptó daño dirigido a un Garumi no combatiente.")
 	if int(contactos["cantidad"]) != contactos_antes_garumi:
 		errores.append("El rechazo de un Garumi emitió un contacto de combate.")
+	var salud_garumi_antes := garumi.health
+	var danio_directo_garumi: bool = CombatDamageScript.aplicar(
+		garumi,
+		9,
+		"Prueba/CombatDamage/Garumi"
+	)
+	if danio_directo_garumi or garumi.health != salud_garumi_antes:
+		errores.append("CombatDamage permitió daño directo a un Garumi no combatiente.")
 
 	var resultado_cero: CombatAttackResult = combate.solicitar_danio_desde_entidad(
 		atacante,
