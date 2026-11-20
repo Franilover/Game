@@ -221,3 +221,12 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 
 - [x] Preferencias de personalidad individuales opcionales ponderan necesidades y curiosidad en Utility AI, con límites y pruebas.
 - [ ] Definir si el juego necesita persistencia de cambios de personalidad aprendidos; por ahora sólo se leen rasgos existentes en los datos individuales.
+
+
+### IA de criaturas — familiaridad con conducta opcional
+
+- [x] Diferenciar encuentros cercanos de avistamientos visuales; no asumir línea de visión sin un sistema validado de oclusión.
+- [x] Permitir que especies configuradas investiguen individuos conocidos mediante un umbral ponderado por curiosidad.
+- [x] Mantener prioridad de agresión recordada y relaciones ecológicas; familiaridad nunca autoriza combate.
+- [ ] Validar visualmente aproximación/investigación y evitar oscilaciones entre estados.
+- [ ] Añadir pruebas de integración con dos criaturas reales y reglas ecológicas simultáneas.
