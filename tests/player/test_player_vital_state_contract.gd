@@ -76,8 +76,20 @@ func _run() -> void:
 	jugador.eterium.establecer_mana(10)
 	if jugador.vital_state.mana != mana_despues_muerte or jugador.is_alive:
 		errores.append("Establecer Eterium revivió o alteró las reservas de un jugador muerto.")
+	jugador.eterium_runtime.sprint_cost_accumulator = 0.75
+	if jugador.eterium_runtime.calcular_costo_carrera(1.0) != 0:
+		errores.append("El runtime calculó coste de carrera mientras el jugador estaba muerto.")
 
+	jugador.eterium_runtime.recovery_accumulator = 0.4
+	jugador.eterium_runtime.sprint_cost_accumulator = 0.6
+	jugador.eterium_runtime.heal_timer = 0.2
 	jugador.reaparecer()
+	if (
+		jugador.eterium_runtime.recovery_accumulator != 0.0
+		or jugador.eterium_runtime.sprint_cost_accumulator != 0.0
+		or jugador.eterium_runtime.heal_timer != 0.0
+	):
+		errores.append("La reaparición local conservó temporizadores de Eterium de la vida anterior.")
 	if (
 		not jugador.is_alive
 		or jugador.health != jugador.max_health
@@ -161,8 +173,20 @@ func _run() -> void:
 	jugador.eterium.establecer_mana(20)
 	if jugador.vital_state.mana != mana_compartido_despues_muerte or jugador.is_alive:
 		errores.append("El setter de Eterium revivió una fisiología compartida muerta.")
+	jugador.eterium_runtime.sprint_cost_accumulator = 0.5
+	if jugador.eterium.procesar_carrera(1.0):
+		errores.append("El coordinador procesó sprint con fisiología compartida muerta.")
 
+	jugador.eterium_runtime.recovery_accumulator = 0.3
+	jugador.eterium_runtime.sprint_cost_accumulator = 0.5
+	jugador.eterium_runtime.heal_timer = 0.1
 	jugador.reaparecer_en_red(Vector2(64, 96))
+	if (
+		jugador.eterium_runtime.recovery_accumulator != 0.0
+		or jugador.eterium_runtime.sprint_cost_accumulator != 0.0
+		or jugador.eterium_runtime.heal_timer != 0.0
+	):
+		errores.append("La reaparición de red conservó temporizadores de Eterium de la vida anterior.")
 	if (
 		jugador.health != 80
 		or jugador.mana != 80
