@@ -1278,3 +1278,12 @@ Límite de esta pasada: no se ha validado todavía el orden de carga completo co
 ### Validación estructural de partidas
 
 Se añadió validación del contrato de save en GameState, separada de la validación JSON de SaveFileRepository. Al listar o iniciar una partida se rechazan IDs internos que no coinciden, estructuras de estado no Dictionary, snapshots anidados con tipos incorrectos y versiones futuras. Los saves legacy sin campo version se interpretan como versión 1. Se añadió test_game_state_save_payload_contract; pendiente de ejecución.
+
+
+## Orden de carga de especie y restauración vital — 2026-11-20
+
+Se corrigió una dependencia de inicialización detectada en la auditoría: `Player.configurar_dependencias()` se ejecuta después de `Player._ready()`, por lo que la configuración persistida del personaje podía no haberse aplicado cuando se iniciaba la carga de Eterium. Ahora se aplica al inyectar GameState/Supabase, antes de resolver las reglas de especie.
+
+La restauración de reservas espera a que estén resueltos tanto el runtime general de Eterium como las reglas de especie (incluido el resultado de catálogo sin regla aplicable). Player publica `configuracion_eterium_lista`; GameStateService se suscribe una sola vez y reintenta la aplicación del snapshot al recibirla. Esto evita normalizar vida/Eterium usando máximos por defecto y que una respuesta asíncrona posterior sobrescriba los valores guardados.
+
+Se añadió `test_player_eterium_restore_readiness` y su ejecución al workflow. El test está integrado, pero no se ha ejecutado localmente en esta sesión ni hay confirmación de CI.
