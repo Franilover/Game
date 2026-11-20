@@ -274,6 +274,7 @@ func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
 		errores.append("Recibir daño consumió durabilidad de la armadura.")
 
 	# Un golpe letal debe sincronizar el estado y emitir la muerte una sola vez.
+	jugador.locomotion.actions.dash_cooldown_timer = 4.0
 	jugador.restaurar_estado_vital(4, true)
 	jugador.take_damage(10, "Prueba/MuerteNormal")
 	jugador.take_damage(10, "Prueba/MuerteRepetida")
