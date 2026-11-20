@@ -246,6 +246,8 @@ Los caminos de entrada dependen del tipo de acción:
 - Proyectiles: `CombatSystem → CombatAttackExecutor → CombatProjectile → CombatDamage`. El proyectil ejecuta el impacto y notifica el resultado; no implementa otra fórmula de daño.
 - IA e IUM: solicitan daño a `CombatSystem.solicitar_danio_desde_entidad()`, que valida la solicitud y delega en `CombatDamage`.
 
+La API de daño de entidad exige que el objetivo pertenezca al grupo `damageable`; una entidad fuera de ese contrato se rechaza antes de emitir contacto o efectos. Garumis no pertenecen a ese grupo y la IA tampoco los selecciona como objetivos de respuestas hostiles. No basta con que un nodo herede de `Entity` o conserve `is_alive=true` para convertirlo en combatiente.
+
 CombatSystem coordina solicitudes y efectos de gameplay; CombatDamage resuelve el daño; Entity conserva su estado vital. Ningún sistema de IA, IUM, proyectiles o feedback puede crear un DamageSystem alternativo.
 
 `Player.take_damage()` es la especialización del receptor: aplica la defensa de armadura y luego entrega el daño efectivo a vida o Eterium compartido. Durante `Player.State.DASH` rechaza el impacto por completo; fuera de ese estado no existe invulnerabilidad temporal adicional. La defensa no se vuelve a aplicar en `CombatDamage`, para evitar doble mitigación. Los ataques que necesiten saltarse defensa o invulnerabilidad requieren una regla explícita y no deben llamar directamente a `VitalState`.
