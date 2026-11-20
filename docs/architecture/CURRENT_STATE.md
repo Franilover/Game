@@ -1398,3 +1398,12 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - `CombatProjectile` ahora hace un barrido de raycast entre la posición actual y la siguiente antes de avanzar. Evita atravesar hurtboxes pequeños cuando la velocidad del proyectil supera la resolución de un paso físico.
 - `CombatProjectileContract` prueba un proyectil que recorre 100 px en un paso contra un hurtbox de 12 px; el impacto se aplica una sola vez.
 - Ambos contratos pasan en Godot 4.7. Queda pendiente la comprobación visual y de balance en una partida normal.
+
+## Inicio de T2 — percepción de criaturas (2026-11-20)
+
+- Se extrajo CreaturePerception como componente puro de descubrimiento de candidatos. CreatureAI conserva la política ecológica y la selección de objetivos, pero delega el inventario de entidades activas.
+- La percepción reúne al jugador explícito, jugadores del grupo y entidades activas del WorldEntityManager; descarta entidades inválidas, muertas, fuera del árbol o pendientes de queue_free().
+- La percepción no decide hostilidad: puede incluir Garumis como habitantes presentes; la política de objetivos de CreatureAI continúa excluyéndolos de persecución y combate.
+- CreatureAITargetPolicy amplía la regresión para comprobar percepción, Garumis perceptibles y descarte de entidades pendientes de eliminación. CI en ejecución para validar la extracción.
+- Se corrigió PlayerEteriumRestoreReadiness: sus cuatro llamadas a free() sobre RefCounted se retiraron; estos objetos se liberan al perder sus referencias. CI en ejecución para confirmar que desaparece el bloqueo previo.
+- La comprobación visual y el balance del combate P1 siguen pendientes de una partida real; no se consideran cerrados por CI.
