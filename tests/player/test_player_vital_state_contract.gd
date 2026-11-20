@@ -54,18 +54,9 @@ func _run() -> void:
 		"curacion_intervalo_s": 0.01,
 		"curacion_vida_por_s": 5.0
 	}
-	var curacion_normal := jugador.eterium.calcular_curacion(0.02)
-	if int(curacion_normal.get("curacion", 0)) != 10 or int(curacion_normal.get("costo_eterium", 0)) != 2:
-		errores.append("El cálculo de curación normal no respetó sus reglas.")
-	elif not jugador.eterium.aplicar_curacion(
-		int(curacion_normal.get("curacion", 0)),
-		int(curacion_normal.get("costo_eterium", 0))
-	):
-		errores.append("La curación normal no pudo aplicarse.")
-	else:
-		jugador._sync_desde_vital()
-		if jugador.health != 100 or jugador.mana != 78:
-			errores.append("La curación normal no sincronizó vida y coste de Eterium.")
+	jugador._aplicar_movimiento_normal(Vector2.ZERO, 1.0, false, 0.02)
+	if jugador.health != 100 or jugador.mana != 78:
+		errores.append("El ciclo idle no ejecutó ni sincronizó la curación automática normal.")
 
 	jugador.take_damage(jugador.max_health + 100, "Prueba/MuertePlayer")
 	if jugador.is_alive or jugador.vital_state.is_alive or int(muertes["cantidad"]) != 1:
