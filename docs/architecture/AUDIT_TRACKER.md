@@ -707,3 +707,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Se añadió _restaurar_posicion_jugador_hogar() después de incorporar la escena al árbol. Solo aplica x/y numéricos y finitos; no modifica el jugador si el snapshot es incompleto o inválido.
 - El contrato test_zone_manager_home_position.tscn comprueba restauración correcta y rechazo de strings/INF. CI completa Godot 4.7 aprobada: [44811300461](https://github.com/Franilover/Game/actions/runs/44811300461); GDScript Quality (Advisory): [44811288159](https://github.com/Franilover/Game/actions/runs/44811288159).
 - El reinicio completo desde el menú y la prueba de muebles/interior también pasan en esa regresión. Aún no está cerrado el reinicio de dos procesos guardando y reabriendo mientras el jugador permanece dentro del interior de Hogar.
+
+## Estado dinámico de entidades en partidas locales — 2026-11-20
+
+- Antes, capturar_estado_persistente_mundo() y restaurar_estado_persistente_mundo() solo estaban conectados a GlobalWorldStore. El guardado local almacenaba semilla/posición/reloj, pero no los deltas de runtime de criaturas y props.
+- GameState ahora conserva entidades_mundo_local_por_zona; codifica Vector2/Vector2i para JSON y los reconstruye al leer. Captura en guardado normal y ZoneManager captura justo antes de descargar Mundo Abierto o Expedición.
+- Main restaura el estado de la zona local antes de registrar al jugador en WorldStreamer, para que el spawner consulte los deltas al materializar cada chunk. El estado de servidores dedicados sigue en GlobalWorldStore y se evita mezclarlo con clientes globales.
+- tests/persistence/test_local_world_entity_state.tscn valida serialización JSON, tipos vectoriales, estado de criatura, tombstone de prop, aislamiento por zona y restauración del manager. CI completa aprobada: [44812559373](https://github.com/Franilover/Game/actions/runs/44812559373); GDScript Quality: [44812537936](https://github.com/Franilover/Game/actions/runs/44812537936).
+- Alcance pendiente: test de reinicio de dos procesos con WorldGenerator real, chunks materializados y entidades modificadas. No cerrar todavía la continuidad procedural P0 solo con el contrato unitario actual.
