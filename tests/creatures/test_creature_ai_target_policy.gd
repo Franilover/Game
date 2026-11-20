@@ -277,6 +277,25 @@ func _run() -> void:
 		return
 	actor.datos["personalidad"] = {}
 	ai._memoria_interaccion.limpiar()
+
+	# La familiaridad puede despertar curiosidad si la especie lo configura,
+	# pero nunca concede una respuesta agresiva ni reemplaza la ecología.
+	actor.comportamiento = ""
+	ai.configuracion_ia = {"memoria_interaccion": {
+		"activo": true,
+		"respuesta_familiaridad": "investigar",
+		"umbral_familiaridad": 0.5,
+		"peso_respuesta_familiaridad": 0.5
+	}}
+	ai._memoria_interaccion.registrar_encuentro_cercano(player, 0.75, 120.0, 4.0)
+	if ai._obtener_respuesta_para_objetivo(player) != "investigar":
+		_fail("La familiaridad no activó la investigación opcional configurada.")
+		return
+	ai.configuracion_ia["memoria_interaccion"]["respuesta_familiaridad"] = "atacar"
+	if ai._obtener_respuesta_para_objetivo(player) != "":
+		_fail("La familiaridad permitió una respuesta agresiva no autorizada.")
+		return
+	ai._memoria_interaccion.limpiar()
 	ai.configuracion_ia = {}
 
 	# La personalidad individual pondera necesidades sin poder anularlas.
@@ -334,7 +353,7 @@ func _run() -> void:
 	}}
 	ai._registrar_avistamientos_cercanos(150.0)
 	if not is_equal_approx(ai._memoria_interaccion.obtener_familiaridad(player), 0.25):
-		_fail("La percepción no registró un avistamiento dentro del radio.")
+		_fail("La percepción no registró un encuentro cercano dentro del radio.")
 		return
 	ai._memoria_interaccion.limpiar()
 
