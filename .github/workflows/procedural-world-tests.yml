@@ -663,7 +663,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(timeout 60s godot --headless --path . res://tests/persistence/test_main_scene_resume.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(timeout 60s godot --headless --verbose --path . res://tests/persistence/test_main_scene_resume.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|MainSceneResume: FAIL:' <<<"$output"; then
             echo "Main scene save resume integration test reported errors."
