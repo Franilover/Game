@@ -487,6 +487,10 @@ func _actualizar_seleccion() -> void:
 func _al_objeto_activo_cambiado(
 	_datos: Dictionary
 ) -> void:
+	# InventoryRuntime es la autoridad de selección. La hotbar sólo conserva
+	# el índice para representar el resaltado visual.
+	if inventory != null and is_instance_valid(inventory):
+		indice_seleccionado = inventory.obtener_indice_hotbar_activo()
 	_actualizar_seleccion()
 
 
