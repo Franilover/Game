@@ -416,6 +416,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run Player vital state contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 45s godot --headless --path . res://tests/player/test_player_vital_state_contract.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerVitalStateContract: FAIL:' <<<"$output"; then
+            echo "Player vital state contract test reported errors."
+            exit 1
+          fi
+
       - name: Run combat temporal contract regression test
         shell: bash
         run: |
