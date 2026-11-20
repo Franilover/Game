@@ -1355,3 +1355,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Ahora `CombatDamage.aplicar()` exige que cualquier atacante atribuido pase `CombatTargeting.es_atacante_valido()`, tanto antes como después del modificador. `null` sigue permitido para daño ambiental/sin atribución.
 - `CombatEntityAttackContract` comprueba el rechazo de un atacante `Entity` fuera del árbol; `CreatureAISignalContract` utiliza una entidad atacante válida al verificar la mitigación.
 - Implementado; pendiente de ejecución Godot 4.7/CI.
+
+
+## Entidades autorizadas como atacantes (2026-11-20)
+
+- `CombatTargeting.es_atacante_valido()` exige ahora que el atacante pertenezca a `damageable`, además de estar vivo, dentro del árbol y no pendiente de eliminación.
+- Esto bloquea ataques de Garumis y de proxies de criatura desactivados, además de impedir que una entidad no combatiente invoque directamente la API de daño como atacante.
+- `CombatEntityAttackContract` comprueba rechazo de Garumi como atacante tanto desde `CombatSystem` como desde `CombatDamage`.
+- Implementado; pendiente de CI.
