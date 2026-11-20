@@ -38,6 +38,9 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if _impactado:
 		return
+	if attack == null or not CombatTargeting.es_atacante_valido(attack.attacker):
+		_cancelar_por_atacante_invalido()
+		return
 	global_position += velocity * delta
 	lifetime -= delta
 	if lifetime <= 0.0:
@@ -65,6 +68,11 @@ func _al_entrar_area(area: Area2D) -> void:
 func _procesar_objetivo(objetivo: Node) -> void:
 	if _impactado or attack == null:
 		return
+	if not CombatTargeting.es_atacante_valido(attack.attacker):
+		_cancelar_por_atacante_invalido()
+		return
+	if _impactado or attack == null:
+		return
 	var entidad: Entity = objetivo as Entity
 	if entidad == null:
 		return
@@ -83,6 +91,11 @@ func _procesar_objetivo(objetivo: Node) -> void:
 
 	# El feedback corresponde al consumidor del resultado, no al proyectil;
 	# así evitamos aplicar dos veces el mismo flash visual.
+	queue_free()
+
+
+func _cancelar_por_atacante_invalido() -> void:
+	_impactado = true
 	queue_free()
 
 
