@@ -256,6 +256,24 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	if danio_objetivo_en_baja or objetivo.health != salud_antes_baja:
 		errores.append("CombatDamage aplicó daño a un objetivo pendiente de eliminación.")
 
+	# Un modificador puede invalidar el objetivo de forma síncrona.
+	# El resolver debe comprobarlo otra vez antes de aplicar el daño.
+	var objetivo_modificado := EntityScript.new() as Entity
+	objetivo_modificado.name = "EntityAttackContractModifierTarget"
+	get_tree().root.add_child(objetivo_modificado)
+	await get_tree().process_frame
+	var salud_antes_modificador := objetivo_modificado.health
+	var dano_modificador_interrumpido := CombatDamageScript.aplicar(
+		objetivo_modificado,
+		5,
+		"Prueba/Modificador/QueueFree",
+		func(_dano: int) -> int:
+			objetivo_modificado.queue_free()
+			return 5
+	)
+	if dano_modificador_interrumpido or objetivo_modificado.health != salud_antes_modificador:
+		errores.append("CombatDamage aplicó daño después de que el modificador invalidó el objetivo.")
+
 	var atacante_pendiente := EntityScript.new() as Entity
 	atacante_pendiente.name = "EntityAttackContractQueuedAttacker"
 	get_tree().root.add_child(atacante_pendiente)
@@ -281,6 +299,8 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 		objetivo.queue_free()
 	if is_instance_valid(atacante_pendiente) and not atacante_pendiente.is_queued_for_deletion():
 		atacante_pendiente.queue_free()
+	if is_instance_valid(objetivo_modificado) and not objetivo_modificado.is_queued_for_deletion():
+		objetivo_modificado.queue_free()
 	garumi.queue_free()
 	await get_tree().process_frame
 
