@@ -169,6 +169,14 @@ func cargar_estado_guardado(estado: Dictionary) -> void:
 			interior.call("cargar_estado_guardado", estado_interior as Dictionary)
 	if is_inside_tree():
 		_reconstruir_visual_decoraciones()
+		if _interior_guardado_pendiente:
+			call_deferred("_restaurar_interior_guardado")
+
+
+## GameState aplica el snapshot de la zona activa mediante este contrato.
+func restaurar_estado_guardado(estado: Dictionary) -> void:
+	cargar_estado_guardado(estado)
+
 
 func establecer_decoraciones(decoraciones: Array) -> void:
 	cargar_estado_guardado({"version": _version_estado, "decoraciones": decoraciones})
