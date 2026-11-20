@@ -1,11 +1,11 @@
-extends SceneTree
+extends Node
 
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run")
 
 
@@ -17,10 +17,10 @@ func _run() -> void:
 	criatura.name = "CreatureDamageReentrancyTarget"
 	atacante_externo.name = "CreatureDamageOuterAttacker"
 	atacante_reentrante.name = "CreatureDamageNestedAttacker"
-	root.add_child(criatura)
-	root.add_child(atacante_externo)
-	root.add_child(atacante_reentrante)
-	await process_frame
+	get_tree().root.add_child(criatura)
+	get_tree().root.add_child(atacante_externo)
+	get_tree().root.add_child(atacante_reentrante)
+	await get_tree().process_frame
 
 	var eventos: Array[Dictionary] = []
 	var control_reentrada := {"iniciado": false}
@@ -68,8 +68,8 @@ func _run() -> void:
 	if not errores.is_empty():
 		for error in errores:
 			push_error("CreatureDamageReentrancy: FAIL: " + error)
-		quit(1)
+		get_tree().quit(1)
 		return
 
 	print("CreatureDamageReentrancy: PASS")
-	quit(0)
+	get_tree().quit(0)
