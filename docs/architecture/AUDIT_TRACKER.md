@@ -542,6 +542,8 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 
 - Implementado `CreatureInteractionMemory` como componente local, temporal y acotado.
 - Integrado con el daño recibido por `CreatureAI`, opt-in por `memoria_interaccion.activo`; la respuesta se aplica sólo al atacante recordado y admite las cuatro respuestas ya soportadas.
+- Las pruebas de memoria cubren aislamiento entre actores, límite de intensidad, exclusión de Garumis, expiración y limpieza de referencias débiles cuando el actor se libera.
+
 - No persiste recuerdos, no modifica el canon y no incluye Garumis.
 - Pruebas ampliadas para identidad individual, acumulación, decaimiento, expiración y retorno al comportamiento base.
 - Estado: implementación realizada; CI pendiente.
