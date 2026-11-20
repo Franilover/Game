@@ -142,8 +142,9 @@ func _limpiar_main(main: Node) -> void:
 	await _limpiar_estado_global()
 	if is_instance_valid(main):
 		get_tree().current_scene = self
-		main.queue_free()
-		await main.tree_exited
+		# Este harness es headless y no necesita una animación de salida:
+		# liberar el runtime completo evita dejar NPCs/deferred nodes al salir.
+		main.free()
 	await get_tree().process_frame
 	await get_tree().process_frame
 
