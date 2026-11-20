@@ -411,7 +411,6 @@ func _aplicar_movimiento_normal(
 	physics_movement_controller.establecer_velocidad(self, velocidad)
 	physics_movement_controller.aplicar_desplazamiento(self)
 	if ajustar_arena:
-		_ajustar_a_arena_garumi()
 	if direccion == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
 	_sincronizar_estado_movimiento()
@@ -697,7 +696,6 @@ func _procesar_jump(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(duracion, jump_distance)
 	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad * _terrain_speed_multiplier)
 	physics_movement_controller.aplicar_desplazamiento(self)
-	_ajustar_a_arena_garumi()
 	var altura := sin(progreso * PI) * 16.0
 	visual.position = _base_visual_position + Vector2(0.0, -altura)
 	if not locomotion.procesando_salto():
@@ -725,17 +723,10 @@ func _iniciar_dash() -> void:
 	_update_visual()
 
 
-func _ajustar_a_arena_garumi() -> void:
-	for arena in get_tree().get_nodes_in_group("garumi_combat_arena"):
-		if is_instance_valid(arena) and arena.has_method("ajustar_jugador_tras_movimiento"):
-			arena.call("ajustar_jugador_tras_movimiento")
-
-
 func _procesar_dash(delta: float) -> void:
 	var velocidad := locomotion.obtener_velocidad_accion(dash_duration, dash_distance)
 	physics_movement_controller.establecer_velocidad(self, _action_direction * velocidad * _terrain_speed_multiplier)
 	physics_movement_controller.aplicar_desplazamiento(self)
-	_ajustar_a_arena_garumi()
 	if not locomotion.procesando_dash():
 		velocity = Vector2.ZERO
 		state = State.IDLE

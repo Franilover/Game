@@ -183,7 +183,6 @@ func _input(event: InputEvent) -> void:
 func _intentar_iniciar_consumo(mano: String, accion: String, boton: int = MOUSE_BUTTON_NONE) -> bool:
 	var hay_contexto := (
 		_interaction_system != null
-		and get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
 		and _interaction_system.hay_interaccion_contextual()
 	)
 	if hay_contexto or _inventory_ui == null or not is_instance_valid(_inventory_ui):
@@ -213,16 +212,15 @@ func _unhandled_input(event: InputEvent) -> void:
 		get_viewport().set_input_as_handled()
 		return
 
-	var combate_garumi_activo := not get_tree().get_nodes_in_group("garumi_combat_arena").is_empty()
 	if accion == "primary_action":
-		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_primaria():
+		if _interaction_system != null and _interaction_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
 			return
 		if _combat_system != null and _combat_system.procesar_accion_primaria():
 			get_viewport().set_input_as_handled()
 			return
 	else:
-		if not combate_garumi_activo and _interaction_system != null and _interaction_system.procesar_accion_secundaria():
+		if _interaction_system != null and _interaction_system.procesar_accion_secundaria():
 			get_viewport().set_input_as_handled()
 			return
 		if _combat_system != null and _combat_system.procesar_accion_secundaria():
