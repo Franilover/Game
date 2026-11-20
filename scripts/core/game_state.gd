@@ -264,9 +264,10 @@ func crear_partida(
 
 
 func iniciar_partida(id: String) -> bool:
-	var datos := _leer_archivo_partida(id)
+	var datos_originales := _leer_archivo_partida(id)
+	var datos := _migrar_datos_partida(id, datos_originales)
 
-	if not _datos_partida_cargables(id, datos):
+	if datos.is_empty():
 		push_warning("GameState: partida ausente, incompatible o con estructura inválida → " + id)
 		return false
 
@@ -275,34 +276,12 @@ func iniciar_partida(id: String) -> bool:
 	_guardado_rapido_conectado = false
 	var metadata := _extraer_metadata_partida(datos)
 
-	world_state.world_seed_valida = false
-	world_state.world_seed = 0
-
-	var mundo_variant: Variant = datos.get(
-		"mundo",
-		{}
-	)
-
-	if mundo_variant is Dictionary:
-		var mundo: Dictionary = mundo_variant as Dictionary
-		if mundo.has("semilla"):
-			world_state.world_seed = int(mundo.get("semilla", 0))
-			world_state.world_seed_valida = true
-
-	if not world_state.world_seed_valida:
-		# Migración de partidas creadas antes del sistema de semillas.
-		# La semilla se crea una sola vez y se persiste inmediatamente.
-		world_state.world_seed = _generar_semilla_mundo()
-		world_state.world_seed_valida = true
-		datos["mundo"] = {
-			"semilla": world_state.world_seed,
-			"generador_version": 1
-		}
-		datos["version"] = SAVE_VERSION
-		_escribir_archivo_partida(
-			id,
-			datos
-		)
+	var mundo: Dictionary = datos.get("mundo", {}) as Dictionary
+	world_state.world_seed = int(mundo.get("semilla", 0))
+	world_state.world_seed_valida = true
+	if datos != datos_originales:
+		if not _escribir_archivo_partida(id, datos):
+			push_warning("GameState: no se pudo persistir la migración; la partida se abrirá con los datos normalizados.")
 
 	active_save_id = id
 	active_save_name = str(
@@ -1474,6 +1453,23 @@ func _leer_archivo_partida(id: String) -> Dictionary:
 
 ## El repositorio garantiza JSON válido; GameState valida el contrato del save.
 ## Versiones antiguas sin campo version se interpretan como versión 1.
+## Normaliza versiones antiguas sin descartar campos desconocidos del progreso.
+## La semilla ausente se genera una sola vez y se guarda con el resto de la migración.
+func _migrar_datos_partida(id: String, datos: Dictionary) -> Dictionary:
+	if not _datos_partida_cargables(id, datos):
+		return {}
+	var migrados := datos.duplicate(true)
+	var mundo_variant: Variant = migrados.get("mundo", {})
+	var mundo: Dictionary = (mundo_variant as Dictionary).duplicate(true) if mundo_variant is Dictionary else {}
+	if not mundo.has("semilla"):
+		mundo["semilla"] = _generar_semilla_mundo()
+	if not mundo.has("generador_version"):
+		mundo["generador_version"] = 1
+	migrados["mundo"] = mundo
+	migrados["version"] = SAVE_VERSION
+	return migrados
+
+
 func _datos_partida_cargables(id: String, datos: Dictionary) -> bool:
 	if id.strip_edges().is_empty() or datos.is_empty():
 		return false
