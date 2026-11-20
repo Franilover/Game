@@ -301,3 +301,12 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] Pruebas para versión 1 sin campo `version`, preservación de progreso desconocido, no mutación del original y rechazo de versiones futuras.
 - [x] CI Godot 4.7 y calidad GDScript aprobadas: [regresión 44751938817](https://github.com/Franilover/Game/actions/runs/44751938817), [calidad 44751938797](https://github.com/Franilover/Game/actions/runs/44751938797).
 - [~] La compatibilidad explícita cubierta es la forma legacy conocida (v1 sin versión, stamina antigua y ausencia de semilla). No se inventaron transformaciones para campos históricos cuya semántica no está documentada.
+
+
+### Guardado entre procesos independientes — 2026-11-20
+
+- [x] Nuevo contrato `tests/persistence/test_save_process_restart.gd` lanza dos instancias independientes de Godot con `OS.execute`: una escribe y termina; la segunda arranca y lee el archivo desde el mismo `user://`.
+- [x] El lector verifica PID distinto, versión, semilla y versión de generador, salud/Eterium, posición, zona, inventario, progreso de misión y reclamación de recompensa.
+- [x] El proceso padre valida códigos de salida y marcadores de éxito de ambos procesos; elimina el fixture al terminar.
+- [x] Integrado en `.github/workflows/procedural-world-tests.yml`. Regresión Godot 4.7 aprobada: [run 44752576177](https://github.com/Franilover/Game/actions/runs/44752576177). Calidad GDScript aprobada en el commit del script: [run 44752557244](https://github.com/Franilover/Game/actions/runs/44752557244).
+- [~] Este contrato demuestra persistencia de archivo entre procesos independientes, pero usa un payload representativo con `SaveFileRepository`; todavía no inicia el juego desde el menú y carga una partida real mediante `GameState.iniciar_partida()` en el segundo proceso.
