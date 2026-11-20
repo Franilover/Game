@@ -586,8 +586,14 @@ func _inicializar_runtime_de_zona() -> void:
 		push_error("Main: no se encontró Entities/Player.")
 		return
 
-	if GarliaMultiplayer.es_servidor_dedicado() and _world_generator != null:
-		GlobalWorldStore.restaurar_estado_entidades(_world_generator.entity_manager, str(_zone_manager.obtener_tipo_actual()))
+	if _world_generator != null:
+		var tipo_zona_actual := str(_zone_manager.obtener_tipo_actual())
+		if GarliaMultiplayer.es_servidor_dedicado():
+			GlobalWorldStore.restaurar_estado_entidades(_world_generator.entity_manager, tipo_zona_actual)
+		elif not GarliaWorldNetwork.es_cliente_en_mundo_global():
+			var estado_local := GameState.obtener_estado_entidades_mundo_local(tipo_zona_actual)
+			if not estado_local.is_empty():
+				_world_generator.entity_manager.restaurar_estado_persistente_mundo(estado_local)
 
 	if _world_generator != null:
 		if _zone_manager.consumir_salida_reino_pendiente():
