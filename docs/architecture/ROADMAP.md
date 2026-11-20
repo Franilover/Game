@@ -281,3 +281,13 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] El contrato encontró y corrigió un nodo `GameplayInputGate` huérfano: `InventoryController.configurar_gate()` ahora adopta el nodo como hijo y libera el gate anterior al reemplazarlo.
 - [x] Suite completa Godot 4.7: **success**, run [44750243790](https://github.com/Franilover/Game/actions/runs/44750243790), commit `49d52ae3`. GDScript Quality (Advisory): **success**, run [44750243789](https://github.com/Franilover/Game/actions/runs/44750243789).
 - [~] La aplicación automática de snapshot a `main.tscn` ya tiene cobertura headless integrada. Sigue pendiente guardar/cerrar/reabrir el proceso real y continuar gameplay con interiores/NPC en ejecución.
+
+
+### Integración de reanudación en main.tscn — 2026-11-20
+
+- [x] Nuevo contrato `test_main_scene_resume` instancia la escena real `scenes/world/main.tscn`, deja que su `Main` configure servicios, inicia Torres mediante el `ZoneManager` real y espera la restauración automática.
+- [x] Verifica posición y orientación, salud, Eterium, stamina, inventario, hotbar, propiedad del `GameplayInputGate` y finalización de restauración vital.
+- [x] La primera ejecución encontró que el test llegaba a `MainSceneResume: PASS` pero fallaba durante la limpieza por nodos dinámicos de entrada sin liberar. Se corrigió la limpieza explícita de ambos gates y el desmontaje diferido de `main.tscn`.
+- [x] Regresión completa Godot 4.7 aprobada en [44750715923](https://github.com/Franilover/Game/actions/runs/44750715923), commit `ccd2ee7773`.
+- [~] Esta prueba cubre la escena principal y su orden de inicialización con un snapshot de prueba en memoria; todavía no simula cerrar y volver a abrir dos procesos independientes ni valida el archivo real desde el arranque de `main.tscn`.
+- [ ] Mantener pendientes el reinicio real del proceso, la migración exhaustiva de saves antiguos y la continuidad integrada de interiores/offline.
