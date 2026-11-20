@@ -256,6 +256,14 @@ func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
 		muertes_normales["cantidad"] = int(muertes_normales["cantidad"]) + 1
 	)
 
+	# El dash concede invulnerabilidad solo durante su estado activo.
+	var vida_antes_dash := jugador.health
+	jugador.state = Player.State.DASH
+	jugador.take_damage(10, "Prueba/Dash")
+	if jugador.health != vida_antes_dash:
+		errores.append("El jugador recibió daño durante el dash.")
+	jugador.state = Player.State.IDLE
+
 	jugador.take_damage(10, "Prueba/Armadura")
 	if jugador.health != 93:
 		errores.append("Player no aplicó la defensa equipada al daño normal.")
