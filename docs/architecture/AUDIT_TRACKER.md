@@ -595,3 +595,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Pruebas cubren límites del modificador, umbrales de curiosidad y competencia descanso/alimentación entre individuos con rasgos opuestos.
 - Esto es personalidad configurada por individuo, no evolución genética ni aprendizaje permanente. No se generan rasgos al azar ni se persisten cambios automáticamente.
 - Validación de los commits de personalidad en curso; la suite anterior pasó hasta el bloque de confianza y memoria. La última modificación de expectativas de test requiere su propio CI.
+
+
+## Encuentros cercanos y reacción a individuos conocidos (2026-11-20)
+
+- Se corrige el nombre semántico: la memoria registra encuentros cercanos por radio, no afirma visibilidad ni línea de visión. Se conserva `registrar_avistamiento` como alias de compatibilidad.
+- La familiaridad puede activar `investigar` sólo si la especie configura `respuesta_familiaridad: "investigar"` y se supera el umbral de Utility AI.
+- La curiosidad individual modula ese umbral; la familiaridad no puede ordenar atacar, huir ni perseguir.
+- La evaluación de familiaridad se realiza después de las reglas ecológicas explícitas, que conservan prioridad.
+- Pruebas cubren investigación optativa y rechazo de respuestas agresivas. Pendiente CI de este cambio y validación visual.
