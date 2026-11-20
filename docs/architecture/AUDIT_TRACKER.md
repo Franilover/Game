@@ -635,3 +635,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Verifica salud, Eterium, stamina, posición, orientación y flags de restauración. La primera ejecución detectó un defecto del harness (el servicio estaba fuera del árbol); se corrigió y la nueva ejecución pasó.
 - Añadido al workflow Godot 4.7. Ejecución [44701475641](https://github.com/Franilover/Game/actions/runs/44701475641): job de regresión **success**.
 - Alcance parcial: no sustituye la integración con `main.tscn`, ZoneManager, inventario real ni la continuación de una sesión tras reinicio.
+
+
+## Reanudación integrada de zona, Player e inventario — 2026-11-20
+
+- Nuevo contrato: `tests/persistence/test_main_session_resume.gd` y `test_main_session_resume.tscn`.
+- La prueba construye un árbol de runtime con `ZoneManager`, la escena real `reino_torres.tscn`, `Player` y la escena real de inventario. Alimenta un snapshot de prueba sin escribir ni sobrescribir saves del usuario.
+- Verifica que ZoneManager reanuda Torres desde `zona_actual_tipo`, y que GameState restaura posición, orientación, salud, Eterium, stamina, objetos y hotbar.
+- El paso de integración terminó **success** en el workflow Godot 4.7 [44747758966](https://github.com/Franilover/Game/actions/runs/44747758966), commit `4422b9bd`. La restauración aislada del Player y el roundtrip anterior también pasaron en el mismo job.
+- Límite: no instancia todavía `main.tscn`, no cierra/reabre el proceso ni prueba continuidad de una sesión real. No cerrar la persistencia P0 completa por este contrato.
