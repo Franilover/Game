@@ -205,6 +205,47 @@ func _run() -> void:
 		return
 	memoria.limpiar()
 
+	# La confianza sólo nace de un evento positivo explícito, nunca de proximidad.
+	memoria.limpiar()
+	memoria.registrar_avistamiento(player, 0.5, 120.0, 4.0)
+	if memoria.obtener_tipo_relacion(player) != "conocido":
+		_fail("La familiaridad no produjo la relación conocida esperada.")
+		return
+	memoria.registrar_interaccion_positiva(player, 0.75, 180.0)
+	if not is_equal_approx(memoria.obtener_confianza(player), 0.75):
+		_fail("La memoria no registró una interacción positiva explícita.")
+		return
+	if memoria.obtener_tipo_relacion(player) != "desconocido":
+		_fail("Una interacción positiva inferior al umbral creó confianza prematura.")
+		return
+	memoria.registrar_interaccion_positiva(player, 0.5, 180.0)
+	if memoria.obtener_tipo_relacion(player) != "confiable":
+		_fail("La memoria no derivó una relación confiable al superar el umbral.")
+		return
+	memoria.registrar_agresion(player, 2.0, 180.0)
+	if memoria.obtener_tipo_relacion(player) != "hostil":
+		_fail("La agresión no prevaleció sobre la confianza al derivar hostilidad.")
+		return
+	memoria.limpiar()
+
+	# La confianza puede habilitar investigar, pero nunca atacar ni perseguir.
+	ai.configuracion_ia = {"memoria_interaccion": {
+		"activo": true,
+		"aceptar_interacciones_positivas": true,
+		"umbral_confianza": 0.5,
+		"respuesta_confianza": "investigar"
+	}}
+	ai.registrar_interaccion_positiva(player, 0.75, 120.0)
+	if ai._obtener_respuesta_para_objetivo(player) != "investigar":
+		_fail("La confianza no habilitó la respuesta de investigación configurada.")
+		return
+	ai.configuracion_ia["memoria_interaccion"]["respuesta_confianza"] = "atacar"
+	if ai._obtener_respuesta_memoria(player) != "":
+		_fail("La confianza permitió una respuesta agresiva no autorizada.")
+		return
+	ai._memoria_interaccion.limpiar()
+	ai.configuracion_ia = {}
+
 	# La percepción cercana alimenta familiaridad sólo si la memoria está activa.
 	ai.configuracion_ia = {"memoria_interaccion": {
 		"activo": true,
