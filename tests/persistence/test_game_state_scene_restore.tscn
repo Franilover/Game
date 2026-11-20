@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tests/persistence/test_game_state_scene_restore.gd" id="1"]
+
+[node name="GameStateSceneRestore" type="Node"]
+script = ExtResource("1")
