@@ -137,6 +137,74 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	if int(ataques_con_danio["cantidad"]) != 2:
 		errores.append("El wrapper de compatibilidad no conservó el evento de daño.")
 
+	# Las señales de contacto son síncronas: un listener puede derrotar
+	# al atacante antes de que CombatSystem llegue a resolver el daño.
+	atacante.restaurar_estado_vital(100, true)
+	objetivo.restaurar_estado_vital(100, true)
+	combate.contacto_efectivo.connect(
+		func(_emisor: Node, _receptor: Entity, origen: String) -> void:
+			if origen == "Prueba/Interrupcion/Atacante":
+				atacante.restaurar_estado_vital(0, false)
+	)
+	var salud_antes_interrupcion := objetivo.health
+	var ataques_antes_interrupcion := int(ataques_con_danio["cantidad"])
+	var resultado_interrumpido: CombatAttackResult = combate.solicitar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		10,
+		"Prueba/Interrupcion/Atacante"
+	)
+	if not resultado_interrumpido.contacto_registrado or not resultado_interrumpido.solicitud_aceptada:
+		errores.append("La interrupción perdió el contacto que ya había sido emitido.")
+	if resultado_interrumpido.danio_aplicado:
+		errores.append("CombatSystem declaró daño aplicado después de morir el atacante en el contacto.")
+	if objetivo.health != salud_antes_interrupcion:
+		errores.append("CombatSystem aplicó daño después de morir el atacante en el contacto.")
+	if int(ataques_con_danio["cantidad"]) != ataques_antes_interrupcion:
+		errores.append("La interrupción emitió el evento de daño confirmado.")
+
+	# El mismo contrato protege el camino melee, que emite contacto antes
+	# de llamar al resolver central de daño.
+	atacante.restaurar_estado_vital(100, true)
+	combate.contacto_efectivo.connect(
+		func(_emisor: Node, _receptor: Entity, origen: String) -> void:
+			if origen == "Prueba/Interrupcion/Melee":
+				atacante.restaurar_estado_vital(0, false)
+	)
+	combate.contacto_efectivo.emit(
+		atacante,
+		objetivo,
+		"Prueba/Interrupcion/Melee"
+	)
+	var salud_antes_melee := objetivo.health
+	var melee_interrumpido := combate._aplicar_danio(
+		objetivo,
+		10,
+		"Prueba/Interrupcion/Melee",
+		atacante
+	)
+	if melee_interrumpido or objetivo.health != salud_antes_melee:
+		errores.append("El resolver melee aplicó daño tras morir el atacante en el callback de contacto.")
+
+	# Un objetivo que muere durante el contacto tampoco puede recibir el golpe.
+	atacante.restaurar_estado_vital(100, true)
+	objetivo.restaurar_estado_vital(100, true)
+	combate.contacto_efectivo.connect(
+		func(_emisor: Node, receptor: Entity, origen: String) -> void:
+			if origen == "Prueba/Interrupcion/Objetivo":
+				receptor.restaurar_estado_vital(0, false)
+	)
+	var resultado_objetivo_interrumpido: CombatAttackResult = combate.solicitar_danio_desde_entidad(
+		atacante,
+		objetivo,
+		10,
+		"Prueba/Interrupcion/Objetivo"
+	)
+	if resultado_objetivo_interrumpido.danio_aplicado or objetivo.health != 0:
+		errores.append("CombatSystem dañó un objetivo que ya había muerto durante el contacto.")
+	if int(ataques_con_danio["cantidad"]) != ataques_antes_interrupcion:
+		errores.append("El objetivo derrotado durante el contacto generó un impacto confirmado.")
+
 	var contactos_antes_rechazo := int(contactos["cantidad"])
 	var resultado_atacante_invalido: CombatAttackResult = combate.solicitar_danio_desde_entidad(
 		null,
