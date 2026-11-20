@@ -298,7 +298,18 @@ func _al_salir_entidad(entity: Node) -> void:
 			_by_chunk.erase(chunk_coord)
 		else:
 			_by_chunk[chunk_coord] = bucket
+	_limpiar_referencias_replica(_replicas_red_by_key, entity)
+	_limpiar_referencias_replica(_replicas_red_props_by_key, entity)
 	_remover_persistencia(entity)
+
+
+func _limpiar_referencias_replica(registro: Dictionary, entity: Node) -> void:
+	# Las réplicas de red pueden desaparecer por cambio de zona o snapshot.
+	# No conservar referencias inválidas hace que el registro no crezca
+	# indefinidamente durante sesiones largas.
+	for clave_variant in registro.keys():
+		if registro.get(clave_variant) == entity:
+			registro.erase(clave_variant)
 
 
 func obtener_entidades_activas() -> Array:
