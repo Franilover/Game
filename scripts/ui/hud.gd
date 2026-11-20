@@ -1915,36 +1915,6 @@ func _usar_don_companero(indice: int) -> void:
 		_discovery_notice_timer = 2.0
 
 
-func _curar_garumi_vinculado_con_eterium(garumi: Node) -> void:
-	const COSTO_ETERIUM := 10
-	const CURACION := 25
-
-	if not is_instance_valid(player) or not is_instance_valid(garumi):
-		return
-	if not garumi.has_method("curar_con_eterium"):
-		return
-	if not bool(garumi.get("is_alive")):
-		return
-
-	var vida_actual := int(garumi.get("health"))
-	var vida_maxima := maxi(1, int(garumi.get("max_health")))
-	if vida_actual >= vida_maxima:
-		return
-	if int(player.get("mana")) < COSTO_ETERIUM:
-		return
-	if not player.eterium.gastar(COSTO_ETERIUM):
-		return
-
-	player._sync_desde_vital()
-	player.mana_changed.emit(player.mana, player.max_mana)
-	var recuperada := int(garumi.call("curar_con_eterium", CURACION))
-	if recuperada <= 0:
-		# No cobrar si el Garumi no pudo recibir la curación.
-		player.eterium.restaurar(COSTO_ETERIUM)
-		player._sync_desde_vital()
-		player.mana_changed.emit(player.mana, player.max_mana)
-
-
 func _pedir_ruptura_vinculo(garumi: Node) -> void:
 	if not is_instance_valid(garumi) or not garumi.has_method("romper_vinculo"):
 		return
@@ -1952,7 +1922,7 @@ func _pedir_ruptura_vinculo(garumi: Node) -> void:
 		_dialogo_ruptura_vinculo.queue_free()
 	_dialogo_ruptura_vinculo = ConfirmationDialog.new()
 	_dialogo_ruptura_vinculo.title = "Romper vínculo"
-	_dialogo_ruptura_vinculo.dialog_text = "¿Quieres romper el vínculo con %s? El Garumi quedará libre y dejará de ocupar uno de tus tres espacios." % str(garumi.get("criatura_nombre"))
+	_dialogo_ruptura_vinculo.dialog_text = "¿Quieres romper el vínculo con %s? El Garumi quedará libre y terminará la relación." % str(garumi.get("criatura_nombre"))
 	_dialogo_ruptura_vinculo.ok_button_text = "Romper vínculo"
 	_dialogo_ruptura_vinculo.cancel_button_text = "Conservar vínculo"
 	add_child(_dialogo_ruptura_vinculo)
