@@ -1232,3 +1232,8 @@ La ejecución melee y a distancia ahora depende de `CombatTargeting.es_atacante_
 `CombatTargeting.es_objetivo_valido()` ahora aplica la misma política en melee, proyectiles y ataques de entidad: el atacante debe ser una Entity viva dentro del árbol y el objetivo debe seguir vivo y pertenecer a `damageable`. `CombatWeaponAttackValidator` y `CombatSystem.solicitar_danio_desde_entidad()` comparten esta frontera; la IA ya no puede registrar contacto ni aplicar daño con un atacante derrotado o fuera del árbol.
 
 La fase posterior al impacto conserva una distinción importante: un objetivo muerto es inválido para recibir otro ataque, pero sigue siendo válido como resultado de un impacto letal ya confirmado. Por eso el callback de efectos comprueba que el nodo exista y que el atacante siga válido, sin exigir que el objetivo continúe vivo. La resolución central impide que impactos posteriores reduzcan de nuevo la salud. La regresión temporal prueba dos proyectiles sobre un objetivo con 5 puntos de vida, un único contacto/resultado confirmado y el rechazo de un atacante derrotado o fuera del árbol.
+
+
+## Ciclo de vida de proyectiles — 2026-11-20
+
+`CombatProjectile._finalizar()` centraliza el cierre por impacto, muerte del atacante y expiración. La operación marca el proyectil como consumido, desactiva la detección de colisiones y solicita su liberación, evitando que una expiración deje una ventana para impactos tardíos. Después de emitir contacto, el proyectil vuelve a validar atacante y objetivo antes de aplicar daño: si un listener derrota al atacante en esa misma emisión, el daño pendiente se cancela. `test_combat_temporal_contract` cubre esa interrupción y la expiración sin impacto.
