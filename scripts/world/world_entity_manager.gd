@@ -333,7 +333,24 @@ func _guardar_tombstone_prop_recolectado(prop: WorldProp, chunk_coord: Vector2i)
 		"is_present": false,
 		"datos": datos_prop
 	}
-	guardar_dato_chunk(chunk_coord, "props", datos_prop)
+	# Actualizar sólo una entrada DATA ya existente. Insertar únicamente el
+	# tombstone haría que tiene_datos_chunk() bloqueara la preparación del
+	# resto de props del chunk al entrar en LOD DATA por primera vez.
+	var datos_chunk := obtener_datos_chunk(chunk_coord, "props")
+	var actualizado := false
+	for indice in range(datos_chunk.size()):
+		var dato_variant: Variant = datos_chunk[indice]
+		if not dato_variant is Dictionary:
+			continue
+		if str((dato_variant as Dictionary).get("runtime_instance_key", "")) != prop_key:
+			continue
+		var dato_actualizado := datos_prop.duplicate(true)
+		dato_actualizado["is_present"] = false
+		datos_chunk[indice] = dato_actualizado
+		actualizado = true
+		break
+	if actualizado:
+		reemplazar_datos_chunk(chunk_coord, "props", datos_chunk)
 
 
 func _limpiar_referencias_replica(registro: Dictionary, entity: Node) -> void:
