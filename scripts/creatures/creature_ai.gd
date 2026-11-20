@@ -810,7 +810,7 @@ func _refrescar_objetivo() -> void:
 	var objetivo_liberacion: Variant = null
 	if criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		objetivo_liberacion = criatura.get_meta("garlia_objetivo_liberacion")
-	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion) and (objetivo_liberacion as Node2D).is_inside_tree():
+	if objetivo_liberacion is Node2D and is_instance_valid(objetivo_liberacion) and (objetivo_liberacion as Node2D).is_inside_tree() and not objetivo_liberacion.is_in_group("garumis"):
 		if not ("is_alive" in objetivo_liberacion) or bool(objetivo_liberacion.get("is_alive")):
 			objetivo = objetivo_liberacion as Node2D
 			return
@@ -838,6 +838,10 @@ func _refrescar_objetivo() -> void:
 
 	var candidatos: Array[Node2D] = []
 	for candidato in _obtener_candidatos_entidad():
+		# Los Garumis no participan en relaciones depredador/presa ni en
+		# persecuciones hostiles: son entidades sociales autónomas.
+		if candidato.is_in_group("garumis"):
+			continue
 		var es_jugador_conectado := candidato.is_in_group("player") or candidato == jugador
 		if not es_jugador_conectado and not _es_objetivo_permitido(candidato):
 			continue
@@ -847,11 +851,7 @@ func _refrescar_objetivo() -> void:
 		# Ser visible no convierte a una entidad en objetivo. Sólo se eligen
 		# candidatos para los que la especie tiene una respuesta ejecutable.
 		var respuesta := _obtener_respuesta_para_objetivo(candidato)
-		# Un Garumi puede formar parte del mundo y de sus relaciones, pero nunca
-		# es una presa ni un objetivo de combate para la IA de criaturas.
-		if candidato.is_in_group("garumis") and respuesta == "atacar":
-			continue
-		if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
+				if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
 			continue
 		candidatos.append(candidato)
 
@@ -933,14 +933,16 @@ func _es_objetivo_permitido(candidato: Node2D) -> bool:
 			return _es_objetivo_ecologico_valido(candidato)
 
 
-func _es_objetivo_ecologico_valido(candidato: Node2D) -> bool:
+	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
+		return false
 	if not candidato is Creature:
 		return false
 	var tipo_relacion := _obtener_relacion_ecologica(candidato as Creature)
 	return not _obtener_respuesta_ecologica(tipo_relacion).is_empty()
 
 
-func _es_seguimiento_ecologico(candidato: Node2D) -> bool:
+	if candidato == null or not is_instance_valid(candidato) or candidato.is_in_group("garumis"):
+		return false
 	if not candidato is Creature:
 		return false
 	var relacion := _obtener_relacion_ecologica(candidato as Creature)
@@ -2083,7 +2085,7 @@ func _buscar_amenaza_para_refugio() -> Creature:
 	for entidad_variant in entity_manager.obtener_entidades_activas():
 		if entidad_variant is Creature:
 			var candidata := entidad_variant as Creature
-			if candidata != criatura and is_instance_valid(candidata) and candidata.is_alive:
+			if candidata != criatura and is_instance_valid(candidata) and candidata.is_alive and not candidata.is_in_group("garumis"):
 				criaturas_activas.append(candidata)
 
 	var mejor: Creature = null
