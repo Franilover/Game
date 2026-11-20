@@ -248,6 +248,8 @@ Los caminos de entrada dependen del tipo de acción:
 
 CombatSystem coordina solicitudes y efectos de gameplay; CombatDamage resuelve el daño; Entity conserva su estado vital. Ningún sistema de IA, IUM, proyectiles o feedback puede crear un DamageSystem alternativo.
 
+`Player.take_damage()` es la especialización del receptor: aplica la defensa de armadura y luego entrega el daño efectivo a vida o Eterium compartido. Durante `Player.State.DASH` rechaza el impacto por completo; fuera de ese estado no existe invulnerabilidad temporal adicional. La defensa no se vuelve a aplicar en `CombatDamage`, para evitar doble mitigación. Los ataques que necesiten saltarse defensa o invulnerabilidad requieren una regla explícita y no deben llamar directamente a `VitalState`.
+
 ---
 
 ## 10. Inventory / Equipment / Hotbar
