@@ -30,6 +30,15 @@ static func aplicar(
 	if dano <= 0:
 		return false
 
+	# El modificador es código externo y puede provocar señales, muerte o
+	# queue_free() del objetivo. Revalidar antes de tocar su estado vital.
+	if not is_instance_valid(objetivo):
+		return false
+	if not objetivo.is_inside_tree() or objetivo.is_queued_for_deletion():
+		return false
+	if not objetivo.is_in_group("damageable") or not objetivo.is_alive:
+		return false
+
 	var salud_antes: int = objetivo.health
 	if objetivo is Creature and atacante != null and is_instance_valid(atacante):
 		(objetivo as Creature).take_damage_desde(atacante, dano, origen)
