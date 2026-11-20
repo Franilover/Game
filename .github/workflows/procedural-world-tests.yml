@@ -816,6 +816,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run offline bundled world snapshot contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_offline_world_snapshot.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|OfflineWorldSnapshot: FAIL:' <<<"$output"; then
+            echo "Offline bundled world snapshot contract reported errors."
+            exit 1
+          fi
+          if ! grep -q 'OfflineWorldSnapshot: PASS' <<<"$output"; then
+            echo "Offline bundled world snapshot contract did not report PASS."
+            exit 1
+          fi
+
       - name: Run world snapshot validator contract test
         shell: bash
         run: |
