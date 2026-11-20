@@ -533,13 +533,15 @@ func capturar_estado_desde_juego(jugador: Player) -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
 
-	player_state.health = int(
-		jugador.get("health")
+	player_state.health = int(jugador.get("health"))
+	player_state.mana = int(jugador.get("mana"))
+	var reservas_capturadas := player_state.normalizar_reservas_vitales(
+		int(jugador.get("max_health")),
+		int(jugador.get("max_mana")),
+		jugador.eterium.vida_eterium_compartidos()
 	)
-
-	player_state.mana = int(
-		jugador.get("mana")
-	)
+	player_state.health = int(reservas_capturadas.get("health", 0))
+	player_state.mana = int(reservas_capturadas.get("mana", 0))
 
 	player_state.position = jugador.global_position
 	player_state.position_valida = true
@@ -1291,19 +1293,18 @@ func _aplicar_estado_al_juego() -> void:
 			if is_instance_valid(zona) and zona.has_method("restaurar_estado_guardado") and estado_zona is Dictionary:
 				zona.call("restaurar_estado_guardado", (estado_zona as Dictionary).duplicate(true))
 
-	var vida_guardada := clampi(
-		player_state.health,
-		0,
-		int(jugador.get("max_health"))
+	var reservas_guardadas := player_state.normalizar_reservas_vitales(
+		int(jugador.get("max_health")),
+		int(jugador.get("max_mana")),
+		jugador.eterium.vida_eterium_compartidos()
 	)
-	var mana_guardado := clampi(
-		player_state.mana,
-		0,
-		int(jugador.get("max_mana"))
-	)
+	var vida_guardada := int(reservas_guardadas.get("health", 0))
+	var mana_guardado := int(reservas_guardadas.get("mana", 0))
+	# Un snapshot con salud cero nunca se restaura como vivo, aunque el save
+	# sea antiguo o haya sido manipulado y no incluya un indicador de muerte.
 	jugador.restaurar_estado_vital(
 		vida_guardada,
-		true,
+		vida_guardada > 0,
 		mana_guardado
 	)
 
