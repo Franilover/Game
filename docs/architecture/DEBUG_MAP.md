@@ -246,3 +246,5 @@ Si `danio_recibido` informa un atacante incorrecto durante varios impactos en el
 ### Recuperación y curación de Eterium
 
 Si el jugador no recupera Eterium, revisar `Player._aplicar_movimiento_normal()`, `PlayerEteriumCoordinator` y `PlayerEteriumRuntime.actualizar_recuperacion()`. La recuperación pasiva y la curación automática se procesan sólo durante quietud en `IDLE`. Si una entidad muerta altera sus reservas, revisar las guardas de `is_alive` en `PlayerEteriumRuntime`. La curación automática debe rechazarse cuando `vida_eterium_compartidos()` sea true; no convertirla en gasto de la misma reserva que representa la vida.
+
+Si el primer movimiento tras reaparecer consume Eterium acumulado de la vida anterior, revisar `Player.reaparecer()`, `Player.reaparecer_en_red()` y `PlayerEteriumRuntime.reiniciar_temporizadores()`. El coordinador de sprint debe rechazar jugadores muertos y limpiar cualquier coste pendiente inválido.
