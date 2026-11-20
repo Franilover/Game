@@ -237,7 +237,7 @@ func get_interaction_details() -> Dictionary:
 
 
 func interact(persona: Node) -> bool:
-	return interactuar_con_herramienta(persona, "mano_secundaria")
+	return interactuar_con_herramienta(persona, "derecha")
 
 
 func interactuar_con_herramienta(persona: Node, mano: String) -> bool:
@@ -372,11 +372,10 @@ func _puede_recolectar(persona: Node, mano: String) -> bool:
 	var inventario: Node = _inventory
 	if inventario == null or not inventario.has_method("obtener_objeto_mano_activa"):
 		return false
-	if mano not in ["izquierda", "derecha", "mano_secundaria"]:
+	if mano not in ["izquierda", "derecha"]:
 		return false
 
-	var mano_inventario := "derecha" if mano == "mano_secundaria" else mano
-	var herramienta_variant: Variant = inventario.call("obtener_objeto_mano_activa", mano_inventario)
+	var herramienta_variant: Variant = inventario.call("obtener_objeto_mano_activa", mano)
 	if not herramienta_variant is Dictionary:
 		return false
 
