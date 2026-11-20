@@ -164,11 +164,25 @@ func listar_ids_partidas() -> Array[String]:
 		var nombre_archivo := entrada.get_next()
 		if nombre_archivo.is_empty():
 			break
-		if entrada.current_is_dir() or not nombre_archivo.ends_with(".json"):
+		if entrada.current_is_dir():
 			continue
-		var id := nombre_archivo.trim_suffix(".json")
-		if _id_valido(id):
-			resultado.append(id)
+
+		if nombre_archivo.ends_with(".json"):
+			var id_final := nombre_archivo.trim_suffix(".json")
+			if _id_valido(id_final) and not resultado.has(id_final):
+				resultado.append(id_final)
+			continue
+
+		# Un .bak válido también representa una partida confirmada recuperable.
+		# Los .tmp nunca se listan: pueden ser escrituras que no llegaron a commit.
+		if nombre_archivo.ends_with(".json.bak"):
+			var id_respaldo := nombre_archivo.trim_suffix(".json.bak")
+			if (
+				_id_valido(id_respaldo)
+				and not resultado.has(id_respaldo)
+				and not _leer_json_dictionary(_ruta_respaldo(ruta_partida(id_respaldo))).is_empty()
+			):
+				resultado.append(id_respaldo)
 	entrada.list_dir_end()
 	return resultado
 
