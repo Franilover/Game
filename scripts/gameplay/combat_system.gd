@@ -406,9 +406,14 @@ func _al_recibir_impacto_proyectil(
 ) -> void:
 	if objetivo == null or not is_instance_valid(objetivo) or ataque == null:
 		return
-	# El objetivo puede estar muerto aquí: CombatProjectile emite esta señal
-	# después de que CombatDamage confirma el daño, incluso si fue letal.
-	if not CombatTargeting.es_atacante_valido(ataque.attacker):
+	# El atacante pudo morir durante las señales síncronas del daño. Eso no
+	# invalida un impacto que ya se aplicó: todavía hay que registrar derrota,
+	# absorción y feedback. Solo se omite si la instancia ya salió del mundo.
+	if (
+		not is_instance_valid(ataque.attacker)
+		or not ataque.attacker.is_inside_tree()
+		or ataque.attacker.is_queued_for_deletion()
+	):
 		return
 
 	var arma := ataque.object_data
@@ -537,25 +542,25 @@ func _aplicar_danio(
 		arma
 	)
 
-	ataque_realizado.emit(
-		actor,
-		objetivo,
-		danio_real
-	)
-
-	print(
-		"CombatSystem: ",
-		actor.name,
-		" atacó a ",
-		objetivo.name,
-		" con ",
-		origen,
-		" por ",
-		danio_real,
-		" de daño efectivo (base: ",
-		danio,
-		")."
-	)
+	if is_instance_valid(actor) and not actor.is_queued_for_deletion():
+		ataque_realizado.emit(
+			actor,
+			objetivo,
+			danio_real
+		)
+		print(
+			"CombatSystem: ",
+			actor.name,
+			" atacó a ",
+			objetivo.name,
+			" con ",
+			origen,
+			" por ",
+			danio_real,
+			" de daño efectivo (base: ",
+			danio,
+			")."
+		)
 	return true
 
 
