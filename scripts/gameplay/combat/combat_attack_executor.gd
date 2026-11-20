@@ -54,7 +54,7 @@ static func disparar_proyectil(
 	al_detectar_contacto: Callable,
 	al_recibir_impacto: Callable
 ) -> CombatProjectile:
-	if atacante == null or not is_instance_valid(atacante):
+	if not CombatTargeting.es_atacante_valido(atacante):
 		return null
 	if raiz_proyectiles == null or not is_instance_valid(raiz_proyectiles):
 		return null
