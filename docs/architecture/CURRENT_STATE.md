@@ -1111,3 +1111,11 @@ Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_tran
 - Los consumibles no alimenticios sólo se usan si al menos un efecto tiene margen aplicable; se retira el objeto antes de mutar recursos.
 - Los alimentos se consumen aunque vida, Eterium y stamina estén al máximo, manteniendo el comportamiento de juego.
 - Regresión: tests/inventory/test_inventory_use_transaction.tscn.
+
+## Contrato de guardado del mundo compartido — 2026-11-19
+
+- El guardado global escribe y valida un temporal antes de tocar el archivo principal.
+- Si existe un mundo anterior, se mueve a `.bak` antes de publicar el temporal; un fallo al proteger el archivo cancela la escritura sin eliminar el mundo válido.
+- Si falla la publicación o la validación final, intenta restaurar el respaldo. La carga también recupera un `.bak` válido si el archivo principal está corrupto.
+- El servidor sólo pausa el mundo cuando el guardado se confirmó correctamente; ante un fallo permanece activo para no perder progreso en memoria.
+- Regresión: `tests/persistence/test_global_world_store_contract.tscn`.
