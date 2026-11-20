@@ -3,6 +3,8 @@ class_name CreatureInteractionMemory
 
 ## Memoria temporal y local a una criatura. No persiste entre sesiones.
 ## Cada actor se identifica por su instancia viva; no se guardan nodos fuertes.
+const MAX_RECUERDOS: int = 16
+
 var _recuerdos: Dictionary = {}
 
 
@@ -25,6 +27,27 @@ func registrar_agresion(actor: Node, intensidad: float = 1.0, duracion: float = 
 	recuerdo["agresion"] = minf(float(recuerdo.get("agresion", 0.0)) + intensidad_segura, 5.0)
 	recuerdo["tiempo_restante"] = duracion_segura
 	_recuerdos[actor_id] = recuerdo
+	_limitar_recuerdos()
+
+
+
+## Evita que una criatura acumule referencias débiles sin límite durante una sesión.
+func _limitar_recuerdos() -> void:
+	while _recuerdos.size() > MAX_RECUERDOS:
+		var id_mas_debil := -1
+		var menor_agresion := INF
+		var menor_duracion := INF
+		for id_variant in _recuerdos:
+			var datos: Dictionary = _recuerdos[id_variant]
+			var agresion := float(datos.get("agresion", 0.0))
+			var duracion_restante := float(datos.get("tiempo_restante", 0.0))
+			if agresion < menor_agresion or (is_equal_approx(agresion, menor_agresion) and duracion_restante < menor_duracion):
+				id_mas_debil = int(id_variant)
+				menor_agresion = agresion
+				menor_duracion = duracion_restante
+		if id_mas_debil < 0:
+			return
+		_recuerdos.erase(id_mas_debil)
 
 
 func obtener_agresion(actor: Node) -> float:
