@@ -1528,11 +1528,7 @@ func _inventario_guardado_valido(valor: Variant) -> bool:
 		if not item_variant is Dictionary:
 			return false
 
-	# "hotbar" se conserva como alias de lectura para snapshots antiguos.
-	var hotbar_variant: Variant = inventario.get(
-		"hotbar_indices",
-		inventario.get("hotbar", [])
-	)
+	var hotbar_variant: Variant = inventario.get("hotbar_indices", [])
 	if not hotbar_variant is Array:
 		return false
 	for indice_variant in hotbar_variant as Array:
