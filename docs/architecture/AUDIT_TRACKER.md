@@ -672,3 +672,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Se añadieron pruebas de v1 sin `version`, conservación de progreso no reconocido, inmutabilidad del original y rechazo de una versión futura.
 - CI completa aprobada en [44751938817](https://github.com/Franilover/Game/actions/runs/44751938817); calidad GDScript aprobada en [44751938797](https://github.com/Franilover/Game/actions/runs/44751938797).
 - No se atribuyen migraciones a versiones anteriores que no estén respaldadas por contratos o datos históricos conocidos.
+
+
+## Guardado entre procesos independientes — 2026-11-20
+
+- Se añadió un contrato que ejecuta dos procesos Godot separados: el primero persiste el fixture y termina; el segundo lee el mismo archivo `user://` y valida que su PID sea distinto.
+- Se comprueban versión, semilla del mundo, valores vitales, posición, zona, inventario, progreso de misión y recompensa reclamada. El proceso padre verifica códigos de salida y marcadores explícitos; elimina el archivo temporal de contrato.
+- El workflow de regresión ejecuta el nuevo contrato. CI Godot 4.7 aprobada: [44752576177](https://github.com/Franilover/Game/actions/runs/44752576177). Calidad GDScript: [44752557244](https://github.com/Franilover/Game/actions/runs/44752557244).
+- Límite explícito: el test usa `SaveFileRepository` con payload representativo, no el flujo completo de menú + `GameState.iniciar_partida()` entre procesos. Ese es el siguiente nivel de integración.
