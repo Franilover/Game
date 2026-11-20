@@ -330,3 +330,11 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] Nuevo contrato tests/persistence/test_home_interior_persistence.tscn: verifica decoraciones exteriores, identidad y contenido de cofres exteriores/interiores, muebles, contador de cofres y restauración del interior abierto.
 - [x] CI Godot 4.7 del contrato de hogar: [run 44757104913](https://github.com/Franilover/Game/actions/runs/44757104913), prueba de hogar aprobada. La regresión completa del commit de integración de guardado anterior también está aprobada: [run 44756242924](https://github.com/Franilover/Game/actions/runs/44756242924).
 - [~] Falta comprobar el viaje completo Torres → Hogar → cerrar proceso → abrir menú → reanudar Hogar con el jugador dentro del interior. El contrato actual verifica la restauración real de la escena Hogar, sin todavía repetir el ciclo de proceso completo para esta zona.
+
+### Reanudación de posición en Hogar — 2026-11-20
+
+- [x] Hallazgo: ZoneManager guardaba las coordenadas del jugador dentro de hogar_estado al salir de la parcela, pero no las consumía al volver a entrar. La restauración podía depender de que otro snapshot global tuviera la posición correcta.
+- [x] Tras añadir la escena Hogar al árbol, ZoneManager restaura las coordenadas locales guardadas si son numéricas y finitas; valores ausentes, malformados o no finitos no alteran la posición actual.
+- [x] Nuevo contrato tests/persistence/test_zone_manager_home_position.tscn cubre coordenadas válidas y rechaza datos inválidos. También se mantienen aprobadas las pruebas de muebles/interior y reinicio general.
+- [x] Regresión completa Godot 4.7 aprobada: [run 44811300461](https://github.com/Franilover/Game/actions/runs/44811300461). Calidad GDScript del cambio: [run 44811288159](https://github.com/Franilover/Game/actions/runs/44811288159).
+- [~] Esto cierra la restauración de posición al reingresar a Hogar desde otra zona. Sigue pendiente el ciclo de dos procesos que guarde y reabra directamente una partida mientras el jugador permanece dentro del interior.
