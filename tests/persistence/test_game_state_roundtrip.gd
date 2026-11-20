@@ -123,6 +123,40 @@ func _run() -> void:
 	estado_legacy.from_dictionary({"stamina": 50.0})
 	if not is_equal_approx(estado_legacy.stamina, 1.5):
 		errores.append("La migración de stamina antigua (0..100) no conservó su valor proporcional.")
+
+	# Las partidas históricas sin campo version se leen como v1 y se
+	# normalizan sin perder campos de progreso que el código actual desconoce.
+	var legado_v1 := {
+		"id": "legacy_v1",
+		"nombre": "Partida antigua",
+		"estado": {
+			"player": {"health": 80, "mana": 25, "stamina": 50.0},
+			"elapsed_time": 123.0,
+			"flags": {
+				"zona_actual_tipo": "reino_torres",
+				"progreso_personalizado_legacy": {"marcador": 17}
+			}
+		}
+	}
+	var legado_migrado := destino._migrar_datos_partida("legacy_v1", legado_v1)
+	if legado_migrado.is_empty():
+		errores.append("No aceptó una partida v1 sin campo version.")
+	else:
+		if int(legado_migrado.get("version", 0)) != GameStateScript.SAVE_VERSION:
+			errores.append("La migración no actualizó la versión del save.")
+		var mundo_legacy: Dictionary = legado_migrado.get("mundo", {}) as Dictionary
+		if not mundo_legacy.has("semilla") or not mundo_legacy.has("generador_version"):
+			errores.append("La migración no incorporó la semilla y versión del generador.")
+		var flags_legacy: Dictionary = (legado_migrado.get("estado", {}) as Dictionary).get("flags", {}) as Dictionary
+		if int((flags_legacy.get("progreso_personalizado_legacy", {}) as Dictionary).get("marcador", 0)) != 17:
+			errores.append("La migración descartó progreso desconocido de la partida antigua.")
+		if int((legado_v1.get("estado", {}) as Dictionary).get("player", {}).get("health", 0)) != 80:
+			errores.append("La migración modificó el archivo legacy original en memoria.")
+	if not destino._migrar_datos_partida("future_version", {
+		"id": "future_version", "version": GameStateScript.SAVE_VERSION + 1,
+		"estado": {}
+	}).is_empty():
+		errores.append("Aceptó una partida de una versión futura incompatible.")
 	if destino.player_state.position != Vector2(123.5, 456.25) or not destino.player_state.position_valida:
 		errores.append("La posición válida del jugador no sobrevivió al roundtrip.")
 	if destino.player_state.tile != Vector2i(12, 45) or not destino.player_state.tile_valido:
