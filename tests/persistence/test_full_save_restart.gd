@@ -152,12 +152,24 @@ func _worker_read() -> void:
 	var game_state: Node = get_tree().root.get_node("GameState")
 	var save_repository: Variant = game_state.get("save_repository")
 	var persisted: Dictionary = save_repository.call("leer_partida", save_id) as Dictionary
+	var state_probe: Dictionary = persisted.get("estado", {}) as Dictionary
+	var flags_probe: Dictionary = state_probe.get("flags", {}) as Dictionary
+	var world_probe: Dictionary = persisted.get("mundo", {}) as Dictionary
+	var inventory_probe: Variant = flags_probe.get("inventario_estado", {})
+	var player_probe: Variant = state_probe.get("player", {})
+	var valid_player := bool(game_state.call("_player_guardado_valido", player_probe))
+	var valid_inventory := bool(game_state.call("_inventario_guardado_valido", inventory_probe))
 	var valid_save := bool(game_state.call("_datos_partida_cargables", save_id, persisted))
-	print("FullSaveRestart: READER_DIAGNOSTIC id=%s path=%s exists=%s keys=%s valid=%s" % [
-		save_id,
-		str(save_repository.get("directorio")),
-		str(not persisted.is_empty()),
-		str(persisted.keys()),
+	print("FullSaveRestart: READER_DIAGNOSTIC id_match=%s version_type=%s version=%s world_version_type=%s seed_type=%s generator_type=%s state_type=%s player_valid=%s inventory_valid=%s valid=%s" % [
+		str(str(persisted.get("id", "")) == save_id),
+		str(typeof(persisted.get("version"))),
+		str(persisted.get("version")),
+		str(typeof(persisted.get("mundo_version"))),
+		str(typeof(world_probe.get("semilla"))),
+		str(typeof(world_probe.get("generador_version"))),
+		str(typeof(persisted.get("estado"))),
+		str(valid_player),
+		str(valid_inventory),
 		str(valid_save)
 	])
 	if not valid_save:
