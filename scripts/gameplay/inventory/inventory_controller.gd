@@ -429,8 +429,14 @@ func seleccionar_hotbar(indice: int) -> bool:
 	return true
 
 func equipar(slot: String, item: Dictionary) -> void:
+	if not EquipmentState.es_objeto_compatible(slot, item):
+		return
 	runtime.equipar(slot, item)
 	equipo_cambio.emit(slot, item.duplicate(true))
+
+
+func puede_equipar_en_slot(slot: String, item: Dictionary) -> bool:
+	return EquipmentState.es_objeto_compatible(slot, item)
 
 func desequipar(slot: String) -> Dictionary:
 	var anterior := runtime.desequipar(slot)
