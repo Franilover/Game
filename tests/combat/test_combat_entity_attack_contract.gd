@@ -76,6 +76,30 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	if danio_directo_garumi or garumi.health != salud_garumi_antes:
 		errores.append("CombatDamage permitió daño directo a un Garumi no combatiente.")
 
+	# Los Garumis tampoco pueden actuar como atacantes: el sistema solo acepta
+	# entidades activas que pertenecen al grupo damageable.
+	var salud_antes_ataque_garumi := objetivo.health
+	var resultado_atacante_garumi: CombatAttackResult = combate.solicitar_danio_desde_entidad(
+		garumi,
+		objetivo,
+		9,
+		"Prueba/Entidad/AtacanteGarumi"
+	)
+	if resultado_atacante_garumi.solicitud_aceptada or resultado_atacante_garumi.motivo_rechazo != &"atacante_invalido":
+		errores.append("CombatSystem permitió que un Garumi iniciara un ataque.")
+	if objetivo.health != salud_antes_ataque_garumi or int(contactos["cantidad"]) != contactos_antes_garumi:
+		errores.append("Un Garumi atacante modificó salud o emitió contacto de combate.")
+
+	var danio_directo_atacante_garumi := CombatDamageScript.aplicar(
+		objetivo,
+		9,
+		"Prueba/CombatDamage/AtacanteGarumi",
+		Callable(),
+		garumi
+	)
+	if danio_directo_atacante_garumi or objetivo.health != salud_antes_ataque_garumi:
+		errores.append("CombatDamage permitió atribuir daño a un Garumi.")
+
 	var resultado_cero: CombatAttackResult = combate.solicitar_danio_desde_entidad(
 		atacante,
 		objetivo,
