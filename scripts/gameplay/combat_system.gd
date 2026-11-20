@@ -262,6 +262,8 @@ func _al_recibir_objetivo_de_ataque(
 	var entidad_objetivo := objetivo as Entity
 	if entidad_objetivo == null:
 		return
+	if not CombatTargeting.es_objetivo_valido(player, entidad_objetivo):
+		return
 	contacto_efectivo.emit(
 		player,
 		entidad_objetivo,
@@ -391,7 +393,7 @@ func _al_detectar_contacto_proyectil(
 ) -> void:
 	if objetivo == null or not is_instance_valid(objetivo):
 		return
-	if ataque == null or not CombatTargeting.es_atacante_valido(ataque.attacker):
+	if ataque == null or not CombatTargeting.es_objetivo_valido(ataque.attacker, objetivo):
 		return
 	contacto_efectivo.emit(
 		ataque.attacker,
@@ -406,7 +408,7 @@ func _al_recibir_impacto_proyectil(
 ) -> void:
 	if objetivo == null or ataque == null:
 		return
-	if not CombatTargeting.es_atacante_valido(ataque.attacker):
+	if not CombatTargeting.es_objetivo_valido(ataque.attacker, objetivo):
 		return
 
 	var arma := ataque.object_data
@@ -567,14 +569,12 @@ func solicitar_danio_desde_entidad(
 	danio: int,
 	origen: String = "CombatSystem/Entidad"
 ) -> CombatAttackResult:
-	if atacante == null or not is_instance_valid(atacante):
+	if not CombatTargeting.es_atacante_valido(atacante):
 		return COMBAT_ATTACK_RESULT.rechazado(&"atacante_invalido")
 	if objetivo == null or not is_instance_valid(objetivo):
 		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_invalido")
-	if not objetivo.is_in_group("damageable"):
+	if not CombatTargeting.es_objetivo_valido(atacante, objetivo):
 		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_no_daniable")
-	if not objetivo.is_alive:
-		return COMBAT_ATTACK_RESULT.rechazado(&"objetivo_derrotado")
 
 	# La IA llama esta API después de confirmar su contacto. El evento se
 	# registra incluso si el daño resultante es cero.
