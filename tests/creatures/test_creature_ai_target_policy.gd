@@ -231,6 +231,10 @@ func _run() -> void:
 	if not is_equal_approx(memoria.obtener_confianza(player), 4.95):
 		_fail("La confianza no tuvo un decaimiento temporal lento.")
 		return
+	memoria.registrar_agresion(player, 0.5, 180.0)
+	if memoria.obtener_tipo_relacion(player) != "desconfiado":
+		_fail("Una agresión leve no produjo desconfianza aunque existiera confianza previa.")
+		return
 	memoria.registrar_agresion(player, 5.0, 180.0)
 	if memoria.obtener_tipo_relacion(player) != "hostil":
 		_fail("La agresión no prevaleció sobre la confianza al derivar hostilidad.")
