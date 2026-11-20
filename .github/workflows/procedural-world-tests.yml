@@ -348,6 +348,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run world entity runtime key persistence regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/entities/test_world_entity_runtime_key.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldEntityRuntimeKey: FAIL:' <<<"$output"; then
+            echo "World entity runtime key test reported errors."
+            exit 1
+          fi
+
       - name: Run world entity replica registry regression test
         shell: bash
         run: |
