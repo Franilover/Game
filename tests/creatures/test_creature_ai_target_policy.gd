@@ -259,6 +259,21 @@ func _run() -> void:
 	ai._memoria_interaccion.limpiar()
 	ai.configuracion_ia = {}
 
+	# Una criatura neutral puede reconocer individuos aunque no seleccione un objetivo hostil.
+	actor.comportamiento = ""
+	ai.objetivo = null
+	ai.configuracion_ia = {"memoria_interaccion": {"activo": true}}
+	ai._memoria_interaccion.limpiar()
+	ai._actualizar_percepcion()
+	if ai.objetivo != null:
+		_fail("La criatura neutral seleccionó un objetivo sin respuesta ecológica.")
+		return
+	if ai._memoria_interaccion.obtener_familiaridad(player) <= 0.0:
+		_fail("La criatura neutral no recordó un individuo cercano sin objetivo hostil.")
+		return
+	ai._memoria_interaccion.limpiar()
+	actor.comportamiento = "agresivo"
+
 	# La percepción cercana alimenta familiaridad sólo si la memoria está activa.
 	ai.configuracion_ia = {"memoria_interaccion": {
 		"activo": true,
