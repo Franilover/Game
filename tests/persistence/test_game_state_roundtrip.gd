@@ -3,6 +3,7 @@ extends Node
 const GameStateScript = preload("res://scripts/core/game_state.gd")
 const MissionManagerScript = preload("res://scripts/gameplay/mission_manager.gd")
 const RelationshipSystemScript = preload("res://scripts/gameplay/relationship_system.gd")
+const PlayerStateScript = preload("res://scripts/state/player_state.gd")
 
 
 func _ready() -> void:
@@ -17,7 +18,7 @@ func _run() -> void:
 
 	origen.player_state.health = 73
 	origen.player_state.mana = 41
-	origen.player_state.stamina = 1.0
+	origen.player_state.stamina = 1.5
 	origen.player_state.position = Vector2(123.5, 456.25)
 	origen.player_state.position_valida = true
 	origen.player_state.tile = Vector2i(12, 45)
@@ -89,6 +90,13 @@ func _run() -> void:
 
 	if destino.player_state.health != 73 or destino.player_state.mana != 41:
 		errores.append("Vida o Eterium no sobrevivieron al roundtrip.")
+	if not is_equal_approx(destino.player_state.stamina, 1.5):
+		errores.append("La stamina fraccionaria se redondeó durante la carga.")
+	var estado_legacy := PlayerStateScript.new() as PlayerState
+	estado_legacy.from_dictionary({"stamina": 50.0})
+	if not is_equal_approx(estado_legacy.stamina, 1.5):
+		errores.append("La migración de stamina antigua (0..100) no conservó su valor proporcional.")
+	estado_legacy.free()
 	if destino.player_state.position != Vector2(123.5, 456.25) or not destino.player_state.position_valida:
 		errores.append("La posición válida del jugador no sobrevivió al roundtrip.")
 	if destino.player_state.tile != Vector2i(12, 45) or not destino.player_state.tile_valido:
