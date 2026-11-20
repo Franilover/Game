@@ -22,11 +22,11 @@ func _run() -> void:
 	}
 	runtime.establecer_equipamiento(equipo_guardado)
 	if str(runtime.obtener_equipo("cabeza").get("id", "")) != "helmet_saved":
-		errores.append("No restauró la armadura válida del snapshot.")
+		errors.append("No restauró la armadura válida del snapshot.")
 	if not runtime.obtener_equipo("torso").is_empty():
-		errores.append("Conservó equipo anterior o aceptó un objeto incompatible al restaurar.")
+		errors.append("Conservó equipo anterior o aceptó un objeto incompatible al restaurar.")
 	if runtime.obtener_equipamiento().has("mano_principal"):
-		errores.append("Restauró una ranura de arma heredada.")
+		errors.append("Restauró una ranura de arma heredada.")
 
 	var items: Array = []
 	for i in range(18):
@@ -120,9 +120,9 @@ func _run() -> void:
 	controller.runtime.equipar("pies", _crear_armadura("boots_stale", "Botas anteriores", "pies", 2))
 	controller.establecer_equipamiento({"cabeza": _crear_armadura("helmet_controller", "Casco", "cabeza", 1)})
 	if not controller.obtener_equipo("pies").is_empty():
-		errores.append("El controlador conservó equipo de la partida anterior.")
+		errors.append("El controlador conservó equipo de la partida anterior.")
 	if str(controller.obtener_equipo("cabeza").get("id", "")) != "helmet_controller":
-		errores.append("El controlador no restauró el equipo validado.")
+		errors.append("El controlador no restauró el equipo validado.")
 	controller.free()
 
 	# Las operaciones públicas de equipo no admiten las antiguas ranuras de armas.
