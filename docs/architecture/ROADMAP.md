@@ -261,3 +261,13 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] Integrado al workflow de regresión Godot 4.7; ejecución [44701475641](https://github.com/Franilover/Game/actions/runs/44701475641), job de regresión **success**.
 - [~] Esto verifica aplicación sobre una instancia real de Player en una escena de prueba; todavía no es una reanudación completa de `main.tscn` con ZoneManager, interior, inventario y continuidad de gameplay.
 - [ ] Mantener pendiente la prueba end-to-end de guardar, cerrar, volver a abrir la escena principal y continuar la partida, incluyendo cambio de zona/interior.
+
+
+### Reanudación integrada de zona, Player e inventario — 2026-11-20
+
+- [x] Se añadió `tests/persistence/test_main_session_resume.gd` con una escena de prueba que monta un árbol de runtime con `ZoneManager`, `Player` e inventario reales.
+- [x] La prueba reanuda Torres a partir de `zona_actual_tipo`, carga la escena real de Torres y aplica el snapshot de Player e inventario.
+- [x] Verifica posición, orientación, salud, Eterium, stamina, objetos y selección de hotbar después de la aplicación.
+- [x] El paso específico `Run saved zone, Player and inventory session resume integration` terminó **success** en CI Godot 4.7, run [44747758966](https://github.com/Franilover/Game/actions/runs/44747758966), commit `4422b9bd`.
+- [~] El alcance confirma restauración integrada de zona/Player/inventario en un árbol de prueba, pero no instancia `main.tscn` ni ejecuta el ciclo real de cerrar y volver a abrir el juego.
+- [ ] Siguen pendientes el reinicio real del proceso, continuidad de gameplay, interiores completos, migraciones antiguas y arranque/reconexión offline end-to-end.
