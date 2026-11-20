@@ -7,6 +7,7 @@ class_name PlayerEteriumCoordinator
 
 var runtime: PlayerEteriumRuntime
 var stamina: PlayerStaminaController
+var especie_configuracion_resuelta: bool = false
 
 func configurar(nuevo_runtime: PlayerEteriumRuntime, nueva_stamina: PlayerStaminaController) -> void:
 	runtime = nuevo_runtime
@@ -27,6 +28,13 @@ func aplicar_especie(regla: Dictionary, especie_id: String) -> bool:
 
 func esta_listo() -> bool:
 	return runtime != null and runtime.runtime_ready
+
+## La restauración persistente espera a que runtime y reglas de especie estén resueltos.
+func marcar_especie_configuracion_resuelta() -> void:
+	especie_configuracion_resuelta = true
+
+func esta_listo_para_restaurar() -> bool:
+	return esta_listo() and especie_configuracion_resuelta
 
 func vida_eterium_compartidos() -> bool:
 	return runtime != null and runtime.vida_eterium_compartidos()
