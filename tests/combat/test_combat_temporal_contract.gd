@@ -282,6 +282,22 @@ func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
 	if int(muertes_normales["cantidad"]) != 1:
 		errores.append("La ruta de vida normal emitió la muerte más de una vez.")
 
+	# Una reaparición inmediata debe cancelar la animación de muerte anterior.
+	jugador.reaparecer()
+	if not jugador.is_alive or jugador.health != jugador.max_health:
+		errores.append("La reaparición no restauró la vida del jugador.")
+	if not jugador.is_physics_processing() or jugador.state != Player.State.IDLE:
+		errores.append("La reaparición no restauró el procesamiento y el estado de movimiento.")
+	if jugador.locomotion.procesando_accion():
+		errores.append("La reaparición conservó una acción temporal activa.")
+	if jugador.locomotion.actions.dash_cooldown_timer != 0.0:
+		errores.append("La reaparición conservó el cooldown del dash.")
+	await get_tree().create_timer(0.4).timeout
+	if not is_equal_approx(jugador.visual.modulate.a, 1.0):
+		errores.append("El tween de muerte anterior ocultó al jugador después de reaparecer.")
+	if not jugador.visual.scale.is_equal_approx(Vector2.ONE):
+		errores.append("El tween de muerte anterior alteró la escala tras reaparecer.")
+
 	jugador.queue_free()
 	inventario.queue_free()
 	await get_tree().process_frame
