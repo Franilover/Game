@@ -502,3 +502,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Regresión: CreatureAITargetPolicy libera el nodo objetivo, verifica la transición a INVESTIGANDO, confirma que conserva la pista y comprueba el retorno a exploración al alcanzar la posición.
 - Estado: implementado y validado en la suite completa Godot 4.7 CI; GDScript Quality también pasó.
 - Ejecución: https://github.com/Franilover/Game/actions/runs/44691254596.
+
+## T2 — separación de decisión y ejecución de IA (2026-11-20)
+
+- Se añadió `CreatureStateDecision`, una política pequeña y pura que traduce las respuestas de especie (`atacar`, `huir`, `perseguir`, `investigar`) a intenciones.
+- `CreatureAI` aplica esas intenciones y conserva la ejecución concreta: validación de alcance, transición, locomoción y manejadores especializados.
+- Exploración, investigación y recuperación comparten el despachador de decisiones, respetando qué respuestas admite cada estado. Una respuesta no permitida o desconocida no crea una conducta.
+- `CreatureAITargetPolicy` cubre normalización, respuestas desconocidas y restricciones de persecución/investigación.
+- Estado: implementación y regresión añadidas; CI de esta revisión pendiente.
