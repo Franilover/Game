@@ -473,6 +473,11 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		return
 	if entity is WorldProp:
 		var prop := entity as WorldProp
+		if prop.is_queued_for_deletion():
+			var chunk_variant: Variant = _obtener_chunk_de_entidad(prop)
+			if chunk_variant is Vector2i:
+				_guardar_tombstone_prop_recolectado(prop, chunk_variant as Vector2i)
+			return
 		var prop_key := str(prop.get_meta("runtime_instance_key", "")).strip_edges()
 		if prop_key.is_empty():
 			var datos_prop := prop.obtener_datos()
