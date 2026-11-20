@@ -190,6 +190,7 @@ func _run() -> void:
 	if ai.objetivo == garumi or actor.has_meta("garlia_objetivo_liberacion"):
 		_fail("La protección de liberación conservó un Garumi como objetivo hostil.")
 		return
+	player.position = Vector2.ZERO
 
 	ai.objetivo = null
 	ai.entity_manager = null
