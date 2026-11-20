@@ -1239,14 +1239,14 @@ func _aplicar_prioridad_necesidades() -> void:
 	var necesidades := _obtener_config_necesidades()
 	if necesidades.is_empty():
 		return
-	var umbral_fatiga := clampf(float(necesidades.get("umbral_fatiga", 75.0)), 0.0, 100.0)
-	var umbral_hambre := clampf(float(necesidades.get("umbral_hambre", 70.0)), 0.0, 100.0)
+	var umbral_fatiga := clampf(CreatureUtilityAIScript.leer_numero(necesidades, "umbral_fatiga", 75.0), 0.0, 100.0)
+	var umbral_hambre := clampf(CreatureUtilityAIScript.leer_numero(necesidades, "umbral_hambre", 70.0), 0.0, 100.0)
 	var actividad_descanso := str(necesidades.get("actividad_descanso", "reposar")).strip_edges().to_lower()
 	var actividad_comida := str(necesidades.get("actividad_alimentacion", "alimentarse")).strip_edges().to_lower()
 	var recuperacion: Variant = necesidades.get("recuperacion_fatiga_por_segundo", null)
 	var puede_recuperar := (recuperacion is int or recuperacion is float) and float(recuperacion) > 0.0
 	if _descanso_por_fatiga:
-		var umbral_salida := clampf(float(necesidades.get("umbral_fatiga_salida", umbral_fatiga * 0.5)), 0.0, umbral_fatiga)
+		var umbral_salida := clampf(CreatureUtilityAIScript.leer_numero(necesidades, "umbral_fatiga_salida", umbral_fatiga * 0.5), 0.0, umbral_fatiga)
 		if _fatiga_actual <= umbral_salida:
 			_descanso_por_fatiga = false
 		else:
@@ -1260,13 +1260,13 @@ func _aplicar_prioridad_necesidades() -> void:
 		puntuaciones["descansar"] = CreatureUtilityAIScript.puntuar_urgencia(
 			_fatiga_actual,
 			umbral_fatiga,
-			float(necesidades.get("peso_prioridad_fatiga", 1.0))
+			CreatureUtilityAIScript.leer_numero(necesidades, "peso_prioridad_fatiga", 1.0)
 		)
 	if actividad_comida == "alimentarse" and not _obtener_ids_alimento().is_empty() and _hambre_actual >= umbral_hambre:
 		puntuaciones["alimentarse"] = CreatureUtilityAIScript.puntuar_urgencia(
 			_hambre_actual,
 			umbral_hambre,
-			float(necesidades.get("peso_prioridad_hambre", 1.0))
+			CreatureUtilityAIScript.leer_numero(necesidades, "peso_prioridad_hambre", 1.0)
 		)
 
 	match CreatureUtilityAIScript.seleccionar_accion(puntuaciones):
