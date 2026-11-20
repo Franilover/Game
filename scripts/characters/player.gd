@@ -74,6 +74,7 @@ var _auth_ref: Node = null
 var _inventory_ref: GarliaInventory = null
 var _exploration_check_timer: float = 0.0
 var _muerte_visual_procesada: bool = false
+var _death_tween: Tween = null
 var _terrain_query_timer: float = 0.0
 var _terrain_speed_multiplier: float = 1.0
 var _terrain_visual_ref: Node = null
@@ -805,18 +806,18 @@ func _morir_jugador() -> void:
 	if visual == null:
 		return
 
-	var tween := create_tween()
+	_death_tween = create_tween()
 
-	tween.set_parallel(true)
+	_death_tween.set_parallel(true)
 
-	tween.tween_property(
+	_death_tween.tween_property(
 		visual,
 		"modulate:a",
 		0.0,
 		0.35
 	)
 
-	tween.tween_property(
+	_death_tween.tween_property(
 		visual,
 		"scale",
 		Vector2(
@@ -827,7 +828,15 @@ func _morir_jugador() -> void:
 	)
 
 
+func _cancelar_animacion_muerte() -> void:
+	if is_instance_valid(_death_tween):
+		if _death_tween.is_running():
+			_death_tween.kill()
+		_death_tween = null
+
+
 func reaparecer_en_red(posicion: Vector2) -> void:
+	_cancelar_animacion_muerte()
 	_muerte_visual_procesada = false
 	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
@@ -852,6 +861,7 @@ func reaparecer_en_red(posicion: Vector2) -> void:
 
 
 func reaparecer() -> void:
+	_cancelar_animacion_muerte()
 	_muerte_visual_procesada = false
 	restaurar_estado_vital(max_health, true, max_mana)
 	stamina_controller.reiniciar()
