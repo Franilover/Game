@@ -9,7 +9,7 @@ static func obtener_defensa(equipo: Dictionary) -> float:
 	for slot_variant in equipo.keys():
 		# Sólo las tres ranuras de armadura contribuyen a la defensa.
 		# Entradas antiguas de armas/manos no deben convertirse en blindaje.
-		if str(slot_variant) not in ["cabeza", "torso", "pies"]:
+		if not EquipmentState.es_ranura_valida(str(slot_variant)):
 			continue
 		var item_variant: Variant = equipo.get(slot_variant, {})
 		if not item_variant is Dictionary:
@@ -23,18 +23,24 @@ static func _obtener_defensa_objeto(item: Dictionary) -> float:
 	if estadisticas_variant is Dictionary:
 		var estadisticas := estadisticas_variant as Dictionary
 		if estadisticas.has("defensa"):
-			return maxf(_numero_no_negativo(estadisticas.get("defensa")), 0.0)
+			var valor: Variant = estadisticas.get("defensa")
+			if valor is int or valor is float:
+				return maxf(float(valor), 0.0)
 
 	var propiedades_variant: Variant = item.get("propiedades_game", {})
 	if propiedades_variant is Dictionary:
 		var propiedades := propiedades_variant as Dictionary
 		if propiedades.has("defensa"):
-			return maxf(_numero_no_negativo(propiedades.get("defensa")), 0.0)
+			var valor: Variant = propiedades.get("defensa")
+			if valor is int or valor is float:
+				return maxf(float(valor), 0.0)
 		var estadisticas_propiedades: Variant = propiedades.get("estadisticas", {})
 		if estadisticas_propiedades is Dictionary:
 			var internas := estadisticas_propiedades as Dictionary
 			if internas.has("defensa"):
-				return maxf(_numero_no_negativo(internas.get("defensa")), 0.0)
+				var valor: Variant = internas.get("defensa")
+				if valor is int or valor is float:
+					return maxf(float(valor), 0.0)
 
 	return maxf(_numero_no_negativo(item.get("defensa", 0.0)), 0.0)
 
