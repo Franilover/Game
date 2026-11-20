@@ -19,6 +19,16 @@ func _run() -> void:
 	if not game_state._datos_partida_cargables("save_contract", save_valido):
 		errores.append("Se rechazó un save actual con estructura válida.")
 
+	# JSON.parse puede representar los números serializados como float.
+	# Las versiones enteras deben seguir siendo válidas al releer desde disco.
+	var version_json := save_valido.duplicate(true)
+	version_json["version"] = 3.0
+	if not game_state._datos_partida_cargables("save_contract", version_json):
+		errores.append("Se rechazó una versión JSON entera representada como float.")
+	version_json["version"] = 3.5
+	if game_state._datos_partida_cargables("save_contract", version_json):
+		errores.append("Se aceptó una versión fraccionaria.")
+
 	var legacy := {
 		"id": "save_contract",
 		"estado": {"player": {"health": 75, "mana": 60}}
