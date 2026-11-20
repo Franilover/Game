@@ -199,6 +199,7 @@ func _probar_colision_melee_fisica(errores: Array[String]) -> void:
 	var jugador := PlayerScene.instantiate() as Player
 	var objetivo := EntityScript.new() as Entity
 	jugador.name = "MeleePhysicsAttacker"
+	jugador.global_position = Vector2.ZERO
 	objetivo.name = "MeleePhysicsTarget"
 	var colision := CollisionShape2D.new()
 	var forma := RectangleShape2D.new()
