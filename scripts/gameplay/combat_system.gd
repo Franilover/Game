@@ -406,9 +406,11 @@ func _al_recibir_impacto_proyectil(
 	objetivo: Entity,
 	ataque: CombatAttack
 ) -> void:
-	if objetivo == null or ataque == null:
+	if objetivo == null or not is_instance_valid(objetivo) or ataque == null:
 		return
-	if not CombatTargeting.es_objetivo_valido(ataque.attacker, objetivo):
+	# El objetivo puede estar muerto aquí: CombatProjectile emite esta señal
+	# después de que CombatDamage confirma el daño, incluso si fue letal.
+	if not CombatTargeting.es_atacante_valido(ataque.attacker):
 		return
 
 	var arma := ataque.object_data
