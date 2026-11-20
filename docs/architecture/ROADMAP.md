@@ -241,3 +241,14 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - P1 misiones: persistencia de progreso, finalización, entrega idempotente, resolución de recompensas y rollback pasan CI. Falta guardar/recargar una partida real después de reclamar.
 - P1/P2 mundo e inventario: contratos de ciclo de vida/reset, persistencia de props/keys, registro de réplicas, spawn/resume, viaje/retorno, terreno, kernel procedural, transacciones de inventario y roundtrip pasan CI. Streaming de larga duración, reinos/interiores completos y pruebas visuales siguen abiertos.
 - Estos cierres son por alcance probado; no significan que todas las fases P0, P1 o P1/P2 estén terminadas.
+
+
+### Verificación adicional de persistencia y modo offline — 2026-11-20
+
+- [x] `GameStateRoundtrip` ahora escribe el snapshot en un archivo real mediante `SaveFileRepository`, lo reabre desde disco y restaura el estado de misión, progreso y reclamación de recompensa desde ese archivo. Contrato ejecutado en CI Godot 4.7.
+- [x] El contrato de snapshot del mundo ahora verifica lectura offline del caché con envoltorio actual (`{mundo: ...}`), compatibilidad con el formato directo legado y rechazo de caché con jerarquía inválida. Contrato ejecutado en CI Godot 4.7.
+- [x] Los contratos de recuperación de saves, recogida atómica, drop, transacciones de inventario, misión y rollback de recompensa continúan pasando en la misma regresión.
+- [~] La prueba de archivo real cierra el tramo de serialización/lectura del snapshot y de persistencia de reclamaciones; no reemplaza todavía la prueba end-to-end que instancia una escena de juego, aplica el snapshot a un `Player` real y continúa jugando.
+- [ ] Sigue pendiente la validación manual de interrupciones reales del proceso/filesystem, migraciones de saves antiguos y reanudación visual completa de escena/zona/interior.
+- [ ] El modo offline ya valida y lee los formatos de caché conocidos; queda probar inicio de partida sin conexión y recuperación de sincronización con Supabase en una sesión integrada.
+- CI de código y contratos: [44700468681](https://github.com/Franilover/Game/actions/runs/44700468681) — **success** (commit `320c07251f`); calidad GDScript: [44700468617](https://github.com/Franilover/Game/actions/runs/44700468617) — **success**.
