@@ -627,3 +627,10 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - El callback de impacto confirmado tiene una regla distinta: el objetivo puede estar muerto porque la señal se emite después de aplicar daño letal. En esa fase se valida la referencia del objetivo y la vigencia del atacante, sin descartar los efectos de una derrota confirmada.
 - `CombatDamage.aplicar()` devuelve éxito únicamente si la salud disminuyó. El objetivo muerto rechaza impactos posteriores, por lo que los efectos posteriores al daño no se repiten aunque varios proyectiles lleguen en el mismo frame.
 - `test_combat_temporal_contract` cubre impactos simultáneos, atacante derrotado/fuera del árbol y ejecución única del callback de impacto confirmado.
+
+
+### Ciclo de vida de proyectiles
+
+- `CombatProjectile._finalizar()` es el único cierre para impacto, cancelación y expiración. Marca el proyectil como consumido, desactiva la detección de colisiones de forma diferida y solicita su eliminación; las rutas de salida son idempotentes.
+- La señal de contacto es síncrona y puede disparar cambios de estado. El proyectil vuelve a validar atacante y objetivo después de emitirla y antes de llamar a `CombatDamage`; morir durante un listener cancela el daño pendiente.
+- La expiración bloquea también los callbacks de colisión tardíos del mismo frame. La prueba temporal cubre expiración, cierre y muerte del atacante durante el contacto.
