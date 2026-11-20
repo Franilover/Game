@@ -98,6 +98,15 @@ func _run() -> void:
 	if not runtime.obtener_equipo("torso").is_empty():
 		errors.append("No retiró la armadura al agotar su durabilidad.")
 
+	# Las operaciones públicas de equipo no admiten las antiguas ranuras de armas.
+	runtime.equipar("mano_principal", {"id": "legacy_weapon", "tipo": "arma"})
+	if runtime.consumir_durabilidad_equipo("mano_principal"):
+		errors.append("Consumió durabilidad mediante una ranura de arma heredada.")
+	if runtime.desequipar_a_inventario("mano_principal"):
+		errors.append("Permitió devolver equipo desde una ranura de arma heredada.")
+	if not runtime.obtener_equipo("mano_principal").is_empty():
+		errors.append("Permitió insertar una entrada de arma en Equipment.")
+
 	# La defensa lee estructuras del catálogo sin duplicar la misma estadística.
 	var defensa_catalogo := CombatDefenseScript.obtener_defensa({
 		"cabeza": {"tipo": "armadura", "propiedades_game": {"defensa": 2}},
