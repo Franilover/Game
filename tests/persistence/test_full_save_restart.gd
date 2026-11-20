@@ -150,6 +150,19 @@ func _worker_read() -> void:
 	var world_data: Node = get_tree().root.get_node("WorldData")
 	world_data.set("cargado", false)
 	var game_state: Node = get_tree().root.get_node("GameState")
+	var save_repository: Variant = game_state.get("save_repository")
+	var persisted: Dictionary = save_repository.call("leer_partida", save_id) as Dictionary
+	var valid_save := bool(game_state.call("_datos_partida_cargables", save_id, persisted))
+	print("FullSaveRestart: READER_DIAGNOSTIC id=%s path=%s exists=%s keys=%s valid=%s" % [
+		save_id,
+		str(save_repository.get("directorio")),
+		str(not persisted.is_empty()),
+		str(persisted.keys()),
+		str(valid_save)
+	])
+	if not valid_save:
+		_fail("El proceso lector no puede validar el archivo creado en el proceso escritor.")
+		return
 	var menu_scene := load("res://scenes/ui/start_menu.tscn") as PackedScene
 	if menu_scene == null:
 		_fail("No se pudo cargar el menú real.")
