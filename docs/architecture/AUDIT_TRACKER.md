@@ -680,3 +680,13 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Se comprueban versión, semilla del mundo, valores vitales, posición, zona, inventario, progreso de misión y recompensa reclamada. El proceso padre verifica códigos de salida y marcadores explícitos; elimina el archivo temporal de contrato.
 - El workflow de regresión ejecuta el nuevo contrato. CI Godot 4.7 aprobada: [44752576177](https://github.com/Franilover/Game/actions/runs/44752576177). Calidad GDScript: [44752557244](https://github.com/Franilover/Game/actions/runs/44752557244).
 - Límite explícito: el test usa `SaveFileRepository` con payload representativo, no el flujo completo de menú + `GameState.iniciar_partida()` entre procesos. Ese es el siguiente nivel de integración.
+
+
+
+## Reinicio completo desde el menú — 2026-11-20
+
+- El nuevo test de dos procesos utiliza el flujo de producto: el primer proceso crea una partida mediante `GameState.crear_partida()`; el segundo instancia el menú real, abre el selector y usa el callback de **Jugar**, que llama a `GameState.iniciar_partida()`.
+- Verifica `main.tscn`, Torres, estado vital, stamina, posición/orientación, inventario/hotbar y el estado/progreso/recompensas de `MissionManager`.
+- La integración descubrió que la versión JSON podía volver como `float` y el validador solo aceptaba `int`. Corregido para admitir valores numéricos enteros y rechazar fracciones; el contrato de payload cubre ambos casos.
+- Las tres pruebas de persistencia (payload, reinicio completo y repositorio entre procesos) pasan. CI Godot 4.7 completa: [44756242924](https://github.com/Franilover/Game/actions/runs/44756242924). Calidad GDScript: [44756242844](https://github.com/Franilover/Game/actions/runs/44756242844).
+- Pendiente siguiente: interiores, reanudación de mundo procedural y recuperación offline/reconexión. El test de reinicio usa snapshot controlado y evita depender de servicios remotos.
