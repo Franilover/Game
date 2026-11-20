@@ -131,7 +131,7 @@ func actualizar(delta: float, decaimiento_por_segundo: float = 0.2) -> void:
 		var actor_id := int(actor_id_variant)
 		var recuerdo: Dictionary = _recuerdos[actor_id]
 		var referencia: Variant = recuerdo.get("actor_ref", null)
-		var actor: Object = referencia.get_ref() if referencia is WeakRef else null
+		var actor: Node = referencia.get_ref() as Node if referencia is WeakRef else null
 		if actor == null or not is_instance_valid(actor) or actor.is_queued_for_deletion():
 			_recuerdos.erase(actor_id)
 			continue
