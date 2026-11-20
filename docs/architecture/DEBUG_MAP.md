@@ -274,3 +274,5 @@ Comprobar el orden `Main._inicializar_runtime_de_zona()` → `Player.configurar_
 ### Inventario/equipo incorrecto tras cargar una partida
 
 Revisar `GameStateService._datos_partida_cargables()` y `_inventario_guardado_valido()` antes de inspeccionar el runtime. La carga usa `GarliaInventory.cargar_estado_partida()` → `InventoryController.establecer_equipamiento()` → `InventoryRuntime.establecer_equipamiento()`; esta última operación reemplaza las ranuras y solo acepta armaduras compatibles. Si persiste una pieza vieja, comprobar que el flujo de carga invoca el setter y que la señal de actualización de equipamiento se procesa. Si hay objetos invisibles, revisar INV-03: el arreglo puede superar `slot_count` y la UI crea exactamente esa cantidad de controles.
+
+Si una partida falla al aparecer en el selector, revisar primero `GameStateService._datos_partida_cargables()`: además de JSON, comprueba tipos de `mundo`, semilla, versión, tiempo, escena, reservas y vectores del jugador. No relajar la validación sin añadir un caso legacy concreto al contrato.
