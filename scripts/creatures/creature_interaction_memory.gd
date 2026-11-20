@@ -7,6 +7,8 @@ const MAX_RECUERDOS: int = 16
 const MAX_INTENSIDAD: float = 5.0
 const INTERVALO_AVISTAMIENTO: float = 4.0
 const DECAY_FAMILIARIDAD: float = 0.01
+const MAX_CONFIANZA: float = 5.0
+const DECAY_CONFIANZA: float = 0.005
 
 var _recuerdos: Dictionary = {}
 
@@ -53,6 +55,19 @@ func registrar_avistamiento(
 	_guardar_recuerdo(actor, recuerdo)
 
 
+## Registra una interacción positiva explícita; no debe llamarse por mera proximidad.
+func registrar_interaccion_positiva(actor: Node, intensidad: float = 0.5, duracion: float = 180.0) -> void:
+	if not _actor_valido(actor):
+		return
+	var intensidad_segura := clampf(_numero_finito(intensidad, 0.0), 0.0, 1.0)
+	var duracion_segura := clampf(_numero_finito(duracion, 0.0), 0.0, 600.0)
+	if intensidad_segura <= 0.0 or duracion_segura <= 0.0:
+		return
+	var recuerdo := _obtener_o_crear_recuerdo(actor)
+	recuerdo["confianza"] = minf(float(recuerdo.get("confianza", 0.0)) + intensidad_segura, MAX_CONFIANZA)
+	recuerdo["tiempo_restante"] = maxf(float(recuerdo.get("tiempo_restante", 0.0)), duracion_segura)
+	_guardar_recuerdo(actor, recuerdo)
+
 func _actor_valido(actor: Node) -> bool:
 	return (
 		actor != null
@@ -92,7 +107,7 @@ func _limitar_recuerdos() -> void:
 		var menor_duracion := INF
 		for id_variant in _recuerdos:
 			var datos: Dictionary = _recuerdos[id_variant]
-			var valor := float(datos.get("agresion", 0.0)) + float(datos.get("familiaridad", 0.0))
+			var valor := float(datos.get("agresion", 0.0)) + float(datos.get("familiaridad", 0.0)) + float(datos.get("confianza", 0.0))
 			var duracion_restante := float(datos.get("tiempo_restante", 0.0))
 			if valor < menor_valor or (is_equal_approx(valor, menor_valor) and duracion_restante < menor_duracion):
 				id_mas_debil = int(id_variant)
@@ -124,6 +139,26 @@ func obtener_familiaridad(actor: Node) -> float:
 	return _obtener_valor(actor, "familiaridad")
 
 
+func obtener_confianza(actor: Node) -> float:
+	return _obtener_valor(actor, "confianza")
+
+
+## Relación derivada de recuerdos, no una etiqueta persistente o global.
+func obtener_tipo_relacion(actor: Node, umbral_hostilidad: float = 1.0, umbral_confianza: float = 1.0, umbral_familiaridad: float = 0.5) -> String:
+	var agresion := obtener_agresion(actor)
+	var confianza := obtener_confianza(actor)
+	var familiaridad := obtener_familiaridad(actor)
+	if agresion >= maxf(umbral_hostilidad, 0.0) and agresion >= confianza:
+		return "hostil"
+	if confianza >= maxf(umbral_confianza, 0.0):
+		return "confiable"
+	if agresion > 0.0:
+		return "desconfiado"
+	if familiaridad >= maxf(umbral_familiaridad, 0.0):
+		return "conocido"
+	return "desconocido"
+
+
 func actualizar(delta: float, decaimiento_por_segundo: float = 0.2) -> void:
 	var tiempo := maxf(_numero_finito(delta, 0.0), 0.0)
 	var decaimiento := maxf(_numero_finito(decaimiento_por_segundo, 0.0), 0.0) * tiempo
@@ -140,6 +175,10 @@ func actualizar(delta: float, decaimiento_por_segundo: float = 0.2) -> void:
 			float(recuerdo.get("familiaridad", 0.0)) - DECAY_FAMILIARIDAD * tiempo,
 			0.0
 		)
+		recuerdo["confianza"] = maxf(
+			float(recuerdo.get("confianza", 0.0)) - DECAY_CONFIANZA * tiempo,
+			0.0
+		)
 		recuerdo["cooldown_avistamiento"] = maxf(
 			float(recuerdo.get("cooldown_avistamiento", 0.0)) - tiempo,
 			0.0
@@ -148,6 +187,7 @@ func actualizar(delta: float, decaimiento_por_segundo: float = 0.2) -> void:
 		if (
 			float(recuerdo["agresion"]) <= 0.0
 			and float(recuerdo["familiaridad"]) <= 0.0
+			and float(recuerdo["confianza"]) <= 0.0
 		) or float(recuerdo["tiempo_restante"]) <= 0.0:
 			_recuerdos.erase(actor_id)
 		else:
