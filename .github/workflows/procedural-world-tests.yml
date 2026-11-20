@@ -326,6 +326,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run world entity manager full reset contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/entities/test_world_entity_manager_reset.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldEntityManagerReset: FAIL:' <<<"$output"; then
+            echo "World entity manager reset test reported errors."
+            exit 1
+          fi
+
       - name: Run world entity replica registry regression test
         shell: bash
         run: |
