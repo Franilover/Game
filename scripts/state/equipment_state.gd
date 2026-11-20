@@ -20,3 +20,16 @@ func obtener(slot: String) -> Dictionary:
 	if item is Dictionary:
 		return (item as Dictionary).duplicate(true)
 	return {}
+
+ 
+## La ranura y la ficha del objeto deben coincidir antes de cualquier transacción.
+static func es_objeto_compatible(slot: String, item: Dictionary) -> bool:
+	if item.is_empty() or slot not in ["cabeza", "torso", "pies"]:
+		return false
+	if str(item.get("tipo", "")).strip_edges().to_lower() != "armadura":
+		return false
+	var propiedades_variant: Variant = item.get("propiedades_game", {})
+	if not propiedades_variant is Dictionary:
+		return false
+	var propiedades := propiedades_variant as Dictionary
+	return str(propiedades.get("ranura_equipamiento", "")).strip_edges().to_lower() == slot
