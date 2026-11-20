@@ -598,6 +598,13 @@ func _inicializar_runtime_de_zona() -> void:
 			_player.global_position = Vector2(560, 120)
 		else:
 			_player.set_spawn_from_world(_world_generator)
+			_player.global_position = ZONE_MANAGER_SCRIPT.resolver_posicion_reanudacion(
+				str(_zone_manager.obtener_tipo_actual()),
+				str(GameState.world_state.flags.get("zona_actual_tipo", "")),
+				GameState.player_state.position_valida,
+				GameState.player_state.position,
+				_player.global_position
+			)
 		_world_generator.registrar_jugador(_player)
 
 	_world_items.configurar_dependencias(
@@ -681,7 +688,14 @@ func _inicializar_runtime_de_zona() -> void:
 	elif tipo_zona_actual == "historia:reserva_carmesi":
 		var zona_reserva: Node = _zone_manager.obtener_zona_actual()
 		var spawn_reserva: Node2D = zona_reserva.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_reserva) else null
-		_player.global_position = spawn_reserva.global_position if is_instance_valid(spawn_reserva) else Vector2(0, 0)
+		var spawn_historia := spawn_reserva.global_position if is_instance_valid(spawn_reserva) else Vector2.ZERO
+		_player.global_position = ZONE_MANAGER_SCRIPT.resolver_posicion_reanudacion(
+			tipo_zona_actual,
+			str(GameState.world_state.flags.get("zona_actual_tipo", "")),
+			GameState.player_state.position_valida,
+			GameState.player_state.position,
+			spawn_historia
+		)
 	elif tipo_zona_actual == "reino_torres" or tipo_zona_actual.begins_with("reino:"):
 		var zona_actual: Node = _zone_manager.obtener_zona_actual()
 		if tipo_zona_actual == "reino_torres" and _zone_manager.has_method("consumir_retorno_hogar_a_torres") and bool(_zone_manager.call("consumir_retorno_hogar_a_torres")):
@@ -689,7 +703,14 @@ func _inicializar_runtime_de_zona() -> void:
 			_player.velocity = Vector2.ZERO
 		else:
 			var punto_aparicion: Node2D = zona_actual.get_node_or_null("PlayerSpawn") as Node2D if is_instance_valid(zona_actual) else null
-			_player.global_position = punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
+			var spawn_reino := punto_aparicion.global_position if is_instance_valid(punto_aparicion) else Vector2(0, 120)
+			_player.global_position = ZONE_MANAGER_SCRIPT.resolver_posicion_reanudacion(
+				tipo_zona_actual,
+				str(GameState.world_state.flags.get("zona_actual_tipo", "")),
+				GameState.player_state.position_valida,
+				GameState.player_state.position,
+				spawn_reino
+			)
 		# Una expedición conserva el punto exacto desde el que el jugador salió
 		# de Torres. Se aplica después del spawn predeterminado del reino.
 		if _zone_manager.has_method("consumir_retorno_expedicion"):
