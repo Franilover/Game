@@ -851,7 +851,7 @@ func _refrescar_objetivo() -> void:
 		# Ser visible no convierte a una entidad en objetivo. Sólo se eligen
 		# candidatos para los que la especie tiene una respuesta ejecutable.
 		var respuesta := _obtener_respuesta_para_objetivo(candidato)
-				if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
+		if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
 			continue
 		candidatos.append(candidato)
 
