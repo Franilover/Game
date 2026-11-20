@@ -259,3 +259,8 @@ Ruta: GameStateService.capturar_estado_desde_juego() → PlayerState → JSON lo
 - Si un snapshot llega con salud cero, debe restaurarse como muerto. No cambiar el argumento vivo a true sin comprobar la salud efectiva.
 - Los guardados normales e Historia no persisten al jugador muerto; el último snapshot vivo se conserva hasta el respawn y el siguiente guardado válido.
 - Contrato: tests/state/test_player_state_vital_persistence_contract.gd. Aún pendiente de ejecución local/CI.
+
+
+### Contrato del archivo de partida
+
+Antes de depurar una partida que no aparece o no carga, separar dos capas: SaveFileRepository comprueba que el archivo sea JSON Dictionary recuperable; GameStateService._datos_partida_cargables valida ID, versión compatible y estructura estado/player/flags. Versiones legacy sin version se interpretan como versión 1; versiones futuras o snapshots con tipos incorrectos se rechazan sin aplicar estado parcial. Contrato: tests/persistence/test_game_state_save_payload_contract.gd.
