@@ -618,3 +618,12 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - Los hitboxes melee y los proyectiles cancelan su ejecución si el atacante deja de cumplir esa condición; vuelven a comprobarla justo antes de procesar un objetivo.
 - El ejecutor evita crear ataques para jugadores muertos y `CombatSystem` vuelve a validar al atacante antes de registrar contacto o efectos de impacto.
 - `test_combat_temporal_contract` comprueba que la muerte durante un ataque pendiente cancela ambos medios y no emite contacto, impacto ni daño.
+
+
+### Validación por fase del impacto
+
+- `CombatTargeting.es_objetivo_valido()` exige atacante válido (Entity dentro del árbol y vivo) y objetivo vivo perteneciente a `damageable`. Las consultas previas al impacto no aceptan atacantes derrotados ni objetivos ya derrotados.
+- `CombatSystem.solicitar_danio_desde_entidad()` y `CombatWeaponAttackValidator` utilizan ese mismo contrato; la IA y los ataques directos no mantienen validaciones más permisivas.
+- El callback de impacto confirmado tiene una regla distinta: el objetivo puede estar muerto porque la señal se emite después de aplicar daño letal. En esa fase se valida la referencia del objetivo y la vigencia del atacante, sin descartar los efectos de una derrota confirmada.
+- `CombatDamage.aplicar()` devuelve éxito únicamente si la salud disminuyó. El objetivo muerto rechaza impactos posteriores, por lo que los efectos posteriores al daño no se repiten aunque varios proyectiles lleguen en el mismo frame.
+- `test_combat_temporal_contract` cubre impactos simultáneos, atacante derrotado/fuera del árbol y ejecución única del callback de impacto confirmado.
