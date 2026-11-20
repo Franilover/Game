@@ -627,6 +627,10 @@ func limpiar_todo() -> void:
 	_active_chunks.clear()
 	_active_creature_chunks.clear()
 	_active_prop_chunks.clear()
+	_replicas_red_by_key.clear()
+	_replicas_red_props_by_key.clear()
+	_runtime_state_by_key.clear()
+	_runtime_prop_state_by_key.clear()
 	_data_by_chunk.clear()
 
 
