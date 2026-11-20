@@ -295,7 +295,7 @@ func _leer_json_dictionary(ruta: String) -> Dictionary:
 func _process(delta: float) -> void:
 	if not GarliaMultiplayer.es_servidor_dedicado() or get_tree().paused:
 		return
-	var sin_jugadores := GarliaMultiplayer.obtener_cantidad_jugadores_remotos() <= 0
+	var sin_jugadores: bool = GarliaMultiplayer.obtener_cantidad_jugadores_remotos() <= 0
 	if sin_jugadores and not _pause_after_save_pending:
 		return
 	if not sin_jugadores:
