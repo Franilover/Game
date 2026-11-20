@@ -3,6 +3,7 @@ class_name Creature
 
 const PIXELGRAFIA_FONT = preload("res://assets/fonts/Pixelgrafia.ttf")
 const SHOP_UI_PATH := "res://scripts/ui/shop_ui.gd"
+const COMBAT_DEFENSE_SCRIPT: Script = preload("res://scripts/gameplay/combat/combat_defense.gd")
 
 signal configuracion_actualizada
 signal danio_recibido(cantidad: int, atacante: Node)
@@ -778,6 +779,16 @@ func _aplicar_danio_recibido(
 ) -> void:
 	if not is_alive:
 		return
+
+	# La defensa propia de la criatura se aplica en el mismo punto para todos
+	# los atacantes. La armadura equipada del jugador sigue resolviéndose en
+	# Player; aquí solo se consume stats_dnd.defensa cuando es numérica.
+	var defensa_variant: Variant = stats_dnd.get("defensa", 0)
+	var defensa_propia := float(defensa_variant) if defensa_variant is int or defensa_variant is float else 0.0
+	cantidad = COMBAT_DEFENSE_SCRIPT.aplicar(cantidad, defensa_propia)
+	if cantidad <= 0:
+		return
+
 	# Los sparrings del Cuartel nunca pueden morir: conservan 1 HP y
 	# recuperan su estado original al cerrar la sesión.
 	if bool(get_meta("barracks_training_target", false)):
