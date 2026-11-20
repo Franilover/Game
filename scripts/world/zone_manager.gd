@@ -636,6 +636,13 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		return
 
 	if is_instance_valid(zona_actual):
+		# Las partidas locales conservan los cambios de criaturas y props por
+		# zona antes de destruir el WorldEntityManager. Los servidores dedicados
+		# usan GlobalWorldStore y los clientes reciben el estado del servidor.
+		if (tipo_actual == TIPO_MUNDO_ABIERTO or tipo_actual == TIPO_EXPEDICION_BOSQUE) and not GarliaMultiplayer.es_servidor_dedicado() and not GarliaWorldNetwork.es_cliente_en_mundo_global():
+			var world_generator := obtener_world_generator()
+			if is_instance_valid(world_generator) and is_instance_valid(world_generator.entity_manager):
+				GameState.capturar_estado_entidades_mundo_local(tipo_actual, world_generator.entity_manager)
 		# El WorldEntityManager pertenece a la escena de zona y se destruye con
 		# ella. Capturar el runtime antes de queue_free conserva sus cambios
 		# aunque la transición no venga del menú de viaje multijugador.
