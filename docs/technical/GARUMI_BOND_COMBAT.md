@@ -1,6 +1,6 @@
-# Vínculos y enfrentamientos de Garumis
+# Contrato actual de vínculos Garumi
 
-Rama: `feat/garumi-bond-combat`
+> Este documento reemplaza el diseño histórico de enfrentamientos descrito en la rama `feat/garumi-bond-combat`. Ese sistema ya no forma parte del juego.
 
 ## Flujo implementado
 
