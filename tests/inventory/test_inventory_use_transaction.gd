@@ -18,6 +18,25 @@ func _run() -> void:
 	get_tree().root.add_child(player)
 	await get_tree().process_frame
 	player.restaurar_estado_vital(40, true, 100)
+	var valid_use := {
+		"propiedades_game": {"uso": {"tipo": "consumible", "efectos": [
+			{"recurso": "vida", "magnitud": 10}
+		]}}
+	}
+	if not controller.tiene_uso_valido(valid_use):
+		errors.append("No reconoció una definición válida de uso.")
+	var disabled_use := valid_use.duplicate(true)
+	disabled_use["propiedades_game"]["uso"]["permitido"] = false
+	if controller.tiene_uso_valido(disabled_use):
+		errors.append("La interfaz ofreció usar un objeto cuyo uso está prohibido.")
+	var unknown_use := valid_use.duplicate(true)
+	unknown_use["propiedades_game"]["uso"]["efectos"] = [{"recurso": "suerte", "magnitud": 10}]
+	if controller.tiene_uso_valido(unknown_use):
+		errors.append("La interfaz ofreció un efecto de recurso desconocido.")
+	var invalid_magnitude_use := valid_use.duplicate(true)
+	invalid_magnitude_use["propiedades_game"]["uso"]["efectos"] = [{"recurso": "vida", "magnitud": "10"}]
+	if controller.tiene_uso_valido(invalid_magnitude_use):
+		errors.append("La interfaz aceptó una magnitud no numérica.")
 	var potion := {
 		"id": "health_potion",
 		"nombre": "Poción",
