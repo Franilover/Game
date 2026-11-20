@@ -59,6 +59,22 @@ func _run() -> void:
 	}):
 		errores.append("Se aceptó un snapshot de flags con tipo incorrecto.")
 
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3, "mundo": "mundo_corrupto",
+		"estado": {}
+	}):
+		errores.append("Se aceptó metadata de mundo con tipo incorrecto.")
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3, "mundo": {"semilla": "sin_semilla"},
+		"estado": {}
+	}):
+		errores.append("Se aceptó una semilla con tipo incorrecto.")
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3,
+		"estado": {"elapsed_time": "tiempo_invalido"}
+	}):
+		errores.append("Se aceptó elapsed_time con tipo incorrecto.")
+
 	var inventario_valido := {
 		"items": [{"id": "item_a", "cantidad": 2}],
 		"hotbar_indices": [6, 7, -1],
