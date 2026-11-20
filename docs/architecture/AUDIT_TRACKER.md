@@ -529,4 +529,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - El descanso mantiene histéresis hasta el umbral de salida, evitando alternancia rápida entre actividades.
 - La prueba existente CreatureAITargetPolicy ahora cubre puntuación, empate, selección contextual y liberación del descanso.
 - Pendiente: ampliar Utility AI a objetivos de supervivencia y contexto, sin duplicar la selección ecológica; validar rendimiento y comportamiento visual.
-- Estado: implementación y pruebas añadidas; CI pendiente.
+- Estado: implementación validada por la regresión completa y GDScript Quality en el run `44694059864`. La ampliación posterior de lectura segura de configuración queda en validación.
+
+
+## T2 — lectura segura de parámetros Utility AI (2026-11-20)
+
+- Se añadió lectura numérica validada para umbrales, pesos y salida de histéresis; valores no numéricos o no finitos usan el valor por defecto.
+- Se amplió CreatureAITargetPolicy con configuraciones mal formadas para evitar errores de conversión durante la decisión.
+- Estado: implementado; CI pendiente.
