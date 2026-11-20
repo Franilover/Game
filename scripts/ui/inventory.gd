@@ -1243,29 +1243,7 @@ func _agregar_etiqueta_modalidad(texto: String) -> void:
 
 func _objeto_tiene_uso_valido(objeto: Dictionary) -> bool:
 	var datos := _enriquecer_datos_objeto(objeto)
-	var propiedades_variant: Variant = datos.get("propiedades_game", {})
-	if not propiedades_variant is Dictionary:
-		return false
-	var uso_variant: Variant = (propiedades_variant as Dictionary).get("uso", {})
-	if not uso_variant is Dictionary:
-		return false
-	var uso := uso_variant as Dictionary
-	if not bool(uso.get("permitido", true)) or str(uso.get("tipo", "")).strip_edges().is_empty():
-		return false
-	var efectos_variant: Variant = uso.get("efectos", null)
-	if efectos_variant is Array:
-		for efecto_variant in efectos_variant as Array:
-			if not efecto_variant is Dictionary:
-				continue
-			var efecto := efecto_variant as Dictionary
-			var recurso := str(efecto.get("recurso", efecto.get("efecto", ""))).to_lower()
-			var magnitud: Variant = efecto.get("magnitud", efecto.get("cantidad", 0))
-			if recurso in ["vida", "salud", "health", "stamina", "eterium", "mana"] and (magnitud is int or magnitud is float) and float(magnitud) > 0.0:
-				return true
-		return false
-	var recurso := str(uso.get("recurso", uso.get("efecto", ""))).to_lower()
-	var magnitud: Variant = uso.get("magnitud", uso.get("cantidad", 0))
-	return recurso in ["vida", "salud", "health", "stamina", "eterium", "mana"] and (magnitud is int or magnitud is float) and float(magnitud) > 0.0
+	return inventory_controller.tiene_uso_valido(datos)
 
 
 func _al_usar_seleccionado() -> void:
