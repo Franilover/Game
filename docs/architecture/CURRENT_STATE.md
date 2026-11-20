@@ -1117,7 +1117,7 @@ Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_tran
 - El guardado global escribe y valida un temporal antes de tocar el archivo principal.
 - Si existe un mundo anterior, se mueve a `.bak` antes de publicar el temporal; un fallo al proteger el archivo cancela la escritura sin eliminar el mundo válido.
 - Si falla la publicación o la validación final, intenta restaurar el respaldo. La carga también recupera un `.bak` válido si el archivo principal está corrupto.
-- El servidor sólo pausa el mundo cuando el guardado se confirmó correctamente; ante un fallo permanece activo para no perder progreso en memoria.
+- El servidor sólo pausa el mundo cuando el guardado se confirmó correctamente; ante un fallo permanece activo, deja el guardado pendiente y lo reintenta periódicamente mientras no haya jugadores. Si alguien vuelve antes del reintento, se cancela la pausa pendiente y continúa el mundo.
 - Regresión: `tests/persistence/test_global_world_store_contract.tscn`.
 
 ## Restauración de estado del jugador — 2026-11-19
