@@ -52,7 +52,6 @@ var inventory: InventoryController = null
 var world_context: WorldContext = null
 var projectile_root: Node = null
 var game_state: GameStateService = null
-var _inventory_equipment_slot: String = "mano_secundaria"
 var _accion_en_mano_derecha: bool = false
 var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
@@ -148,10 +147,6 @@ func _al_ataque_solicitado(
 		_atacar_con_objeto(objeto, direccion_ataque)
 		return
 
-	if modo == "mano_secundaria":
-		if not _es_arma(objeto):
-			return
-		_atacar_con_arma(objeto, direccion_ataque)
 
 func _es_herramienta(objeto: Dictionary) -> bool:
 	return COMBAT_ITEM_RESOLVER.es_herramienta(objeto)
@@ -209,11 +204,8 @@ func _usar_pala() -> bool:
 	return false
 
 
-func _consumir_durabilidad_herramienta(en_equipo: bool = false) -> void:
+func _consumir_durabilidad_herramienta() -> void:
 	if inventory == null:
-		return
-	if en_equipo:
-		inventory.consumir_durabilidad_equipo(_inventory_equipment_slot)
 		return
 	var mano := "derecha" if _accion_en_mano_derecha else "izquierda"
 	inventory.consumir_durabilidad_mano_activa(mano)
@@ -319,40 +311,6 @@ func _obtener_objeto_equipado_para_accion() -> Dictionary:
 	# El clic derecho usa el objeto activo de la mano derecha.
 	return inventory.obtener_objeto_mano_activa("derecha")
 
-
-func _obtener_arma_equipada(slot_preferido: String = "mano_principal") -> Dictionary:
-	if inventory == null:
-		return {}
-
-	var equipo_variant: Variant = inventory.obtener_equipamiento()
-	if not equipo_variant is Dictionary:
-		return {}
-	var equipo := equipo_variant as Dictionary
-
-	var preferida_variant: Variant = equipo.get(slot_preferido, {})
-	if preferida_variant is Dictionary and _es_arma(preferida_variant as Dictionary):
-		_inventory_equipment_slot = slot_preferido
-		return (preferida_variant as Dictionary).duplicate(true)
-
-	for clave_variant in ["mano_principal", "mano_secundaria"]:
-		var clave := str(clave_variant)
-		var candidato_variant: Variant = equipo.get(clave, {})
-		if candidato_variant is Dictionary and _es_arma(candidato_variant as Dictionary):
-			_inventory_equipment_slot = clave
-			return (candidato_variant as Dictionary).duplicate(true)
-
-	for clave_variant in equipo.keys():
-		var clave := str(clave_variant)
-		var candidato_variant: Variant = equipo.get(clave, {})
-		if candidato_variant is Dictionary and _es_arma(candidato_variant as Dictionary):
-			_inventory_equipment_slot = clave
-			return (candidato_variant as Dictionary).duplicate(true)
-
-	return {}
-
-
-func _es_arma(objeto: Dictionary) -> bool:
-	return COMBAT_ITEM_RESOLVER.es_arma(objeto)
 
 func _atacar_desarmado(direccion: Vector2) -> void:
 	# El hitbox es la única resolución del ataque melee.
