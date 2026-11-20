@@ -44,7 +44,7 @@ func _physics_process(delta: float) -> void:
 	global_position += velocity * delta
 	lifetime -= delta
 	if lifetime <= 0.0:
-		queue_free()
+		_finalizar()
 
 func _configurar_colision(radio: float) -> void:
 	if _collision_shape == null:
@@ -82,6 +82,15 @@ func _procesar_objetivo(objetivo: Node) -> void:
 	_impactado = true
 	contacto_detectado.emit(entidad, attack)
 
+	# Los listeners de contacto pueden cambiar el estado de combate de forma
+	# síncrona. No se aplica daño si el atacante murió durante esa señal.
+	if not CombatTargeting.es_atacante_valido(attack.attacker):
+		_finalizar()
+		return
+	if not is_instance_valid(entidad) or not entidad.is_alive:
+		_finalizar()
+		return
+
 	# objetivo_impactado conserva su contrato histórico: solo se emite cuando
 	# CombatDamage confirma una reducción real de salud.
 	if CombatDamage.aplicar(entidad, attack.damage, attack.origin, Callable(), attack.attacker):
@@ -89,11 +98,19 @@ func _procesar_objetivo(objetivo: Node) -> void:
 
 	# El feedback corresponde al consumidor del resultado, no al proyectil;
 	# así evitamos aplicar dos veces el mismo flash visual.
-	queue_free()
+	_finalizar()
 
 
 func _cancelar_por_atacante_invalido() -> void:
+	_finalizar()
+
+
+func _finalizar() -> void:
+	# El cierre es idempotente y bloquea callbacks de colisión restantes
+	# durante el frame en que se solicita queue_free().
 	_impactado = true
+	if is_inside_tree():
+		set_deferred("monitoring", false)
 	queue_free()
 
 
