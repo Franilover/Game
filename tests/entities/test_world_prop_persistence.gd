@@ -39,10 +39,10 @@ func _run() -> void:
 	else:
 		recolectado.queue_free()
 		await get_tree().process_frame
-		var estado_recolectado := manager.obtener_estado_prop(chunk_recoleccion, "prop:0:recurso_a")
+		var estado_recolectado: Dictionary = manager.obtener_estado_prop(chunk_recoleccion, "prop:0:recurso_a")
 		if estado_recolectado.is_empty() or bool(estado_recolectado.get("is_present", true)):
 			errores.append("La eliminación por recolección no creó un tombstone persistente.")
-		var datos_guardados := manager.obtener_datos_chunk(chunk_recoleccion, "props")
+		var datos_guardados: Array = manager.obtener_datos_chunk(chunk_recoleccion, "props")
 		var tombstone_en_chunk := false
 		for dato_variant in datos_guardados:
 			if dato_variant is Dictionary:
@@ -59,7 +59,7 @@ func _run() -> void:
 	else:
 		manager.despawn_props_chunk(chunk_descarga)
 		await get_tree().process_frame
-		var estado_descargado := manager.obtener_estado_prop(chunk_descarga, "prop:0:recurso_b")
+		var estado_descargado: Dictionary = manager.obtener_estado_prop(chunk_descarga, "prop:0:recurso_b")
 		if estado_descargado.is_empty() or not bool(estado_descargado.get("is_present", true)):
 			errores.append("Descargar un chunk convirtió un prop intacto en recolectado.")
 
@@ -81,7 +81,7 @@ func _run() -> void:
 			else:
 				reutilizado.queue_free()
 				await get_tree().process_frame
-				var estado_reutilizado := manager.obtener_estado_prop(Vector2i(6, 2), "prop:0:recurso_c")
+				var estado_reutilizado: Dictionary = manager.obtener_estado_prop(Vector2i(6, 2), "prop:0:recurso_c")
 				if estado_reutilizado.is_empty() or bool(estado_reutilizado.get("is_present", true)):
 					errores.append("El prop reciclado conservó una marca de descarga y no pudo persistir su recolección.")
 
