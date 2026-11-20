@@ -1331,3 +1331,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - `CreatureAISignalContract` comprueba que 7 puntos de daño con defensa 3 reduzcan 4 puntos de salud y publiquen ese mismo valor.
 - No se añadió una clasificación inventada de daño elemental: los ataques aún no transportan un campo canónico de tipo de daño, así que resistencias e inmunidades tipadas quedan pendientes de definir.
 - Código y regresión añadidos; ejecución Godot/CI de esta revisión pendiente.
+
+
+## Rechazo temprano de acciones de combate inválidas (2026-11-20)
+
+- Las entradas primaria/secundaria, la señal de solicitud del controlador, el uso de objeto activo y la creación de melee/proyectiles ahora comparten `CombatTargeting.es_atacante_valido()`.
+- Un jugador muerto, fuera del árbol o pendiente de eliminación no puede iniciar un hitbox/proyectil ni dejar acciones pendientes que se descarten recién al procesar colisiones.
+- `CombatTemporalContract` añade una regresión para entradas primaria/secundaria y una solicitud tardía emitida directamente por el controlador.
+- Implementado en código; pendiente ejecución Godot 4.7/CI.
