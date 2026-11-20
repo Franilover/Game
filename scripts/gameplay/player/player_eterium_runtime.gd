@@ -107,14 +107,14 @@ func restaurar(cantidad: int) -> bool:
 	return vital_state.mana > anterior
 
 func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
-	if not runtime_ready or not puede_recuperar or not recupera:
-		if not puede_recuperar:
-			recovery_accumulator = 0.0
-		return 0
 	if vital_state == null:
 		return 0
 	if not vital_state.is_alive:
 		recovery_accumulator = 0.0
+		return 0
+	if not runtime_ready or not puede_recuperar or not recupera:
+		if not puede_recuperar:
+			recovery_accumulator = 0.0
 		return 0
 	# Al estar lleno, el reloj de recuperación se pausa. Conservamos la
 	# fracción acumulada para continuar desde ella tras gastar Eterium.
@@ -185,6 +185,9 @@ func calcular_curacion(delta: float) -> Dictionary:
 	var costo_s := maxf(float(reglas.get("curacion_costo_s_por_tick", 0.0)), 0.0)
 	var intervalo_s := maxf(float(reglas.get("curacion_intervalo_s", 0.0)), 0.01)
 	var curacion_por_s := maxf(float(reglas.get("curacion_vida_por_s", 0.0)), 0.0)
+	if costo_s <= 0.0 or curacion_por_s <= 0.0:
+		heal_timer = 0.0
+		return {}
 	var costo_runtime := maxi(1, roundi(costo_s * escala))
 	if mana() < costo_runtime:
 		heal_timer = 0.0
