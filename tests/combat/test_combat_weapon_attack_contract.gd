@@ -149,7 +149,26 @@ func _probar_resultados_de_ejecucion(errores: Array[String]) -> void:
 	if int(contactos["cantidad"]) != contactos_antes_objetivo_derrotado:
 		errores.append("Un objetivo derrotado produjo un contacto.")
 
+	var objetivo_en_baja := EntityScript.new() as Entity
+	objetivo_en_baja.name = "WeaponAttackContractQueuedTarget"
+	get_tree().root.add_child(objetivo_en_baja)
+	await get_tree().process_frame
+	objetivo_en_baja.queue_free()
+	var contactos_antes_objetivo_en_baja := int(contactos["cantidad"])
+	var resultado_objetivo_en_baja: CombatAttackResult = combate.solicitar_ataque_con_arma(
+		atacante,
+		objetivo_en_baja,
+		arma_daniadora
+	)
+	if resultado_objetivo_en_baja.solicitud_aceptada or resultado_objetivo_en_baja.motivo_rechazo != &"objetivo_invalido":
+		errores.append("La validación de armas aceptó un objetivo pendiente de eliminación.")
+	if int(contactos["cantidad"]) != contactos_antes_objetivo_en_baja:
+		errores.append("El objetivo pendiente de eliminación produjo un contacto de arma.")
+
 	combate.queue_free()
 	atacante.queue_free()
-	objetivo.queue_free()
+	if not objetivo.is_queued_for_deletion():
+		objetivo.queue_free()
+	if is_instance_valid(objetivo_en_baja) and not objetivo_en_baja.is_queued_for_deletion():
+		objetivo_en_baja.queue_free()
 	await get_tree().process_frame
