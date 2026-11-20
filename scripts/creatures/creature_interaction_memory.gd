@@ -27,9 +27,8 @@ func registrar_agresion(actor: Node, intensidad: float = 1.0, duracion: float = 
 	_guardar_recuerdo(actor, recuerdo)
 
 
-## Un avistamiento repetido crea familiaridad lentamente, sin convertir la
-## mera detección en confianza ni alterar por sí solo la respuesta hostil.
-func registrar_avistamiento(
+## Un encuentro cercano repetido crea familiaridad; no afirma que hubiera línea de visión.
+func registrar_encuentro_cercano(
 	actor: Node,
 	intensidad: float = 0.25,
 	duracion: float = 120.0,
@@ -44,15 +43,20 @@ func registrar_avistamiento(
 		return
 
 	var recuerdo := _obtener_o_crear_recuerdo(actor)
-	if float(recuerdo.get("cooldown_avistamiento", 0.0)) > 0.0:
+	if float(recuerdo.get("cooldown_encuentro", 0.0)) > 0.0:
 		return
 	recuerdo["familiaridad"] = minf(
 		float(recuerdo.get("familiaridad", 0.0)) + intensidad_segura,
 		MAX_INTENSIDAD
 	)
-	recuerdo["cooldown_avistamiento"] = intervalo_seguro
+	recuerdo["cooldown_encuentro"] = intervalo_seguro
 	recuerdo["tiempo_restante"] = maxf(float(recuerdo.get("tiempo_restante", 0.0)), duracion_segura)
 	_guardar_recuerdo(actor, recuerdo)
+
+
+## Compatibilidad con datos y llamadas anteriores.
+func registrar_avistamiento(actor: Node, intensidad: float = 0.25, duracion: float = 120.0, intervalo: float = INTERVALO_AVISTAMIENTO) -> void:
+	registrar_encuentro_cercano(actor, intensidad, duracion, intervalo)
 
 
 ## Registra una interacción positiva explícita; no debe llamarse por mera proximidad.
@@ -179,8 +183,8 @@ func actualizar(delta: float, decaimiento_por_segundo: float = 0.2) -> void:
 			float(recuerdo.get("confianza", 0.0)) - DECAY_CONFIANZA * tiempo,
 			0.0
 		)
-		recuerdo["cooldown_avistamiento"] = maxf(
-			float(recuerdo.get("cooldown_avistamiento", 0.0)) - tiempo,
+		recuerdo["cooldown_encuentro"] = maxf(
+			float(recuerdo.get("cooldown_encuentro", 0.0)) - tiempo,
 			0.0
 		)
 		recuerdo["tiempo_restante"] = maxf(float(recuerdo.get("tiempo_restante", 0.0)) - tiempo, 0.0)
