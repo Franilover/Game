@@ -405,6 +405,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run player Eterium restore readiness contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/player/test_player_eterium_restore_readiness.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayerEteriumRestoreReadiness: FAIL:' <<<"$output"; then
+            echo "Player Eterium restore readiness contract test reported errors."
+            exit 1
+          fi
+
       - name: Run GameState save payload contract test
         shell: bash
         run: |
