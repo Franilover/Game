@@ -252,3 +252,12 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [ ] Sigue pendiente la validación manual de interrupciones reales del proceso/filesystem, migraciones de saves antiguos y reanudación visual completa de escena/zona/interior.
 - [ ] El modo offline ya valida y lee los formatos de caché conocidos; queda probar inicio de partida sin conexión y recuperación de sincronización con Supabase en una sesión integrada.
 - CI de código y contratos: [44700468681](https://github.com/Franilover/Game/actions/runs/44700468681) — **success** (commit `320c07251f`); calidad GDScript: [44700468617](https://github.com/Franilover/Game/actions/runs/44700468617) — **success**.
+
+
+### Aplicación del snapshot sobre Player real — 2026-11-20
+
+- [x] Nuevo contrato `GameStateSceneRestore`: instancia la escena real `Player`, la añade al árbol de escenas y ejecuta `GameStateService._aplicar_estado_al_juego()`.
+- [x] Verifica restauración de salud, Eterium, stamina, posición y orientación, además de las banderas de aplicación/restauración vital.
+- [x] Integrado al workflow de regresión Godot 4.7; ejecución [44701475641](https://github.com/Franilover/Game/actions/runs/44701475641), job de regresión **success**.
+- [~] Esto verifica aplicación sobre una instancia real de Player en una escena de prueba; todavía no es una reanudación completa de `main.tscn` con ZoneManager, interior, inventario y continuidad de gameplay.
+- [ ] Mantener pendiente la prueba end-to-end de guardar, cerrar, volver a abrir la escena principal y continuar la partida, incluyendo cambio de zona/interior.
