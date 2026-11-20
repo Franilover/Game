@@ -1317,3 +1317,8 @@ En servidor dedicado, la transición ahora también se cancela si `GlobalWorldSt
 ## Descubrimiento de partidas con respaldo pendiente de recuperación — 2026-11-20
 
 `SaveFileRepository.listar_ids_partidas()` ahora descubre archivos `.json.bak` válidos aunque no exista el `.json` principal. Así, `GameState.obtener_partidas()` puede incluir la partida en el selector y su lectura puede intentar recuperar el archivo principal. Los temporales `.tmp` no se listan porque no representan una escritura confirmada; los respaldos corruptos tampoco. Se amplió `SaveFileRepositoryContract` con los tres escenarios y la restauración de un respaldo aislado. La ejecución de este cambio está pendiente de CI.
+
+
+## Rechazo de entidades pendientes de eliminación en combate — 2026-11-20
+
+Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_free()` todavía no lo haya retirado del árbol. `CombatTargeting` rechaza atacantes y objetivos pendientes de eliminación; `CombatDamage` repite la protección para daño directo; `CombatSystem` y `CombatWeaponAttackValidator` devuelven `objetivo_invalido` antes de emitir contacto. Se ampliaron los contratos de daño de entidad y ataque con arma para cubrir esa ventana síncrona. Ejecución Godot/CI pendiente; no se declara validación.
