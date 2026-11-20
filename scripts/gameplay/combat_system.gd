@@ -90,7 +90,7 @@ func _ready() -> void:
 
 
 func procesar_accion_primaria() -> bool:
-	if not CombatTargeting.es_atacante_valido(player):
+	if not CombatTargeting.es_atacante_valido(player) or _tiempo_desde_ataque > 0.0:
 		return false
 
 	# El router ya resolvió la prioridad de interacción.
@@ -107,7 +107,7 @@ func procesar_accion_primaria() -> bool:
 
 
 func procesar_accion_secundaria() -> bool:
-	if not CombatTargeting.es_atacante_valido(player):
+	if not CombatTargeting.es_atacante_valido(player) or _tiempo_desde_ataque > 0.0:
 		return false
 
 	var objeto_mano := _obtener_objeto_mano_activa("derecha")
@@ -197,7 +197,7 @@ func _usar_pala() -> bool:
 		return false
 
 	if world_context.cambiar_zona_at(tile, 1):
-		_tiempo_desde_ataque = enfriamiento_arma
+		_iniciar_cooldown_ataque()
 		print("CombatSystem: pala → Pradera convertida en Tierra en ", tile)
 		return true
 
@@ -644,6 +644,10 @@ func aplicar_danio_desde_entidad(
 		origen
 	)
 	return resultado.danio_aplicado
+
+
+func _iniciar_cooldown_ataque() -> void:
+	_tiempo_desde_ataque = maxf(enfriamiento_arma, 0.0)
 
 
 func _normalizar_direccion_ataque(direccion: Vector2) -> Vector2:
