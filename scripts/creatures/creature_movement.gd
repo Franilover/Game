@@ -139,7 +139,7 @@ func procesar(delta: float) -> void:
 
 	if direccion_actual.length_squared() > 0.001:
 		direccion_actual = _direccion_evitar_superposicion_npcs(direccion_actual)
-		direccion_actual = _aplicar_seguro_atasco_npc(direccion_actual, delta)
+		direccion_actual = _aplicar_seguro_atasco(direccion_actual, delta)
 	else:
 		_reiniciar_seguro_atasco()
 	creature.velocity = direccion_actual * move_speed
@@ -217,7 +217,7 @@ func _procesar_ruta_rutina(delta: float) -> void:
 
 	var direccion := creature.global_position.direction_to(destino)
 	direccion = _direccion_evitar_superposicion_npcs(direccion)
-	direccion = _aplicar_seguro_atasco_npc(direccion, delta)
+	direccion = _aplicar_seguro_atasco(direccion, delta)
 	creature.velocity = direccion * move_speed
 	creature.move_and_slide()
 
@@ -310,13 +310,13 @@ func _comparten_entrada_destino(a: Creature, b: Creature) -> bool:
 	return not destino_a.is_empty() and destino_a == destino_b
 
 
-## Si el cuerpo deja de avanzar, busca un desvío libre y lo mantiene estable.
-## Si no hay espacio, espera sin vibrar y vuelve a probar cuando el bloqueo cambie.
-func _aplicar_seguro_atasco_npc(direccion: Vector2, delta: float) -> Vector2:
+## Si una criatura deja de avanzar, busca un desvío libre y lo mantiene estable.
+## Se activa sólo después de detectar falta de progreso, no realiza consultas
+## de colisión adicionales en cada frame de movimiento normal.
+func _aplicar_seguro_atasco(direccion: Vector2, delta: float) -> Vector2:
 	if (
 		direccion.length_squared() <= 0.001
 		or not creature is Creature
-		or not (creature as Creature).is_in_group("torres_game_npc")
 	):
 		_reiniciar_seguro_atasco()
 		return direccion
