@@ -519,3 +519,14 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Regresión: CreatureMovementNPCSafety ahora crea una pared física y verifica con la máscara de colisión predeterminada que una criatura no perteneciente a torres_game_npc elija y mantenga un desvío ante una pared de la capa estática 1.
 - Límite: no es navegación global; no encuentra rutas alrededor de paredes largas, habitaciones complejas ni laberintos. NavigationAgent2D no está integrado en el flujo de IA actual.
 - Estado: código y regresión añadidos; pendiente de CI y validación visual en partida.
+
+
+## T2 — Utility AI inicial de necesidades (2026-11-20)
+
+- Se incorporó CreatureUtilityAI como evaluador puro de urgencias y selector determinista.
+- Se conectó a CreatureAI para comparar hambre y fatiga sólo cuando las acciones correspondientes están configuradas y son ejecutables.
+- Se mantienen los umbrales, dieta declarada y recuperación fisiológica. Pesos opcionales permiten variar prioridades por especie; sin ellos se usan pesos iguales.
+- El descanso mantiene histéresis hasta el umbral de salida, evitando alternancia rápida entre actividades.
+- La prueba existente CreatureAITargetPolicy ahora cubre puntuación, empate, selección contextual y liberación del descanso.
+- Pendiente: ampliar Utility AI a objetivos de supervivencia y contexto, sin duplicar la selección ecológica; validar rendimiento y comportamiento visual.
+- Estado: implementación y pruebas añadidas; CI pendiente.
