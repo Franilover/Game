@@ -170,6 +170,7 @@ func _probar_contacto_independiente_del_danio(errores: Array[String]) -> void:
 
 	# El hitbox melee publica contacto aunque una herramienta no tenga daño.
 	var area_melee := CombatAttackAreaScript.new() as CombatAttackArea
+	area_melee.atacante = atacante
 	area_melee.objeto_ataque = {
 		"tipo": "herramienta",
 		"nombre": "Herramienta de prueba",
