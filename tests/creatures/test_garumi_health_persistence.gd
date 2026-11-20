@@ -35,6 +35,10 @@ func _run() -> void:
 
 	if garumi.is_in_group("damageable"):
 		errores.append("El Garumi se registró como objetivo de daño.")
+	if garumi.has_method("take_damage"):
+		garumi.call("take_damage", 999, "test")
+		if bool(garumi.get("is_alive")) == false:
+			errores.append("Un impacto externo alteró el estado vital del Garumi.")
 	if garumi.has_method("obtener_datos_amistad"):
 		var amistad: Dictionary = garumi.call("obtener_datos_amistad")
 		for campo in ["health", "nivel", "experiencia_total"]:

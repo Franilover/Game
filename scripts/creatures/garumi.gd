@@ -153,6 +153,11 @@ func configurar(datos_garumi: Dictionary) -> void:
 	_configurar_cerebro_garumi()
 
 
+## Inmunidad estructural: un Garumi nunca recibe daño del sistema de criaturas.
+func take_damage(_cantidad: int, _origen: String = "desconocido") -> void:
+	return
+
+
 func activar_como_proxy() -> void:
 	super.activar_como_proxy()
 	_normalizar_grupos_garumi()
