@@ -71,8 +71,6 @@ func _procesar_objetivo(objetivo: Node) -> void:
 	if not CombatTargeting.es_atacante_valido(attack.attacker):
 		_cancelar_por_atacante_invalido()
 		return
-	if _impactado or attack == null:
-		return
 	var entidad: Entity = objetivo as Entity
 	if entidad == null:
 		return
