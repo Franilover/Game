@@ -317,7 +317,11 @@ func desequipar_a_inventario(slot: String) -> bool:
 func establecer_hotbar_slot(indice_hotbar: int, indice_inventario: int) -> bool:
 	if indice_hotbar < 0 or indice_hotbar >= hotbar.indices.size():
 		return false
-	if indice_inventario < 0 or indice_inventario >= state.items.size():
+	# La hotbar referencia exclusivamente la mochila (slots 6–11).
+	# Las manos y los espacios adicionales no son asignables a esta barra.
+	if indice_inventario < 6 or indice_inventario > 11:
+		return false
+	if indice_inventario >= state.items.size():
 		return false
 	hotbar.indices[indice_hotbar] = indice_inventario
 	return true
