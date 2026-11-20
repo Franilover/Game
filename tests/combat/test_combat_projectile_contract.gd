@@ -13,6 +13,7 @@ func _run() -> void:
 	var errores: Array[String] = []
 	await _probar_impacto_real_y_unico(errores)
 	await _probar_contacto_con_danio_cero(errores)
+	await _probar_barrido_fisico(errores)
 
 	if not errores.is_empty():
 		for error in errores:
@@ -116,6 +117,50 @@ func _probar_contacto_con_danio_cero(errores: Array[String]) -> void:
 		errores.append("El proyectil de daño cero informó un impacto efectivo.")
 
 	proyectil.queue_free()
+	atacante.queue_free()
+	objetivo.queue_free()
+	await get_tree().process_frame
+
+
+func _probar_barrido_fisico(errores: Array[String]) -> void:
+	var atacante := EntityScript.new() as Entity
+	var objetivo := EntityScript.new() as Entity
+	atacante.name = "ProjectileSweepAttacker"
+	objetivo.name = "ProjectileSweepTarget"
+
+	var colision := CollisionShape2D.new()
+	var forma := RectangleShape2D.new()
+	forma.size = Vector2(12.0, 12.0)
+	colision.shape = forma
+	objetivo.add_child(colision)
+	objetivo.position = Vector2(50.0, 0.0)
+
+	get_tree().root.add_child(atacante)
+	get_tree().root.add_child(objetivo)
+	await get_tree().physics_frame
+
+	var proyectil := _crear_proyectil(atacante, 9)
+	proyectil.global_position = Vector2.ZERO
+	proyectil.velocity = Vector2(1000.0, 0.0)
+	await get_tree().physics_frame
+
+	var impactos := {"cantidad": 0}
+	proyectil.objetivo_impactado.connect(
+		func(_objetivo: Entity, _ataque: CombatAttack) -> void:
+			impactos["cantidad"] = int(impactos["cantidad"]) + 1
+	)
+
+	var salud_inicial := objetivo.health
+	# El proyectil recorre 100 px en un solo paso: el volumen de colisión del
+	# objetivo mide 12 px. Sin barrido, el movimiento discreto lo atravesaría.
+	proyectil._physics_process(0.1)
+	if objetivo.health != salud_inicial - 9:
+		errores.append("El barrido físico no detectó un hurtbox atravesado a alta velocidad.")
+	if int(impactos["cantidad"]) != 1:
+		errores.append("El barrido físico no emitió exactamente un impacto confirmado.")
+
+	if is_instance_valid(proyectil) and not proyectil.is_queued_for_deletion():
+		proyectil.queue_free()
 	atacante.queue_free()
 	objetivo.queue_free()
 	await get_tree().process_frame
