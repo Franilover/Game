@@ -287,15 +287,14 @@ func _vincular_desde_amigos(registro: Dictionary) -> void:
 		registro_vinculado["tipo_vinculo"] = "amistad"
 
 	# Activar el vínculo en la instancia del mundo cuando siga presente.
-	var jugador := get_tree().get_first_node_in_group("player")
 	var instancia_encontrada := false
 	for nodo in get_tree().get_nodes_in_group("garumis"):
 		if not is_instance_valid(nodo) or str(nodo.get("_garumi_instancia_id")).strip_edges() != id_instancia:
 			continue
 		instancia_encontrada = true
-		if is_instance_valid(jugador) and nodo.has_method("restaurar_vinculo_persistido"):
+		if nodo.has_method("restaurar_vinculo_persistido"):
 			var posicion: Vector2 = nodo.global_position if nodo is Node2D else Vector2.ZERO
-			nodo.call("restaurar_vinculo_persistido", jugador, false, posicion)
+			nodo.call("restaurar_vinculo_persistido", posicion)
 			if nodo.has_method("obtener_datos_persistencia_vinculo"):
 				var datos_actuales: Variant = nodo.call("obtener_datos_persistencia_vinculo")
 				if datos_actuales is Dictionary and not (datos_actuales as Dictionary).is_empty():
