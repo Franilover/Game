@@ -281,3 +281,8 @@ Si una partida falla al aparecer en el selector, revisar primero `GameStateServi
 ### Objetos guardados que no aparecen en inventario
 
 La cuadrícula visible se reconstruye en `GarliaInventory.cargar_estado_partida()` después de normalizar la capacidad. Comprueba `max(slot_count, items.size())`, el nodo `InventoryScroll/Grid` y los grupos `RESERVA N`. Los índices de cada botón se guardan en el metadata `inventory_index`; no recortar `items` al tamaño base de 18. El contrato `InventoryOverflowUI` cubre una carga de 30 ranuras.
+
+
+### Una transición deja el mundo sin zona activa
+
+Revisar `ZoneManager._cambiar_zona()`: debe cargar e instanciar el destino antes de ejecutar `queue_free()` sobre la zona actual. Si la ruta o instancia falla, `_transicionando` debe volver a `false` y `zona_actual` debe seguir apuntando a la zona previa. El contrato de regresión está en `tests/world/test_zone_manager_torres_fallback.gd`.
