@@ -12,7 +12,7 @@ func _run() -> void:
 	var ruta := "user://global_world_store_contract/world.json"
 	var directorio := ruta.get_base_dir()
 	DirAccess.make_dir_recursive_absolute(ProjectSettings.globalize_path(directorio))
-	var store := StoreScript.new() as Node
+	var store: Variant = StoreScript.new()
 	add_child(store)
 	store._save_path = ruta
 
@@ -54,7 +54,7 @@ func _run() -> void:
 		"elapsed_time": 12.5,
 		"flags": {"zona_actual_tipo": "bosque"}
 	}))
-	var game_state := get_node_or_null("/root/GameState")
+	var game_state: Variant = get_node_or_null("/root/GameState")
 	if game_state == null or not store.restaurar_en_game_state(game_state):
 		errores.append("No restauró el mundo cuando sólo quedaba un backup válido.")
 	elif int(game_state.world_state.world_seed) != 555:
