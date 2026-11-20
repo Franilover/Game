@@ -274,7 +274,9 @@ InventoryController coordina operaciones y permisos de interacción; InventoryRu
 
 La definición estática de uso de objetos se valida en InventoryController. La UI sólo solicita esa validación con datos enriquecidos; la aplicabilidad concreta sigue dependiendo de los recursos actuales del actor y sólo el controlador aplica efectos.
 
-Las armas y herramientas de las manos se leen desde los slots de mano del inventario. Equipment mantiene las ranuras de armadura (cabeza, torso y pies); no es la fuente de las armas activas de combate.
+Las armas y herramientas se leen desde las manos del inventario (izquierda 0–5 y derecha 12–17). Equipment sólo admite armadura en cabeza, torso y pies; la compatibilidad se valida en EquipmentState y InventoryRuntime, no sólo en la UI. CombatDefense suma defensa exclusivamente desde esas tres ranuras y admite datos en `estadisticas.defensa`, `propiedades_game.defensa` o `defensa` raíz, con precedencia para evitar dobles sumas.
+
+La durabilidad se consume mediante operaciones explícitas del objeto equipado o de la mano. No se desgasta armadura automáticamente al recibir daño: esa regla no está definida y no debe inventarse durante una refactorización.
 
 ---
 
