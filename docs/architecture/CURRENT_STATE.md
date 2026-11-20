@@ -1380,3 +1380,13 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - GDScript Quality (Advisory) terminó en success.
 - El workflow global no queda verde: después de completar todos los pasos de combate, falla en el test ajeno `PlayerEteriumRestoreReadiness` con `Can't free a RefCounted object` en `tests/player/test_player_eterium_restore_readiness.gd:49`. Ese problema queda fuera de este bloque P1.
 - Ejecuciones: [Godot 4.7 Regression Tests](https://github.com/Franilover/Game/actions/runs/44680722334) · [GDScript Quality](https://github.com/Franilover/Game/actions/runs/44680675642).
+
+
+## Daño efectivo por impacto y reentrada (2026-11-20)
+
+- `Entity.take_damage()` devuelve la cantidad aplicada por esa invocación, obtenida directamente de `VitalState`, sin reconstruirla a partir de la salud global después de emitir señales.
+- `Player.take_damage()` devuelve el daño mitigado por armadura y, en fisiología compartida, el consumo efectivo de la reserva vital de Eterium. `Creature.take_damage()` y `take_damage_desde()` devuelven el daño que queda tras defensa y reglas de sparring.
+- `CombatDamage.aplicar_y_obtener_danio()` es la API central que devuelve ese valor; `aplicar()` conserva su contrato booleano para consumidores existentes.
+- `CombatSystem` usa el valor real para `ataque_realizado`, feedback, efectos y robo de vida. Los proyectiles actualizan el resultado transportado antes de emitir el impacto confirmado.
+- Se corrigió la reentrada: una señal `health_changed` puede causar otro golpe síncrono, pero el golpe exterior ya no suma ese daño al suyo ni lo atribuye al atacante equivocado.
+- Regresión `CreatureDamageReentrancy` y ampliación de `PlayerVitalStateContract` añadidas al workflow; ejecución CI pendiente.
