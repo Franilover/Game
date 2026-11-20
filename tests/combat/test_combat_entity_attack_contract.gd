@@ -1,6 +1,7 @@
 extends Node
 
 const EntityScript = preload("res://scripts/characters/entity.gd")
+const GarumiScript = preload("res://scripts/creatures/garumi.gd")
 const CombatSystemScript = preload("res://scripts/gameplay/combat_system.gd")
 const IUMManagerScript = preload("res://scripts/gameplay/ium_manager.gd")
 const IUMRepositoryScript = preload("res://scripts/core/ium_repository.gd")
@@ -29,11 +30,14 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	var atacante := EntityScript.new() as Entity
 	var objetivo := EntityScript.new() as Entity
 	var combate := CombatSystemScript.new() as CombatSystem
+	var garumi := GarumiScript.new() as Entity
 
 	atacante.name = "EntityAttackContractAttacker"
 	objetivo.name = "EntityAttackContractTarget"
+	garumi.name = "EntityAttackContractGarumi"
 	get_tree().root.add_child(atacante)
 	get_tree().root.add_child(objetivo)
+	get_tree().root.add_child(garumi)
 	get_tree().root.add_child(combate)
 	await get_tree().process_frame
 
@@ -49,6 +53,20 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	)
 
 	var salud_inicial := objetivo.health
+	if garumi.is_in_group("damageable"):
+		errores.append("El Garumi de prueba quedó registrado como objetivo dañable.")
+	var contactos_antes_garumi := int(contactos["cantidad"])
+	var resultado_garumi: CombatAttackResult = combate.solicitar_danio_desde_entidad(
+		atacante,
+		garumi,
+		9,
+		"Prueba/Entidad/Garumi"
+	)
+	if resultado_garumi.solicitud_aceptada or resultado_garumi.motivo_rechazo != &"objetivo_no_daniable":
+		errores.append("CombatSystem aceptó daño dirigido a un Garumi no combatiente.")
+	if int(contactos["cantidad"]) != contactos_antes_garumi:
+		errores.append("El rechazo de un Garumi emitió un contacto de combate.")
+
 	var resultado_cero: CombatAttackResult = combate.solicitar_danio_desde_entidad(
 		atacante,
 		objetivo,
@@ -139,6 +157,7 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 	combate.queue_free()
 	atacante.queue_free()
 	objetivo.queue_free()
+	garumi.queue_free()
 	await get_tree().process_frame
 
 
