@@ -203,3 +203,14 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 **Límites:** esta hoja de ruta no autoriza cambios en Supabase ni cambios de canon de Garlia. Los cambios de código permanecen aislados en la rama indicada; no se hace merge a `main` sin autorización explícita.
 
 7. Validar memoria temporal de interacción con más perfiles. Incorporar recuerdos positivos sólo cuando exista un evento real de ayuda, alimentación o vínculo; reutilizar `RelationshipSystem` en criaturas con `personaje_game_id` en vez de duplicar amistad. No persistir memoria efímera por defecto.
+
+
+### IA de criaturas — relaciones individuales (2026-11-20)
+
+- [x] Memoria individual acotada para agresión y familiaridad.
+- [x] Clasificación derivada de relación y confianza temporal por interacción positiva explícita.
+- [x] Integración opt-in de confianza con Utility AI, limitada a investigar.
+- [x] Reutilización de candidatos de percepción para evitar escaneos redundantes en el mismo tick.
+- [ ] Conectar un evento positivo real cuando exista una acción de gameplay con semántica inequívoca.
+- [ ] Añadir cooperación/evitación entre individuos sólo con eventos y reglas ecológicas existentes.
+- [ ] Validar conducta visual y perfilar carga con muchas criaturas.
