@@ -57,17 +57,10 @@ func restaurar_en_game_state(game_state: Node) -> bool:
 		print("GlobalWorldStore: se creó la semilla inicial del mundo global.")
 		return false
 
-	var file := FileAccess.open(_save_path, FileAccess.READ)
-	if file == null:
-		push_error("GlobalWorldStore: no se pudo abrir el guardado global.")
+	var data := _leer_guardado_global()
+	if data.is_empty():
+		push_error("GlobalWorldStore: el archivo global no es válido y no hay respaldo recuperable.")
 		return false
-	var parsed: Variant = JSON.parse_string(file.get_as_text())
-	file.close()
-	if not parsed is Dictionary:
-		push_error("GlobalWorldStore: el archivo del mundo global no es válido.")
-		return false
-
-	var data := parsed as Dictionary
 	game_state.world_state.world_seed = int(data.get("world_seed", 0))
 	game_state.world_state.world_seed_valida = bool(data.get("world_seed_valida", false))
 	game_state.world_state.elapsed_time = float(data.get("elapsed_time", 0.0))
@@ -188,25 +181,121 @@ func guardar_desde_runtime() -> bool:
 		"entidades_por_zona": _serializar_variante(_entidades_por_zona),
 		"saved_at": Time.get_datetime_string_from_system(true)
 	}
+	return _escribir_guardado_global(data)
+
+
+func _leer_guardado_global() -> Dictionary:
+	var datos := _leer_json_dictionary(_save_path)
+	if not datos.is_empty():
+		return datos
+
+	var ruta_respaldo := _save_path + ".bak"
+	var respaldo := _leer_json_dictionary(ruta_respaldo)
+	if respaldo.is_empty():
+		return {}
+
+	# Si el archivo principal está dañado, intenta restaurar el último
+	# guardado confirmado. Si el rename falla, conserva y devuelve el backup.
+	if FileAccess.file_exists(_save_path):
+		var error_borrado := DirAccess.remove_absolute(ProjectSettings.globalize_path(_save_path))
+		if error_borrado != OK:
+			push_warning("GlobalWorldStore: no se pudo retirar el archivo global dañado; se conserva el respaldo.")
+			return respaldo
+	var error_restauracion := DirAccess.rename_absolute(
+		ProjectSettings.globalize_path(ruta_respaldo),
+		ProjectSettings.globalize_path(_save_path)
+	)
+	if error_restauracion != OK:
+		push_warning("GlobalWorldStore: no se pudo restaurar el respaldo global; se usará en memoria.")
+	return respaldo
+
+
+func _escribir_guardado_global(data: Dictionary) -> bool:
+	if data.is_empty():
+		return false
 	var temporary_path := _save_path + ".tmp"
+	var backup_path := _save_path + ".bak"
+	var contenido := JSON.stringify(data)
 	var file := FileAccess.open(temporary_path, FileAccess.WRITE)
 	if file == null:
 		push_error("GlobalWorldStore: no se pudo escribir el guardado temporal.")
 		return false
-	file.store_string(JSON.stringify(data))
+	file.store_string(contenido)
 	file.flush()
+	var bytes_esperados := contenido.to_utf8_buffer().size()
+	var bytes_escritos := file.get_length()
 	file.close()
-
-	var absolute_temp := temporary_path
-	var absolute_final := _save_path
-	var error := DirAccess.rename_absolute(absolute_temp, absolute_final)
-	if error != OK:
-		DirAccess.remove_absolute(absolute_final)
-		error = DirAccess.rename_absolute(absolute_temp, absolute_final)
-	if error != OK:
-		push_error("GlobalWorldStore: no se pudo publicar el guardado global. Error: " + str(error))
+	if bytes_escritos != bytes_esperados or _leer_json_dictionary(temporary_path).is_empty():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+		push_error("GlobalWorldStore: el temporal quedó incompleto o no superó la validación JSON.")
 		return false
+
+	var habia_archivo_previo := FileAccess.file_exists(_save_path)
+	if habia_archivo_previo:
+		# No se toca el archivo final si no se puede proteger primero.
+		if FileAccess.file_exists(backup_path):
+			var error_backup_anterior := DirAccess.remove_absolute(ProjectSettings.globalize_path(backup_path))
+			if error_backup_anterior != OK:
+				DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+				push_error("GlobalWorldStore: no se pudo limpiar el respaldo anterior.")
+				return false
+		var error_proteger := DirAccess.rename_absolute(
+				ProjectSettings.globalize_path(_save_path),
+				ProjectSettings.globalize_path(backup_path)
+			)
+		if error_proteger != OK:
+			DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+			push_error("GlobalWorldStore: no se pudo proteger el mundo anterior.")
+			return false
+
+	var error_publicar := DirAccess.rename_absolute(
+		ProjectSettings.globalize_path(temporary_path),
+		ProjectSettings.globalize_path(_save_path)
+	)
+	if error_publicar != OK:
+		if habia_archivo_previo and FileAccess.file_exists(backup_path):
+			DirAccess.rename_absolute(
+				ProjectSettings.globalize_path(backup_path),
+				ProjectSettings.globalize_path(_save_path)
+			)
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(temporary_path))
+		push_error("GlobalWorldStore: no se pudo publicar el temporal. Error: " + str(error_publicar))
+		return false
+
+	if _leer_json_dictionary(_save_path).is_empty():
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(_save_path))
+		if habia_archivo_previo and FileAccess.file_exists(backup_path):
+			DirAccess.rename_absolute(
+				ProjectSettings.globalize_path(backup_path),
+				ProjectSettings.globalize_path(_save_path)
+			)
+		push_error("GlobalWorldStore: el archivo publicado no superó la validación.")
+		return false
+
+	if FileAccess.file_exists(backup_path):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(backup_path))
 	return true
+
+
+func _leer_json_dictionary(ruta: String) -> Dictionary:
+	if ruta.is_empty() or not FileAccess.file_exists(ruta):
+		return {}
+	var file := FileAccess.open(ruta, FileAccess.READ)
+	if file == null:
+		return {}
+	var contenido := file.get_as_text()
+	file.close()
+	var parser := JSON.new()
+	if parser.parse(contenido) != OK or not parser.data is Dictionary:
+		return {}
+	var resultado := (parser.data as Dictionary).duplicate(true)
+	return resultado
+
+
+func _eliminar_guardado_global(ruta: String) -> bool:
+	if not FileAccess.file_exists(ruta):
+		return true
+	return DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta)) == OK
 
 
 func _process(delta: float) -> void:
