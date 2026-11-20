@@ -1390,3 +1390,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - `CombatSystem` usa el valor real para `ataque_realizado`, feedback, efectos y robo de vida. Los proyectiles actualizan el resultado transportado antes de emitir el impacto confirmado.
 - Se corrigió la reentrada: una señal `health_changed` puede causar otro golpe síncrono, pero el golpe exterior ya no suma ese daño al suyo ni lo atribuye al atacante equivocado.
 - Regresión `CreatureDamageReentrancy` y ampliación de `PlayerVitalStateContract` añadidas al workflow; ejecución CI pendiente.
+
+
+## Colisiones físicas melee y barrido continuo de proyectiles (2026-11-20)
+
+- `CombatAttackArea` quedó cubierto con una prueba de física real de Godot: un hitbox melee detecta el `Hurtbox` de una entidad situada dentro de su alcance y ejecuta el daño configurado.
+- `CombatProjectile` ahora hace un barrido de raycast entre la posición actual y la siguiente antes de avanzar. Evita atravesar hurtboxes pequeños cuando la velocidad del proyectil supera la resolución de un paso físico.
+- `CombatProjectileContract` prueba un proyectil que recorre 100 px en un paso contra un hurtbox de 12 px; el impacto se aplica una sola vez.
+- Ambos contratos pasan en Godot 4.7. Queda pendiente la comprobación visual y de balance en una partida normal.
