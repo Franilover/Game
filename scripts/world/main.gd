@@ -2292,7 +2292,7 @@ func _inicializar_ium() -> void:
 		return
 
 	_ium_repository.configurar(_supabase_client)
-	_ium_manager.configurar(_ium_repository, _player)
+	_ium_manager.configurar(_ium_repository, _player, _combat_system)
 
 	if _ium_lab == null:
 		push_error("Main: no se encontró UI/IUMLab.")
