@@ -255,6 +255,8 @@ func _al_recibir_objetivo_de_ataque(
 
 	if ataque == null or not is_instance_valid(ataque):
 		return
+	if not CombatTargeting.es_atacante_valido(ataque.atacante):
+		return
 
 	var objeto := ataque.objeto_ataque
 	var entidad_objetivo := objetivo as Entity
