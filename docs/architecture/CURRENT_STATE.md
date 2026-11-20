@@ -1287,3 +1287,12 @@ Se corrigió una dependencia de inicialización detectada en la auditoría: `Pla
 La restauración de reservas espera a que estén resueltos tanto el runtime general de Eterium como las reglas de especie (incluido el resultado de catálogo sin regla aplicable). Si la respuesta de especie llega antes que el runtime general, Player vuelve a aplicar la regla de especie al terminar el runtime para que su capacidad tenga precedencia. Player publica `configuracion_eterium_lista`; GameStateService se suscribe una sola vez y difiere únicamente la restauración de vida/Eterium hasta recibirla; posición, stamina, inventario, misiones y demás estado de la partida se aplican sin bloquear el mundo. Los guardados normal y narrativo también se pausan durante esa breve espera para no sobrescribir el snapshot original con reservas temporales por defecto. Esto evita normalizar vida/Eterium usando máximos por defecto y que una respuesta asíncrona posterior sobrescriba los valores guardados.
 
 Se añadió `test_player_eterium_restore_readiness` y su ejecución al workflow. El test está integrado, pero no se ha ejecutado localmente en esta sesión ni hay confirmación de CI.
+
+
+## Restauración segura de inventario — 2026-11-20
+
+La carga de equipamiento ahora reemplaza el conjunto anterior en vez de añadir piezas sobre el runtime existente. `InventoryRuntime.establecer_equipamiento()` limpia primero las ranuras y acepta únicamente armaduras compatibles con `cabeza`, `torso` y `pies`; se rechazan armas, ranuras heredadas y fichas mal formadas. `InventoryController` expone esta operación y `GarliaInventory.cargar_estado_partida()` la usa al restaurar el snapshot. Esto evita que una pieza de una partida/instancia anterior permanezca equipada cuando el nuevo save no la contiene.
+
+GameState valida ahora la estructura interna de `inventario_estado` antes de aceptar una partida: arreglo de objetos con diccionarios, hotbar con índices numéricos, equipo con diccionarios y selectores de mano/hotbar numéricos. Se mantiene el alias legacy `hotbar` como alternativa a `hotbar_indices`. Los contratos de equipamiento y payload cubren estos casos y ya están incluidos en el workflow; ejecución pendiente de confirmación.
+
+Queda abierto el hallazgo INV-03: un save puede contener más objetos que los slots visibles de la UI. No se recortan ni descartan esos objetos automáticamente; falta decidir una migración/presentación que los conserve accesibles.
