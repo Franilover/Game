@@ -347,7 +347,7 @@ func _aplicar_seguro_atasco(direccion: Vector2, delta: float) -> Vector2:
 	# alternen el rodeo y vibren en el sitio.
 	if _direccion_desvio_atasco.length_squared() > 0.001:
 		var desplazamiento_desvio := _direccion_desvio_atasco * maxf(DISTANCIA_PRUEBA_DESVIO_NPC, move_speed * 0.25)
-		if not creature.test_move(creature.global_transform, desplazamiento_desvio):
+		if not _hay_obstaculo_en_desplazamiento(desplazamiento_desvio):
 			return _direccion_desvio_atasco
 		_direccion_desvio_atasco = Vector2.ZERO
 
@@ -360,12 +360,33 @@ func _aplicar_seguro_atasco(direccion: Vector2, delta: float) -> Vector2:
 	]
 	for candidato in candidatos:
 		var desplazamiento := candidato * maxf(DISTANCIA_PRUEBA_DESVIO_NPC, move_speed * 0.25)
-		if not creature.test_move(creature.global_transform, desplazamiento):
+		if not _hay_obstaculo_en_desplazamiento(desplazamiento):
 			_direccion_desvio_atasco = candidato
 			return candidato
 
 	# Si no hay espacio, detenerse hasta que el personaje que bloquea se aparte.
 	return Vector2.ZERO
+
+
+## Consulta la geometría estática del mundo independientemente de collision_mask
+## del cuerpo: Creature y Garumi usan máscara física 0 por diseño.
+func _hay_obstaculo_en_desplazamiento(desplazamiento: Vector2) -> bool:
+	if not is_instance_valid(creature):
+		return true
+	var forma := creature.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if forma == null or forma.shape == null or forma.disabled:
+		return false
+	var consulta := PhysicsShapeQueryParameters2D.new()
+	consulta.shape = forma.shape
+	var transformacion := forma.global_transform
+	transformacion.origin += desplazamiento
+	consulta.transform = transformacion
+	consulta.collision_mask = 1
+	consulta.collide_with_bodies = true
+	consulta.collide_with_areas = false
+	consulta.exclude = [creature.get_rid()]
+	var espacio := creature.get_world_2d().direct_space_state
+	return not espacio.intersect_shape(consulta, 1).is_empty()
 
 
 func _reiniciar_seguro_atasco() -> void:
