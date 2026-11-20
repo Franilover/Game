@@ -302,12 +302,17 @@ func _probar_danio_jugador_con_armadura(errores: Array[String]) -> void:
 		return
 
 	inventario_compartido.inventory_controller.runtime.equipar("torso", armadura)
-	jugador_compartido.eterium.establecer_mana(4)
 	var muertes_compartidas := {"cantidad": 0}
 	jugador_compartido.died.connect(func() -> void:
 		muertes_compartidas["cantidad"] = int(muertes_compartidas["cantidad"]) + 1
 	)
 
+	jugador_compartido.eterium.establecer_mana(20)
+	jugador_compartido.take_damage(10, "Prueba/ArmaduraEterium")
+	if jugador_compartido.mana != 13 or jugador_compartido.health != 13:
+		errores.append("La armadura no mitigó el daño con vida/Eterium compartidos.")
+
+	jugador_compartido.eterium.establecer_mana(4)
 	jugador_compartido.take_damage(10, "Prueba/MuerteEterium")
 	jugador_compartido.take_damage(10, "Prueba/MuerteEteriumRepetida")
 	if jugador_compartido.mana != 0 or jugador_compartido.health != 0:
