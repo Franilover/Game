@@ -62,7 +62,7 @@ Los acentos se normalizan para resolver identificadores como `juguetón` y `acom
 
 ## Límites y prioridades
 
-- El seguimiento de Garumis vinculados, el estado guardado y el enfrentamiento existente tienen prioridad sobre la conducta autónoma.
+- El vínculo persistente, el estado guardado y las interacciones iniciadas por el jugador tienen prioridad sobre la conducta autónoma.
 - `CreatureMovement` conserva velocidad, colisiones y desplazamiento físico.
 - Esta capa no sustituye `CreatureAI` ni cambia la IA de otras criaturas.
 - La relación persistente con el jugador no se inventa ni se almacena en metadatos.
