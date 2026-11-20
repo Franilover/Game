@@ -105,11 +105,31 @@ func _run() -> void:
 	if memoria.obtener_agresion(otro_actor) != 2.0:
 		_fail("La memoria no mantuvo recuerdos independientes.")
 		return
+
+	# La intensidad tiene un límite y los Garumis no se convierten en amenazas recordadas.
+	for _i in range(8):
+		memoria.registrar_agresion(player, 1.0, 8.0)
+	if memoria.obtener_agresion(player) != 5.0:
+		_fail("La intensidad acumulada superó su límite de seguridad.")
+		return
+	var garumi_recordado := Node2D.new()
+	garumi_recordado.add_to_group("garumis")
+	get_tree().root.add_child(garumi_recordado)
+	memoria.registrar_agresion(garumi_recordado, 1.0, 8.0)
+	if memoria.obtener_agresion(garumi_recordado) != 0.0:
+		_fail("La memoria registró a un Garumi como agresor.")
+		return
+	memoria.registrar_agresion(otro_actor, 1.0, 0.0)
+	if memoria.obtener_agresion(otro_actor) != 2.0:
+		_fail("La memoria aceptó una duración nula.")
+		return
+
 	memoria.actualizar(8.0, 0.0)
 	if memoria.cantidad_recuerdos() != 0:
 		_fail("La memoria conservó recuerdos después de expirar.")
 		return
 	otro_actor.queue_free()
+	garumi_recordado.queue_free()
 
 	# Un jugador cercano no debe ser un objetivo implícito de una criatura
 	# neutral sin una respuesta definida.
@@ -143,6 +163,9 @@ func _run() -> void:
 	ai.al_recibir_danio(1, player)
 	if ai._obtener_respuesta_para_objetivo(player) != "huir":
 		_fail("La criatura no recordó al actor que la agredió.")
+		return
+	if ai._obtener_respuesta_para_objetivo(otro_actor) != "perseguir":
+		_fail("La memoria alteró la reacción hacia un actor que no la agredió.")
 		return
 	ai._actualizar_memoria_interaccion(6.0)
 	if ai._obtener_respuesta_para_objetivo(player) != "perseguir":
