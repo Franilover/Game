@@ -537,3 +537,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Se añadió lectura numérica validada para umbrales, pesos y salida de histéresis; valores no numéricos o no finitos usan el valor por defecto.
 - Se amplió CreatureAITargetPolicy con configuraciones mal formadas para evitar errores de conversión durante la decisión.
 - Estado: implementado; CI pendiente.
+
+## T2 — memoria individual de interacción (2026-11-20)
+
+- Implementado `CreatureInteractionMemory` como componente local, temporal y acotado.
+- Integrado con el daño recibido por `CreatureAI`, opt-in por `memoria_interaccion.activo`; la respuesta se aplica sólo al atacante recordado y admite las cuatro respuestas ya soportadas.
+- No persiste recuerdos, no modifica el canon y no incluye Garumis.
+- Pruebas ampliadas para identidad individual, acumulación, decaimiento, expiración y retorno al comportamiento base.
+- Estado: implementación realizada; CI pendiente.
