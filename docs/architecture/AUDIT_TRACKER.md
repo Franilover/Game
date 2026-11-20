@@ -565,3 +565,14 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - El límite de 16 recuerdos conserva ahora los individuos con mayor experiencia acumulada (agresión + familiaridad).
 - Pruebas añadidas para cooldown, decaimiento, exclusión de Garumis y conexión con percepción.
 - Estado: código y pruebas añadidos; CI y validación visual pendientes.
+
+
+## T2 — relaciones individuales y adaptación acotada de criaturas (2026-11-20)
+
+- Se amplió la memoria con confianza derivada únicamente de interacciones positivas explícitas; familiaridad sigue naciendo de avistamientos y agresión de daño recibido.
+- Se añadió una clasificación derivada por individuo y precedencia de hostilidad ante recuerdos contradictorios.
+- CreatureAI expone un punto de integración opt-in para eventos positivos confirmados. La confianza puede habilitar únicamente `investigar`, con puntuación de Utility AI; nunca puede ordenar atacar/perseguir.
+- Se reutiliza la lista de candidatos obtenida por percepción para reducir consultas repetidas durante el mismo tick.
+- Los recuerdos siguen limitados a 16 individuos, con referencias débiles, decaimiento y expiración.
+- Pendiente: identificar un evento positivo de gameplay que tenga semántica inequívoca; no conectar diálogo o proximidad como recompensa social. Pendiente también validación visual y profiling con poblaciones grandes.
+- Estado: código y pruebas añadidos; CI de la serie en ejecución. Un run anterior falló por una expectativa de test corregida posteriormente; no se declara aprobada la serie hasta que termine la regresión de la punta actual.
