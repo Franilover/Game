@@ -286,6 +286,13 @@ func _conectar_lifecycle(entity: Node) -> void:
 
 
 func _al_salir_entidad(entity: Node) -> void:
+	# Una recolección elimina el prop del árbol antes de descargar el chunk.
+	# Registrar el tombstone aquí evita que los datos originales lo regeneren.
+	if entity is WorldProp and entity.is_queued_for_deletion() and not bool(entity.get_meta("world_manager_unloading", false)):
+		var chunk_recolectado := _obtener_chunk_de_entidad(entity)
+		if chunk_recolectado != null:
+			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_recolectado)
+
 	_global_entities.erase(entity)
 	for chunk_variant in _by_chunk.keys():
 		var chunk_coord: Vector2i = chunk_variant
@@ -301,6 +308,32 @@ func _al_salir_entidad(entity: Node) -> void:
 	_limpiar_referencias_replica(_replicas_red_by_key, entity)
 	_limpiar_referencias_replica(_replicas_red_props_by_key, entity)
 	_remover_persistencia(entity)
+
+
+func _obtener_chunk_de_entidad(entity: Node) -> Variant:
+	for chunk_variant in _by_chunk.keys():
+		var bucket_variant: Variant = _by_chunk.get(chunk_variant, [])
+		if bucket_variant is Array and entity in (bucket_variant as Array):
+			return chunk_variant
+	return null
+
+
+func _guardar_tombstone_prop_recolectado(prop: WorldProp, chunk_coord: Vector2i) -> void:
+	var datos_prop := prop.obtener_datos()
+	var prop_key := str(prop.get_meta("runtime_instance_key", "")).strip_edges()
+	if prop_key.is_empty():
+		prop_key = str(datos_prop.get("id", datos_prop.get("clave", datos_prop.get("nombre", "")))).strip_edges()
+	if prop_key.is_empty():
+		return
+	datos_prop["runtime_instance_key"] = prop_key
+	datos_prop["chunk"] = chunk_coord
+	datos_prop["is_present"] = false
+	_runtime_prop_state_by_key[_runtime_key(chunk_coord, prop_key)] = {
+		"runtime_instance_key": prop_key,
+		"is_present": false,
+		"datos": datos_prop
+	}
+	guardar_dato_chunk(chunk_coord, "props", datos_prop)
 
 
 func _limpiar_referencias_replica(registro: Dictionary, entity: Node) -> void:
@@ -432,6 +465,7 @@ func guardar_estado_entidad(entity: Node, chunk_coord: Vector2i) -> void:
 		_runtime_prop_state_by_key[prop_state_key] = {
 			"position": prop.global_position,
 			"runtime_instance_key": prop_key,
+			"is_present": true,
 			"datos": datos_prop
 		}
 		var registro_prop := datos_prop.duplicate(true)
@@ -571,7 +605,11 @@ func despawn_props_chunk(chunk_coord: Vector2i) -> void:
 		if not entity is WorldProp:
 			restantes.append(entity)
 			continue
+		if entity.is_queued_for_deletion():
+			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_coord)
+			continue
 		guardar_estado_entidad(entity, chunk_coord)
+		entity.set_meta("world_manager_unloading", true)
 		_remover_persistencia(entity)
 		if _entity_factory != null and is_instance_valid(_entity_factory):
 			_entity_factory.reciclar_prop(entity as WorldProp)
@@ -608,7 +646,11 @@ func despawn_entidades_de_chunks() -> void:
 				if not entity_variant is Node or not is_instance_valid(entity_variant):
 					continue
 				var entity := entity_variant as Node
-				guardar_estado_entidad(entity, chunk_coord)
+				if entity is WorldProp and entity.is_queued_for_deletion():
+					_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_coord)
+				else:
+					guardar_estado_entidad(entity, chunk_coord)
+				entity.set_meta("world_manager_unloading", true)
 				_remover_persistencia(entity)
 				entity.queue_free()
 		_by_chunk.erase(chunk_coord)
