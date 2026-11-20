@@ -510,3 +510,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Exploración, investigación y recuperación comparten el despachador de decisiones, respetando qué respuestas admite cada estado. Una respuesta no permitida o desconocida no crea una conducta.
 - `CreatureAITargetPolicy` cubre normalización, respuestas desconocidas y restricciones de persecución/investigación.
 - Estado: implementación y regresión añadidas; CI de esta revisión pendiente.
+
+
+## T2 — recuperación local de obstáculos para criaturas (2026-11-20)
+
+- Hallazgo: el seguro antiatasco de CreatureMovement sólo se aplicaba a NPC de Torres. Las criaturas normales podían conservar la dirección bloqueada indefinidamente aunque la IA siguiera enviando el mismo objetivo.
+- Cambio: la recuperación tras falta de progreso se generalizó a instancias Creature. Prueba desvíos locales con test_move y mantiene el desvío mientras continúe libre. La comprobación sólo se activa tras acumular 0.8 s sin avance; no añade una consulta de colisión por frame normal.
+- Regresión: CreatureMovementNPCSafety ahora crea una pared física y verifica que una criatura no perteneciente a torres_game_npc elija y mantenga un desvío.
+- Límite: no es navegación global; no encuentra rutas alrededor de paredes largas, habitaciones complejas ni laberintos. NavigationAgent2D no está integrado en el flujo de IA actual.
+- Estado: código y regresión añadidos; pendiente de CI y validación visual en partida.
