@@ -432,3 +432,10 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Corrección: el atacante también debe pertenecer a `damageable`. Esto excluye Garumis y proxies de criaturas desactivados; no cambia su presencia, vínculo ni habilidades de exploración.
 - Regresión: `CombatEntityAttackContract` comprueba que Garumi no pueda iniciar ataques desde CombatSystem ni atribuir daño a través de CombatDamage.
 - Estado: implementado; pendiente de CI.
+
+
+## Clasificación de objetivos rechazados (2026-11-20)
+
+- `solicitar_danio_desde_entidad()` devuelve ahora `objetivo_derrotado` para objetivos vivos=false y `objetivo_no_daniable` para entidades fuera del grupo de daño, conservando `objetivo_invalido` para referencias/instancias fuera de juego.
+- La prueba de atacante pendiente utiliza un segundo objetivo vivo, evitando invocar APIs tipadas con una referencia que el propio test ya liberó.
+- Estado: corrección implementada; pendiente de CI.
