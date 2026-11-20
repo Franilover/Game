@@ -650,3 +650,13 @@ Si una respuesta requiere revisar varios sistemas sin una frontera clara, la arq
 - `health_changed` y otras señales pueden ejecutar listeners síncronos que soliciten un segundo daño antes de terminar el primero. Cada `danio_recibido` debe conservar la cantidad y el atacante del golpe que lo originó, incluso bajo esa reentrada.
 - `Creature.take_damage()` sigue siendo la ruta compatible para daño sin atacante explícito; ambos caminos comparten la misma aplicación de daño, protección de sparring y publicación del resultado.
 - `test_combat_creature_damage_reentrancy` reproduce daño anidado desde `health_changed` y verifica atribución y cantidades de ambos golpes.
+
+
+### Recuperación y curación del jugador
+
+- `PlayerEteriumRuntime` gobierna gasto, restauración, absorción, recuperación pasiva y cálculo de curación. Toda operación que recupere o consuma recursos debe respetar `VitalState.is_alive`.
+- La recuperación pasiva descarta su acumulador al detectar una entidad muerta; no debe aumentar reservas después de la muerte.
+- La curación automática se ejecuta durante el ciclo normal cuando el jugador permanece quieto en estado `IDLE`. El runtime calcula la operación y Player sincroniza el snapshot y la señal de salud.
+- La curación automática sólo existe cuando salud y Eterium son reservas separadas. En fisiología compartida, gastar Eterium para curar salud consumiría la misma reserva que representa la vida; por eso el runtime rechaza esa operación. La recuperación de la reserva compartida se realiza mediante las rutas de restauración/absorción permitidas.
+- `establecer_mana()` no puede reanimar un estado vital muerto. La reaparición es responsabilidad del ciclo explícito de respawn.
+- `test_player_vital_state_contract` cubre curación por el ciclo idle, rechazo de gasto/restauración/curación tras la muerte, y bloqueo de curación automática en fisiología compartida.
