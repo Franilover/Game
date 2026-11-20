@@ -628,7 +628,7 @@ jobs:
 
       - name: Run full GameState save restart through menu and Main
         run: |
-          output="$(timeout 120s godot --headless --path . --script res://tests/persistence/test_full_save_restart.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          output="$(timeout 120s godot --headless --path . res://tests/persistence/test_full_save_restart.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
           if ! grep -q 'FullSaveRestart: PASS' <<<"$output"; then
             echo "Full GameState restart test did not report PASS."
