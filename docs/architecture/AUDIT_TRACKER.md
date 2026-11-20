@@ -547,3 +547,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - No persiste recuerdos, no modifica el canon y no incluye Garumis.
 - Pruebas ampliadas para identidad individual, acumulación, decaimiento, expiración y retorno al comportamiento base.
 - Estado: implementación realizada; regresión completa y GDScript Quality aprobados en los commits de pruebas `d130202` (runs `44695492033` y `44695492008`).
+
+
+## T2 — límite de recuerdos por criatura (2026-11-20)
+
+- Se limita `CreatureInteractionMemory` a 16 actores recordados simultáneamente por criatura.
+- Al superar el límite, se elimina el recuerdo de menor agresión acumulada; los empates se resuelven por menor duración restante.
+- Se amplía `CreatureAITargetPolicy` para comprobar el límite y la conservación de recuerdos intensos.
+- Estado: implementación enviada; regresión y calidad GDScript pendientes de CI.
