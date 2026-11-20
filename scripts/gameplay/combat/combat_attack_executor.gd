@@ -16,7 +16,7 @@ static func crear_ataque_melee(
 	danio_directo: int,
 	al_detectar_objetivo: Callable
 ) -> CombatAttackArea:
-	if atacante == null or not is_instance_valid(atacante):
+	if not CombatTargeting.es_atacante_valido(atacante):
 		return null
 
 	var ataque := CombatAttackArea.new()
