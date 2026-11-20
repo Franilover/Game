@@ -310,3 +310,14 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [x] El proceso padre valida códigos de salida y marcadores de éxito de ambos procesos; elimina el fixture al terminar.
 - [x] Integrado en `.github/workflows/procedural-world-tests.yml`. Regresión Godot 4.7 aprobada: [run 44752576177](https://github.com/Franilover/Game/actions/runs/44752576177). Calidad GDScript aprobada en el commit del script: [run 44752557244](https://github.com/Franilover/Game/actions/runs/44752557244).
 - [~] Este contrato demuestra persistencia de archivo entre procesos independientes, pero usa un payload representativo con `SaveFileRepository`; todavía no inicia el juego desde el menú y carga una partida real mediante `GameState.iniciar_partida()` en el segundo proceso.
+
+
+
+### Reinicio completo desde el menú — 2026-11-20
+
+- [x] El contrato `tests/persistence/test_full_save_restart.gd` lanza procesos escritores y lectores independientes. El escritor crea una partida mediante `GameState.crear_partida()` y guarda un snapshot; el lector inicia el menú real, abre el selector, ejecuta `_jugar_partida()` y carga mediante `GameState.iniciar_partida()`.
+- [x] Verifica la entrada en `main.tscn`, zona Torres, posición/orientación, salud, Eterium, stamina, inventario, hotbar y estado/progreso/recompensas de misiones.
+- [x] Se detectó y corrigió un defecto real: JSON.parse entrega la versión serializada como `float` en Godot 4.7. El validador acepta ahora enteros representados como int o float y rechaza versiones fraccionarias.
+- [x] El callback de readiness vital se reintenta tras resolver reglas locales de Eterium en la prueba offline; el jugador se congela en `Events.scene_changed` para evitar que la física altere la muestra antes de verificarla.
+- [x] Pruebas de payload, reinicio completo y reinicio de repositorio entre procesos aprobadas. Regresión completa Godot 4.7: [run 44756242924](https://github.com/Franilover/Game/actions/runs/44756242924). Calidad GDScript: [run 44756242844](https://github.com/Franilover/Game/actions/runs/44756242844).
+- [~] El reinicio ahora queda cubierto desde el menú hasta Main para el snapshot de contrato. Aún faltan escenarios reales de interiores, reanudación de mundo procedural y recuperación offline/reconexión.
