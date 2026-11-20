@@ -563,6 +563,31 @@ func consumir_salida_reino_pendiente() -> bool:
 	return pendiente
 
 
+func _restaurar_posicion_jugador_hogar() -> void:
+	var estado_variant: Variant = GameState.world_state.flags.get("hogar_estado", {})
+	if not estado_variant is Dictionary:
+		return
+	var jugador_variant: Variant = (estado_variant as Dictionary).get("jugador", {})
+	if not jugador_variant is Dictionary:
+		return
+	var jugador_estado := jugador_variant as Dictionary
+	if not jugador_estado.has("x") or not jugador_estado.has("y"):
+		return
+	var x_variant: Variant = jugador_estado.get("x")
+	var y_variant: Variant = jugador_estado.get("y")
+	if not (x_variant is int or x_variant is float) or not (y_variant is int or y_variant is float):
+		return
+	var x := float(x_variant)
+	var y := float(y_variant)
+	if not is_finite(x) or not is_finite(y):
+		return
+	var jugador := _obtener_jugador_principal()
+	if not is_instance_valid(jugador):
+		push_warning("ZoneManager: no se pudo restaurar la posición de Hogar porque falta Player.")
+		return
+	jugador.global_position = Vector2(x, y)
+
+
 func obtener_tipo_actual() -> String:
 	return tipo_actual
 
@@ -647,6 +672,13 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		if estado_hogar_variant is Dictionary:
 			zona_actual.call("cargar_estado_guardado", (estado_hogar_variant as Dictionary).duplicate(true))
 	add_child(zona_actual)
+
+	# Hogar conserva su propia última posición porque su snapshot también se
+	# utiliza al volver desde otras zonas. Consumirla aquí evita reabrir la
+	# parcela con el jugador en el spawn genérico cuando el estado global del
+	# jugador no contiene una posición válida para esta zona.
+	if tipo == TIPO_HOGAR:
+		_restaurar_posicion_jugador_hogar()
 
 	if tipo != TIPO_MUNDO_ABIERTO and zona_actual.has_signal("salida_solicitada"):
 		var callback := Callable(self, "salir_de_reino_actual")
