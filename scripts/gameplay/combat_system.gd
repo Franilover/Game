@@ -551,8 +551,10 @@ func _aplicar_danio(
 		" con ",
 		origen,
 		" por ",
+		danio_real,
+		" de daño efectivo (base: ",
 		danio,
-		" de daño."
+		")."
 	)
 	return true
 
