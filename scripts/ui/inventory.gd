@@ -259,12 +259,8 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	mano_derecha_activa = clampi(int(datos.get("mano_derecha_activa", 0)), 0, 5)
 
 	var equipo_variant: Variant = datos.get("equipo", {})
-	if equipo_variant is Dictionary:
-		for slot_variant in (equipo_variant as Dictionary).keys():
-			var slot := str(slot_variant)
-			var item_variant: Variant = (equipo_variant as Dictionary).get(slot, {})
-			if item_variant is Dictionary and not (item_variant as Dictionary).is_empty():
-				inventory_controller.equipar(slot, (item_variant as Dictionary).duplicate(true))
+	var equipo_guardado: Dictionary = equipo_variant as Dictionary if equipo_variant is Dictionary else {}
+	inventory_controller.establecer_equipamiento(equipo_guardado)
 
 	# El estado de runtime ya cambió; notificar a la hotbar/HUD después de
 	# reconstruir los slots para que la carga no dependa de una interacción.
