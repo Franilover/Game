@@ -1339,3 +1339,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Un jugador muerto, fuera del árbol o pendiente de eliminación no puede iniciar un hitbox/proyectil ni dejar acciones pendientes que se descarten recién al procesar colisiones.
 - `CombatTemporalContract` añade una regresión para entradas primaria/secundaria y una solicitud tardía emitida directamente por el controlador.
 - Implementado en código; pendiente ejecución Godot 4.7/CI.
+
+
+## Contrato de cooldown del combate (2026-11-20)
+
+- Las entradas pública primaria/secundaria rechazan la solicitud cuando aún existe cooldown; las señales tardías siguen protegidas en el handler.
+- Los tres caminos que inician intervalo (melee, arma/proyectil y pala) usan un único helper que limita el valor a cero o más.
+- `CombatTemporalContract` cubre el rechazo durante cooldown y un valor de configuración negativo.
+- Implementado; pendiente ejecución Godot 4.7/CI.
