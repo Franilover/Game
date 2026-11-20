@@ -272,7 +272,9 @@ Qué índices de inventario están asignados y cuál está seleccionado. Sus sei
 
 InventoryController coordina operaciones y permisos de interacción; InventoryRuntime aplica transacciones; InventoryState, InventoryHotbarState y EquipmentState poseen cada estado.
 
-Combat consulta Equipment cuando necesita saber qué arma está equipada.
+La definición estática de uso de objetos se valida en InventoryController. La UI sólo solicita esa validación con datos enriquecidos; la aplicabilidad concreta sigue dependiendo de los recursos actuales del actor y sólo el controlador aplica efectos.
+
+Las armas y herramientas de las manos se leen desde los slots de mano del inventario. Equipment mantiene las ranuras de armadura (cabeza, torso y pies); no es la fuente de las armas activas de combate.
 
 ---
 
