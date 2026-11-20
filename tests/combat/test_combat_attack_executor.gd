@@ -232,7 +232,7 @@ func _probar_colision_melee_fisica(errores: Array[String]) -> void:
 	await get_tree().physics_frame
 	await get_tree().physics_frame
 
-	print("MeleePhysics debug: player=", jugador.global_position, " target=", objetivo.global_position, " hitbox=", area.global_position, " overlapping=", area._area.get_overlapping_areas(), " hurtbox=", objetivo.get_node_or_null("Hurtbox"))
+	print("MeleePhysics debug: player=", jugador.global_position, " target=", objetivo.global_position, " hitbox=", area.global_position, " target_children=", objetivo.get_children(), " collision=", objetivo.get_node_or_null("CollisionShape2D"), " overlapping=", area._area.get_overlapping_areas(), " hurtbox=", objetivo.get_node_or_null("Hurtbox"))
 
 	if objetivo.health != objetivo.max_health - combate.danio_desarmado:
 		errores.append("El hitbox melee no detectó el hurtbox real durante la simulación física.")
