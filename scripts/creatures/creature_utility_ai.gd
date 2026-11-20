@@ -2,6 +2,15 @@ extends RefCounted
 class_name CreatureUtilityAI
 
 
+## Lee valores numéricos opcionales sin convertir cadenas u otros tipos por accidente.
+static func leer_numero(configuracion: Dictionary, clave: String, defecto: float) -> float:
+	var valor: Variant = configuracion.get(clave, defecto)
+	if not (valor is int or valor is float):
+		return defecto
+	var numero := float(valor)
+	return numero if is_finite(numero) else defecto
+
+
 ## Convierte una necesidad que superó su umbral en una urgencia comparable.
 ## El pequeño valor base hace que alcanzar el umbral ya sea una opción válida.
 static func puntuar_urgencia(valor: float, umbral: float, peso: float = 1.0) -> float:
