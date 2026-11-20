@@ -1129,3 +1129,8 @@ Las regresiones `test_inventory_pickup_contract`, `test_inventory_equipment_tran
 ## Registro de réplicas de entidades — 2026-11-19
 
 Al salir una criatura o un prop del árbol, WorldEntityManager elimina también las referencias que mantenía en los registros de réplicas de red. Antes, esos diccionarios podían conservar nodos liberados hasta que volviera a registrarse la misma clave; en sesiones con muchas entidades transitorias, el registro podía crecer aunque las entidades ya no existieran. La limpieza compara la referencia exacta y conserva las demás réplicas. Regresión: tests/entities/test_world_entity_replica_registry.tscn.
+
+
+## Reinicio completo del administrador de entidades — 2026-11-19
+
+`WorldEntityManager.limpiar_todo()` vacía ahora también los registros de réplicas de red y los estados runtime de criaturas y props, además de las entidades, índices activos y datos preparados por chunk. Esto evita reutilizar referencias o estados de una sesión anterior tras un reinicio completo. Regresión: tests/entities/test_world_entity_manager_reset.tscn.
