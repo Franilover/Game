@@ -1490,3 +1490,11 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Pruebas ampliadas para relaciones derivadas, confianza explícita, precedencia de hostilidad, respuesta `investigar` y rechazo de respuestas agresivas por confianza.
 - Límite: todavía no existe un evento de juego confirmado que deba llamar a `registrar_interaccion_positiva`; el punto de integración queda preparado, pero no se finge que hablar o estar cerca sea una interacción positiva. Tampoco se han añadido vínculos entre grupos, parentesco ni memoria persistente.
 - CI de la serie de cambios en curso; un run anterior falló por una expectativa de prueba corregida en el commit `38a90f8`. Validación visual y medición de rendimiento en partida siguen pendientes.
+
+
+## Escalado de respuesta por agresiones repetidas (2026-11-20)
+
+- `CreatureAI` admite umbrales y respuesta opcionales para agresión repetida (`umbral_agresion_repetida`, `respuesta_agresion_repetida`).
+- La respuesta de escalado sólo se activa cuando la agresión acumulada supera el umbral configurado; la memoria mantiene límites, decaimiento y expiración, por lo que la adaptación no es permanente ni ilimitada.
+- Sin esos campos, se conserva exactamente la respuesta de agresión existente. No se modifica la política ecológica ni se introduce aprendizaje de especie.
+- `CreatureAITargetPolicy` cubre respuesta inicial y escalado después de agresiones repetidas. La regresión completa y GDScript Quality pasaron para el commit `521b694` (runs `44698006887` y `44698006898`); los cambios posteriores de percepción y escalado están en nueva validación.
