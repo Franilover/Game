@@ -439,6 +439,8 @@ func puede_equipar_en_slot(slot: String, item: Dictionary) -> bool:
 	return EquipmentState.es_objeto_compatible(slot, item)
 
 func desequipar(slot: String) -> Dictionary:
+	if not EquipmentState.es_ranura_valida(slot):
+		return {}
 	var anterior := runtime.desequipar(slot)
 	equipo_cambio.emit(slot, {})
 	return anterior
@@ -514,5 +516,5 @@ func consumir_durabilidad_equipo(slot: String) -> bool:
 		inventario_cambio.emit()
 	return resultado
 
-func obtener_objeto_equipado(slot: String = "mano_secundaria") -> Dictionary:
+func obtener_objeto_equipado(slot: String = "torso") -> Dictionary:
 	return runtime.obtener_equipo(slot)
