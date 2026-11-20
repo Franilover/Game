@@ -15,8 +15,6 @@ var _vinculado: bool = false
 var _tipo_vinculo: String = ""
 var _menu_contextual: CanvasLayer = null
 var _jugador_menu_contextual: Node2D = null
-var _jugador_vinculado: Node = null
-var _guardado: bool = false
 var _garumi_instancia_id: String = ""
 var _cerebro_garumi: GarumiBrain = null
 var eterium_maximo: int = 30
@@ -62,82 +60,6 @@ func restaurar_eterium(cantidad: int) -> int:
 		eterium_cambiado.emit(eterium_actual, eterium_maximo)
 		_persistir_estado_vinculo()
 	return eterium_actual - anterior
-
-
-func esta_guardado() -> bool:
-	return _guardado
-
-
-func establecer_estado_companero(jugador: Node, activo: bool) -> void:
-	if not _vinculado or not is_instance_valid(jugador) or not jugador is Node2D:
-		return
-	if activo:
-		_invocar_garumi(jugador)
-	else:
-		_guardar_garumi()
-
-
-func alternar_estado_invocacion(jugador: Node) -> void:
-	if not _vinculado or not is_instance_valid(jugador) or not jugador is Node2D:
-		return
-	if _guardado:
-		_invocar_garumi(jugador)
-	elif _esta_en_pantalla():
-		_guardar_garumi()
-	else:
-		# Si está libre pero fuera de cámara, la tecla lo trae junto al jugador.
-		global_position = (jugador as Node2D).global_position + Vector2(42.0, 20.0)
-		_jugador_vinculado = jugador
-		if has_method("iniciar_seguimiento_jugador"):
-			iniciar_seguimiento_jugador(jugador)
-		actualizar_estado_en_hud()
-
-
-func _esta_en_pantalla() -> bool:
-	var camara := get_viewport().get_camera_2d()
-	if camara == null:
-		return true
-	var posicion_pantalla: Vector2 = get_global_transform_with_canvas().origin
-	return get_viewport().get_visible_rect().has_point(posicion_pantalla)
-
-
-func _guardar_garumi() -> void:
-	if _guardado:
-		return
-	_guardado = true
-	if has_method("detener_seguimiento_jugador"):
-		detener_seguimiento_jugador()
-	if has_method("desactivar_como_proxy"):
-		desactivar_como_proxy()
-	else:
-		visible = false
-		set_physics_process(false)
-		set_process(false)
-	actualizar_estado_en_hud()
-	_persistir_estado_vinculo()
-
-
-func _invocar_garumi(jugador: Node) -> void:
-	if not is_instance_valid(jugador) or not jugador is Node2D:
-		return
-	_guardado = false
-	_jugador_vinculado = jugador
-	var destino := (jugador as Node2D).global_position + Vector2(42.0, 20.0)
-	if has_method("activar_como_proxy"):
-		activar_como_proxy()
-	_normalizar_grupos_garumi()
-	global_position = destino
-	velocity = Vector2.ZERO
-	if has_method("iniciar_seguimiento_jugador"):
-		iniciar_seguimiento_jugador(jugador)
-	actualizar_estado_en_hud()
-	_persistir_estado_vinculo()
-
-
-func actualizar_estado_en_hud() -> void:
-	for nodo_hud in get_tree().get_nodes_in_group("hud"):
-		if is_instance_valid(nodo_hud) and nodo_hud.has_method("actualizar_estado_garumi"):
-			nodo_hud.call("actualizar_estado_garumi", self, _guardado)
 
 
 func configurar(datos_garumi: Dictionary) -> void:
@@ -424,7 +346,6 @@ func obtener_datos_persistencia_vinculo() -> Dictionary:
 	registro["garumi_instancia_id"] = _garumi_instancia_id
 	registro["vinculado"] = true
 	registro["tipo_vinculo"] = _tipo_vinculo
-	registro["guardado"] = _guardado
 	registro["eterium_actual"] = eterium_actual
 	registro.erase("health")
 	registro.erase("nivel")
@@ -450,15 +371,12 @@ func restaurar_vinculo_persistido(jugador: Node, _guardado: bool, posicion: Vect
 	if not is_instance_valid(jugador) or not jugador is Node2D:
 		return
 	_vinculado = true
-	_jugador_vinculado = jugador
-	_guardado = true
 	_tipo_vinculo = str(datos.get("tipo_vinculo", _tipo_vinculo))
 	_garumi_instancia_id = str(datos.get("garumi_instancia_id", _garumi_instancia_id))
 	global_position = posicion
 	set_meta("vinculado", true)
 	set_meta("tipo_vinculo", _tipo_vinculo)
 	_normalizar_grupos_garumi()
-	actualizar_estado_en_hud()
 
 
 func _puede_establecer_otro_vinculo() -> bool:
@@ -480,19 +398,11 @@ func romper_vinculo() -> bool:
 			nodo_hud.call("eliminar_garumi_vinculado", self)
 	_vinculado = false
 	_tipo_vinculo = ""
-	_guardado = false
-	_jugador_vinculado = null
 	remove_from_group("damageable")
 	remove_meta("vinculado")
 	remove_meta("tipo_vinculo")
 	datos["vinculado"] = false
 	datos.erase("tipo_vinculo")
-	set_physics_process(true)
-	set_process(true)
-	visible = true
-	activar_como_proxy()
-	_normalizar_grupos_garumi()
-	restaurar_estado_vital(max_health, true)
 	actualizar_estado_en_hud()
 	print("Garumi: vínculo roto; ", criatura_nombre, " queda libre y ya no ocupa un espacio.")
 	return true

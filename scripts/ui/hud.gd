@@ -96,12 +96,6 @@ func configurar(nuevo_player: Player = null, nuevo_world_context: WorldContext =
 		if is_instance_valid(player) and player != nuevo_player:
 			_desconectar_senales_player()
 		player = nuevo_player
-		if is_instance_valid(_garumi_companero_actual):
-			for garumi_vinculado in _garumis_vinculados_nodos:
-				if is_instance_valid(garumi_vinculado) and garumi_vinculado.has_method("establecer_estado_companero"):
-					var es_companero := garumi_vinculado == _garumi_companero_actual
-					var estaba_guardado := bool(garumi_vinculado.call("esta_guardado")) if garumi_vinculado.has_method("esta_guardado") else false
-					garumi_vinculado.call("establecer_estado_companero", player, es_companero and not estaba_guardado)
 	if nuevo_world_context != null and is_instance_valid(nuevo_world_context):
 		world_context = nuevo_world_context
 	if nuevo_mission_manager != null and is_instance_valid(nuevo_mission_manager):
@@ -1776,9 +1770,6 @@ func _agregar_garumi_vinculado(garumi: Node, _nombre: String) -> void:
 	_garumis_vinculados_nodos.append(garumi)
 	if not is_instance_valid(_garumi_companero_actual):
 		_establecer_companero(garumi)
-	else:
-		if garumi.has_method("establecer_estado_companero"):
-			garumi.call("establecer_estado_companero", player, false)
 	_actualizar_selector_companero()
 	_actualizar_menu_garumis_movil()
 
@@ -1854,7 +1845,6 @@ func _actualizar_selector_companero() -> void:
 	_garumi_companero_slot.icon = retrato
 	_garumi_companero_slot.text = "" if retrato != null else "—"
 	if is_instance_valid(_garumi_companero_actual):
-		var guardado := bool(_garumi_companero_actual.call("esta_guardado")) if _garumi_companero_actual.has_method("esta_guardado") else false
 		_garumi_companero_slot.tooltip_text = ""
 	else:
 		_garumi_companero_slot.tooltip_text = ""
@@ -1895,7 +1885,7 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	if codigo < KEY_1 or codigo > KEY_3:
 		return false
 	var indice := codigo - KEY_1
-	# Con el selector de R abierto, 1–3 cambian el compañero; fuera de él usan dones.
+	# Con el selector abierto, 1–3 cambian la fuente Garumi; fuera de él usan dones.
 	if _r_selector_abierto:
 		if indice < _garumis_vinculados_nodos.size():
 			_seleccionar_companero(_garumis_vinculados_nodos[indice])
