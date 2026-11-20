@@ -654,3 +654,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - El test aísla el catálogo de NPC y resuelve Eterium localmente para no depender de red/credenciales. No materializa NPC, no cubre interiores ni simula el cierre/reapertura de un proceso real.
 - Suite completa Godot 4.7: **success**, run [44750243790](https://github.com/Franilover/Game/actions/runs/44750243790), commit `49d52ae3`; GDScript Quality (Advisory): **success**, run [44750243789](https://github.com/Franilover/Game/actions/runs/44750243789).
 - Persistencia integral P0 sigue abierta para cierre/reinicio real, migraciones antiguas, interrupciones de filesystem y continuidad de gameplay.
+
+
+## Reanudación real de main.tscn y limpieza del harness — 2026-11-20
+
+- Se añadió `tests/persistence/test_main_scene_resume.gd` y su escena de prueba. Instancia `scenes/world/main.tscn`, ejecuta el arranque real de Main y espera que ZoneManager cargue Torres y que GameState aplique el snapshot.
+- El contrato verifica posición, orientación, salud, Eterium, stamina, inventario, hotbar, propiedad del GameplayInputGate y bandera de restauración vital.
+- La primera ejecución imprimió `MainSceneResume: PASS`, pero CI detectó errores de limpieza: un GameplayInputGate dinámico y recursos/nodos huérfanos al salir. Se corrigió la liberación de los gates y se difirió el desmontaje de Main.
+- La regresión completa del commit `ccd2ee7773` pasó: [Godot 4.7 CI](https://github.com/Franilover/Game/actions/runs/44750715923). Calidad GDScript asociada: [run 44750715897](https://github.com/Franilover/Game/actions/runs/44750715897).
+- Alcance: es una integración de la escena principal con snapshot de prueba en memoria. No equivale todavía a reiniciar dos procesos, leer el save real durante el arranque, ni reanudar interiores y sesión offline de extremo a extremo.
