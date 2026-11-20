@@ -154,7 +154,10 @@ func recuperacion_stamina_carrera_eterium() -> float:
 	return maxf(float(reglas.get("carrera_eterium_recuperacion_stamina_por_segundo", 0.0)), 0.0)
 
 func calcular_costo_carrera(delta: float) -> int:
-	if not runtime_ready:
+	if not runtime_ready or vital_state == null:
+		return 0
+	if not vital_state.is_alive:
+		sprint_cost_accumulator = 0.0
 		return 0
 	sprint_cost_accumulator += costo_carrera_eterium_por_segundo() * _escala_runtime() * maxf(delta, 0.0)
 	return floori(sprint_cost_accumulator)
@@ -167,6 +170,7 @@ func confirmar_costo_carrera(cantidad: int) -> bool:
 		sprint_cost_accumulator = 0.0
 		return false
 	if not gastar(gastadas):
+		sprint_cost_accumulator = 0.0
 		return false
 	sprint_cost_accumulator -= gastadas
 	return true
