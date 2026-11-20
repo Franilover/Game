@@ -494,3 +494,11 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - `GDScript Quality (Advisory)` también pasó.
 - La prueba de política verifica que el selector elige el candidato elegible más cercano, cambia de objetivo al cambiar distancias y que la percepción no convierte a Garumis en objetivos hostiles.
 - Ejecución: https://github.com/Franilover/Game/actions/runs/44690720916.
+
+## Memoria de objetivo tras pérdida de entidad (2026-11-20)
+
+- Hallazgo: al desaparecer el nodo perseguido, CreatureAI cambiaba directamente a EXPLORANDO. Aunque guardaba ultima_posicion_objetivo, la investigación también se cancelaba si objetivo quedaba inválido.
+- Corrección: se mantiene un indicador explícito de última posición conocida. Al perder un objetivo durante persecución, se pasa a INVESTIGANDO, se recorre la posición memorizada y se vuelve a EXPLORANDO al llegar o agotar la duración.
+- Regresión: CreatureAITargetPolicy libera el nodo objetivo, verifica la transición a INVESTIGANDO, confirma que conserva la pista y comprueba el retorno a exploración al alcanzar la posición.
+- Estado: implementado y validado en la suite completa Godot 4.7 CI; GDScript Quality también pasó.
+- Ejecución: https://github.com/Franilover/Game/actions/runs/44691254596.
