@@ -1412,3 +1412,10 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - La ejecución completa `Garlia Godot 4.7 Regression Tests` terminó en success en el commit `7137f82`; `GDScript Quality (Advisory)` también pasó.
 - La extracción adicional de CreatureTargetSelector y la memoria de último objetivo pasan en la suite completa del commit `76c5161`; GDScript Quality también pasó. Ejecución: https://github.com/Franilover/Game/actions/runs/44691254596.
 - La comprobación visual y el balance del combate P1 siguen pendientes de una partida real; no se consideran cerrados por CI.
+
+### Decisión de estados de IA
+
+- Se añadió CreatureStateDecision como política pura: clasifica las respuestas de especie en intenciones de atacar, huir, perseguir o investigar.
+- CreatureAI ejecuta las intenciones y conserva las particularidades de cada estado, incluyendo el control de alcance antes de iniciar un ataque.
+- Exploración, investigación y recuperación comparten el despachador; cada estado mantiene sus respuestas permitidas. Las respuestas desconocidas o no admitidas no generan conductas.
+- La regresión CreatureAITargetPolicy cubre normalización y restricciones de la política. Esta revisión está pendiente de CI; no se declara validada todavía.
