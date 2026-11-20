@@ -1237,3 +1237,12 @@ La fase posterior al impacto conserva una distinción importante: un objetivo mu
 ## Ciclo de vida de proyectiles — 2026-11-20
 
 `CombatProjectile._finalizar()` centraliza el cierre por impacto, muerte del atacante y expiración. La operación marca el proyectil como consumido, desactiva la detección de colisiones y solicita su liberación, evitando que una expiración deje una ventana para impactos tardíos. Después de emitir contacto, el proyectil vuelve a validar atacante y objetivo antes de aplicar daño: si un listener derrota al atacante en esa misma emisión, el daño pendiente se cancela. `test_combat_temporal_contract` cubre esa interrupción y la expiración sin impacto.
+
+
+## Auditoría de ejecución de ataques de criaturas — 2026-11-20
+
+Se revisó la ruta completa de `CreatureAI`: perfiles de contacto (genérico, Dramarias, Flaxis y Lignianos), Cambiaformas con arma y Rancrodeen adherido. La IA sólo decide y solicita; las rutas de daño llegan a `CombatSystem` y `CombatDamage`. No se encontró una escritura directa de salud en `CreatureAI`.
+
+Se cerró una ventana de reentrada: `contacto_efectivo` ejecuta listeners síncronos, por lo que un listener podía derrotar al atacante o al objetivo y la solicitud continuaba aplicando daño. `solicitar_danio_desde_entidad()` ahora vuelve a validar ambos participantes después de la señal. El resolver melee `_aplicar_danio()` también valida antes de reducir salud, protegiendo tanto al jugador como a las armas de entidades/Cambiaformas. Una solicitud interrumpida conserva el contacto ya emitido, pero no informa daño ni publica `ataque_realizado`.
+
+Además, Lignianos no aplica ralentización si alguno de los participantes ya murió durante el contacto, y Rancrodeen se desprende al perder un objetivo válido. Se ampliaron `test_combat_entity_attack_contract` y `test_combat_weapon_attack_contract` para cubrir interrupciones síncronas. La ejecución de Godot sigue pendiente de confirmación local/CI.
