@@ -151,6 +151,11 @@ func _worker_write() -> void:
 	var creature := natural.creature as Creature
 	var changed_position := creature.global_position + Vector2(41.25, -23.5)
 	var changed_velocity := Vector2(2.75, -1.25)
+	var restart_metadata := {"position": {"x": changed_position.x, "y": changed_position.y}, "velocity": {"x": changed_velocity.x, "y": changed_velocity.y}, "runtime_key": str(natural.key), "creature_id": str(natural.id)}
+	var flags_variant: Variant = GameState.get("world_state").get("flags")
+	var flags: Dictionary = flags_variant as Dictionary
+	flags["natural_entity_restart_probe"] = restart_metadata
+	GameState.get("world_state").set("flags", flags)
 	creature.global_position = changed_position
 	creature.velocity = changed_velocity
 	if not GameState.capturar_estado_entidades_mundo_local("mundo_abierto", parts.manager):
@@ -202,15 +207,23 @@ func _worker_read() -> void:
 	if restored.is_empty():
 		_fail("El snapshot de entidades no sobrevivió al JSON.")
 		return
+	var expected: Dictionary = (state.get("flags", {}) as Dictionary).get("natural_entity_restart_probe", {}) as Dictionary
+	var expected_position: Dictionary = expected.get("position", {}) as Dictionary
+	var expected_velocity: Dictionary = expected.get("velocity", {}) as Dictionary
+	var expected_key := str(expected.get("runtime_key", ""))
 	var natural := await _generar_criatura_natural(parts, restored)
 	if natural.is_empty():
 		_fail("El spawn natural no se rematerializó tras el reinicio.")
 		return
 	var creature := natural.creature as Creature
 	var errors: Array[String] = []
-	if creature.global_position != Vector2(553.25, 488.5):
+	var expected_position_vector := Vector2(float(expected_position.get("x", 0.0)), float(expected_position.get("y", 0.0)))
+	var expected_velocity_vector := Vector2(float(expected_velocity.get("x", 0.0)), float(expected_velocity.get("y", 0.0)))
+	if expected_key.is_empty() or str(natural.key) != expected_key:
+		errors.append("El generador no recreó la misma clave de instancia natural.")
+	if creature.global_position != expected_position_vector:
 		errors.append("La posición runtime no sobrevivió al reinicio: %s" % str(creature.global_position))
-	if creature.velocity != Vector2(2.75, -1.25):
+	if creature.velocity != expected_velocity_vector:
 		errors.append("La velocidad runtime no sobrevivió al reinicio: %s" % str(creature.velocity))
 	var matches := 0
 	for entity in (parts.manager as Node).obtener_por_chunk(CHUNK):
