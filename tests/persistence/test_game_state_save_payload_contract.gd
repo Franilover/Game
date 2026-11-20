@@ -60,6 +60,15 @@ func _run() -> void:
 		errores.append("Se aceptó un snapshot de flags con tipo incorrecto.")
 
 	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": "tres", "estado": {}
+	}):
+		errores.append("Se aceptó una versión con tipo incorrecto.")
+	if game_state._datos_partida_cargables("save_contract", {
+		"id": "save_contract", "version": 3,
+		"estado": {"player": {"health": "mucha vida"}}
+	}):
+		errores.append("Se aceptó una reserva del jugador con tipo incorrecto.")
+	if game_state._datos_partida_cargables("save_contract", {
 		"id": "save_contract", "version": 3, "mundo": "mundo_corrupto",
 		"estado": {}
 	}):
