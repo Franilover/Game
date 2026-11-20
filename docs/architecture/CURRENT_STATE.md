@@ -1272,7 +1272,7 @@ Se auditó la ruta GameStateService → PlayerState → Player.restaurar_estado_
 - Los saves antiguos conservan sus campos y conversión de stamina 0..100; no se introdujo una nueva versión de formato.
 - test_player_state_vital_persistence_contract cubre migración legacy, límites, reservas compartidas inconsistentes, salud cero y serialización de ida y vuelta. La prueba está añadida, pero aún no se ha ejecutado en Godot.
 
-Límite de esta pasada: no se ha validado todavía el orden de carga completo con datos reales de especie/Supabase, ni la recuperación ante interrupciones reales del proceso. La muerte sigue sin ser un snapshot guardable: guardar_partida() y el guardado de Historia rechazan al jugador muerto.
+Límite de esta pasada: el orden de carga quedó protegido por contrato y prueba unitaria, pero aún no se ha validado en ejecución con respuestas reales/asíncronas de Supabase ni la recuperación ante interrupciones reales del proceso. La muerte sigue sin ser un snapshot guardable: guardar_partida() y el guardado de Historia rechazan al jugador muerto.
 
 
 ### Validación estructural de partidas
