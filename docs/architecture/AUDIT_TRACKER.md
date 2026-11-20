@@ -617,3 +617,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - P1/P2 mundo: contratos de persistencia de props/keys, reset/registro de entidades, spawn/resume, viaje/retorno, terreno y kernel procedural pasan CI. Falta prueba de estrés de streaming, sesiones largas y reinos/interiores completos.
 - P1/P2 inventario: contratos de recogida, uso, crafting, equipamiento, overflow, hotbar, drops y roundtrip pasan CI. Saves antiguos, durabilidad/transferencia entre manos y verificación visual de scroll siguen abiertos.
 - La verificación CI es headless/contractual; no sustituye la comprobación visual en PC/Android ni una sesión real completa.
+
+
+## Verificación adicional — persistencia y offline — 2026-11-20
+
+- `GameStateRoundtrip`: el snapshot cruza `SaveFileRepository` (escritura JSON real, reapertura y restauración en un servicio nuevo), incluyendo estado/progreso/recompensa reclamada de misiones.
+- `WorldSnapshotValidatorContract`: verifica caché offline envuelto, formato legado directo y rechazo de jerarquía inválida.
+- Recogida atómica, drop, transacciones de inventario, persistencia de misión y rollback de recompensa siguen cubiertos por contratos.
+- CI Godot 4.7 y GDScript Quality aprobados en commit `320c07251f`.
+- Límite no cerrado: aplicación completa del snapshot a una escena real, continuidad de gameplay tras reanudar, migración de saves antiguos y arranque/reconexión offline end-to-end.
