@@ -59,7 +59,12 @@ func actualizar_recuperacion(delta: float, puede_recuperar: bool) -> int:
 	return runtime.actualizar_recuperacion(delta, puede_recuperar)
 
 func procesar_carrera(delta: float) -> bool:
-	if runtime == null or not runtime.runtime_ready:
+	if (
+		runtime == null
+		or not runtime.runtime_ready
+		or runtime.vital_state == null
+		or not runtime.vital_state.is_alive
+	):
 		return false
 	if runtime.mana() <= 0:
 		return false
