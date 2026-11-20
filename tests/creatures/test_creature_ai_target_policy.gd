@@ -227,7 +227,6 @@ func _run() -> void:
 	ai.entity_manager = null
 	refugio_root.queue_free()
 	refugio_manager.free()
-	criatura_percibida.free()
 
 	var alimento := WorldItemScript.new() as WorldItem
 	alimento.configurar({"item_id": "recurso-test", "cantidad": 1})
