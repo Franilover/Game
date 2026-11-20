@@ -515,7 +515,7 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 ## T2 — recuperación local de obstáculos para criaturas (2026-11-20)
 
 - Hallazgo: el seguro antiatasco de CreatureMovement sólo se aplicaba a NPC de Torres. Las criaturas normales podían conservar la dirección bloqueada indefinidamente aunque la IA siguiera enviando el mismo objetivo.
-- Cambio: la recuperación tras falta de progreso se generalizó a instancias Creature. Prueba desvíos locales con test_move y mantiene el desvío mientras continúe libre. La comprobación sólo se activa tras acumular 0.8 s sin avance; no añade una consulta de colisión por frame normal.
-- Regresión: CreatureMovementNPCSafety ahora crea una pared física y verifica que una criatura no perteneciente a torres_game_npc elija y mantenga un desvío.
+- Cambio: la recuperación tras falta de progreso se generalizó a instancias Creature. Consulta la geometría estática con PhysicsShapeQueryParameters2D (capa 1), independientemente de collision_mask=0 de Creature/Garumi, y mantiene el desvío mientras continúe libre. La comprobación sólo se activa tras acumular 0.8 s sin avance; no añade una consulta de colisión por frame normal.
+- Regresión: CreatureMovementNPCSafety ahora crea una pared física y verifica con la máscara de colisión predeterminada que una criatura no perteneciente a torres_game_npc elija y mantenga un desvío ante una pared de la capa estática 1.
 - Límite: no es navegación global; no encuentra rutas alrededor de paredes largas, habitaciones complejas ni laberintos. NavigationAgent2D no está integrado en el flujo de IA actual.
 - Estado: código y regresión añadidos; pendiente de CI y validación visual en partida.
