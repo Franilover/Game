@@ -516,6 +516,74 @@ func guardar_partida() -> bool:
 	return resultado
 
 
+## Local worlds keep their runtime entity deltas in the private save.
+func capturar_estado_entidades_mundo_local(zona_tipo: String, entity_manager: Node) -> bool:
+	var tipo := zona_tipo.strip_edges()
+	if tipo.is_empty() or not is_instance_valid(entity_manager):
+		return false
+	if not entity_manager.has_method("capturar_estado_persistente_mundo"):
+		return false
+	var estado_variant: Variant = entity_manager.call("capturar_estado_persistente_mundo")
+	if not estado_variant is Dictionary:
+		return false
+	var por_zona_variant: Variant = world_state.flags.get("entidades_mundo_local_por_zona", {})
+	var por_zona: Dictionary = (por_zona_variant as Dictionary).duplicate(true) if por_zona_variant is Dictionary else {}
+	por_zona[tipo] = _serializar_variante_guardado(estado_variant as Dictionary)
+	world_state.flags["entidades_mundo_local_por_zona"] = por_zona
+	return true
+
+
+func obtener_estado_entidades_mundo_local(zona_tipo: String) -> Dictionary:
+	var por_zona_variant: Variant = world_state.flags.get("entidades_mundo_local_por_zona", {})
+	if not por_zona_variant is Dictionary:
+		return {}
+	var estado_variant: Variant = (por_zona_variant as Dictionary).get(zona_tipo.strip_edges(), {})
+	if not estado_variant is Dictionary:
+		return {}
+	var decodificado: Variant = _deserializar_variante_guardado(estado_variant)
+	return decodificado as Dictionary if decodificado is Dictionary else {}
+
+
+func _serializar_variante_guardado(valor: Variant) -> Variant:
+	if valor is Vector2:
+		var vector := valor as Vector2
+		return {"__garlia_type": "Vector2", "x": vector.x, "y": vector.y}
+	if valor is Vector2i:
+		var vector_i := valor as Vector2i
+		return {"__garlia_type": "Vector2i", "x": vector_i.x, "y": vector_i.y}
+	if valor is Array:
+		var resultado: Array = []
+		for elemento in valor as Array:
+			resultado.append(_serializar_variante_guardado(elemento))
+		return resultado
+	if valor is Dictionary:
+		var resultado: Dictionary = {}
+		for clave in (valor as Dictionary).keys():
+			resultado[str(clave)] = _serializar_variante_guardado((valor as Dictionary)[clave])
+		return resultado
+	return valor
+
+
+func _deserializar_variante_guardado(valor: Variant) -> Variant:
+	if valor is Array:
+		var resultado: Array = []
+		for elemento in valor as Array:
+			resultado.append(_deserializar_variante_guardado(elemento))
+		return resultado
+	if valor is Dictionary:
+		var diccionario := valor as Dictionary
+		match str(diccionario.get("__garlia_type", "")):
+			"Vector2":
+				return Vector2(float(diccionario.get("x", 0.0)), float(diccionario.get("y", 0.0)))
+			"Vector2i":
+				return Vector2i(int(diccionario.get("x", 0)), int(diccionario.get("y", 0)))
+		var resultado: Dictionary = {}
+		for clave in diccionario.keys():
+			resultado[str(clave)] = _deserializar_variante_guardado(diccionario[clave])
+		return resultado
+	return valor
+
+
 func capturar_estado_desde_juego(jugador: Player) -> void:
 	if jugador == null or not is_instance_valid(jugador):
 		return
@@ -543,6 +611,10 @@ func capturar_estado_desde_juego(jugador: Player) -> void:
 			var tipo_zona := str(zone_manager.call("obtener_tipo_actual"))
 			world_state.flags["zona_actual_tipo"] = tipo_zona
 			var zona := zone_manager.call("obtener_zona_actual") as Node
+			if not GarliaMultiplayer.es_servidor_dedicado() and not GarliaWorldNetwork.es_cliente_en_mundo_global():
+				var world_generator: WorldGenerator = zone_manager.call("obtener_world_generator") as WorldGenerator
+				if is_instance_valid(world_generator) and is_instance_valid(world_generator.entity_manager):
+					capturar_estado_entidades_mundo_local(tipo_zona, world_generator.entity_manager)
 			if is_instance_valid(zona) and zona.has_method("obtener_estado_guardado"):
 				var estado_zona_variant: Variant = zona.call("obtener_estado_guardado")
 				if estado_zona_variant is Dictionary:
