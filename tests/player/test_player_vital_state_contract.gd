@@ -58,7 +58,7 @@ func _run() -> void:
 		errores.append("La curación aceptó un coste de Eterium negativo.")
 	if jugador.health != 90 or jugador.mana != 80:
 		errores.append("El coste negativo alteró las reservas antes del ciclo idle.")
-	jugador._aplicar_movimiento_normal(Vector2.ZERO, 1.0, false, 0.02)
+	jugador._procesar_curacion_eterium(0.02)
 	if jugador.health != 100 or jugador.mana != 78:
 		errores.append("El ciclo idle no ejecutó ni sincronizó la curación automática normal.")
 
