@@ -231,3 +231,8 @@ El equipamiento real (`InventoryEquipment`) y las manos activas son estados dist
 
 Si un click usa el objeto equivocado: revisar `CombatSystem.procesar_accion_primaria/secundaria()`, `InventoryController.obtener_objeto_mano_activa()` y la selección de mano; no empezar por la UI.
 Si el daño recibido ignora armadura: revisar la ruta de equipamiento defensivo del Player y `CombatDefense`.
+
+
+### Reentrada durante contacto de IA/melee
+
+Si el contacto se registra pero el daño no debe continuar, inspeccionar los listeners de `contacto_efectivo` y el contrato de revalidación posterior en `CombatSystem.solicitar_danio_desde_entidad()` y `CombatSystem._aplicar_danio()`. No mover esta regla a `CreatureAI`: cubre también melee y Cambiaformas. Para Rancrodeen adherido, comprobar `CombatTargeting.es_objetivo_valido()` antes de cada pulso.
