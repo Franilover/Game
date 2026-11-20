@@ -42,32 +42,25 @@ func _run() -> void:
 		_fail("El snapshot local no contiene criaturas utilizables.")
 		return
 
-	var cache_dir := ProjectSettings.globalize_path("user://cache")
-	if not DirAccess.dir_exists_absolute(cache_dir):
-		DirAccess.make_dir_recursive_absolute(cache_dir)
-	var cache_path := ProjectSettings.globalize_path("user://cache/world_initial.json")
-	if FileAccess.file_exists("user://cache/world_initial.json"):
-		DirAccess.remove_absolute(cache_path)
-
-	var cache_only := WorldDataScript.new() as WorldDataService
-	cache_only.name = "WorldDataCacheOnlyProbe"
-	add_child(cache_only)
-	var wrapper := {"mundo": bundled.mundo.duplicate(true)}
-	var cache_file := FileAccess.open("user://cache/world_initial.json", FileAccess.WRITE)
+	var contract_dir := ProjectSettings.globalize_path("user://contracts")
+	DirAccess.make_dir_recursive_absolute(contract_dir)
+	var cache_path := "user://contracts/offline_world_snapshot_cache.json"
+	var cache_file := FileAccess.open(cache_path, FileAccess.WRITE)
 	if cache_file == null:
-		_fail("No se pudo preparar la caché local para probar la ruta alternativa.")
+		_fail("No se pudo preparar la caché local temporal.")
 		return
-	cache_file.store_string(JSON.stringify(wrapper))
+	cache_file.store_string(JSON.stringify({"mundo": bundled.mundo.duplicate(true)}))
 	cache_file.close()
 
 	var cache_loaded := WorldDataScript.new() as WorldDataService
 	cache_loaded.name = "WorldDataCacheOnly"
 	add_child(cache_loaded)
-	var local_cache := cache_loaded._leer_mundo_local("user://cache/world_initial.json", true)
+	var local_cache := cache_loaded._leer_mundo_local(cache_path, true)
 	if local_cache.is_empty() or not ValidatorScript.is_valid(local_cache):
 		_fail("La lectura de caché local no aceptó el formato {mundo: ...}.")
 		return
 
+	DirAccess.remove_absolute(ProjectSettings.globalize_path(cache_path))
 	print("OfflineWorldSnapshot: PASS bundled=true cache=true biomes=%d ecosystems=%d creatures=%d" % [biomas.size(), ecosistemas.size(), criaturas.size()])
 	get_tree().quit(0)
 
