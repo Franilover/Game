@@ -1298,3 +1298,10 @@ GameState valida ahora la estructura interna de `inventario_estado` antes de ace
 Queda abierto el hallazgo INV-03: un save puede contener más objetos que los slots visibles de la UI. No se recortan ni descartan esos objetos automáticamente; falta decidir una migración/presentación que los conserve accesibles.
 
 La validación estructural se amplió también a metadata superior (versión, mundo, semilla, versión del generador), tiempo/escena y campos numéricos/vectoriales del Player. Un tipo incorrecto se rechaza antes de convertir o aplicar el snapshot, reduciendo errores de conversión durante el listado y carga. El contrato incluye versiones y reservas mal tipadas; ejecución pendiente.
+
+
+## Inventario: acceso a ranuras guardadas por encima de la capacidad base — 2026-11-20
+
+Se corrigió INV-03 sin recortar ni migrar destructivamente el snapshot. La UI ahora aloja la cuadrícula dentro de un `ScrollContainer` y organiza los grupos de seis ranuras en una cuadrícula de tres columnas. Al cargar una partida, calcula los grupos visibles con `max(slot_count, items.size())`: conserva las tres secciones originales (mano izquierda, mochila, mano derecha) y añade grupos `RESERVA N` para las ranuras adicionales. Así, objetos en índices superiores a 17 permanecen accesibles, seleccionables y movibles sin alterar el formato del save ni la prioridad de inserción del runtime.
+
+Se añadió `test_inventory_overflow_ui`, que instancia la escena real, carga 30 ranuras y comprueba que existan 30 controles y cinco grupos con índices visuales consecutivos. El test quedó integrado en el workflow; ejecución pendiente de confirmación.
