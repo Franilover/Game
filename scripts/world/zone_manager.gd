@@ -602,6 +602,14 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		_transicionando = false
 		return
 
+	# Instanciar el destino antes de retirar la zona actual. Una escena que
+	# falla al construir no debe dejar al jugador dentro de un contenedor vacío.
+	var zona_preparada := packed.instantiate()
+	if zona_preparada == null:
+		push_error("ZoneManager: no se pudo instanciar la zona '%s'." % path)
+		_transicionando = false
+		return
+
 	if is_instance_valid(zona_actual):
 		# El WorldEntityManager pertenece a la escena de zona y se destruye con
 		# ella. Capturar el runtime antes de queue_free conserva sus cambios
@@ -624,7 +632,7 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		zona_actual.queue_free()
 		await zona_actual.tree_exited
 
-	zona_actual = packed.instantiate()
+	zona_actual = zona_preparada
 	zona_actual.name = "ZonaActiva"
 	if tipo == TIPO_HOGAR and zona_actual.has_method("cargar_estado_guardado"):
 		var estado_hogar_variant: Variant = GameState.world_state.flags.get("hogar_estado", {})
