@@ -47,11 +47,44 @@ func _run() -> void:
 	if jugador.vital_state.health != jugador.health:
 		errores.append("El daño normal dejó desincronizado VitalState.")
 
+	jugador.eterium_runtime.runtime_ready = true
+	jugador.eterium_runtime.reglas = {
+		"escala_runtime": 1.0,
+		"curacion_costo_s_por_tick": 2.0,
+		"curacion_intervalo_s": 0.01,
+		"curacion_vida_por_s": 5.0
+	}
+	var curacion_normal := jugador.eterium.calcular_curacion(0.02)
+	if int(curacion_normal.get("curacion", 0)) != 10 or int(curacion_normal.get("costo_eterium", 0)) != 2:
+		errores.append("El cálculo de curación normal no respetó sus reglas.")
+	elif not jugador.eterium.aplicar_curacion(
+		int(curacion_normal.get("curacion", 0)),
+		int(curacion_normal.get("costo_eterium", 0))
+	):
+		errores.append("La curación normal no pudo aplicarse.")
+	else:
+		jugador._sync_desde_vital()
+		if jugador.health != 100 or jugador.mana != 78:
+			errores.append("La curación normal no sincronizó vida y coste de Eterium.")
+
 	jugador.take_damage(jugador.max_health + 100, "Prueba/MuertePlayer")
 	if jugador.is_alive or jugador.vital_state.is_alive or int(muertes["cantidad"]) != 1:
 		errores.append("La muerte normal no sincronizó el estado ni emitió died.")
 	if jugador.eterium.absorber(10) != 0 or jugador.is_alive:
 		errores.append("La absorción de Eterium revivió una entidad muerta.")
+	var mana_despues_muerte := jugador.vital_state.mana
+	jugador.eterium_runtime.reglas["recuperacion_pasiva_s_por_segundo"] = 100.0
+	if jugador.eterium.restaurar(10) or jugador.eterium.gastar(1):
+		errores.append("El runtime permitió gastar o restaurar Eterium después de morir.")
+	if jugador.eterium_runtime.actualizar_recuperacion(1.0, true) != 0:
+		errores.append("La recuperación pasiva avanzó con el jugador muerto.")
+	if not jugador.eterium.calcular_curacion(1.0).is_empty():
+		errores.append("El runtime calculó curación para un jugador muerto.")
+	if jugador.eterium.aplicar_curacion(10, 0):
+		errores.append("El runtime aplicó curación a un jugador muerto.")
+	jugador.eterium.establecer_mana(10)
+	if jugador.vital_state.mana != mana_despues_muerte or jugador.is_alive:
+		errores.append("Establecer Eterium revivió o alteró las reservas de un jugador muerto.")
 
 	jugador.reaparecer()
 	if (
@@ -100,6 +133,20 @@ func _run() -> void:
 	if jugador.health != 110 or jugador.mana != 110 or jugador.vital_state.health != 110:
 		errores.append("La absorción de Eterium compartido no recuperó la vida.")
 
+	jugador.eterium_runtime.runtime_ready = true
+	jugador.eterium_runtime.reglas = {
+		"escala_runtime": 1.0,
+		"curacion_costo_s_por_tick": 2.0,
+		"curacion_intervalo_s": 0.01,
+		"curacion_vida_por_s": 5.0
+	}
+	if not jugador.eterium.calcular_curacion(1.0).is_empty():
+		errores.append("La fisiología compartida calculó una curación que gastaría su propia reserva vital.")
+	if jugador.eterium.aplicar_curacion(10, 2):
+		errores.append("La fisiología compartida aplicó una curación que consumiría su misma vida.")
+	if jugador.health != 110 or jugador.mana != 110:
+		errores.append("El intento de curación alteró la reserva vital compartida.")
+
 	jugador.admin_establecer_maximos(80, 80, 3.0)
 	if (
 		jugador.max_health != 80
@@ -117,6 +164,12 @@ func _run() -> void:
 		errores.append("Agotar el Eterium compartido no produjo una muerte idempotente.")
 	if jugador.eterium.absorber(10) != 0 or jugador.is_alive:
 		errores.append("Absorber Eterium después de agotar la vida revivió al jugador.")
+	var mana_compartido_despues_muerte := jugador.vital_state.mana
+	if jugador.eterium_runtime.actualizar_recuperacion(1.0, true) != 0:
+		errores.append("La recuperación pasiva restauró Eterium tras la muerte compartida.")
+	jugador.eterium.establecer_mana(20)
+	if jugador.vital_state.mana != mana_compartido_despues_muerte or jugador.is_alive:
+		errores.append("El setter de Eterium revivió una fisiología compartida muerta.")
 
 	jugador.reaparecer_en_red(Vector2(64, 96))
 	if (
