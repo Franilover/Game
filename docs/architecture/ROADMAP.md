@@ -225,8 +225,8 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 
 ### IA de criaturas — familiaridad con conducta opcional
 
-- [x] Diferenciar encuentros cercanos de avistamientos visuales; no asumir línea de visión sin un sistema validado de oclusión.
-- [x] Permitir que especies configuradas investiguen individuos conocidos mediante un umbral ponderado por curiosidad.
-- [x] Mantener prioridad de agresión recordada y relaciones ecológicas; familiaridad nunca autoriza combate.
+- [~] Diferenciar encuentros cercanos de avistamientos visuales; no asumir línea de visión sin un sistema validado de oclusión.
+- [~] Permitir que especies configuradas investiguen individuos conocidos mediante un umbral ponderado por curiosidad.
+- [~] Mantener prioridad de agresión recordada y relaciones ecológicas; familiaridad nunca autoriza combate.
 - [ ] Validar visualmente aproximación/investigación y evitar oscilaciones entre estados.
 - [ ] Añadir pruebas de integración con dos criaturas reales y reglas ecológicas simultáneas.
