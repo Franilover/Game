@@ -135,7 +135,7 @@ func _run() -> void:
 	npc_a.collision_mask = 1
 	var pared := StaticBody2D.new()
 	pared.collision_layer = 1
-	pared.position = npc_a.global_position + Vector2(26.0, -12.0)
+	pared.position = npc_a.global_position + Vector2(24.0, -12.0)
 	var forma_pared := CollisionShape2D.new()
 	var rectangulo := RectangleShape2D.new()
 	rectangulo.size = Vector2(4.0, 80.0)
