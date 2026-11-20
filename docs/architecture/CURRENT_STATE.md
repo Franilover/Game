@@ -1371,3 +1371,12 @@ Las fronteras de combate ya no consideran válido un nodo sólo porque `queue_fr
 - Esto mantiene el contrato de resultados consistente con la validación de armas y permite a IA/sistemas consumidores reaccionar al motivo correcto.
 - La regresión de entidad usa un objetivo vivo separado al comprobar atacantes pendientes de eliminación, evitando pasar referencias ya liberadas a una API tipada.
 - Implementado; pendiente de CI.
+
+
+## Validación CI del bloque P1 de combate (2026-11-20)
+
+- Godot 4.7 ejecutó correctamente: `CreatureAISignalContract`, `CombatTemporalContract`, `CombatItemResolver`, `CombatAttackExecutor`, `CombatProjectileContract`, `CombatImpactEffects`, `CombatWeaponAttackContract`, `CombatEntityAttackContract` y `CombatEventQueueContract`.
+- La regresión melee confirmó un único golpe por objetivo y daño a dos objetivos distintos en el mismo hitbox. La regresión de entidad confirmó que Garumis no pueden ser objetivos ni atacantes.
+- GDScript Quality (Advisory) terminó en success.
+- El workflow global no queda verde: después de completar todos los pasos de combate, falla en el test ajeno `PlayerEteriumRestoreReadiness` con `Can't free a RefCounted object` en `tests/player/test_player_eterium_restore_readiness.gd:49`. Ese problema queda fuera de este bloque P1.
+- Ejecuciones: [Godot 4.7 Regression Tests](https://github.com/Franilover/Game/actions/runs/44680722334) · [GDScript Quality](https://github.com/Franilover/Game/actions/runs/44680675642).
