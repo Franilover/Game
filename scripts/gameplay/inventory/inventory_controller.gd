@@ -31,7 +31,21 @@ var mano_izquierda_activa: int = 0
 var mano_derecha_activa: int = 0
 
 func configurar_gate(gate: GameplayInputGate) -> void:
+	if input_gate == gate:
+		return
+	if is_instance_valid(input_gate):
+		input_gate.queue_free()
+
 	input_gate = gate
+	if not is_instance_valid(input_gate):
+		return
+	# GameplayInputGate extiende Node: InventoryController es responsable
+	# de su ciclo de vida y debe mantenerlo dentro del árbol de escenas.
+	if input_gate.get_parent() != self:
+		if input_gate.get_parent() != null:
+			input_gate.reparent(self)
+		else:
+			add_child(input_gate)
 
 func puede_interactuar() -> bool:
 	if input_gate == null or not is_instance_valid(input_gate):
