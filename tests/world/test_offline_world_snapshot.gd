@@ -30,15 +30,25 @@ func _run() -> void:
 		return
 
 	var biomas := bundled.mundo.get("biomas", [])
-	var ecosistemas := bundled.mundo.get("ecosistemas", [])
-	var criaturas := bundled.mundo.get("criaturas", [])
+	var ecosistemas := 0
+	var criaturas := 0
+	for bioma_variant in biomas:
+		if not bioma_variant is Dictionary:
+			continue
+		for ecosistema_variant in (bioma_variant as Dictionary).get("ecosistemas", []):
+			if not ecosistema_variant is Dictionary:
+				continue
+			ecosistemas += 1
+			for habitat_variant in (ecosistema_variant as Dictionary).get("habitats", []):
+				if habitat_variant is Dictionary:
+					criaturas += ((habitat_variant as Dictionary).get("criaturas", []) as Array).size()
 	if not biomas is Array or biomas.is_empty():
 		_fail("El snapshot local no contiene biomas utilizables.")
 		return
-	if not ecosistemas is Array or ecosistemas.is_empty():
+	if ecosistemas <= 0:
 		_fail("El snapshot local no contiene ecosistemas utilizables.")
 		return
-	if not criaturas is Array or criaturas.is_empty():
+	if criaturas <= 0:
 		_fail("El snapshot local no contiene criaturas utilizables.")
 		return
 
@@ -56,12 +66,12 @@ func _run() -> void:
 	cache_loaded.name = "WorldDataCacheOnly"
 	add_child(cache_loaded)
 	var local_cache := cache_loaded._leer_mundo_local(cache_path, true)
-	if local_cache.is_empty() or not ValidatorScript.is_valid(local_cache):
+	if local_cache.is_empty() or not ValidatorScript.es_valido(local_cache):
 		_fail("La lectura de caché local no aceptó el formato {mundo: ...}.")
 		return
 
 	DirAccess.remove_absolute(ProjectSettings.globalize_path(cache_path))
-	print("OfflineWorldSnapshot: PASS bundled=true cache=true biomes=%d ecosystems=%d creatures=%d" % [biomas.size(), ecosistemas.size(), criaturas.size()])
+	print("OfflineWorldSnapshot: PASS bundled=true cache=true biomes=%d ecosystems=%d creatures=%d" % [biomas.size(), ecosistemas, criaturas])
 	get_tree().quit(0)
 
 
