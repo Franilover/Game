@@ -447,3 +447,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - GDScript Quality (Advisory): PASS.
 - El workflow completo continúa fallando después del bloque de combate en `PlayerEteriumRestoreReadiness` (error de liberación de objeto RefCounted en la línea 49); no es una regresión de combate.
 - Pendiente real de P1: validar colisiones físicas y balance dentro de una partida; definir resistencias/inmunidades solo cuando exista un contrato explícito de tipos de daño.
+
+
+## Daño efectivo aislado por solicitud (2026-11-20)
+
+- Hallazgo: calcular el daño con `salud_antes - salud_después` después de `health_changed` mezcla el golpe actual con otros golpes síncronos disparados por listeners. El evento `Creature.danio_recibido` podía publicar un total incorrecto y el robo de vida vampírico podía curar de más.
+- Corrección: `Entity`, `Player` y `Creature` devuelven el daño de la invocación; `CombatDamage.aplicar_y_obtener_danio()` propaga el resultado. El método booleano antiguo permanece por compatibilidad.
+- Efectos posteriores, señales de impacto y robo de vida usan el daño mitigado real, no el valor bruto de arma.
+- Regresiones: `CreatureDamageReentrancy` verifica dos golpes anidados, su atribución y cantidad independiente; `PlayerVitalStateContract` verifica retorno de daño para fisiología normal y compartida. Ambas integradas en CI.
+- Estado: implementado; pendiente resultado CI y validación en partida.
