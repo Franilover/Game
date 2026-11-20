@@ -366,3 +366,5 @@ La rama de trabajo recibió correcciones adicionales de persistencia que todaví
 | INV-03 | Media | Capacidad visible del inventario | Sigue pendiente decidir cómo hacer accesibles los objetos guardados por encima de `slot_count`; no se recortan para evitar pérdida silenciosa. | En verificación | Probar un save con más slots que la UI actual y elegir migración/paginación o validación conservadora. |
 
 Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las nuevas pruebas están integradas en pasos ya existentes del workflow; no hay confirmación de ejecución en esta sesión.
+
+| SAVE-03 | Alta | Integridad del payload | La validación comprueba ahora que la versión sea entera, metadata `mundo/semilla/generador` tenga tipos válidos, `elapsed_time/scene` sean compatibles y los campos numéricos/vectoriales de Player no contengan tipos arbitrarios. | Corregido pendiente de prueba | Ejecutar `GameStateSavePayloadContract` y probar listado/carga de un JSON con metadata corrupta. |
