@@ -609,11 +609,13 @@ func despawn_props_chunk(chunk_coord: Vector2i) -> void:
 			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_coord)
 			continue
 		guardar_estado_entidad(entity, chunk_coord)
-		entity.set_meta("world_manager_unloading", true)
 		_remover_persistencia(entity)
 		if _entity_factory != null and is_instance_valid(_entity_factory):
+			# El prop se conserva en el pool: no debe llevar una marca de
+			# queue_free a su siguiente aparición.
 			_entity_factory.reciclar_prop(entity as WorldProp)
 		else:
+			entity.set_meta("world_manager_unloading", true)
 			entity.queue_free()
 
 	if restantes.is_empty():
