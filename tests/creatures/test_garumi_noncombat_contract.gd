@@ -35,9 +35,12 @@ func _run() -> void:
 
 	if garumi.is_in_group("damageable"):
 		errores.append("El Garumi se registró como objetivo de daño.")
+	if garumi.get_node_or_null("Hurtbox") != null:
+		errores.append("El Garumi conserva una hurtbox heredada.")
+	var vida_interna: int = int(garumi.get("health"))
 	garumi.call("take_damage", 999, "test")
-	if not bool(garumi.get("is_alive")):
-		errores.append("Un impacto externo alteró el estado vital del Garumi.")
+	if int(garumi.get("health")) != vida_interna:
+		errores.append("Un impacto externo alteró el valor vital heredado.")
 
 	var amistad: Dictionary = garumi.call("obtener_datos_amistad")
 	for campo in ["health", "nivel", "experiencia_total"]:

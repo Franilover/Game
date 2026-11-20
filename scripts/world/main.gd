@@ -1486,15 +1486,12 @@ func _restaurar_garumis_vinculados() -> void:
 			float(registro.get("position_x", _player.global_position.x + 42.0)),
 			float(registro.get("position_y", _player.global_position.y + 20.0))
 		)
-		var esta_guardado := bool(registro.get("guardado", false))
-		# Si quedó libre lejos del jugador al cerrar el juego, vuelve a su lado.
-		if not esta_guardado and posicion_guardada.distance_to(_player.global_position) > 520.0:
-			posicion_guardada = _player.global_position + Vector2(42.0, 20.0)
+		# El vínculo no mueve al Garumi: conserva su posición autónoma en el mundo.
 		garumi.global_position = posicion_guardada
 		if not entity_manager.registrar_global(garumi, clave_persistente):
 			entity_factory.reciclar_criatura(garumi)
 			continue
-		garumi.restaurar_vinculo_persistido(_player, esta_guardado, posicion_guardada)
+		garumi.restaurar_vinculo_persistido(posicion_guardada)
 		if is_instance_valid(_hud) and _hud.has_method("registrar_garumi_restaurado"):
 			_hud.call("registrar_garumi_restaurado", garumi)
 		restaurados += 1

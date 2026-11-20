@@ -16,6 +16,12 @@ var eterium_actual: int = 30
 
 func _ready() -> void:
 	super._ready()
+	# Creature hereda la hurtbox de Entity para especies combatientes.
+	# Garumi conserva movimiento e interacción, pero no tiene hurtbox ni recibe daño.
+	var hurtbox := get_node_or_null("Hurtbox")
+	if is_instance_valid(hurtbox):
+		hurtbox.queue_free()
+	remove_from_group("damageable")
 	add_to_group("garumi_instances")
 	_normalizar_grupos_garumi()
 	_configurar_cerebro_garumi()
@@ -230,9 +236,7 @@ func _persistir_estado_vinculo() -> void:
 		game_state.call("guardar_garumi_vinculado", registro)
 
 
-func restaurar_vinculo_persistido(jugador: Node, _guardado: bool, posicion: Vector2) -> void:
-	if not is_instance_valid(jugador) or not jugador is Node2D:
-		return
+func restaurar_vinculo_persistido(posicion: Vector2) -> void:
 	_vinculado = true
 	_tipo_vinculo = str(datos.get("tipo_vinculo", _tipo_vinculo))
 	_garumi_instancia_id = str(datos.get("garumi_instancia_id", _garumi_instancia_id))
@@ -261,7 +265,6 @@ func romper_vinculo() -> bool:
 			nodo_hud.call("eliminar_garumi_vinculado", self)
 	_vinculado = false
 	_tipo_vinculo = ""
-	remove_from_group("damageable")
 	remove_meta("vinculado")
 	remove_meta("tipo_vinculo")
 	datos["vinculado"] = false

@@ -35,7 +35,6 @@ var _hud_status_elapsed: float = 0.0
 var mostrar_contexto_mundo: bool = false
 
 var _tiempo_contexto: float = 0.0
-var _combate_garumi_activo: bool = false
 var _ultima_tile_contexto: Vector2i = Vector2i(2147483647, 2147483647)
 
 var location_panel: Control = null
@@ -67,8 +66,8 @@ var discovery_notice: Label = null
 var _discovery_notice_timer: float = 0.0
 var _garumis_vinculados_ids: Dictionary = {}
 var _garumis_vinculados_nodos: Array[Node] = []
-var _garumi_companero_actual: Node = null
-var _garumi_companero_slot: Button = null
+var _garumi_fuente_actual: Node = null
+var _garumi_fuente_slot: Button = null
 var _garumi_selector_panel: PanelContainer = null
 var _garumi_selector_lista: HBoxContainer = null
 var _garumi_mobile_menu: PanelContainer = null
@@ -199,7 +198,7 @@ func _conectar_senal_game_state() -> void:
 
 
 func _process(delta: float) -> void:
-	_procesar_hold_companero(delta)
+	_procesar_hold_selector_garumi(delta)
 	_actualizar_indicador_recarga_dash(delta)
 	_eterium_ui_elapsed += delta
 	if _eterium_ui_elapsed >= 0.1:
@@ -1295,15 +1294,15 @@ func accion_controles_moviles(accion: String) -> void:
 			if _es_interfaz_movil():
 				_alternar_menu_garumis_movil()
 			elif _r_selector_abierto:
-				_cerrar_selector_companero()
+				_cerrar_selector_garumi()
 			else:
-				_abrir_selector_companero()
+				_abrir_selector_garumi()
 		"garumi_slot_1":
-			_usar_don_companero(0)
+			_usar_don_garumi(0)
 		"garumi_slot_2":
-			_usar_don_companero(1)
+			_usar_don_garumi(1)
 		"garumi_slot_3":
-			_usar_don_companero(2)
+			_usar_don_garumi(2)
 
 
 func _input(event: InputEvent) -> void:
@@ -1335,7 +1334,7 @@ func _input(event: InputEvent) -> void:
 			elif not hand_key.pressed and _r_hold_activo:
 				_r_hold_activo = false
 				if not _r_selector_abierto:
-					_alternar_companero_actual()
+					_asegurar_fuente_garumi()
 				get_viewport().set_input_as_handled()
 				return
 		# Capturar Tab en _input para evitar que otro control consuma la entrada.
@@ -1411,9 +1410,9 @@ func _input(event: InputEvent) -> void:
 
 func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
-	# El selector de compañero no forma parte del HUD de Historia.
-	if is_instance_valid(_garumi_companero_slot):
-		_garumi_companero_slot.visible = not activo and not _es_interfaz_movil()
+	# El selector de dones no forma parte del HUD de Historia.
+	if is_instance_valid(_garumi_fuente_slot):
+		_garumi_fuente_slot.visible = not activo and not _es_interfaz_movil()
 	if is_instance_valid(_garumi_selector_panel):
 		_garumi_selector_panel.visible = false if activo else _r_selector_abierto
 	if is_instance_valid(_garumi_mobile_menu) and activo:
@@ -1458,8 +1457,8 @@ func _actualizar_layout_hud_movil() -> void:
 		return
 
 	# El botón R de escritorio se sustituye por el control Garumis táctil.
-	if is_instance_valid(_garumi_companero_slot):
-		_garumi_companero_slot.hide()
+	if is_instance_valid(_garumi_fuente_slot):
+		_garumi_fuente_slot.hide()
 
 	# El desplegable táctil se abre debajo del único botón Garumis.
 	if is_instance_valid(_garumi_mobile_menu):
@@ -1608,10 +1607,10 @@ func _preparar_menu_garumis_movil() -> void:
 		PIXEL_UI_THEME.apply(boton)
 		boton.pressed.connect(_usar_don_desde_menu_movil.bind(i))
 		fila_habilidades.add_child(boton)
-	var titulo_companeros := Label.new()
-	titulo_companeros.text = "Garumis vinculados"
-	titulo_companeros.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	contenido.add_child(titulo_companeros)
+	var titulo_garumis_vinculados := Label.new()
+	titulo_garumis_vinculados.text = "Garumis vinculados"
+	titulo_garumis_vinculados.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	contenido.add_child(titulo_garumis_vinculados)
 	_garumi_mobile_companions = HBoxContainer.new()
 	_garumi_mobile_companions.alignment = BoxContainer.ALIGNMENT_CENTER
 	_garumi_mobile_companions.add_theme_constant_override("separation", 6)
@@ -1622,7 +1621,7 @@ func _preparar_menu_garumis_movil() -> void:
 
 
 func _alternar_menu_garumis_movil() -> void:
-	if not is_instance_valid(_garumi_mobile_menu) or _modo_historia or _combate_garumi_activo:
+	if not is_instance_valid(_garumi_mobile_menu) or _modo_historia:
 		return
 	if _garumi_mobile_menu.visible:
 		_garumi_mobile_menu.hide()
@@ -1654,7 +1653,7 @@ func _actualizar_menu_garumis_movil() -> void:
 		else:
 			boton.text = str(i + 1)
 		PIXEL_UI_THEME.apply(boton)
-		boton.pressed.connect(_seleccionar_companero_desde_menu_movil.bind(garumi))
+		boton.pressed.connect(_seleccionar_fuente_desde_menu_movil.bind(garumi))
 		_garumi_mobile_companions.add_child(boton)
 	if cantidad == 0:
 		var vacio := Label.new()
@@ -1664,42 +1663,42 @@ func _actualizar_menu_garumis_movil() -> void:
 
 
 func _usar_don_desde_menu_movil(indice: int) -> void:
-	_usar_don_companero(indice)
+	_usar_don_garumi(indice)
 	if is_instance_valid(_garumi_mobile_menu):
 		_garumi_mobile_menu.hide()
 
 
-func _seleccionar_companero_desde_menu_movil(garumi: Node) -> void:
-	_seleccionar_companero(garumi)
+func _seleccionar_fuente_desde_menu_movil(garumi: Node) -> void:
+	_seleccionar_fuente_garumi(garumi)
 	if is_instance_valid(_garumi_mobile_menu):
 		_garumi_mobile_menu.hide()
 
 
 func _preparar_panel_garumis_vinculados() -> void:
 	# Un único botón cuadrado, reutilizando exactamente la escena visual de Q/E.
-	_garumi_companero_slot = HAND_SLOT_SCENE.instantiate() as Button
-	if not is_instance_valid(_garumi_companero_slot):
-		push_error("HUD: no se pudo crear el botón de compañero R.")
+	_garumi_fuente_slot = HAND_SLOT_SCENE.instantiate() as Button
+	if not is_instance_valid(_garumi_fuente_slot):
+		push_error("HUD: no se pudo crear el selector de fuente Garumi.")
 		return
-	_garumi_companero_slot.name = "GarumiCompanionSlot"
-	# El único slot del compañero permanece fijo en la esquina superior izquierda.
-	_garumi_companero_slot.set_anchors_preset(Control.PRESET_TOP_LEFT)
-	_garumi_companero_slot.anchor_left = 0.0
-	_garumi_companero_slot.anchor_right = 0.0
-	_garumi_companero_slot.anchor_top = 0.0
-	_garumi_companero_slot.anchor_bottom = 0.0
-	_garumi_companero_slot.offset_left = 16.0
-	_garumi_companero_slot.offset_top = 16.0
-	_garumi_companero_slot.offset_right = 64.0
-	_garumi_companero_slot.offset_bottom = 64.0
-	PIXEL_UI_THEME.apply(_garumi_companero_slot)
-	_garumi_companero_slot.tooltip_text = ""
-	var etiqueta := _garumi_companero_slot.get_node_or_null("HandKey") as Label
+	_garumi_fuente_slot.name = "GarumiAbilitySourceSlot"
+	# El acceso a la fuente Garumi permanece fijo en la esquina superior izquierda.
+	_garumi_fuente_slot.set_anchors_preset(Control.PRESET_TOP_LEFT)
+	_garumi_fuente_slot.anchor_left = 0.0
+	_garumi_fuente_slot.anchor_right = 0.0
+	_garumi_fuente_slot.anchor_top = 0.0
+	_garumi_fuente_slot.anchor_bottom = 0.0
+	_garumi_fuente_slot.offset_left = 16.0
+	_garumi_fuente_slot.offset_top = 16.0
+	_garumi_fuente_slot.offset_right = 64.0
+	_garumi_fuente_slot.offset_bottom = 64.0
+	PIXEL_UI_THEME.apply(_garumi_fuente_slot)
+	_garumi_fuente_slot.tooltip_text = ""
+	var etiqueta := _garumi_fuente_slot.get_node_or_null("HandKey") as Label
 	if is_instance_valid(etiqueta):
 		etiqueta.text = "R"
-	_garumi_companero_slot.pressed.connect(_alternar_companero_actual)
-	_garumi_companero_slot.visible = not _es_interfaz_movil()
-	add_child(_garumi_companero_slot)
+	_garumi_fuente_slot.pressed.connect(_asegurar_fuente_garumi)
+	_garumi_fuente_slot.visible = not _es_interfaz_movil()
+	add_child(_garumi_fuente_slot)
 
 	_garumi_selector_panel = PanelContainer.new()
 	_garumi_selector_panel.name = "GarumiCompanionSelector"
@@ -1721,11 +1720,6 @@ func _preparar_panel_garumis_vinculados() -> void:
 	_garumi_selector_panel.add_child(_garumi_selector_lista)
 	add_child(_garumi_selector_panel)
 	_actualizar_layout_hud_movil()
-
-
-func mostrar_panel_garumis_durante_combate(_mostrar: bool) -> void:
-	# Se conserva la API para el sistema de combate, pero el HUD ya no dibuja círculos.
-	pass
 
 
 func mostrar_resultado_vinculo(garumi: Node, exito: bool, tipo: String = "") -> void:
@@ -1762,27 +1756,27 @@ func _agregar_garumi_vinculado(garumi: Node, _nombre: String) -> void:
 		return
 	var id := str(garumi.get_instance_id())
 	if _garumis_vinculados_ids.has(id):
-		_actualizar_selector_companero()
+		_actualizar_selector_garumi()
 		return
 	if _garumis_vinculados_nodos.size() >= 3:
 		return
 	_garumis_vinculados_ids[id] = true
 	_garumis_vinculados_nodos.append(garumi)
-	if not is_instance_valid(_garumi_companero_actual):
-		_establecer_companero(garumi)
-	_actualizar_selector_companero()
+	if not is_instance_valid(_garumi_fuente_actual):
+		_establecer_fuente_garumi(garumi)
+	_actualizar_selector_garumi()
 	_actualizar_menu_garumis_movil()
 
 
-func _procesar_hold_companero(delta: float) -> void:
+func _procesar_hold_selector_garumi(delta: float) -> void:
 	if not _r_hold_activo or _r_selector_abierto:
 		return
 	_r_hold_elapsed += delta
 	if _r_hold_elapsed >= R_HOLD_DELAY:
-		_abrir_selector_companero()
+		_abrir_selector_garumi()
 
 
-func _abrir_selector_companero() -> void:
+func _abrir_selector_garumi() -> void:
 	if _combate_garumi_activo or not is_instance_valid(_garumi_selector_panel):
 		return
 	_r_selector_abierto = true
@@ -1805,49 +1799,49 @@ func _abrir_selector_companero() -> void:
 		var textura := _buscar_textura_garumi(garumi)
 		if textura != null:
 			boton.icon = textura
-		boton.pressed.connect(_seleccionar_companero.bind(garumi))
+		boton.pressed.connect(_seleccionar_fuente_garumi.bind(garumi))
 		_garumi_selector_lista.add_child(boton)
 	_garumi_selector_panel.visible = not _garumis_vinculados_nodos.is_empty()
 	_garumi_selector_panel.move_to_front()
 
 
-func _cerrar_selector_companero() -> void:
+func _cerrar_selector_garumi() -> void:
 	_r_selector_abierto = false
 	if is_instance_valid(_garumi_selector_panel):
 		_garumi_selector_panel.visible = false
 
 
-func _seleccionar_companero(garumi: Node) -> void:
+func _seleccionar_fuente_garumi(garumi: Node) -> void:
 	if not is_instance_valid(garumi):
 		return
-	_establecer_companero(garumi)
-	_cerrar_selector_companero()
+	_establecer_fuente_garumi(garumi)
+	_cerrar_selector_garumi()
 
 
-func _establecer_companero(garumi: Node) -> void:
+func _establecer_fuente_garumi(garumi: Node) -> void:
 	# Seleccionar un Garumi solo cambia la fuente de dones; nunca lo invoca.
 	if not is_instance_valid(garumi) or not _garumis_vinculados_nodos.has(garumi):
 		return
-	_garumi_companero_actual = garumi
-	_actualizar_selector_companero()
+	_garumi_fuente_actual = garumi
+	_actualizar_selector_garumi()
 
 
-func _alternar_companero_actual() -> void:
+func _asegurar_fuente_garumi() -> void:
 	# R ya no invoca/guarda seres. El selector se abre manteniendo la tecla.
-	if not is_instance_valid(_garumi_companero_actual) and not _garumis_vinculados_nodos.is_empty():
-		_establecer_companero(_garumis_vinculados_nodos[0])
+	if not is_instance_valid(_garumi_fuente_actual) and not _garumis_vinculados_nodos.is_empty():
+		_establecer_fuente_garumi(_garumis_vinculados_nodos[0])
 
 
-func _actualizar_selector_companero() -> void:
-	if not is_instance_valid(_garumi_companero_slot):
+func _actualizar_selector_garumi() -> void:
+	if not is_instance_valid(_garumi_fuente_slot):
 		return
-	var retrato := _buscar_textura_garumi(_garumi_companero_actual) if is_instance_valid(_garumi_companero_actual) else null
-	_garumi_companero_slot.icon = retrato
-	_garumi_companero_slot.text = "" if retrato != null else "—"
-	if is_instance_valid(_garumi_companero_actual):
-		_garumi_companero_slot.tooltip_text = ""
+	var retrato := _buscar_textura_garumi(_garumi_fuente_actual) if is_instance_valid(_garumi_fuente_actual) else null
+	_garumi_fuente_slot.icon = retrato
+	_garumi_fuente_slot.text = "" if retrato != null else "—"
+	if is_instance_valid(_garumi_fuente_actual):
+		_garumi_fuente_slot.tooltip_text = ""
 	else:
-		_garumi_companero_slot.tooltip_text = ""
+		_garumi_fuente_slot.tooltip_text = ""
 
 
 func _buscar_textura_garumi(nodo: Node) -> Texture2D:
@@ -1871,8 +1865,6 @@ func _buscar_textura_garumi(nodo: Node) -> Texture2D:
 
 func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	# 1, 2 y 3 activan dones de la fuente Garumi seleccionada.
-	if _combate_garumi_activo:
-		return false
 	for nodo_inventario in get_tree().get_nodes_in_group("inventory"):
 		if nodo_inventario is CanvasItem and (nodo_inventario as CanvasItem).visible:
 			return false
@@ -1888,17 +1880,17 @@ func _procesar_tecla_garumis(evento: InputEventKey) -> bool:
 	# Con el selector abierto, 1–3 cambian la fuente Garumi; fuera de él usan dones.
 	if _r_selector_abierto:
 		if indice < _garumis_vinculados_nodos.size():
-			_seleccionar_companero(_garumis_vinculados_nodos[indice])
+			_seleccionar_fuente_garumi(_garumis_vinculados_nodos[indice])
 		return true
-	_usar_don_companero(indice)
+	_usar_don_garumi(indice)
 	return true
 
 
-func _usar_don_companero(indice: int) -> void:
-	if not is_instance_valid(_garumi_companero_actual):
+func _usar_don_garumi(indice: int) -> void:
+	if not is_instance_valid(_garumi_fuente_actual):
 		return
-	if _garumi_companero_actual.has_method("usar_don_por_slot"):
-		_garumi_companero_actual.call("usar_don_por_slot", indice)
+	if _garumi_fuente_actual.has_method("usar_don_por_slot"):
+		_garumi_fuente_actual.call("usar_don_por_slot", indice)
 	elif is_instance_valid(discovery_notice):
 		discovery_notice.text = "Los dones de este Garumi aún no están disponibles."
 		discovery_notice.visible = true
@@ -1943,14 +1935,14 @@ func eliminar_garumi_vinculado(garumi: Node) -> void:
 	var id := str(garumi.get_instance_id())
 	_garumis_vinculados_ids.erase(id)
 	_garumis_vinculados_nodos.erase(garumi)
-	if _garumi_companero_actual == garumi:
-		_garumi_companero_actual = null
+	if _garumi_fuente_actual == garumi:
+		_garumi_fuente_actual = null
 		if not _garumis_vinculados_nodos.is_empty():
-			_establecer_companero(_garumis_vinculados_nodos[0])
-	_actualizar_selector_companero()
+			_establecer_fuente_garumi(_garumis_vinculados_nodos[0])
+	_actualizar_selector_garumi()
 	_actualizar_menu_garumis_movil()
 
 
 func actualizar_estado_garumi(garumi: Node, _guardado: bool) -> void:
-	if garumi == _garumi_companero_actual:
-		_actualizar_selector_companero()
+	if garumi == _garumi_fuente_actual:
+		_actualizar_selector_garumi()
