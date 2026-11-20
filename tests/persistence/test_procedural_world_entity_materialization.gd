@@ -96,7 +96,33 @@ func _run() -> void:
 		_fail(["La criatura natural no quedó registrada tras materializar DATA."])
 		return
 
-	# Simula cambios runtime del juego sobre la instancia natural y captura
+	# Preparar también props desde el catálogo/bioma real. La prueba los
+	# verifica cuando el chunk tiene candidatos válidos; no inyecta datos.
+	spawner.preparar_datos_props_chunk(CHUNK)
+	var datos_props := manager.obtener_datos_chunk(CHUNK, "props")
+	var prop_runtime_key := ""
+	var prop_posicion_modificada := Vector2.ZERO
+	var prop_materializado: WorldProp = null
+	if not datos_props.is_empty():
+		for dato_prop_variant in datos_props:
+			if not dato_prop_variant is Dictionary:
+				continue
+			var dato_prop := dato_prop_variant as Dictionary
+			prop_runtime_key = str(dato_prop.get("runtime_instance_key", "")).strip_edges()
+			if not prop_runtime_key.is_empty():
+				break
+		if not prop_runtime_key.is_empty() and spawner.materializar_props_datos_chunk(CHUNK):
+			for entidad_variant in manager.obtener_por_chunk(CHUNK):
+				if entidad_variant is WorldProp and is_instance_valid(entidad_variant):
+					var prop_candidato := entidad_variant as WorldProp
+					if str(prop_candidato.get_meta("runtime_instance_key", "")) == prop_runtime_key:
+						prop_materializado = prop_candidato
+						break
+		if is_instance_valid(prop_materializado):
+				prop_posicion_modificada = prop_materializado.global_position + Vector2(-21.5, 13.75)
+				prop_materializado.global_position = prop_posicion_modificada
+
+	# Simula cambios runtime del juego sobre las instancias naturales y captura
 	# el snapshot usando el mismo contrato que GameState utiliza al guardar.
 	var posicion_modificada := criatura.global_position + Vector2(37.5, -19.25)
 	var velocidad_modificada := Vector2(2.25, -1.5)
@@ -111,10 +137,18 @@ func _run() -> void:
 	if estado_criatura.get("position") != posicion_modificada or estado_criatura.get("velocity") != velocidad_modificada:
 		_fail(["El snapshot no conservó la posición y velocidad runtime de la criatura."])
 		return
+	if is_instance_valid(prop_materializado):
+		var clave_prop_estado := "0:0:" + prop_runtime_key
+		var estado_prop: Dictionary = (snapshot.get("props", {}) as Dictionary).get(clave_prop_estado, {}) as Dictionary
+		if estado_prop.is_empty() or estado_prop.get("position") != prop_posicion_modificada:
+			_fail(["El snapshot no conservó la posición del prop natural."])
+			return
 
-	# Simula descarga y reentrada al chunk: la instancia se elimina, pero el
-	# estado guardado debe aplicarse a la misma aparición determinista.
+	# Simula descarga y reentrada al chunk: las instancias se eliminan, pero
+	# el estado guardado debe aplicarse a las mismas apariciones deterministas.
 	manager.despawn_criaturas_chunk(CHUNK)
+	if is_instance_valid(prop_materializado):
+		manager.despawn_props_chunk(CHUNK)
 	manager.restaurar_estado_persistente_mundo(snapshot)
 	if not spawner.materializar_criaturas_datos_chunk(CHUNK):
 		_fail(["No se pudo rematerializar el spawn natural después de restaurar el snapshot."])
@@ -128,6 +162,21 @@ func _run() -> void:
 		errors.append("La posición runtime no sobrevivió a descarga y rematerialización.")
 	if restaurada.velocity != velocidad_modificada:
 		errors.append("La velocidad runtime no sobrevivió a descarga y rematerialización.")
+	if is_instance_valid(prop_materializado):
+		if not spawner.materializar_props_datos_chunk(CHUNK):
+			errors.append("No se pudo rematerializar el prop natural después de restaurar el snapshot.")
+		else:
+			var prop_restaurado: WorldProp = null
+			for entidad_variant in manager.obtener_por_chunk(CHUNK):
+				if entidad_variant is WorldProp and is_instance_valid(entidad_variant):
+					var candidato := entidad_variant as WorldProp
+					if str(candidato.get_meta("runtime_instance_key", "")) == prop_runtime_key:
+						prop_restaurado = candidato
+						break
+			if not is_instance_valid(prop_restaurado):
+				errors.append("El prop natural no reapareció tras restaurar el estado.")
+			elif prop_restaurado.global_position != prop_posicion_modificada:
+				errors.append("La posición runtime del prop no sobrevivió a la rematerialización.")
 	if manager.obtener_por_chunk(CHUNK).filter(func(entidad: Variant) -> bool:
 		return entidad is Creature and str((entidad as Creature).get_meta("runtime_instance_key", "")) == runtime_key
 	).size() != 1:
@@ -136,7 +185,7 @@ func _run() -> void:
 	if not errors.is_empty():
 		_fail(errors)
 		return
-	print("ProceduralWorldEntityMaterialization: PASS seed=%d chunk=%s creature=%s runtime=%s" % [generator.map_seed, str(CHUNK), criatura_id, runtime_key])
+	print("ProceduralWorldEntityMaterialization: PASS seed=%d chunk=%s creature=%s runtime=%s props=%d" % [generator.map_seed, str(CHUNK), criatura_id, runtime_key, datos_props.size()])
 	world_instance.queue_free()
 	await get_tree().process_frame
 	get_tree().quit(0)
