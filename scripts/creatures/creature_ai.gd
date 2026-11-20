@@ -847,6 +847,10 @@ func _refrescar_objetivo() -> void:
 		# Ser visible no convierte a una entidad en objetivo. Sólo se eligen
 		# candidatos para los que la especie tiene una respuesta ejecutable.
 		var respuesta := _obtener_respuesta_para_objetivo(candidato)
+		# Un Garumi puede formar parte del mundo y de sus relaciones, pero nunca
+		# es una presa ni un objetivo de combate para la IA de criaturas.
+		if candidato.is_in_group("garumis") and respuesta == "atacar":
+			continue
 		if respuesta not in ["atacar", "huir", "perseguir", "investigar"]:
 			continue
 		candidatos.append(candidato)
