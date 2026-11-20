@@ -56,6 +56,8 @@ func configurar_dependencias(
 	world_data: WorldDataService = null
 ) -> void:
 	_inventory = inventory
+	if _player != player:
+		_esperando_configuracion_eterium_jugador = false
 	_player = player
 	_world_context = world_context
 	_world_atmosphere = world_atmosphere
