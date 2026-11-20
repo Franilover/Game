@@ -100,11 +100,16 @@ func _run() -> void:
 		errores.append("No se pudo resolver la configuración local de Eterium.")
 	player.eterium.marcar_especie_configuracion_resuelta()
 
-	# Reaplicar mediante las dependencias que Main ya conectó. Esto permite
-	# medir el snapshot sin que la regeneración de dash o la física lo alteren.
-	GameState._partida_aplicada_en_escena = false
-	GameState._estado_vital_restaurado_en_escena = false
-	GameState._aplicar_estado_al_juego()
+	# Esperar la aplicación automática que Main programó al configurar
+	# GameState. El Player permanece pausado para medir los valores iniciales,
+	# antes de que física o regeneración de dash los modifiquen.
+	frames = 0
+	while frames < 120 and (
+		not GameState._partida_aplicada_en_escena
+		or not GameState._estado_vital_restaurado_en_escena
+	):
+		await get_tree().process_frame
+		frames += 1
 
 	if str(zone_manager.call("obtener_tipo_actual")) != "reino_torres":
 		errores.append("La zona cambió inesperadamente durante la restauración.")
