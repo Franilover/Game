@@ -258,6 +258,17 @@ jobs:
             exit 1
           fi
 
+      - name: Run creature damage reentrancy contract test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . --script res://tests/combat/test_combat_creature_damage_reentrancy.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|CreatureDamageReentrancy: FAIL:' <<<"$output"; then
+            echo "Creature damage reentrancy contract test reported errors."
+            exit 1
+          fi
+
       - name: Run creature movement NPC safety regression test
         shell: bash
         run: |
