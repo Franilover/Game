@@ -1157,5 +1157,5 @@ Cuando una criatura se registra sin `runtime_instance_key`, el administrador usa
 - Los materializadores DATA y FULL consultan ese estado antes de crear el prop; una recolección confirmada no vuelve a aparecer al regenerar el chunk.
 - La descarga normal del chunk marca la entidad como retirada por el administrador y conserva `is_present=true`, diferenciando una descarga de una recolección.
 - El tombstone sólo actualiza una entrada DATA existente; si todavía no hay datos preparados, permanece en el estado runtime sin crear una lista parcial que impida generar los demás props del chunk.
-- Si la recolección ya había solicitado `queue_free` cuando comienza la descarga, el administrador guarda el tombstone en vez de registrar el objeto como intacto.
+- Si la recolección ya había solicitado `queue_free` cuando comienza la descarga, el administrador guarda el tombstone en vez de registrar el objeto como intacto. La misma protección se aplica si el guardado global captura el mundo antes de que se procese `tree_exiting`.
 - Regresión: `tests/entities/test_world_prop_persistence.tscn`.
