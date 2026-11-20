@@ -1,6 +1,6 @@
 # Garlia — Hoja de ruta técnica activa
 
-**Rama de trabajo:** `refactor/p1-player-locomotion`  
+**Rama de trabajo:** `work/design-and-architecture`  
 **Alcance:** estabilidad y expansión del juego individual.  
 **Regla de validación:** solo marcar como completado lo que tenga evidencia en código y pruebas; CI correcto no sustituye una prueba visual o de gameplay que no exista.
 
@@ -33,8 +33,8 @@
 - [x] Contrato automatizado de sobrescritura, recuperación, eliminación y rechazo de IDs/payloads inválidos; CI Godot 4.7 aprobado.
 - [ ] Validar la recuperación ante interrupción real del proceso y errores de filesystem fuera del entorno de contrato.
 - [ ] Validar versión y migraciones de saves antiguos.
-- [ ] Rechazar estructuras corruptas o incompletas sin destruir el último save válido.
-- [ ] Comprobar restauración de posición, zona/interior, salud, maná, stamina, inventario, IUM, misiones, Garumis y tiempo.
+- [~] Rechazar estructuras corruptas o incompletas sin destruir el último save válido; ahora valida la estructura anidada de inventario, pendiente de ejecutar el contrato actualizado.
+- [~] Comprobar restauración de posición, zona/interior, salud, maná, stamina, inventario, IUM, misiones, Garumis y tiempo; roundtrip de estado existe, falta validar carga integral en escena.
 - [ ] Comprobar guardado rápido, autosave, cierre de ventana y guardados simultáneos.
 - [ ] Verificar que una muerte o transición de escena no guarde un snapshot parcial.
 
@@ -104,7 +104,7 @@
 - [x] Verificar el contrato de soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo; la ruta de fallo conserva el objeto y usa el dato actual del runtime, no una copia de arrastre obsoleta.
 - [ ] Auditar identidad por ID, apilamiento, límites y capacidad.
 - [ ] Probar durabilidad, consumibles, transferencia entre manos y equipamiento.
-- [ ] Verificar restauración completa del inventario y compatibilidad con saves antiguos.
+- [~] Verificar restauración completa del inventario y compatibilidad con saves antiguos; carga de equipo ahora reemplaza y valida ranuras, falta ejecutar contratos y resolver slots guardados que superen la capacidad visible.
 - [ ] Unificar validaciones para recoger, soltar, intercambiar, usar y equipar.
 
 ### 3.3 Datos y modo sin conexión
