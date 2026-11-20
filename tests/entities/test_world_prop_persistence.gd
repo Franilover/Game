@@ -2,6 +2,7 @@ extends Node
 
 const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
 const WorldPropScript = preload("res://scripts/world/world_prop.gd")
+const WorldEntityFactoryScript = preload("res://scripts/world/world_entity_factory.gd")
 
 
 func _ready() -> void:
@@ -26,9 +27,10 @@ func _crear_prop(manager: Variant, chunk: Vector2i, key: String) -> WorldProp:
 func _run() -> void:
 	var errores: Array[String] = []
 	var manager: Variant = WorldEntityManagerScript.new()
+	var factory: Variant = WorldEntityFactoryScript.new()
 	var entities_root := Node.new()
 	get_tree().root.add_child(entities_root)
-	manager.configurar(entities_root)
+	manager.configurar(entities_root, factory)
 
 	var chunk_recoleccion := Vector2i(2, -3)
 	var recolectado := _crear_prop(manager, chunk_recoleccion, "prop:0:recurso_a")
@@ -61,9 +63,32 @@ func _run() -> void:
 		if estado_descargado.is_empty() or not bool(estado_descargado.get("is_present", true)):
 			errores.append("Descargar un chunk convirtió un prop intacto en recolectado.")
 
+		# El prop descargado entra al pool. Al reutilizarlo, una recolección
+		# posterior debe volver a crear el tombstone, sin una marca residual.
+		var reutilizado: WorldProp = factory._tomar_prop_del_pool() as WorldProp
+		if reutilizado == null:
+			errores.append("La descarga no recicló el prop en la fábrica.")
+		else:
+			reutilizado.datos = {
+				"id": "recurso_c",
+				"nombre": "Recurso reutilizado",
+				"tipo": "recurso",
+				"chunk": Vector2i(6, 2)
+			}
+			reutilizado.set_meta("runtime_instance_key", "prop:0:recurso_c")
+			if not manager.registrar(reutilizado, Vector2i(6, 2)):
+				errores.append("No se pudo volver a registrar el prop reciclado.")
+			else:
+				reutilizado.queue_free()
+				await get_tree().process_frame
+				var estado_reutilizado := manager.obtener_estado_prop(Vector2i(6, 2), "prop:0:recurso_c")
+				if estado_reutilizado.is_empty() or bool(estado_reutilizado.get("is_present", true)):
+					errores.append("El prop reciclado conservó una marca de descarga y no pudo persistir su recolección.")
+
 	entities_root.queue_free()
 	await get_tree().process_frame
 	manager.free()
+	factory.free()
 
 	if not errores.is_empty():
 		for error in errores:
