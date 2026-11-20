@@ -408,6 +408,7 @@ func _aplicar_movimiento_normal(
 	physics_movement_controller.aplicar_desplazamiento(self)
 	if direccion == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
+		_procesar_curacion_eterium(delta)
 	_sincronizar_estado_movimiento()
 
 
