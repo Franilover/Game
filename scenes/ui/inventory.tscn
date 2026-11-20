@@ -200,11 +200,20 @@ size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_constants/separation = 5
 
-[node name="Grid" type="HBoxContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel" unique_id=1707057280]
+[node name="InventoryScroll" type="ScrollContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel"]
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+horizontal_scroll_mode = 0
+vertical_scroll_mode = 1
+
+[node name="Grid" type="GridContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InventoryScroll" unique_id=1707057280]
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 0
-theme_override_constants/separation = 8
+columns = 3
+theme_override_constants/h_separation = 8
+theme_override_constants/v_separation = 8
 
 [node name="DetailBlock" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel"]
 custom_minimum_size = Vector2(0, 102)
