@@ -70,6 +70,15 @@ func _run() -> void:
 	if not is_equal_approx(UtilityAIScript.leer_numero({"peso": "alto"}, "peso", 1.0), 1.0):
 		_fail("Utility AI no aplicó el valor por defecto ante un peso mal formado.")
 		return
+	if not is_equal_approx(UtilityAIScript.aplicar_preferencia(0.4, 0.5), 0.6):
+		_fail("La preferencia individual no modificó la puntuación dentro de su límite.")
+		return
+	if not is_equal_approx(UtilityAIScript.aplicar_preferencia(0.4, -0.5), 0.2):
+		_fail("La preferencia individual no redujo la puntuación de forma acotada.")
+		return
+	if not is_equal_approx(UtilityAIScript.aplicar_preferencia(0.4, 5.0), 0.6):
+		_fail("La preferencia individual superó el límite de +/- 50%.")
+		return
 	if not is_equal_approx(UtilityAIScript.leer_numero({"peso": true}, "peso", 1.0), 1.0):
 		_fail("Utility AI convirtió un booleano en un peso numérico.")
 		return
@@ -253,10 +262,51 @@ func _run() -> void:
 		_fail("La confianza no habilitó la respuesta de investigación configurada.")
 		return
 	ai.configuracion_ia["memoria_interaccion"]["respuesta_confianza"] = "atacar"
+	actor.datos["personalidad"] = {"curiosidad": 0.5}
+	ai.configuracion_ia["memoria_interaccion"]["umbral_confianza"] = 1.0
+	if ai._obtener_respuesta_memoria(player) != "investigar":
+		_fail("La curiosidad no redujo moderadamente el umbral para investigar.")
+		return
+	actor.datos["personalidad"] = {"curiosidad": -0.5}
+	if ai._obtener_respuesta_memoria(player) != "":
+		_fail("La baja curiosidad no elevó moderadamente el umbral de confianza.")
+		return
+	actor.datos["personalidad"] = {}
 	if ai._obtener_respuesta_memoria(player) != "":
 		_fail("La confianza permitió una respuesta agresiva no autorizada.")
 		return
 	ai._memoria_interaccion.limpiar()
+	ai.configuracion_ia = {}
+
+	# La personalidad individual pondera necesidades sin poder anularlas.
+	actor.datos["personalidad"] = {"preferencia_descanso": 0.5}
+	ai.configuracion_ia = {
+		"necesidades": {
+			"umbral_fatiga": 50.0,
+			"umbral_hambre": 50.0,
+			"actividad_descanso": "reposar",
+			"actividad_alimentacion": "alimentarse",
+			"recuperacion_fatiga_por_segundo": 1.0
+		},
+		"alimentacion": {"item_ids": ["food"]}
+	}
+	ai._fatiga_actual = 60.0
+	ai._hambre_actual = 60.0
+	ai._descanso_por_fatiga = false
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "reposar":
+		_fail("La preferencia individual por descansar no influyó en la elección de Utility AI.")
+		return
+	actor.datos["personalidad"] = {"preferencia_descanso": -0.5, "preferencia_alimentacion": 0.5}
+	ai._descanso_por_fatiga = false
+	ai.actividad_horaria = "explorar"
+	ai._aplicar_prioridad_necesidades()
+	if ai.actividad_horaria != "alimentarse":
+		_fail("La preferencia individual por alimentarse no influyó en la elección de Utility AI.")
+		return
+	actor.datos["personalidad"] = {}
+	ai._descanso_por_fatiga = false
+	ai.actividad_horaria = "explorar"
 	ai.configuracion_ia = {}
 
 	# Una criatura neutral puede reconocer individuos aunque no seleccione un objetivo hostil.
