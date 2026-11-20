@@ -71,9 +71,24 @@ func _run() -> void:
 	if garumi_derrotado.health != 0 or garumi_derrotado.is_alive:
 		errores.append("Un Garumi con cero vida guardada se restauró como vivo.")
 
+	var garumi_progresion := _crear_garumi(base.merged({
+		"health": 20,
+		"eterium_actual": 10,
+		"experiencia_total": 0
+	}, true))
+	var nivel_anterior := garumi_progresion.nivel
+	garumi_progresion.ganar_experiencia(100)
+	if garumi_progresion.nivel <= nivel_anterior:
+		errores.append("La prueba no alcanzó un nuevo nivel.")
+	if garumi_progresion.health <= 20 or garumi_progresion.health >= garumi_progresion.max_health:
+		errores.append("Subir de nivel no conservó la salud actual con su incremento de capacidad.")
+	if garumi_progresion.eterium_actual <= 10 or garumi_progresion.eterium_actual >= garumi_progresion.eterium_maximo:
+		errores.append("Subir de nivel no conservó el Eterium actual con su incremento de capacidad.")
+
 	garumi_guardado.free()
 	garumi_legacy.free()
 	garumi_derrotado.free()
+	garumi_progresion.free()
 
 	if not errores.is_empty():
 		for error in errores:
