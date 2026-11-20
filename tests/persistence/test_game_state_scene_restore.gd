@@ -36,6 +36,7 @@ func _run() -> void:
 	player.eterium.marcar_especie_configuracion_resuelta()
 
 	var game_state := GameStateScript.new() as GameStateService
+	add_child(game_state)
 	game_state._player = player
 	game_state.player_state.health = 64
 	game_state.player_state.mana = 37
