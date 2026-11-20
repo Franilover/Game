@@ -21,7 +21,7 @@ func _run() -> void:
 	for indice in range(30):
 		items.append({
 			"id": "saved_item_%d" % indice,
-			"nombre": "Objeto guardado %d" % indice,
+			"nombre": "Objeto compartido" if indice < 2 else "Objeto guardado %d" % indice,
 			"cantidad": 1,
 			"max_stack": 1
 		})
@@ -48,6 +48,14 @@ func _run() -> void:
 
 	if str(inventory.obtener_objeto(29).get("id", "")) != "saved_item_29":
 		push_error("InventoryOverflowUI: el objeto de la última ranura no quedó accesible.")
+		get_tree().quit(1)
+		return
+	if inventory._buscar_indice_objeto({"id": "saved_item_1", "nombre": "Objeto compartido"}) != 1:
+		push_error("InventoryOverflowUI: no resolvió por ID cuando dos objetos comparten nombre.")
+		get_tree().quit(1)
+		return
+	if inventory._buscar_indice_objeto({"id": "id_inexistente", "nombre": "Objeto compartido"}) != -1:
+		push_error("InventoryOverflowUI: hizo fallback por nombre pese a recibir un ID.")
 		get_tree().quit(1)
 		return
 	var scroll := inventory.get_node_or_null("Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/InventoryScroll")
