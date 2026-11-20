@@ -12,6 +12,23 @@ func _run() -> void:
 	var manager := ZONE_MANAGER_SCRIPT.new() as Node2D
 	add_child(manager)
 
+	# Una ruta inválida no debe retirar la zona que ya está funcionando.
+	var zona_previa := Node2D.new()
+	manager.add_child(zona_previa)
+	manager.set("zona_actual", zona_previa)
+	manager.set("tipo_actual", "zona_prueba")
+	await manager.call("_cambiar_zona", "res://scenes/world/escena_inexistente.tscn", "zona_rota")
+	if not is_instance_valid(zona_previa) or manager.get("zona_actual") != zona_previa:
+		_fail("Una transición inválida retiró la zona activa.")
+		return
+	if bool(manager.get("_transicionando")):
+		_fail("Una transición inválida dejó bloqueado el ZoneManager.")
+		return
+	zona_previa.queue_free()
+	manager.set("zona_actual", null)
+	manager.set("tipo_actual", "")
+	await get_tree().process_frame
+
 	# No SupabaseClient is injected here on purpose: Torres must still be
 	# reachable from the RealmMenu while the remote realm catalog loads.
 	manager.entrar_reino("torres")
