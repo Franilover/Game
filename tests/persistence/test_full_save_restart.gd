@@ -230,9 +230,9 @@ func _worker_read() -> void:
 		errors.append("El inventario real no restauró el objeto de hotbar.")
 	if inventory.hotbar_indices.size() != 6 or inventory.hotbar_indices[0] != 6:
 		errors.append("La selección de hotbar no se restauró.")
-	if not GameState._partida_aplicada_en_escena:
+	if not bool(game_state.get("_partida_aplicada_en_escena")):
 		errors.append("GameState no marcó la aplicación del estado.")
-	if not GameState._estado_vital_restaurado_en_escena:
+	if not bool(game_state.get("_estado_vital_restaurado_en_escena")):
 		errors.append("La restauración vital no terminó.")
 	var mission_manager: Node = root.get_node("MissionManager")
 	var mission_state: Dictionary = mission_manager.call("serializar_estado_partida") as Dictionary
