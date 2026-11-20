@@ -156,7 +156,10 @@ func _probar_melee_con_multiples_objetivos(errores: Array[String]) -> void:
 		0.1,
 		Color(0.8, 0.6, 0.4, 0.5)
 	)
-	area.objetivo_detectado.connect(combate._al_recibir_objetivo_de_ataque)
+	area.objetivo_detectado.connect(
+		func(objetivo: Entity) -> void:
+			combate._al_recibir_objetivo_de_ataque(objetivo, area)
+	)
 	jugador.add_child(area)
 
 	var salud_a := objetivo_a.health
