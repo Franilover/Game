@@ -29,7 +29,11 @@ func _run() -> void:
 		_fail("La prueba offline conectó accidentalmente un cliente remoto.")
 		return
 
-	var biomas: Array = bundled.mundo.get("biomas", []) as Array
+	var biomas_variant: Variant = bundled.mundo.get("biomas", [])
+	if not biomas_variant is Array or (biomas_variant as Array).is_empty():
+		_fail("El snapshot local no contiene biomas utilizables.")
+		return
+	var biomas: Array = biomas_variant as Array
 	var ecosistemas := 0
 	var criaturas := 0
 	for bioma_variant in biomas:
@@ -42,9 +46,6 @@ func _run() -> void:
 			for habitat_variant in (ecosistema_variant as Dictionary).get("habitats", []):
 				if habitat_variant is Dictionary:
 					criaturas += ((habitat_variant as Dictionary).get("criaturas", []) as Array).size()
-	if not biomas is Array or biomas.is_empty():
-		_fail("El snapshot local no contiene biomas utilizables.")
-		return
 	if ecosistemas <= 0:
 		_fail("El snapshot local no contiene ecosistemas utilizables.")
 		return
