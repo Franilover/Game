@@ -211,10 +211,10 @@ func _ready() -> void:
 		_iniciar_zonas()
 	elif not GameState.debe_iniciar_en_reino_torres():
 		_iniciar_zonas()
-	elif not _supabase_client.obtener_reinos_game().is_empty():
-		_iniciar_zonas()
 	else:
-		call_deferred("_verificar_inicio_de_zona")
+		# Torres es una escena local fija. No debe quedar bloqueada esperando
+		# el catálogo remoto: el juego debe poder iniciar una sesión offline.
+		_iniciar_zonas()
 
 
 func _esperar_datos_mundo_servidor() -> void:
