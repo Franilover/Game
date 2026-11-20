@@ -202,4 +202,4 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 
 **Límites:** esta hoja de ruta no autoriza cambios en Supabase ni cambios de canon de Garlia. Los cambios de código permanecen aislados en la rama indicada; no se hace merge a `main` sin autorización explícita.
 
-7. Validar memoria temporal de interacción con más perfiles de especie y decidir si conviene persistir recuerdos selectivos; no persistir por defecto.
+7. Validar memoria temporal de interacción con más perfiles. Incorporar recuerdos positivos sólo cuando exista un evento real de ayuda, alimentación o vínculo; reutilizar `RelationshipSystem` en criaturas con `personaje_game_id` en vez de duplicar amistad. No persistir memoria efímera por defecto.
