@@ -1202,5 +1202,6 @@ La interacción principal de Garumi ahora deriva al diálogo heredado de Creatur
 - `CombatDefense` es el único cálculo de mitigación: resta defensa plana, limita el resultado a cero y redondea hacia arriba cuando queda daño fraccionario.
 - La ruta de Eterium compartido sincroniza vida y estado de supervivencia desde `PlayerEteriumRuntime`; el evento de cambio actualiza la presentación y activa la muerte una sola vez.
 - La durabilidad de armadura no se consume al recibir daño. El desgaste de equipo sigue siendo una operación explícita de inventario, no un efecto implícito del golpe.
-- `test_inventory_equipment_transaction` cubre ahora daño reducido, bloqueo completo, impacto nulo, defensa negativa, redondeo fraccionario y fallback ante estadísticas mal formadas.
-- La regresión verifica el cálculo puro de mitigación; la prueba de integración en ejecución de `Player.take_damage()` sigue siendo una cobertura separada por añadir.
+- `test_inventory_equipment_transaction` cubre daño reducido, bloqueo completo, impacto nulo, defensa negativa, redondeo fraccionario y fallback ante estadísticas mal formadas.
+- `test_combat_temporal_contract` instancia las escenas reales de Player e Inventory y verifica mitigación con vida normal y Eterium compartido, sincronización de vida/reserva y emisión única de muerte.
+- La prueba de integración no consume durabilidad de armadura: confirma que la recepción de daño no introduce desgaste implícito.
