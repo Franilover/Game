@@ -383,3 +383,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Corrección: `CombatTargeting` rechaza atacantes/objetivos con `is_queued_for_deletion()`; `CombatDamage` aplica la misma frontera final al objetivo. `CombatSystem.solicitar_danio_desde_entidad()` y `CombatWeaponAttackValidator` identifican el objetivo pendiente como `objetivo_invalido` antes del contacto.
 - Regresión: `test_combat_entity_attack_contract` comprueba API genérica, daño directo y atacante pendiente; `test_combat_weapon_attack_contract` comprueba la ruta de armas.
 - Estado: corregido en código, pendiente de ejecución Godot 4.7 y CI. La protección cubre estas rutas de combate, no declara resuelto el ítem general de entidades inválidas del P0.
+
+
+## Defensa propia de criaturas en combate (2026-11-20)
+
+- Hallazgo: la armadura equipada mitigaba el daño del jugador, pero `Creature._aplicar_danio_recibido()` entregaba el daño bruto a `Entity`; `stats_dnd.defensa` no intervenía.
+- Corrección: las criaturas aplican `CombatDefense.aplicar()` con su defensa numérica antes de reducir salud. `danio_recibido` emite el daño posterior a mitigación y conserva el atacante.
+- Regresión: `CreatureAISignalContract` ahora verifica defensa 3 frente a daño 7 (4 de daño efectivo), atribución y muerte.
+- Estado: implementado; pendiente ejecutar el contrato en Godot 4.7/CI.
+- Límite: resistencias e inmunidades por tipo no se implementan hasta que el modelo de ataque defina un tipo de daño real. No se inventaron categorías ni reglas elementales.
