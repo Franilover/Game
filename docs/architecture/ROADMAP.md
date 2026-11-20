@@ -33,8 +33,8 @@
 - [x] Contrato automatizado de sobrescritura, recuperación, eliminación y rechazo de IDs/payloads inválidos; CI Godot 4.7 aprobado.
 - [ ] Validar la recuperación ante interrupción real del proceso y errores de filesystem fuera del entorno de contrato.
 - [ ] Validar versión y migraciones de saves antiguos.
-- [~] Rechazar estructuras corruptas o incompletas sin destruir el último save válido; ahora valida la estructura anidada de inventario, pendiente de ejecutar el contrato actualizado.
-- [~] Comprobar restauración de posición, zona/interior, salud, maná, stamina, inventario, IUM, misiones, Garumis y tiempo; roundtrip de estado existe, falta validar carga integral en escena.
+- [x] Rechazar estructuras corruptas o incompletas sin destruir el último save válido dentro del contrato del repositorio; la validación de la estructura anidada de inventario también pasa en CI Godot 4.7. Migraciones de saves antiguos siguen pendientes.
+- [~] El contrato `GameStateRoundtrip` verifica salud, Eterium, stamina, posición/tile/orientación, inventario, interior/zona, proceso IUM, tiempo ambiental y estado/progreso/reclamación de misiones. Falta validar la aplicación del snapshot y la reanudación integral en una escena real.
 - [ ] Comprobar guardado rápido, autosave, cierre de ventana y guardados simultáneos.
 - [ ] Verificar que una muerte o transición de escena no guarde un snapshot parcial.
 
@@ -67,8 +67,8 @@
 ### 2.2 IA de criaturas
 - [x] Separar la salud y el estado vital de las decisiones de IA.
 - [x] Comunicar configuración y daño mediante señales.
-- [~] Separar percepción, selección de objetivo, decisión y ejecución: CreaturePerception descubre candidatos; CreatureTargetSelector elige según la política ecológica; CreatureStateDecision traduce respuestas a intenciones de estado sin ejecutar conductas. CreatureAI conserva la ejecución, los movimientos especializados y los ataques con validación de alcance. Falta extraer conductas de navegación y completar pruebas de transiciones por estado.
-- [~] Auditar navegación, memoria, pérdida de objetivo y reacciones: la pérdida de objetivo conserva y visita la última posición conocida; CreatureMovement recupera bloqueos locales para criaturas y NPC tras detectar falta de progreso, consultando la geometría estática sin alterar la máscara física predeterminada. Falta navegación global para rutas complejas y revisión integral de reacciones.
+- [~] Separar percepción, selección de objetivo, decisión y ejecución: `CreaturePerception`, `CreatureTargetSelector` y `CreatureStateDecision` están extraídos; `CreatureAI` conserva ejecución, movimientos especializados y ataques con validación de alcance. Percepción, selección, memoria, Utility AI, personalidad, escalado por agresión y familiaridad tienen contratos aprobados en CI. Falta extraer navegación/conductas adicionales y validar transiciones visuales en partida.
+- [~] Navegación local recupera bloqueos y mantiene el desvío; la pérdida de objetivo conserva y visita la última posición conocida. La memoria individual, familiaridad, confianza explícita, Utility AI y personalidad están implementadas y cubiertas por pruebas. Falta navegación global para rutas complejas y validación visual de reacciones/transiciones.
 - [ ] Verificar IA fuera de rango y transiciones de simulación.
 - [ ] Revisar perfiles y `ia_config` de las especies existentes.
 - [ ] Comprobar sincronización de configuración desde los datos canónicos.
@@ -76,8 +76,8 @@
 
 ### 2.3 Interacciones y progresión
 - [x] Validar estado y progreso de misiones al restaurar partidas; contrato CI cubre normalización, finalización idempotente y emisión única de la señal de recompensa.
-- [ ] Auditar el flujo completo de misiones: aceptar, progreso, completar, recompensa y persistencia.
-- [ ] Verificar que las recompensas se apliquen una sola vez y no se pierdan al recargar.
+- [~] El flujo de progreso/finalización, persistencia del estado de misión, reclamación idempotente, resolución de recompensas por UUID y rollback de entregas tiene contratos aprobados. Falta validar en una partida real la continuidad después de guardar y recargar.
+- [~] La aplicación idempotente y el rollback ante inventario lleno están cubiertos por `MissionRewardDelivery` y `MissionManagerContract`; falta probar una recompensa ya entregada después de cerrar y reanudar una partida real.
 - [ ] Revisar diálogos interrumpidos, ramas y condiciones.
 - [ ] Auditar relaciones, regalos, memoria social y persistencia.
 - [ ] Verificar interacciones con NPC, objetos, estaciones y zonas.
@@ -89,12 +89,12 @@
 
 ### 3.1 Mundo y generación
 - [ ] Reducir responsabilidades de `WorldGenerator` mediante fronteras reales.
-- [ ] Auditar `WorldTerrain`, `WorldStreamer`, `WorldEntityManager`, factory y reglas de spawn.
+- [~] Hay contratos para ciclo de vida/reset del `WorldEntityManager`, persistencia de props/keys, registro de réplicas, spawn/resume de zona, terreno y kernel procedural. Falta una auditoría integral de streaming/factory/spawn en sesiones largas.
 - [ ] Garantizar generación determinista para una misma semilla y versión.
-- [ ] Evitar duplicados al cargar/descargar chunks.
-- [ ] Verificar persistencia de cambios del mundo y de interiores.
-- [ ] Comprobar límites, transiciones entre reinos y restauración de posición.
-- [ ] Revisar entidades globales frente a entidades sujetas al streaming.
+- [~] Los contratos de identidad runtime, registro de réplicas y reanudación de spawn cubren duplicación en sus rutas probadas; falta una prueba de estrés de ciclos repetidos de carga/descarga de chunks.
+- [~] La persistencia de props del mundo y el roundtrip de zona/interior tienen contratos; falta comprobar cambios de interiores y reanudación completa en una sesión real.
+- [~] Los contratos de viaje/retorno, progresión de rutas y mapa estático de bosque cubren rutas y restauración en sus escenarios; faltan límites entre todos los reinos e interiores en runtime.
+- [~] Hay contratos de ciclo de vida, reset, persistencia e identidad de entidades y registro de réplicas; falta verificar el comportamiento global/streaming bajo carga y cambios de zona prolongados.
 - [ ] Probar mundos largos y sesiones con muchas criaturas.
 
 ### 3.2 Inventario y objetos
@@ -104,8 +104,8 @@
 - [x] `InventoryRuntime` revierte recogidas parciales que no caben; el contrato verifica rechazo atómico y transferencia íntegra cuando existe capacidad.
 - [x] Verificar el contrato de soltar objetos: retirar del inventario solo tras crear y registrar el objeto del mundo; la ruta de fallo conserva el objeto y usa el dato actual del runtime, no una copia de arrastre obsoleta.
 - [ ] Auditar identidad por ID, apilamiento, límites y capacidad.
-- [ ] Probar durabilidad, consumibles, transferencia entre manos y equipamiento.
-- [~] Verificar restauración completa del inventario y compatibilidad con saves antiguos; carga de equipo reemplaza y valida ranuras, y los slots guardados extra ya son visibles mediante grupos de reserva. Falta ejecutar contratos y probar scroll en ventana real.
+- [~] Los contratos de uso de objetos, crafting y equipamiento pasan en CI; durabilidad y transferencia entre manos todavía necesitan cobertura específica y prueba visual.
+- [~] Los contratos de transacción, desbordamiento UI, equipamiento y roundtrip de inventario pasan en CI; la carga de equipo valida ranuras y los slots extra se muestran mediante grupos de reserva. Falta compatibilidad con saves antiguos y comprobar scroll/selección en ventana real.
 - [ ] Unificar validaciones para recoger, soltar, intercambiar, usar y equipar.
 
 ### 3.3 Datos y modo sin conexión
@@ -132,8 +132,8 @@
 - [x] Mantener importación/compilación headless en CI.
 - [x] Ejecutar contratos de locomoción, combate, IA y ciclo de vida cubiertos por el workflow actual.
 - [x] Contrato de recuperación de `SaveFileRepository` ejecutado en CI.
-- [x] Contratos de recogida/soltado de inventario y restauración/finalización de misiones ejecutados en CI; la aplicación efectiva de recompensas y persistencia integral siguen pendientes.
-- [ ] Añadir contratos de datos offline y restauración completa.
+- [x] Contratos de recogida, uso, crafting, equipamiento, overflow, hotbar, drops, roundtrip de partida, restauración/finalización de misiones y entrega/rollback de recompensas ejecutados en CI; persistencia integral tras una sesión real sigue pendiente.
+- [~] El contrato de `WorldSnapshotValidator` y `GameStateRoundtrip` ya cubre estructura de snapshot y serialización/restauración de datos; falta integración end-to-end offline y aplicación completa del snapshot en escena.
 - [ ] Añadir pruebas de integración de inicio/cierre de partida.
 - [ ] Verificar referencias rotas de escenas, recursos, autoloads y scripts.
 - [ ] Añadir pruebas de regresión para fallos encontrados, no solo pruebas felices.
@@ -230,3 +230,14 @@ El trabajo multijugador queda aplazado. No forma parte de las fases activas ni s
 - [~] Mantener prioridad de agresión recordada y relaciones ecológicas; familiaridad nunca autoriza combate.
 - [ ] Validar visualmente aproximación/investigación y evitar oscilaciones entre estados.
 - [ ] Añadir pruebas de integración con dos criaturas reales y reglas ecológicas simultáneas.
+
+
+## Cierre de avances verificados — 2026-11-20
+
+- CI completo Godot 4.7: **success**, run [44699447898](https://github.com/Franilover/Game/actions/runs/44699447898), commit `49a25d51`; importación/compilación y todos los contratos del workflow terminaron correctamente.
+- P0 cerrados en el alcance automatizado: recuperación transaccional de `SaveFileRepository`, validación de estructura anidada de inventario, normalización/restauración de estado vital, roundtrip de snapshots y contratos de ciclo de vida. No se cierra la fase P0 completa: faltan carga integral en escena, saves antiguos, interrupciones reales y autosave/cierre.
+- P1 combate: contratos de daño efectivo/reentrada, temporalidad, melee físico, proyectiles, ataques de entidades, defensas y fisiología pasan CI. Balance y validación visual siguen abiertos.
+- P1 criaturas: percepción/selección, memoria individual, Utility AI, personalidad, escalado de agresión, familiaridad, navegación local y exclusión no-combatiente de Garumis pasan CI. Navegación global, transiciones visuales, simulación fuera de rango y perfilado siguen abiertos.
+- P1 misiones: persistencia de progreso, finalización, entrega idempotente, resolución de recompensas y rollback pasan CI. Falta guardar/recargar una partida real después de reclamar.
+- P1/P2 mundo e inventario: contratos de ciclo de vida/reset, persistencia de props/keys, registro de réplicas, spawn/resume, viaje/retorno, terreno, kernel procedural, transacciones de inventario y roundtrip pasan CI. Streaming de larga duración, reinos/interiores completos y pruebas visuales siguen abiertos.
+- Estos cierres son por alcance probado; no significan que todas las fases P0, P1 o P1/P2 estén terminadas.
