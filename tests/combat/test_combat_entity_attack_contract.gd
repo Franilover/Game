@@ -333,14 +333,17 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 		errores.append("CombatDamage aplicó daño después de que el modificador invalidó el objetivo.")
 
 	var atacante_pendiente := EntityScript.new() as Entity
+	var objetivo_atacante_pendiente := EntityScript.new() as Entity
 	atacante_pendiente.name = "EntityAttackContractQueuedAttacker"
+	objetivo_atacante_pendiente.name = "EntityAttackContractQueuedTarget"
 	get_tree().root.add_child(atacante_pendiente)
+	get_tree().root.add_child(objetivo_atacante_pendiente)
 	await get_tree().process_frame
 	atacante_pendiente.queue_free()
 	var contactos_antes_atacante_en_baja := int(contactos["cantidad"])
 	var resultado_atacante_en_baja: CombatAttackResult = combate.solicitar_danio_desde_entidad(
 		atacante_pendiente,
-		objetivo,
+		objetivo_atacante_pendiente,
 		5,
 		"Prueba/AtacanteEnBaja"
 	)
@@ -357,6 +360,8 @@ func _probar_solicitud_generica(errores: Array[String]) -> void:
 		objetivo.queue_free()
 	if is_instance_valid(atacante_pendiente) and not atacante_pendiente.is_queued_for_deletion():
 		atacante_pendiente.queue_free()
+	if is_instance_valid(objetivo_atacante_pendiente) and not objetivo_atacante_pendiente.is_queued_for_deletion():
+		objetivo_atacante_pendiente.queue_free()
 	if is_instance_valid(objetivo_modificado) and not objetivo_modificado.is_queued_for_deletion():
 		objetivo_modificado.queue_free()
 	garumi.queue_free()
