@@ -1246,3 +1246,8 @@ Se revisó la ruta completa de `CreatureAI`: perfiles de contacto (genérico, Dr
 Se cerró una ventana de reentrada: `contacto_efectivo` ejecuta listeners síncronos, por lo que un listener podía derrotar al atacante o al objetivo y la solicitud continuaba aplicando daño. `solicitar_danio_desde_entidad()` ahora vuelve a validar ambos participantes después de la señal. El resolver melee `_aplicar_danio()` también valida antes de reducir salud, protegiendo tanto al jugador como a las armas de entidades/Cambiaformas. Una solicitud interrumpida conserva el contacto ya emitido, pero no informa daño ni publica `ataque_realizado`.
 
 Además, Lignianos no aplica ralentización si alguno de los participantes ya murió durante el contacto, y Rancrodeen se desprende al perder un objetivo válido. Se ampliaron `test_combat_entity_attack_contract` y `test_combat_weapon_attack_contract` para cubrir interrupciones síncronas. La ejecución de Godot sigue pendiente de confirmación local/CI.
+
+
+## Reentrada al recibir daño de criaturas — 2026-11-20
+
+Se eliminó el atacante temporal compartido de `Creature`. Ahora `take_damage_desde()` y `take_damage()` convergen en una operación común que conserva el atacante como dato local. Esto evita que un listener síncrono de `health_changed` provoque un segundo golpe y sobrescriba la atribución del primero. Se mantiene la protección de sparring y la señal `danio_recibido` sólo se emite cuando la salud realmente disminuye. Se añadió `test_combat_creature_damage_reentrancy` para comprobar dos golpes anidados, sus cantidades y sus atacantes. La prueba está añadida, pero aún no se ha ejecutado en Godot.
