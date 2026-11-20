@@ -289,7 +289,7 @@ func _al_salir_entidad(entity: Node) -> void:
 	# Una recolección elimina el prop del árbol antes de descargar el chunk.
 	# Registrar el tombstone aquí evita que los datos originales lo regeneren.
 	if entity is WorldProp and entity.is_queued_for_deletion() and not bool(entity.get_meta("world_manager_unloading", false)):
-		var chunk_recolectado := _obtener_chunk_de_entidad(entity)
+		var chunk_recolectado: Variant = _obtener_chunk_de_entidad(entity)
 		if chunk_recolectado != null:
 			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_recolectado)
 
