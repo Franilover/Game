@@ -63,6 +63,46 @@ func obtener_peso_criatura(candidato: Dictionary) -> float:
 	return 1.0
 
 
+func elegir_candidato_uniforme_excluyendo(
+	candidatos: Array,
+	excluidas: Dictionary,
+	rng: RandomNumberGenerator
+) -> Dictionary:
+	# Conserva el sorteo uniforme sin materializar un array filtrado.
+	var cantidad := 0
+	for candidato_variant in candidatos:
+		if not candidato_variant is Dictionary:
+			continue
+		var candidato := candidato_variant as Dictionary
+		var criatura_variant: Variant = candidato.get("criatura", {})
+		if not criatura_variant is Dictionary:
+			continue
+		var criatura := criatura_variant as Dictionary
+		var criatura_id := str(criatura.get("id", criatura.get("criatura_id", ""))).strip_edges()
+		if not criatura_id.is_empty() and not excluidas.has(criatura_id):
+			cantidad += 1
+	if cantidad == 0:
+		return {}
+
+	var indice_elegido := rng.randi_range(0, cantidad - 1)
+	var indice_actual := 0
+	for candidato_variant in candidatos:
+		if not candidato_variant is Dictionary:
+			continue
+		var candidato := candidato_variant as Dictionary
+		var criatura_variant: Variant = candidato.get("criatura", {})
+		if not criatura_variant is Dictionary:
+			continue
+		var criatura := criatura_variant as Dictionary
+		var criatura_id := str(criatura.get("id", criatura.get("criatura_id", ""))).strip_edges()
+		if criatura_id.is_empty() or excluidas.has(criatura_id):
+			continue
+		if indice_actual == indice_elegido:
+			return candidato
+		indice_actual += 1
+	return {}
+
+
 func elegir_criatura_excluyendo(
 	candidatos: Array,
 	excluidas: Dictionary,
