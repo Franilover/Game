@@ -237,7 +237,7 @@ func _procesar_variaciones_si_hay_presupuesto() -> void:
 
 
 func _procesar_entidades_si_hay_presupuesto() -> void:
-	if _entity_spawner == null or _data_preparation_active:
+	if _entity_spawner == null:
 		return
 	var limite := _presupuesto_entidades()
 	if limite <= 0:
@@ -245,7 +245,9 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 
 	# Primero construimos DATA para un chunk remoto. Esto no crea Nodes y deja
 	# preparado el mundo para una futura transición instantánea a TERRAIN/FULL.
-	if not _data_entity_queue.is_empty():
+	# Mientras DATA espera al siguiente frame, las colas de entidades FULL/props
+	# siguen recibiendo su pequeño turno para no retrasar criaturas cercanas.
+	if not _data_preparation_active and not _data_entity_queue.is_empty():
 		var data_coord: Vector2i = _data_entity_queue.pop_front()
 		_data_entity_queued.erase(data_coord)
 		_data_preparation_active = true
