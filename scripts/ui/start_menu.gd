@@ -501,7 +501,7 @@ func _abrir_selector_partidas() -> void:
 	SceneManager.preparar(MAIN_SCENE_PATH)
 	var estado := ResourceLoader.load_threaded_get_status(SAVE_SELECTOR_PATH)
 	if estado == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-		var solicitud := ResourceLoader.load_threaded_request(SAVE_SELECTOR_PATH, "PackedScene", true)
+		var solicitud := ResourceLoader.load_threaded_request(SAVE_SELECTOR_PATH, "PackedScene", false)
 		if solicitud != OK and solicitud != ERR_BUSY:
 			push_error("StartMenu: no se pudo solicitar save_selector.tscn (error %d)." % solicitud)
 			_selector_cargando = false
