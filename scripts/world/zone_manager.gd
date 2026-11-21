@@ -337,9 +337,8 @@ func _id_expedicion_valido(id_expedicion: String) -> bool:
 
 
 func _guardar_partida_si_disponible() -> void:
-	if not GameState.active_save_id.is_empty():
-		if not GameState.guardar_partida():
-			push_warning("ZoneManager: no se pudo guardar el estado después del viaje.")
+	if not GameState.guardar_progreso_actual("después del viaje"):
+		push_warning("ZoneManager: no se pudo guardar el estado después del viaje.")
 
 
 ## Viaje regular al mundo exterior desde el Registro de la Puerta.
