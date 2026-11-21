@@ -117,6 +117,26 @@ func _comprobar_pausa_actividad_social(npc: Creature, errores: Array[String]) ->
 			errores.append("La actividad social debe pausarse durante %s." % meta_clave)
 		npc.remove_meta(meta_clave)
 
+	var otro := CreatureScene.instantiate() as Creature
+	if otro == null:
+		errores.append("No se pudo crear el NPC secundario para probar reservas de puestos.")
+		return
+	add_child(otro)
+	otro.add_to_group("torres_game_npc")
+	var destino := Vector2(120.0, 80.0)
+	otro.global_position = destino + Vector2(8.0, 0.0)
+	if not NPCScheduleScript.puesto_interior_ocupado(npc, [npc, otro], destino):
+		errores.append("Un puesto interior ocupado físicamente debe rechazarse.")
+	otro.global_position = Vector2(500.0, 500.0)
+	otro.set_meta("rutina_puesto_interior_reservado", destino)
+	if not NPCScheduleScript.puesto_interior_ocupado(npc, [npc, otro], destino):
+		errores.append("Un puesto reservado por un NPC en tránsito debe rechazarse.")
+	otro.remove_meta("rutina_puesto_interior_reservado")
+	if NPCScheduleScript.puesto_interior_ocupado(npc, [npc, otro], destino):
+		errores.append("Un puesto libre no debe bloquearse sin ocupante ni reserva.")
+	otro.remove_from_group("torres_game_npc")
+	otro.queue_free()
+
 func _comprobar_reservas_sociales(
 	agenda: NPCScheduleSystem,
 	npc_a: Creature,
