@@ -219,6 +219,10 @@ func _run() -> void:
 		errores.append("Una acción de diálogo no resuelta no ofrece una salida segura.")
 	# La tecla de avanzar debe ejecutar la acción terminal en vez de saltarla.
 	dialogo_prueba_cierre._abierto = true
+	dialogo_prueba_cierre._lineas = [{"hablante": "Mara", "texto": "Hasta luego."}]
+	dialogo_prueba_cierre._indice_linea = 0
+	dialogo_prueba_cierre._texto_completo = "Hasta luego."
+	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
 	dialogo_prueba_cierre._acciones = accion_desconocida.duplicate(true)
 	dialogo_prueba_cierre._avanzar()
 	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
@@ -581,6 +585,8 @@ func _run() -> void:
 	# congelarse y restaurarse sin provocar errores de Object.get_meta().
 	if npc.has_meta("cinematica_npc_activa"):
 		npc.remove_meta("cinematica_npc_activa")
+	# La rutina previa se conserva tal como estaba antes de la cinemática.
+	npc.set_meta("rutina_en_transito", true)
 	director_prueba._guardar_estado_npc(npc)
 	if not npc.has_meta("cinematica_npc_activa"):
 		errores.append("La captura no marcó al NPC durante la cinemática.")
