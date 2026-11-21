@@ -2,6 +2,7 @@ extends Node
 
 const CreatureScript = preload("res://scripts/creatures/creature.gd")
 const GarumiScript = preload("res://scripts/creatures/garumi.gd")
+const GarumiBrainScript = preload("res://scripts/ai/garumi_brain.gd")
 const AIScript = preload("res://scripts/creatures/creature_ai.gd")
 const PerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
 const TargetSelectorScript = preload("res://scripts/creatures/creature_target_selector.gd")
@@ -586,6 +587,20 @@ func _run() -> void:
 	if jugador_nuevo not in snapshot_siguiente_frame:
 		_fail("El snapshot de jugadores no se actualizó en el siguiente physics frame.")
 		return
+	# GarumiBrain reutiliza el mismo snapshot, sin volver a consultar el grupo
+	# por cada Garumi. La selección conserva el radio y el jugador más cercano.
+	jugador_grupo.position = Vector2(30.0, 0.0)
+	jugador_nuevo.position = Vector2(80.0, 0.0)
+	var garumi_prueba := GarumiScript.new() as Garumi
+	var brain_prueba := GarumiBrainScript.new() as GarumiBrain
+	brain_prueba.garumi = garumi_prueba
+	get_tree().root.add_child(brain_prueba)
+	if brain_prueba._buscar_jugador_cercano(50.0) != jugador_grupo:
+		_fail("GarumiBrain no reutilizó el snapshot para escoger al jugador cercano.")
+		return
+	get_tree().root.remove_child(brain_prueba)
+	brain_prueba.free()
+	garumi_prueba.free()
 	criatura_percibida.position = Vector2(20.0, 0.0)
 	var selector_cercano := TargetSelectorScript.seleccionar_mas_cercano(
 		actor,
