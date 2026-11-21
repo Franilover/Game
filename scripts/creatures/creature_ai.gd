@@ -1317,8 +1317,10 @@ func _actualizar_rutina() -> void:
 	actividad_horaria = actividad_por_defecto if not actividad_por_defecto.is_empty() else "explorar"
 
 	if not horario.is_empty() and world_atmosphere != null and is_instance_valid(world_atmosphere):
-		var tiempo: Dictionary = world_atmosphere.obtener_tiempo()
-		var hora := fposmod(float(tiempo.get("hora_del_dia", 0.0)), 24.0)
+		# La rutina sólo necesita la hora. obtener_tiempo() construye un
+		# Dictionary completo (incluida una copia de estación) por criatura.
+		# Leer la propiedad evita esa asignación en cada physics tick.
+		var hora := fposmod(world_atmosphere.hora_del_dia, 24.0)
 		var bloques_variant: Variant = horario.get("bloques", [])
 		if bloques_variant is Array:
 			for bloque_variant in bloques_variant as Array:
@@ -1366,7 +1368,9 @@ func _obtener_personalidad_individual() -> Dictionary:
 
 func _obtener_config_necesidades() -> Dictionary:
 	var valor: Variant = configuracion_ia.get("necesidades", {})
-	return valor.duplicate(true) if valor is Dictionary else {}
+	# Los consumidores de necesidades sólo leen este bloque; devolver la
+	# referencia evita copias profundas repetidas en el ciclo físico.
+	return valor as Dictionary if valor is Dictionary else {}
 
 
 func _actualizar_necesidades(delta: float) -> void:
