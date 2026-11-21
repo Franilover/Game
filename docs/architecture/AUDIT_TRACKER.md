@@ -19,7 +19,7 @@
 ## Resumen ejecutivo
 
 - El CI Godot 4.7 del commit `1ceaad7` terminó en **success** (run `43924866198`, 40 pasos completados).
-- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01`, `MISS-01`, `DIA-01`, `MOBILE-01` y `NPC-01` tienen contratos automatizados aprobados en la rama actual. `SPECIES-01` tiene prueba de reintento aprobada y queda pendiente validar el endpoint en ejecución real. `AUTH-02` ya vuelve a solicitar catálogos al restaurar/iniciar sesión; el contrato de disparadores pasó CI.
+- `INV-01`, `ITEM-03`, `SAVE-01`, `WORLD-01`, `MISS-01`, `DIA-01`, `MOBILE-01` y `NPC-01` tienen contratos automatizados aprobados en la rama actual. `SPECIES-01` ya cubre caché local, filtrado de registros inválidos, corrupción segura y consumo por CharacterCreation; queda pendiente validar el endpoint REST real y el flujo visual en Android/PC. `AUTH-02` ya vuelve a solicitar catálogos al restaurar/iniciar sesión; el contrato de disparadores pasó CI.
 - La entrega de recompensas ahora resuelve `item_id` mediante el catálogo canónico `GarliaWorldItems`, aplica rollback atómico y evita reintentos recursivos por `inventory_changed`.
 - El catálogo real de Supabase se consultó solo en lectura: la misión activa «Conocer a Abel» recompensa una Espada de Madera mediante UUID; no se modificaron tablas, funciones, políticas ni datos.
 - La corrección de compilación Godot 4.7, encabezados de Auth, Garudex, locomoción, continuidad del menú social, diálogos móviles y entradas NPC también pasan la batería actual.
