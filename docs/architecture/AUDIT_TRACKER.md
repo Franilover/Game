@@ -731,3 +731,8 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Ambas pruebas corrieron en CI Godot 4.7 y pasaron: [regresión completa 44819414220](https://github.com/Franilover/Game/actions/runs/44819414220). Calidad GDScript aprobada: [44819414273](https://github.com/Franilover/Game/actions/runs/44819414273).
 - Alcance cerrado: lectura/validación del snapshot local y entrada a Torres con ZoneManager sin SupabaseClient.
 - Aún pendiente: recorrido completo desde el menú y creación/reanudación de partida sin red, además de reconexión remota durante o después de la sesión. También sigue pendiente persistir cambios de criaturas originados por acciones reales de gameplay y probar props naturales con catálogo activo.
+
+- Se añadió `tests/world/test_offline_menu_start.tscn`: carga el menú real con WorldData local, comprueba que el botón «Aventura» esté habilitado y que abra el selector de partidas. No requiere modificar el snapshot ni la caché del usuario.
+- Los contratos de snapshot, entrada a Torres y menú offline pasan en la regresión completa Godot 4.7: [44842636211](https://github.com/Franilover/Game/actions/runs/44842636211). Calidad GDScript: [44842618403](https://github.com/Franilover/Game/actions/runs/44842618403).
+- Cerrado: disponibilidad del menú y selector de partidas con el snapshot local, además de la entrada a Torres sin SupabaseClient inyectado.
+- Pendiente: crear una partida nueva desde el menú y completar la entrada a Main sin red; probar la reconexión remota posterior.
