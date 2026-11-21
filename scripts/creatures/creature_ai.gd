@@ -85,6 +85,7 @@ var criatura: Creature = null
 var objetivo: Node2D = null
 var configuracion_ia: Dictionary = {}
 var relaciones_ecologicas: Array = []
+var _relaciones_ecologicas_por_par: Dictionary = {}
 var jugador: Node2D = null
 var entity_manager: WorldEntityManager = null
 var inventory: GarliaInventory = null
@@ -215,6 +216,7 @@ static func calcular_fase_inicial(instance_id: int) -> float:
 func configurar_relaciones_ecologicas(nuevas_relaciones_ecologicas: Array) -> void:
 	# La fábrica publica una nueva instantánea; esta referencia es de sólo lectura.
 	relaciones_ecologicas = nuevas_relaciones_ecologicas
+	_reconstruir_indice_relaciones_ecologicas()
 
 
 func configurar_criatura() -> void:
@@ -1104,6 +1106,7 @@ func _al_recibir_relaciones_ecologicas(
 ) -> void:
 	# El emisor conserva la propiedad de la instantánea y la reemplaza al cambiarla.
 	relaciones_ecologicas = relaciones
+	_reconstruir_indice_relaciones_ecologicas()
 
 
 func _buscar_nodo_jugador(nodo: Node) -> Node:
@@ -2370,6 +2373,28 @@ func _buscar_amenaza_para_refugio() -> Creature:
 	return mejor
 
 
+func _reconstruir_indice_relaciones_ecologicas() -> void:
+	_relaciones_ecologicas_por_par.clear()
+	for relacion_variant in relaciones_ecologicas:
+		if not relacion_variant is Dictionary:
+			continue
+		var relacion := relacion_variant as Dictionary
+		var origen_id := str(relacion.get("criatura_origen_id", ""))
+		var destino_id := str(relacion.get("criatura_destino_id", ""))
+		if origen_id.is_empty() or destino_id.is_empty():
+			continue
+		var clave_par := origen_id + "\u001f" + destino_id
+		var por_ecosistema: Dictionary = _relaciones_ecologicas_por_par.get(clave_par, {})
+		var ecosistema_id := str(relacion.get("ecosistema_id", ""))
+		# Mantener la primera regla por par/ecosistema conserva el desempate
+		# original, que sólo reemplazaba una regla al encontrar mayor prioridad.
+		if not por_ecosistema.has(ecosistema_id):
+			por_ecosistema[ecosistema_id] = str(
+				relacion.get("tipo_relacion", "")
+			).strip_edges().to_lower()
+		_relaciones_ecologicas_por_par[clave_par] = por_ecosistema
+
+
 func _obtener_relacion_ecologica_ids(origen: Creature, destino: Creature) -> String:
 	if origen == null or destino == null:
 		return ""
@@ -2377,29 +2402,15 @@ func _obtener_relacion_ecologica_ids(origen: Creature, destino: Creature) -> Str
 	var destino_id := destino.criatura_id
 	if origen_id.is_empty() or destino_id.is_empty():
 		return ""
+	var clave_par := origen_id + "\u001f" + destino_id
+	var por_ecosistema_variant: Variant = _relaciones_ecologicas_por_par.get(clave_par, {})
+	if not por_ecosistema_variant is Dictionary:
+		return ""
+	var por_ecosistema := por_ecosistema_variant as Dictionary
 	var ecosistema_id := str(origen.datos.get("ecosistema_id", ""))
-	var mejor_tipo := ""
-	var mejor_prioridad := -1
-	for relacion_variant in relaciones_ecologicas:
-		if not relacion_variant is Dictionary:
-			continue
-		var relacion := relacion_variant as Dictionary
-		if str(relacion.get("criatura_origen_id", "")) != origen_id:
-			continue
-		if str(relacion.get("criatura_destino_id", "")) != destino_id:
-			continue
-		var relacion_ecosistema := str(relacion.get("ecosistema_id", ""))
-		var prioridad := 0
-		if not ecosistema_id.is_empty() and relacion_ecosistema == ecosistema_id:
-			prioridad = 2
-		elif relacion_ecosistema.is_empty():
-			prioridad = 1
-		else:
-			continue
-		if prioridad > mejor_prioridad:
-			mejor_prioridad = prioridad
-			mejor_tipo = str(relacion.get("tipo_relacion", "")).strip_edges().to_lower()
-	return mejor_tipo
+	if not ecosistema_id.is_empty() and por_ecosistema.has(ecosistema_id):
+		return str(por_ecosistema[ecosistema_id])
+	return str(por_ecosistema.get("", ""))
 
 
 
