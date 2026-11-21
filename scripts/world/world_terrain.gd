@@ -492,9 +492,6 @@ func _copiar_dato_borde_vecino(
 	ecosistemas: PackedInt32Array,
 	zonas_base: PackedInt32Array
 ) -> bool:
-	if local_x != 0 and local_x != chunk_size_tiles + 1 and local_y != 0 and local_y != chunk_size_tiles + 1:
-		return false
-
 	var vecino_coord: Vector2i = _tile_to_chunk(tile)
 	var datos_variant: Variant = _loaded_chunks.get(vecino_coord, null)
 	if datos_variant == null:
@@ -593,10 +590,16 @@ func _procesar_datos_chunk(
 			global_y
 		)
 
-		# El borde puede ser una coordenada que ya pertenece al chunk vecino.
-		# Reutilizarlo elimina trabajo duplicado sin cambiar ningún resultado.
+		# Sólo consultar al chunk vecino para las celdas del perímetro.
+		# El interior no puede reutilizar datos y evita una llamada por celda.
 		var indice_dato := local_y * size + local_x
-		if _copiar_dato_borde_vecino(
+		var es_borde := (
+			local_x == 0
+			or local_x == chunk_size_tiles + 1
+			or local_y == 0
+			or local_y == chunk_size_tiles + 1
+		)
+		if es_borde and _copiar_dato_borde_vecino(
 			tile,
 			local_x,
 			local_y,
