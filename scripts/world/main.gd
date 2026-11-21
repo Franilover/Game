@@ -2153,8 +2153,9 @@ func _procesar_cinematicas_pendientes() -> void:
 		var npc_a := _buscar_npc_cinematica(nombre_a)
 		var npc_b := _buscar_npc_cinematica(nombre_b)
 		if not is_instance_valid(npc_a) or not is_instance_valid(npc_b) or npc_a == npc_b:
-			if tipo != "narrativa":
-				_cinematicas_pendientes.remove_at(indice)
+			_cinematicas_pendientes.remove_at(indice)
+			if tipo == "narrativa":
+				_abortar_cinematica_narrativa(clave, "uno de los participantes ya no existe")
 			continue
 
 		var centro_actual := (npc_a.global_position + npc_b.global_position) * 0.5
