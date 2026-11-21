@@ -620,9 +620,26 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 	_transicionando = true
 	# Validar y cargar la escena de destino antes de retirar la zona actual.
 	# Si el recurso falta, el jugador no queda atrapado en una escena vacía.
-	var packed := load(path) as PackedScene
+	# La carga del recurso se realiza en segundo plano. La zona actual sigue
+	# viva mientras se prepara el destino, evitando congelar la interfaz.
+	var estado_carga := ResourceLoader.load_threaded_get_status(path)
+	if estado_carga == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+		var solicitud := ResourceLoader.load_threaded_request(path, "PackedScene", true)
+		if solicitud != OK and solicitud != ERR_BUSY:
+			push_error("ZoneManager: no se pudo solicitar la zona '%s' (error %d)." % [path, solicitud])
+			_transicionando = false
+			return
+		estado_carga = ResourceLoader.load_threaded_get_status(path)
+	while estado_carga == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+		estado_carga = ResourceLoader.load_threaded_get_status(path)
+	if estado_carga != ResourceLoader.THREAD_LOAD_LOADED:
+		push_error("ZoneManager: no se pudo preparar la zona '%s' (estado %d)." % [path, estado_carga])
+		_transicionando = false
+		return
+	var packed := ResourceLoader.load_threaded_get(path) as PackedScene
 	if packed == null:
-		push_error("ZoneManager: no se pudo cargar la zona '%s'." % path)
+		push_error("ZoneManager: el recurso preparado no es una PackedScene: '%s'." % path)
 		_transicionando = false
 		return
 
