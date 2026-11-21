@@ -23,7 +23,7 @@
 - La entrega de recompensas ahora resuelve `item_id` mediante el catálogo canónico `GarliaWorldItems`, aplica rollback atómico y evita reintentos recursivos por `inventory_changed`.
 - El catálogo real de Supabase se consultó solo en lectura: la misión activa «Conocer a Abel» recompensa una Espada de Madera mediante UUID; no se modificaron tablas, funciones, políticas ni datos.
 - La corrección de compilación Godot 4.7, encabezados de Auth, Garudex, locomoción, continuidad del menú social, diálogos móviles y entradas NPC también pasan la batería actual.
-- Las pruebas son headless/contractuales; todavía falta validar una partida visual en Android/PC y el flujo offline completo.
+- Las pruebas headless/contractuales ya cubren snapshot incluido, menú listo sin conexión, selector local de partidas, entrada a Torres sin Supabase y aplicación del snapshot al Player activo. Sigue pendiente la validación visual/manual en Android/PC y una prueba real de desconexión/reconexión durante una sesión.
 - No se modificó Supabase ni se integró la rama en `main`. 
 
 ## Registro de hallazgos
