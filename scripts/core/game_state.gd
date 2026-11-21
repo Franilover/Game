@@ -10,6 +10,10 @@ const STORY_SAVE_DIRECTORY := "user://historia"
 const STORY_SAVE_ID := "reserva_carmesi"
 const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 10.0
+# Supabase puede no responder (modo offline/error de red). No permitir que una
+# configuración remota pendiente bloquee indefinidamente la restauración vital
+# ni, por consecuencia, todos los guardados locales.
+const RESTAURACION_VITAL_TIMEOUT_S: float = 5.0
 const MAIN_SCENE_PATH: String = "res://scenes/world/main.tscn"
 
 var player_state := PlayerState.new()
@@ -40,6 +44,7 @@ var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
 var _esperando_configuracion_eterium_jugador: bool = false
 var _estado_vital_restaurado_en_escena: bool = false
+var _espera_restauracion_vital_elapsed: float = 0.0
 var _inventory: GarliaInventory = null
 var _player: Player = null
 var _world_context: WorldContext = null
@@ -68,6 +73,7 @@ func configurar_dependencias(
 	if _player != player:
 		_esperando_configuracion_eterium_jugador = false
 		_estado_vital_restaurado_en_escena = false
+		_espera_restauracion_vital_elapsed = 0.0
 	_player = player
 	_world_context = world_context
 	_world_atmosphere = world_atmosphere
@@ -118,6 +124,16 @@ func _process(delta: float) -> void:
 	if not get_tree().paused:
 		world_state.elapsed_time += delta
 	_autosave_timer += delta
+
+	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
+		_espera_restauracion_vital_elapsed += delta
+		if _espera_restauracion_vital_elapsed >= RESTAURACION_VITAL_TIMEOUT_S:
+			push_warning(
+				"GameState: Supabase no terminó de configurar Eterium tras "
+				+ str(RESTAURACION_VITAL_TIMEOUT_S)
+				+ " s; restaurando vida y Eterium con las capacidades locales disponibles."
+			)
+			_restaurar_estado_vital_jugador(_player)
 
 	if _primer_guardado_pendiente:
 		_primer_guardado_elapsed += delta
@@ -223,6 +239,7 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 	_guardado_rapido_conectado = false
 	_partida_aplicada_en_escena = false
 	_estado_vital_restaurado_en_escena = false
+	_espera_restauracion_vital_elapsed = 0.0
 	_autosave_timer = 0.0
 
 	# Una llamada de inicio nueva nunca debe borrar silenciosamente una partida
@@ -1653,6 +1670,7 @@ func _restaurar_estado_vital_jugador(jugador: Player) -> void:
 		mana_guardado
 	)
 	_estado_vital_restaurado_en_escena = true
+	_espera_restauracion_vital_elapsed = 0.0
 	_primer_guardado_pendiente = true
 	_primer_guardado_elapsed = 0.0
 	call_deferred("_guardar_progreso_diferido")
@@ -1783,6 +1801,7 @@ func _abrir_escena_principal() -> void:
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
 	_estado_vital_restaurado_en_escena = false
+	_espera_restauracion_vital_elapsed = 0.0
 	_primer_guardado_pendiente = _hay_runtime_partida_activo() and (_historia_reserva_activa or not active_save_id.is_empty())
 	_primer_guardado_elapsed = 0.0
 	var escena := get_tree().current_scene
