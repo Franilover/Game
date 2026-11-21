@@ -342,6 +342,7 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	rng.seed = abs(_terrain.map_seed + chunk_coord.x * 92837111 + chunk_coord.y * 689287499) + 1
 	var datos: Array = []
 	var especies: Dictionary = {}
+	var candidatos_validos_por_contexto: Dictionary = {}
 	for slot in range(max_creatures_per_chunk):
 		var creado := false
 		for intento in range(32):
@@ -363,26 +364,46 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			var candidatos := _spawn_rules.obtener_candidatos(ecosistema)
 			if candidatos.is_empty():
 				continue
+			var bioma_contexto_variant: Variant = contexto.get("bioma", {})
+			var bioma_contexto_id := str((bioma_contexto_variant as Dictionary).get("id", "")) if bioma_contexto_variant is Dictionary else ""
+			var zona_contexto := int(contexto.get("zona", -1))
+			var clave_contexto := bioma_contexto_id + "\u001f" + str(ecosistema.get("id", "")) + "\u001f" + str(zona_contexto)
+			var candidatos_contexto: Array[Dictionary]
+			if candidatos_validos_por_contexto.has(clave_contexto):
+				candidatos_contexto = candidatos_validos_por_contexto[clave_contexto]
+			else:
+				candidatos_contexto = []
+				for candidato_variant in candidatos:
+					if not candidato_variant is Dictionary:
+						continue
+					var candidato := candidato_variant as Dictionary
+					var criatura_variant: Variant = candidato.get("criatura", {})
+					if not criatura_variant is Dictionary:
+						continue
+					var criatura := criatura_variant as Dictionary
+					var criatura_id := str(criatura.get("id", criatura.get("criatura_id", ""))).strip_edges()
+					var habitat_clave := str(candidato.get("habitat_clave", "general")).to_lower()
+					if criatura_id.is_empty():
+						continue
+					if not _spawn_rules.ubicacion_valida(
+						bioma_contexto_variant,
+						habitat_clave,
+						zona_contexto
+					):
+						continue
+					candidatos_contexto.append(candidato)
+				candidatos_validos_por_contexto[clave_contexto] = candidatos_contexto
+			if candidatos_contexto.is_empty():
+				continue
 			var validos: Array[Dictionary] = []
-			for candidato_variant in candidatos:
-				if not candidato_variant is Dictionary:
-					continue
-				var candidato := candidato_variant as Dictionary
+			for candidato in candidatos_contexto:
 				var criatura_variant: Variant = candidato.get("criatura", {})
 				if not criatura_variant is Dictionary:
 					continue
 				var criatura := criatura_variant as Dictionary
 				var criatura_id := str(criatura.get("id", criatura.get("criatura_id", ""))).strip_edges()
-				var habitat_clave := str(candidato.get("habitat_clave", "general")).to_lower()
-				if criatura_id.is_empty() or especies.has(criatura_id):
-					continue
-				if not _spawn_rules.ubicacion_valida(
-					contexto.get("bioma", {}),
-					habitat_clave,
-					int(contexto.get("zona", -1))
-				):
-					continue
-				validos.append(candidato)
+				if not criatura_id.is_empty() and not especies.has(criatura_id):
+					validos.append(candidato)
 			if validos.is_empty():
 				continue
 			var candidato_elegido := validos[rng.randi_range(0, validos.size() - 1)] as Dictionary
