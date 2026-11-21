@@ -82,6 +82,9 @@ func _run() -> void:
 			]
 		}
 	}
+	# Simular el cambio de estación que en runtime realiza _actualizar_estacion().
+	# La paleta se normaliza una vez y luego se reutiliza durante cada frame.
+	atmosphere._preparar_cache_iluminacion()
 	if not atmosphere.calcular_color_iluminacion(0.5).is_equal_approx(Color("#ffffff")):
 		_fail("A station-specific lighting palette was not used.")
 		return
