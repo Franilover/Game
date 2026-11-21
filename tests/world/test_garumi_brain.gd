@@ -42,6 +42,11 @@ func _run() -> void:
 		_expect(cerebro.obtener_elementos().has("terava"), "Debe leer el primer elemento desde ia_config.")
 		_expect(cerebro.obtener_elementos().has("lumora"), "Debe leer el segundo elemento desde ia_config.")
 		_expect(float(cerebro.obtener_comportamiento().get("curiosidad", 0.0)) == 0.8, "Debe conservar rasgos de comportamiento.")
+		var ia_config_actual: Dictionary = garumi.datos.get("ia_config", {})
+		ia_config_actual["garumi"] = {"movimiento": {"perfil": "errante"}}
+		garumi.datos["ia_config"] = ia_config_actual
+		garumi.configuracion_actualizada.emit()
+		_expect(cerebro._perfil == "errante", "El cerebro debe recargar su configuración al recibir la señal, sin depender del tick físico.")
 		garumi.configurar({
 			"id": "garumi-brain-unknown-test",
 			"nombre": "Perfil desconocido",
