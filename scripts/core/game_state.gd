@@ -535,7 +535,7 @@ func guardar_partida() -> bool:
 
 	if datos.is_empty():
 		_guardado_en_curso = false
-		return false
+		return _rechazar_guardado("no se pudo leer el archivo de la partida activa: " + active_save_id)
 
 	datos["version"] = SAVE_VERSION
 	datos["nombre"] = active_save_name
