@@ -873,17 +873,19 @@ func _refrescar_objetivo(candidatos: Array[Node2D] = [], usar_candidatos_provist
 	elif criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		criatura.remove_meta("garlia_objetivo_liberacion")
 
-	# Reutilizar el mismo conjunto para la reacción del bosque y la selección
-	# normal. Antes, las especies reactivas volvían a consultar el manager y
-	# recorrían todos los candidatos dos veces durante una misma percepción.
-	var entidades := candidatos if usar_candidatos_provistos else _obtener_candidatos_entidad()
+	# Sólo las especies reactivas necesitan consultar candidatos antes de
+	# las decisiones de refugio. Si ya vienen de percepción, se reutilizan.
+	var entidades: Array[Node2D] = candidatos if usar_candidatos_provistos else []
 
 	# Las respuestas especiales del bosque se asignan al jugador conectado
 	# que realmente provocó la reacción, no al ancla oculta de Main.
-	var jugador_bosque := _buscar_jugador_reactivo_bosque(entidades)
-	if is_instance_valid(jugador_bosque):
-		objetivo = jugador_bosque
-		return
+	if _es_reactivo_bosque():
+		if not usar_candidatos_provistos:
+			entidades = _obtener_candidatos_entidad()
+		var jugador_bosque := _buscar_jugador_reactivo_bosque(entidades)
+		if is_instance_valid(jugador_bosque):
+			objetivo = jugador_bosque
+			return
 
 	if actividad_horaria == "proteger":
 		objetivo = _buscar_amenaza_para_refugio()
@@ -895,6 +897,8 @@ func _refrescar_objetivo(candidatos: Array[Node2D] = [], usar_candidatos_provist
 			objetivo = refugio
 			return
 
+	if not usar_candidatos_provistos and entidades.is_empty():
+		entidades = _obtener_candidatos_entidad()
 	objetivo = CreatureTargetSelectorScript.seleccionar_mas_cercano(
 		criatura,
 		entidades,
