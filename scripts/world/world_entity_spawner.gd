@@ -1397,7 +1397,10 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 				habitat_ids.append(habitat_id)
 	# Algunos ecosistemas no entregan hábitats en todos los tiles.
 	# El bioma y ecosistema siguen siendo suficientes para elegir sus props.
-	var clave_contexto := bioma_id + "\u001f" + ecosistema_id + "\u001f" + "\u001e".join(habitat_ids)
+	var habitat_key := ""
+	for habitat_id in habitat_ids:
+		habitat_key += habitat_id + "\u001e"
+	var clave_contexto := bioma_id + "\u001f" + ecosistema_id + "\u001f" + habitat_key
 	var candidatos: Array = []
 	if candidatos_cache.has(clave_contexto):
 		candidatos = candidatos_cache[clave_contexto]
