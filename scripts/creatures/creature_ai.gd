@@ -1122,7 +1122,9 @@ func _obtener_respuesta_a_objetivo() -> String:
 
 func _obtener_config_memoria_interaccion() -> Dictionary:
 	var valor: Variant = configuracion_ia.get("memoria_interaccion", {})
-	return valor as Dictionary if valor is Dictionary else {}
+	if valor is Dictionary:
+		return valor as Dictionary
+	return {}
 
 
 func _registrar_agresion_interaccion(atacante: Node) -> void:
