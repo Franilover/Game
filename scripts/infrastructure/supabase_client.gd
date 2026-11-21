@@ -32,6 +32,8 @@ const RPC_ETERIUM_RUNTIME := (
 const API_ESPECIES_JUGABLES := (
 	"/rest/v1/especies_jugables?select=id,clave,nombre,clado_id,orden&activo=eq.true&order=orden.asc"
 )
+const CACHE_ESPECIES_JUGABLES_PATH := "user://cache/especies_jugables.json"
+const CACHE_ESPECIES_JUGABLES_VERSION := 1
 const API_PERSONAJE_REGALOS := (
 	"/rest/v1/personaje_regalos_v1?select=id,personaje_game_id,item_id,reaccion,amistad,confianza,respeto,afecto,activo&activo=eq.true"
 )
@@ -143,6 +145,7 @@ func _ready() -> void:
 	_http_reinos_game = _crear_http_request()
 	_http_reinos_game.request_completed.connect(_al_completar_reinos_game)
 
+	_cargar_cache_especies_jugables()
 	call_deferred("cargar_eterium_runtime")
 	call_deferred("cargar_especie_eterium_game")
 	call_deferred("cargar_personaje_social")
@@ -462,28 +465,93 @@ func _al_completar_especies_jugables(
 		_reintentar_carga_especies_jugables("formato de respuesta inesperado")
 		return
 
-	var especies: Array = []
-	for especie_variant in json.data as Array:
-		if especie_variant is Dictionary:
-			especies.append((especie_variant as Dictionary).duplicate(true))
+	var especies := _normalizar_especies_jugables(json.data as Array)
 
 	if especies.is_empty():
-		# Una respuesta vacía puede deberse a que el catálogo aún se está
-		# publicando o a una inconsistencia temporal. No la tratamos como éxito
-		# definitivo: notificamos el estado y mantenemos una comprobación lenta.
-		_especies_jugables.clear()
-		print("SupabaseClient: Supabase respondió sin especies activas; se comprobará de nuevo.")
-		especies_jugables_cargadas.emit([])
-		_reintentar_carga_especies_jugables("catálogo vacío")
+		# Una respuesta vacía no debe borrar un catálogo válido que ya se
+		# recuperó de la caché local. Sin caché, conservamos el reintento normal.
+		print("SupabaseClient: Supabase respondió sin especies activas.")
+		if _especies_jugables.is_empty():
+			especies_jugables_cargadas.emit([])
+			_reintentar_carga_especies_jugables("catálogo vacío")
 		return
 
 	_intentos_especies_jugables = 0
 	_especies_jugables = especies
+	_guardar_cache_especies_jugables(especies)
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
-	if especies.is_empty():
-		push_warning("SupabaseClient: el catálogo de especies sigue vacío tras los reintentos.")
 	especies_jugables_cargadas.emit(especies.duplicate(true))
 
+
+
+func _normalizar_especies_jugables(datos: Array) -> Array:
+	var especies: Array = []
+	for item_variant in datos:
+		if not item_variant is Dictionary:
+			continue
+		var item := (item_variant as Dictionary).duplicate(true)
+		if str(item.get("id", "")).strip_edges().is_empty():
+			continue
+		if str(item.get("clave", "")).strip_edges().is_empty():
+			continue
+		if str(item.get("nombre", "")).strip_edges().is_empty():
+			continue
+		especies.append(item)
+	return especies
+
+
+func _cargar_cache_especies_jugables(
+	ruta: String = CACHE_ESPECIES_JUGABLES_PATH
+) -> bool:
+	if not FileAccess.file_exists(ruta):
+		return false
+	var archivo := FileAccess.open(ruta, FileAccess.READ)
+	if archivo == null:
+		return false
+	var contenido := archivo.get_as_text()
+	archivo.close()
+	var json := JSON.new()
+	if json.parse(contenido) != OK or not json.data is Dictionary:
+		push_warning("SupabaseClient: caché local de especies inválida; se solicitará el catálogo remoto.")
+		return false
+	var raiz := json.data as Dictionary
+	if int(raiz.get("version", 0)) != CACHE_ESPECIES_JUGABLES_VERSION:
+		push_warning("SupabaseClient: versión de caché de especies no compatible.")
+		return false
+	var datos_variant: Variant = raiz.get("especies", [])
+	if not datos_variant is Array:
+		return false
+	var especies := _normalizar_especies_jugables(datos_variant as Array)
+	if especies.is_empty():
+		return false
+	_especies_jugables = especies
+	print("SupabaseClient: especies jugables recuperadas de caché local → ", especies.size())
+	especies_jugables_cargadas.emit(especies.duplicate(true))
+	return true
+
+
+func _guardar_cache_especies_jugables(
+	especies: Array,
+	ruta: String = CACHE_ESPECIES_JUGABLES_PATH
+) -> bool:
+	var normalizadas := _normalizar_especies_jugables(especies)
+	if normalizadas.is_empty():
+		return false
+	var directorio := ProjectSettings.globalize_path(ruta).get_base_dir()
+	var error_directorio := DirAccess.make_dir_recursive_absolute(directorio)
+	if error_directorio != OK and error_directorio != ERR_ALREADY_EXISTS:
+		push_warning("SupabaseClient: no se pudo crear el directorio de caché de especies.")
+		return false
+	var archivo := FileAccess.open(ruta, FileAccess.WRITE)
+	if archivo == null:
+		push_warning("SupabaseClient: no se pudo escribir la caché local de especies.")
+		return false
+	archivo.store_string(JSON.stringify({
+		"version": CACHE_ESPECIES_JUGABLES_VERSION,
+		"especies": normalizadas
+	}))
+	archivo.close()
+	return true
 
 
 func _reintentar_carga_especies_jugables(motivo: String) -> void:
