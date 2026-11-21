@@ -70,6 +70,7 @@ var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
 var _especie_eterium_game_cargado: bool = false
 var _especies_jugables: Array = []
+var _ruta_cache_especies_jugables: String = CACHE_ESPECIES_JUGABLES_PATH
 var _especies_jugables_remotas_cargadas: bool = false
 var _intentos_especies_jugables: int = 0
 var _reintento_especies_programado: bool = false
@@ -146,7 +147,7 @@ func _ready() -> void:
 	_http_reinos_game = _crear_http_request()
 	_http_reinos_game.request_completed.connect(_al_completar_reinos_game)
 
-	_cargar_cache_especies_jugables()
+	_cargar_cache_especies_jugables(_ruta_cache_especies_jugables)
 	call_deferred("cargar_eterium_runtime")
 	call_deferred("cargar_especie_eterium_game")
 	call_deferred("cargar_personaje_social")
@@ -483,7 +484,7 @@ func _al_completar_especies_jugables(
 	_intentos_especies_jugables = 0
 	_especies_jugables = especies
 	_especies_jugables_remotas_cargadas = true
-	_guardar_cache_especies_jugables(especies)
+	_guardar_cache_especies_jugables(especies, _ruta_cache_especies_jugables)
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
 	especies_jugables_cargadas.emit(especies.duplicate(true))
 
