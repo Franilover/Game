@@ -953,19 +953,3 @@ func _remover_persistencia(entity: Node) -> void:
 		if _persistent_by_key.get(clave, null) == entity:
 			_persistent_by_key.erase(clave)
 	_persistent_keys_by_entity.erase(entity)
-
-
-
-func obtener_diagnostico_despawn() -> Dictionary:
-	return {
-		"creatures": {
-			"entities": _diag_despawn_creature_count,
-			"last_ms": _diag_despawn_creature_last_ms,
-			"max_ms": _diag_despawn_creature_max_ms
-		},
-		"props": {
-			"entities": _diag_despawn_prop_count,
-			"last_ms": _diag_despawn_prop_last_ms,
-			"max_ms": _diag_despawn_prop_max_ms
-		}
-	}
