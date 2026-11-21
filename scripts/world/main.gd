@@ -1780,6 +1780,12 @@ func _npc_libre_para_cinematica(npc: Creature, permitir_actividad_social: bool =
 	return npc.velocity.length() <= 5.0
 
 
+func _abortar_cinematica_narrativa(clave: String, motivo: String) -> void:
+	push_warning("Main: se cancela la presentación narrativa '%s': %s" % [clave, motivo])
+	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_method("finalizar_cinematica_historia"):
+		_npc_conversation_system.call("finalizar_cinematica_historia", clave, false)
+
+
 func _al_cinematica_narrativa_solicitada(
 	clave: String,
 	nombre_a: String,
@@ -1793,21 +1799,28 @@ func _al_cinematica_narrativa_solicitada(
 		_encolar_cinematica_proximidad("narrativa", clave, nombre_a, nombre_b, posicion_global, etapa, duracion)
 		return
 	if not is_instance_valid(_player) or not is_instance_valid(_camera):
+		_abortar_cinematica_narrativa(clave, "no hay jugador o cámara disponibles")
 		return
 	if not is_instance_valid(_cutscene_director) or _cutscene_director.esta_activo():
+		_abortar_cinematica_narrativa(clave, "el director cinematográfico no está disponible")
 		return
 	if is_instance_valid(_dialogue_system) and _dialogue_system.esta_abierto():
+		_abortar_cinematica_narrativa(clave, "hay otro diálogo activo")
 		return
-	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+	if not is_instance_valid(_zone_manager) or str(_zone_manager.obtener_tipo_actual()) != "reino_torres":
+		_abortar_cinematica_narrativa(clave, "el jugador ya no está en Torres")
 		return
 	var npc_a := _buscar_npc_cinematica(nombre_a)
 	var npc_b := _buscar_npc_cinematica(nombre_b)
 	if not _npc_libre_para_cinematica_historia(npc_a, npc_b):
+		_abortar_cinematica_narrativa(clave, "los participantes dejaron de estar disponibles")
 		return
 	if npc_a == npc_b or not _distancia_cinematica_historia_valida(npc_a, npc_b):
+		_abortar_cinematica_narrativa(clave, "los participantes ya no están juntos")
 		return
 	var centro_real := (npc_a.global_position + npc_b.global_position) * 0.5
 	if _player.global_position.distance_to(centro_real) > 520.0:
+		_abortar_cinematica_narrativa(clave, "el jugador se alejó antes de iniciar la escena")
 		return
 
 	var escenas: Dictionary = {
@@ -1823,7 +1836,7 @@ func _al_cinematica_narrativa_solicitada(
 	if is_instance_valid(_npc_conversation_system) and _npc_conversation_system.has_method("obtener_dialogo_historia"):
 		datos_dialogo_historia = _npc_conversation_system.call("obtener_dialogo_historia", clave)
 	if datos_dialogo_historia.is_empty():
-		push_warning("Main: no se pudo preparar el diálogo de historia '%s'." % clave)
+		_abortar_cinematica_narrativa(clave, "no se pudo preparar el diálogo de historia")
 		return
 	var zoom_actual := _camera.zoom.x
 	var completada := await _ejecutar_cinematica_intercambio_social(
@@ -1833,8 +1846,10 @@ func _al_cinematica_narrativa_solicitada(
 		0.75, 0.25, 0.25, 0.6,
 		{"npc": nombre_a, "datos": datos_dialogo_historia}
 	)
-	if completada and is_instance_valid(_npc_conversation_system):
-		_npc_conversation_system.call("finalizar_cinematica_historia", clave, true)
+	if is_instance_valid(_npc_conversation_system):
+		_npc_conversation_system.call("finalizar_cinematica_historia", clave, completada)
+	if not completada:
+		push_warning("Main: la cinemática narrativa '%s' no llegó a completarse." % clave)
 
 
 
