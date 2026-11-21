@@ -333,24 +333,32 @@ func _guardar_tombstone_prop_recolectado(prop: WorldProp, chunk_coord: Vector2i)
 		"is_present": false,
 		"datos": datos_prop
 	}
-	# Actualizar sólo una entrada DATA ya existente. Insertar únicamente el
-	# tombstone haría que tiene_datos_chunk() bloqueara la preparación del
-	# resto de props del chunk al entrar en LOD DATA por primera vez.
-	var datos_chunk := obtener_datos_chunk(chunk_coord, "props")
-	var actualizado := false
-	for indice in range(datos_chunk.size()):
-		var dato_variant: Variant = datos_chunk[indice]
+	# Actualizar sólo una entrada DATA ya existente. No obtener/reemplazar
+	# el Array completo: esas funciones hacen copias profundas de todos los
+	# props del chunk para cambiar un único booleano.
+	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
+	if not bucket_variant is Dictionary:
+		return
+	var bucket := bucket_variant as Dictionary
+	var datos_variant: Variant = bucket.get("props", [])
+	if not datos_variant is Array:
+		return
+	var datos := datos_variant as Array
+	for indice in range(datos.size()):
+		var dato_variant: Variant = datos[indice]
 		if not dato_variant is Dictionary:
 			continue
-		if str((dato_variant as Dictionary).get("runtime_instance_key", "")) != prop_key:
+		var dato := dato_variant as Dictionary
+		if str(dato.get("runtime_instance_key", "")) != prop_key:
 			continue
-		var dato_actualizado := (dato_variant as Dictionary).duplicate(true)
+		# Copia superficial: sólo cambia is_present y conserva aislado el
+		# diccionario original sin duplicar estructuras anidadas.
+		var dato_actualizado := dato.duplicate()
 		dato_actualizado["is_present"] = false
-		datos_chunk[indice] = dato_actualizado
-		actualizado = true
+		datos[indice] = dato_actualizado
+		bucket["props"] = datos
+		_data_by_chunk[chunk_coord] = bucket
 		break
-	if actualizado:
-		reemplazar_datos_chunk(chunk_coord, "props", datos_chunk)
 
 
 func _limpiar_referencias_replica(registro: Dictionary, entity: Node) -> void:
@@ -364,16 +372,18 @@ func _limpiar_referencias_replica(registro: Dictionary, entity: Node) -> void:
 
 func obtener_entidades_activas() -> Array:
 	var resultado: Array = []
+	var vistos: Dictionary = {}
 	for bucket_variant in _by_chunk.values():
 		if not bucket_variant is Array:
 			continue
 		for entity_variant in bucket_variant as Array:
-			if entity_variant is Node and is_instance_valid(entity_variant):
+			if entity_variant is Node and is_instance_valid(entity_variant) and not vistos.has(entity_variant):
+				vistos[entity_variant] = true
 				resultado.append(entity_variant)
 	for entity_variant in _global_entities:
-		if entity_variant is Node and is_instance_valid(entity_variant):
-			if not entity_variant in resultado:
-				resultado.append(entity_variant)
+		if entity_variant is Node and is_instance_valid(entity_variant) and not vistos.has(entity_variant):
+			vistos[entity_variant] = true
+			resultado.append(entity_variant)
 	return resultado
 
 
