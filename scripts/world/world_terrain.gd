@@ -638,7 +638,6 @@ func _procesar_datos_chunk(
 	_generation_task["cursor"] = cursor
 
 	# Durante DATOS, el diagnóstico debe mostrar el cursor de datos.
-	_generation_task["cursor"] = cursor
 	_generation_task["datos_listos"] = datos_listos
 
 	var data_ms_this_step := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
@@ -687,6 +686,7 @@ func _procesar_pintado_chunk(
 		chunk_size_tiles
 		* chunk_size_tiles
 	)
+	var data_size: int = chunk_size_tiles + CHUNK_PADDING * 2
 
 	var cursor: int = int(_generation_task.get("cursor_pintado", 0))
 	var datos_listos: PackedByteArray = _generation_task.get("datos_listos", PackedByteArray())
@@ -718,7 +718,6 @@ func _procesar_pintado_chunk(
 		var padded_y: int = (
 			local_y + CHUNK_PADDING
 		)
-		var data_size := chunk_size_tiles + CHUNK_PADDING * 2
 		var data_index := padded_y * data_size + padded_x
 		if solo_datos_listos:
 			# La zona final (agua/orilla) depende de los cuatro vecinos. Si uno
@@ -751,9 +750,7 @@ func _procesar_pintado_chunk(
 			global_y
 		)
 
-		var zona_base: int = int(
-			zonas_base[padded_y * (chunk_size_tiles + CHUNK_PADDING * 2) + padded_x]
-		)
+		var zona_base: int = int(zonas_base[data_index])
 
 		var zona_final: int = (
 			_zona_final_desde_array(
@@ -765,14 +762,12 @@ func _procesar_pintado_chunk(
 			)
 		)
 
-		zonas[padded_y * (chunk_size_tiles + CHUNK_PADDING * 2) + padded_x] = (
-			zona_final
-		)
+		zonas[data_index] = zona_final
 
 		_pintar_tile(
 			tile,
 			zona_final,
-			int(biomas[padded_y * (chunk_size_tiles + CHUNK_PADDING * 2) + padded_x])
+			int(biomas[data_index])
 		)
 
 		cursor += 1
