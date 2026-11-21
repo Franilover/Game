@@ -844,6 +844,28 @@ func _run() -> void:
 			return
 		ai._cambiar_estado(AIScript.Estado.RECUPERANDO)
 
+	# La rutina/selección de prioridades se agrupa a 200 ms; el tiempo
+	# fisiológico sigue avanzando en cada tick físico.
+	ai._tiempo_rutina_auxiliar = 0.0
+	if ai._debe_actualizar_rutina_auxiliar(0.05):
+		_fail("La rutina auxiliar se ejecutó antes de completar su intervalo.")
+		return
+	if ai._debe_actualizar_rutina_auxiliar(0.05):
+		_fail("La rutina auxiliar adelantó su segundo tick.")
+		return
+	if ai._debe_actualizar_rutina_auxiliar(0.05):
+		_fail("La rutina auxiliar adelantó su tercer tick.")
+		return
+	if not ai._debe_actualizar_rutina_auxiliar(0.05):
+		_fail("La rutina auxiliar no se ejecutó al completar 200 ms.")
+		return
+	if ai._debe_actualizar_rutina_auxiliar(0.05):
+		_fail("La rutina auxiliar no conservó el resto del acumulador.")
+		return
+	if not ai._debe_actualizar_rutina_auxiliar(0.15):
+		_fail("La rutina auxiliar no acumuló el tiempo restante correctamente.")
+		return
+
 	print("CreatureAITargetPolicy: PASS - selección y contacto.")
 	get_tree().root.remove_child(player)
 	player.free()
