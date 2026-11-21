@@ -3135,12 +3135,22 @@ func _finalizar_conversacion(completada: bool = false) -> void:
 			_progreso_parejas[clave] = progreso
 			if is_instance_valid(_game_state) and _game_state.has_method("guardar_conversaciones_npc"):
 				_game_state.call("guardar_conversaciones_npc", _progreso_parejas)
+	var proximo_paseo_exterior := -1
+	if is_instance_valid(_world_atmosphere):
+		var tiempo_fin_conversacion := _world_atmosphere.obtener_tiempo()
+		proximo_paseo_exterior = posmod(
+			int(tiempo_fin_conversacion.get("hora_del_dia", 0.0) * 60.0) + 3,
+			1440
+		)
 	for clave_participante in ["npc_a", "npc_b", "npc_c"]:
 		var nombre_participante := str(_conversacion_activa.get(clave_participante, "")).strip_edges().to_lower()
 		var participante := _npc_por_nombre.get(nombre_participante) as Creature
 		if is_instance_valid(participante):
 			participante.remove_meta("_conversacion_ambiental_activa")
-			participante.set_meta("rutina_paseo_exterior_siguiente", posmod(int(_world_atmosphere.obtener_tiempo().get("hora_del_dia", 0.0) * 60.0) + 3, 1440))
+			if proximo_paseo_exterior >= 0:
+				participante.set_meta("rutina_paseo_exterior_siguiente", proximo_paseo_exterior)
+			else:
+				participante.remove_meta("rutina_paseo_exterior_siguiente")
 	_ocultar_burbujas()
 	_conversacion_activa.clear()
 	_indice_linea = 0
