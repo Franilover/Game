@@ -412,12 +412,17 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 			continue
 		if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
 			continue
-		if not bool(npc.get_meta("rutina_en_transito", false)):
+		var ruta_fallida := bool(npc.get_meta("rutina_ruta_fallida", false))
+		var en_transito := bool(npc.get_meta("rutina_en_transito", false))
+		if not en_transito and not ruta_fallida:
 			continue
 		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
-		if movimiento != null:
+		if movimiento != null and en_transito:
 			movimiento.detener_por_rutina()
 		npc.set_meta("rutina_en_transito", false)
+		npc.set_meta("rutina_ruta_fallida", false)
+		npc.remove_meta("rutina_ruta_reintento_ms")
+		npc.remove_meta("rutina_destino_global")
 		npc.set_meta("rutina_firma", "")
 
 
@@ -682,12 +687,21 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				npc.set_process(true)
 				npc.set_physics_process(true)
 			else:
-				# Si otra acción detuvo la ruta antes de llegar, se recupera el
-				# recorrido en vez de dejar al NPC abandonado fuera del trabajo.
-				var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
-				var destino_reintento_global := _zona.to_global(destino_reintento)
+				# Las rutas fallidas se reintentan con pausa para no recalcular AStar cada tick.
+				var ruta_fallida := bool(npc.get_meta("rutina_ruta_fallida", false))
+				var reintento_en := int(npc.get_meta("rutina_ruta_reintento_ms", 0))
+				if ruta_fallida and Time.get_ticks_msec() < reintento_en:
+					return
+				var destino_guardado: Variant = npc.get_meta("rutina_destino_global", Vector2.ZERO)
+				var destino_reintento_global: Vector2
+				if destino_guardado is Vector2 and destino_guardado != Vector2.ZERO:
+					destino_reintento_global = destino_guardado
+				else:
+					var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
+					destino_reintento_global = _zona.to_global(destino_reintento)
 				if npc.global_position.distance_to(destino_reintento_global) <= DISTANCIA_LLEGADA:
 					npc.set_meta("rutina_en_transito", false)
+					npc.set_meta("rutina_ruta_fallida", false)
 					if not edificio_id.is_empty():
 						_marcar_npc_dentro_edificio(npc, edificio_id)
 				else:
@@ -695,9 +709,15 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 					if not ruta_reintento.is_empty():
 						movimiento_actual.establecer_ruta(ruta_reintento)
 						npc.set_meta("rutina_en_transito", true)
-					elif str(npc.get_meta("rutina_error_firma", "")) != firma_nueva:
-						push_warning("NPCScheduleSystem: no se pudo reanudar la ruta de " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
-						npc.set_meta("rutina_error_firma", firma_nueva)
+						npc.set_meta("rutina_ruta_fallida", false)
+						npc.remove_meta("rutina_ruta_reintento_ms")
+						npc.set_meta("rutina_error_firma", "")
+					else:
+						npc.set_meta("rutina_ruta_fallida", true)
+						npc.set_meta("rutina_ruta_reintento_ms", Time.get_ticks_msec() + 3000)
+						if str(npc.get_meta("rutina_error_firma", "")) != firma_nueva:
+							push_warning("NPCScheduleSystem: no se pudo reanudar la ruta de " + npc.get_nombre_visual() + " hacia " + ubicacion + "; se reintentará.")
+							npc.set_meta("rutina_error_firma", firma_nueva)
 		return
 
 	var destino_local := _resolver_destino_rutina_local(
@@ -719,14 +739,20 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	npc.visible = not (is_instance_valid(_zona) and (_zona.get("_interior_activo") == true))
 	if npc.global_position.distance_to(destino_global) > DISTANCIA_LLEGADA:
 		var ruta := _crear_ruta(npc.global_position, destino_global)
+		npc.set_meta("rutina_destino_global", destino_global)
 		if ruta.is_empty():
 			if str(npc.get_meta("rutina_error_firma", "")) != firma_nueva:
-				push_warning("NPCScheduleSystem: no se encontró una ruta transitable para " + npc.get_nombre_visual() + " hacia " + ubicacion + ".")
+				push_warning("NPCScheduleSystem: no se encontró una ruta transitable para " + npc.get_nombre_visual() + " hacia " + ubicacion + "; se reintentará.")
 				npc.set_meta("rutina_error_firma", firma_nueva)
 			movimiento.detener_por_rutina()
-			npc.set_meta("rutina_firma", "")
+			npc.set_meta("rutina_firma", firma_nueva)
+			npc.set_meta("rutina_ruta_fallida", true)
+			npc.set_meta("rutina_ruta_reintento_ms", Time.get_ticks_msec() + 3000)
+			npc.set_meta("rutina_en_transito", false)
 			return
 		npc.set_meta("rutina_error_firma", "")
+		npc.set_meta("rutina_ruta_fallida", false)
+		npc.remove_meta("rutina_ruta_reintento_ms")
 		movimiento.establecer_ruta(ruta)
 		npc.set_meta("rutina_en_transito", true)
 		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " -> ", ubicacion, " (", actividad, ") | puntos de ruta: ", ruta.size())
