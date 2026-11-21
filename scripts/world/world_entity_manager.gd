@@ -817,6 +817,7 @@ func _despawn_chunk_entities(
 	retirar_criaturas: bool,
 	retirar_props: bool
 ) -> void:
+	_despawn_jobs.erase(chunk_coord)
 	# API síncrona de compatibilidad para limpiezas globales y herramientas.
 	# El streaming usa iniciar/procesar_despawn_chunk para repartir el trabajo.
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
@@ -900,6 +901,7 @@ func despawn_entidades_de_chunks() -> void:
 	_active_chunks.clear()
 	_active_creature_chunks.clear()
 	_active_prop_chunks.clear()
+	_despawn_jobs.clear()
 
 
 func limpiar_todo() -> void:
@@ -924,6 +926,7 @@ func limpiar_todo() -> void:
 	_runtime_state_by_key.clear()
 	_runtime_prop_state_by_key.clear()
 	_data_by_chunk.clear()
+	_despawn_jobs.clear()
 
 
 func _registrar_clave_persistente(entity: Node, persistent_key: String) -> void:
