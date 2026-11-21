@@ -19,6 +19,7 @@ func _run() -> void:
 		return
 
 	var originales: Array = client.call("obtener_especies_jugables")
+	var remotas_original: bool = bool(client.get("_especies_jugables_remotas_cargadas"))
 	var canonicas := [{
 		"id": "offline_species_cache_probe",
 		"clave": "humano",
@@ -37,6 +38,10 @@ func _run() -> void:
 	client.set("_especies_jugables", [])
 	if not bool(client.call("_cargar_cache_especies_jugables", ruta)):
 		_fail("No se pudo recuperar el catálogo guardado.")
+		return
+
+	if bool(client.get("_especies_jugables_remotas_cargadas")):
+		_fail("Leer la caché marcó el catálogo como sincronizado con Supabase.")
 		return
 
 	var recuperadas: Array = client.call("obtener_especies_jugables")
@@ -66,6 +71,7 @@ func _run() -> void:
 		return
 
 	client.set("_especies_jugables", originales)
+	client.set("_especies_jugables_remotas_cargadas", remotas_original)
 	if FileAccess.file_exists(ruta):
 		DirAccess.remove_absolute(ruta_absoluta)
 	print("PlayableSpeciesCache: PASS roundtrip=true invalid_entries_filtered=true corrupt_cache_safe=true")
