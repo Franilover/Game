@@ -77,6 +77,9 @@ var _entity_activation_active: bool = false
 # WorldTerrain sólo mantiene un unload visual activo; el streamer conserva el resto.
 var _pending_unload_chunks: Array[Vector2i] = []
 var _pending_unload_lookup: Dictionary = {}
+var _diag_unload_entity_last_ms: float = 0.0
+var _diag_unload_entity_max_ms: float = 0.0
+var _diag_unload_entity_count: int = 0
 var _diag_entity_activation_count: int = 0
 var _diag_entity_activation_last_ms: float = 0.0
 var _diag_entity_activation_max_ms: float = 0.0
@@ -323,7 +326,11 @@ func _procesar_descarga_si_hay_presupuesto() -> void:
 			if _distancia_chunk(chunk_coord, _player_chunk) <= _unload_radius:
 				continue
 			if _entity_spawner != null:
+				var entity_unload_start_usec := Time.get_ticks_usec()
 				_entity_spawner.despawn_chunk(chunk_coord)
+				_diag_unload_entity_last_ms = float(Time.get_ticks_usec() - entity_unload_start_usec) / 1000.0
+				_diag_unload_entity_max_ms = maxf(_diag_unload_entity_max_ms, _diag_unload_entity_last_ms)
+				_diag_unload_entity_count += 1
 			_terrain.descargar_chunk(chunk_coord)
 			break
 
@@ -1104,6 +1111,11 @@ func obtener_diagnostico() -> Dictionary:
 		"entity_activation_queue": _entity_activation_queue.size(),
 		"pending_unload_chunks": _pending_unload_chunks.size(),
 		"pending_unload_queue": _pending_unload_chunks.duplicate(),
+		"unload_entity_profile": {
+			"count": _diag_unload_entity_count,
+			"last_ms": _diag_unload_entity_last_ms,
+			"max_ms": _diag_unload_entity_max_ms
+		},
 		"entity_activation_profile": {
 			"count": _diag_entity_activation_count,
 			"elapsed_last_ms": _diag_entity_activation_last_ms,
