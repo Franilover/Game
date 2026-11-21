@@ -135,6 +135,8 @@ var _hay_ultima_posicion_objetivo: bool = false
 var _tiempo_pensamiento: float = 0.0
 var _tiempo_estado: float = 0.0
 var _tiempo_estado_proceso: float = 0.0
+var _tiempo_rutina_auxiliar: float = 0.0
+const INTERVALO_RUTINA_AUXILIAR: float = 0.20
 var _tiempo_accion: float = 0.0
 var _tiempo_recuperacion: float = 0.0
 var _tiempo_adherido: float = 0.0
@@ -219,10 +221,11 @@ func _physics_process(delta: float) -> void:
 		_actualizar_velocidad_ambiental()
 
 	_actualizar_memoria_interaccion(delta)
-	_actualizar_rutina()
-	_aplicar_prioridad_necesidades()
+	if _debe_actualizar_rutina_auxiliar(delta):
+		_actualizar_rutina()
+		_aplicar_prioridad_necesidades()
+		_publicar_actividad_rutina()
 	_actualizar_necesidades(delta)
-	_publicar_actividad_rutina()
 
 	# La locomoción corre en otro nodo y en cada frame físico; detenerla aquí
 	# evita que avance entre dos ticks de decisión de la máquina de estados.
@@ -265,6 +268,17 @@ func _physics_process(delta: float) -> void:
 		_medir_debug_seccion("CreatureAI/Estado", func() -> void:
 			_procesar_estado(delta_decision)
 		)
+
+
+func _debe_actualizar_rutina_auxiliar(delta: float) -> bool:
+	# El horario y la selección de prioridades no requieren frecuencia física.
+	# Se agrupan en un tick corto; necesidades y memoria siguen acumulando delta
+	# en cada paso para no alterar su evolución temporal.
+	_tiempo_rutina_auxiliar += maxf(delta, 0.0)
+	if _tiempo_rutina_auxiliar < INTERVALO_RUTINA_AUXILIAR:
+		return false
+	_tiempo_rutina_auxiliar = fposmod(_tiempo_rutina_auxiliar, INTERVALO_RUTINA_AUXILIAR)
+	return true
 
 
 func _medir_debug_seccion(nombre: String, accion: Callable) -> void:
