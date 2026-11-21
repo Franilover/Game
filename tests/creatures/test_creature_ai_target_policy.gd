@@ -561,8 +561,8 @@ func _run() -> void:
 		_fail("La caché de percepción duplicó o perdió entidades tras un alta.")
 		return
 	var jugador_grupo := Node2D.new()
-	jugador_grupo.add_to_group("player")
 	get_tree().root.add_child(jugador_grupo)
+	jugador_grupo.add_to_group("player")
 	var candidatos_percibidos := PerceptionScript.obtener_candidatos(actor, player, refugio_manager)
 	if jugador_grupo not in candidatos_percibidos:
 		_fail("La percepción no descubrió a un jugador conectado por grupo.")
@@ -574,8 +574,8 @@ func _run() -> void:
 		_fail("La percepción omitió al Garumi como entidad presente en el mundo.")
 		return
 	var jugador_nuevo := Node2D.new()
-	jugador_nuevo.add_to_group("player")
 	get_tree().root.add_child(jugador_nuevo)
+	jugador_nuevo.add_to_group("player")
 	var snapshot_mismo_frame := PerceptionScript.obtener_candidatos(actor, player, refugio_manager)
 	if jugador_nuevo in snapshot_mismo_frame:
 		_fail("El snapshot de jugadores se reconstruyó varias veces en el mismo physics frame.")
