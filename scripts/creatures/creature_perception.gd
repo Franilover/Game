@@ -9,11 +9,13 @@ static func obtener_candidatos(
 	entity_manager: WorldEntityManager
 ) -> Array[Node2D]:
 	var candidatos: Array[Node2D] = []
+	var vistos: Dictionary = {}
 
 	# La referencia explícita permite percibir al jugador antes de que se
 	# registre en el grupo global, pero nunca conserva nodos muertos o retirados.
 	if _es_candidato_activo(jugador):
 		candidatos.append(jugador)
+		vistos[jugador.get_instance_id()] = true
 
 	# Los jugadores conectados se descubren por grupo. La referencia explícita
 	# puede apuntar al ancla del mundo, por eso no sustituye esta búsqueda.
@@ -25,7 +27,9 @@ static func obtener_candidatos(
 			var jugador_actual := jugador_variant as Node2D
 			if not _es_candidato_activo(jugador_actual):
 				continue
-			if jugador_actual not in candidatos:
+			var jugador_id := jugador_actual.get_instance_id()
+			if not vistos.has(jugador_id):
+				vistos[jugador_id] = true
 				candidatos.append(jugador_actual)
 
 	if entity_manager == null or not is_instance_valid(entity_manager):
@@ -37,7 +41,9 @@ static func obtener_candidatos(
 		var entidad := entidad_variant as Entity
 		if entidad == criatura or not _es_candidato_activo(entidad):
 			continue
-		if entidad not in candidatos:
+		var entidad_id := entidad.get_instance_id()
+		if not vistos.has(entidad_id):
+			vistos[entidad_id] = true
 			candidatos.append(entidad)
 
 	return candidatos
