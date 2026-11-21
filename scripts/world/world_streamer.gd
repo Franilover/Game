@@ -711,6 +711,7 @@ func _actualizar_data_entidades(centro: Vector2i) -> void:
 			stale_queued.append(coord_variant)
 	for coord in stale_queued:
 		_data_entity_queued.erase(coord)
+		_data_entity_queue.erase(coord)
 
 	# DATA también tiene prioridad espacial. Los chunks más cercanos al jugador
 	# se preparan primero; los remotos quedan como trabajo de fondo.
