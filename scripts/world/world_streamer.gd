@@ -921,11 +921,14 @@ func _procesar_siguiente_chunk_entidades() -> void:
 	# Las funciones de materialización desde DATA ceden el frame cada dos
 	# instancias. Esperarlas es esencial: invocarlas sin await las detenía
 	# en su primer yield y podía dejar la materialización incompleta.
+	var props_materializados := false
 	if lod == LOD_TERRAIN or lod == LOD_FULL:
-		var props_materializados := false
 		if _entity_spawner.has_method("materializar_props_datos_chunk"):
 			props_materializados = await _entity_spawner.materializar_props_datos_chunk(chunk_coord)
-		if not props_materializados and obtener_lod_chunk(chunk_coord) in [LOD_TERRAIN, LOD_FULL]:
+
+	var lod_despues_props := obtener_lod_chunk(chunk_coord)
+	if lod_despues_props == LOD_TERRAIN or lod_despues_props == LOD_FULL:
+		if not props_materializados:
 			_entity_spawner.spawn_props_chunk(chunk_coord)
 	else:
 		_entity_spawner.cancelar_prop_spawn_chunk(chunk_coord)
