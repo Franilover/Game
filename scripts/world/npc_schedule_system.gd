@@ -2295,6 +2295,9 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
+		# No dejar el objetivo ni la reserva del compañero colgados si el NPC
+		# perdió su componente de movimiento durante una reconstrucción.
+		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
 	var distancia := npc.global_position.distance_to(pareja_actual.global_position)
 	if movimiento.rutina_terminada():
