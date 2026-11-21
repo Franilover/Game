@@ -1171,7 +1171,13 @@ func registrar_interaccion_positiva(actor: Node, intensidad: float = 0.5, duraci
 func _actualizar_memoria_interaccion(delta: float) -> void:
 	var memoria := _obtener_config_memoria_interaccion()
 	if not bool(memoria.get("activo", false)):
-		_memoria_interaccion.limpiar()
+		if _memoria_interaccion.cantidad_recuerdos() > 0:
+			_memoria_interaccion.limpiar()
+		return
+	# La mayoría de las criaturas no mantiene recuerdos de actores entre ticks.
+	# Evitar keys()/recorrido cuando el registro está vacío ahorra trabajo por
+	# criatura sin cambiar decaimiento ni expiración de recuerdos existentes.
+	if _memoria_interaccion.cantidad_recuerdos() == 0:
 		return
 	_memoria_interaccion.actualizar(
 		delta,
