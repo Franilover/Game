@@ -5,6 +5,7 @@ const SUPABASE_URL: String = "https://ftdxthnizdosaaavjhah.supabase.co"
 const SUPABASE_PUBLISHABLE_KEY: String = "sb_publishable_dZowBcHCW7PJ5tV8aDnAPQ_1URMyPbV"
 
 const SESSION_FILE_PATH: String = "user://garlia_session.json"
+const RESTORE_RETRY_SECONDS: float = 30.0
 
 
 signal login_started
@@ -29,14 +30,27 @@ var perfil: Dictionary = {}
 var _request: HTTPRequest = null
 var _request_busy: bool = false
 var _restaurando_sesion: bool = false
+var _restauracion_reintentable: bool = false
+var _session_file_path: String = SESSION_FILE_PATH
+var _restore_retry_timer: Timer = null
 
 
 func _ready() -> void:
 	_crear_request()
+	_restore_retry_timer = Timer.new()
+	_restore_retry_timer.name = "SessionRestoreRetry"
+	_restore_retry_timer.wait_time = RESTORE_RETRY_SECONDS
+	_restore_retry_timer.one_shot = true
+	add_child(_restore_retry_timer)
+	_restore_retry_timer.timeout.connect(_al_timeout_reintento_restauracion)
 
 	call_deferred(
 		"_restaurar_sesion"
 	)
+
+
+func _al_timeout_reintento_restauracion() -> void:
+	_restaurar_sesion()
 
 
 func _crear_request() -> void:
@@ -289,7 +303,7 @@ func _restaurar_sesion() -> void:
 	_restaurando_sesion = true
 
 	if not FileAccess.file_exists(
-		SESSION_FILE_PATH
+		_session_file_path
 	):
 		_restaurando_sesion = false
 
@@ -298,7 +312,7 @@ func _restaurar_sesion() -> void:
 		return
 
 	var archivo := FileAccess.open(
-		SESSION_FILE_PATH,
+		_session_file_path,
 		FileAccess.READ
 	)
 
@@ -380,6 +394,7 @@ func _restaurar_sesion() -> void:
 		"GarliaAuth: restaurando sesión..."
 	)
 
+	_restauracion_reintentable = false
 	var restaurada: bool = await _renovar_sesion()
 
 	_restaurando_sesion = false
@@ -390,16 +405,25 @@ func _restaurar_sesion() -> void:
 			obtener_username()
 		)
 
+		if _restore_retry_timer != null:
+			_restore_retry_timer.stop()
 		session_restored.emit()
 	else:
-		_eliminar_sesion_guardada()
-		_limpiar_sesion()
+		if _restauracion_reintentable:
+			print("GarliaAuth: restauración aplazada; se conservará la sesión local.")
+			if _restore_retry_timer != null:
+				_restore_retry_timer.start()
+		else:
+			_eliminar_sesion_guardada()
+			_limpiar_sesion()
 
 	session_restore_finished.emit()
 
 
 func _renovar_sesion() -> bool:
+	_restauracion_reintentable = true
 	if refresh_token.is_empty():
+		_restauracion_reintentable = false
 		return false
 
 	if _request_busy:
@@ -472,8 +496,9 @@ func _renovar_sesion() -> bool:
 		return false
 
 	if response_code < 200 or response_code >= 300:
+		_restauracion_reintentable = not [400, 401, 403].has(response_code)
 		print(
-			"GarliaAuth: refresh token rechazado."
+			"GarliaAuth: refresh token rechazado o temporalmente no disponible."
 		)
 
 		return false
@@ -534,13 +559,16 @@ func _renovar_sesion() -> bool:
 			user_email
 		)
 	)
+	# Supabase rota el refresh token: persistirlo antes de pedir el perfil evita
+	# perder el token nuevo si la segunda solicitud falla por conectividad.
+	_guardar_sesion()
 
 	var perfil_cargado: bool = await _cargar_perfil()
 
 	if not perfil_cargado:
 		return false
 
-	_guardar_sesion()
+	_restauracion_reintentable = false
 
 	print(
 		"GarliaAuth: token renovado correctamente."
@@ -593,6 +621,7 @@ func _cargar_perfil() -> bool:
 	)
 
 	if respuesta == null:
+		_restauracion_reintentable = true
 		login_failed.emit(
 			"No se pudo conectar con la base de datos de Garlia."
 		)
@@ -623,6 +652,7 @@ func _cargar_perfil() -> bool:
 	)
 
 	if result_code != HTTPRequest.RESULT_SUCCESS:
+		_restauracion_reintentable = true
 		login_failed.emit(
 			"No se pudo conectar con la base de datos de Garlia."
 		)
@@ -641,6 +671,7 @@ func _cargar_perfil() -> bool:
 		return false
 
 	if response_code < 200 or response_code >= 300:
+		_restauracion_reintentable = not [400, 401, 403].has(response_code)
 		login_failed.emit(
 			"No se pudo acceder al perfil de Garlia."
 		)
@@ -731,7 +762,7 @@ func _guardar_sesion() -> void:
 		return
 
 	var archivo := FileAccess.open(
-		SESSION_FILE_PATH,
+		_session_file_path,
 		FileAccess.WRITE
 	)
 
