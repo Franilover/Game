@@ -11,7 +11,7 @@ static var _jugadores_cache_tree_id: int = 0
 static var _jugadores_cache: Array[Node2D] = []
 
 
-static func _obtener_jugadores_del_grupo(arbol: SceneTree) -> Array[Node2D]:
+static func obtener_jugadores_del_grupo(arbol: SceneTree) -> Array[Node2D]:
 	var frame_actual := Engine.get_physics_frames()
 	var tree_id := arbol.get_instance_id()
 	if frame_actual != _jugadores_cache_frame or tree_id != _jugadores_cache_tree_id:
@@ -42,7 +42,7 @@ static func obtener_candidatos(
 	# puede apuntar al ancla del mundo, por eso no sustituye esta búsqueda.
 	var arbol := Engine.get_main_loop() as SceneTree
 	if arbol != null:
-		for jugador_actual in _obtener_jugadores_del_grupo(arbol):
+		for jugador_actual in obtener_jugadores_del_grupo(arbol):
 			if not _es_candidato_activo(jugador_actual):
 				continue
 			var jugador_id := jugador_actual.get_instance_id()
