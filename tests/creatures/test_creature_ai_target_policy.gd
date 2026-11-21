@@ -844,6 +844,24 @@ func _run() -> void:
 			return
 		ai._cambiar_estado(AIScript.Estado.RECUPERANDO)
 
+	# Los IDs consecutivos de criaturas deben quedar repartidos por el
+	# intervalo, evitando que una materialización en bloque sincronice la IA.
+	var fases_iniciales: Array[float] = []
+	var fase_minima := 1.0
+	var fase_maxima := 0.0
+	for instance_id in range(1, 33):
+		var fase := AIScript.calcular_fase_inicial(instance_id)
+		fases_iniciales.append(fase)
+		fase_minima = minf(fase_minima, fase)
+		fase_maxima = maxf(fase_maxima, fase)
+	if fases_iniciales.size() != 32 or fase_maxima - fase_minima < 0.8:
+		_fail("Las fases iniciales no distribuyeron las criaturas por el intervalo.")
+		return
+	for fase in fases_iniciales:
+		if fase < 0.0 or fase >= 1.0:
+			_fail("Una fase inicial salió del rango normalizado.")
+			return
+
 	# La rutina/selección de prioridades se agrupa a 200 ms; el tiempo
 	# fisiológico sigue avanzando en cada tick físico.
 	ai._tiempo_rutina_auxiliar = 0.0
