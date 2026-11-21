@@ -117,6 +117,7 @@ func configurar_dependencias(
 	combat_system = nuevo_combat_system
 	world_items = nuevo_world_items
 	world_atmosphere = nuevo_world_atmosphere
+	_climate_system_node = null
 	_estado_ambiental_cache_valido = false
 	# WorldEntityFactory mantiene una instantánea aislada y la reemplaza al
 	# actualizar las reglas. Las IA sólo la consultan: compartirla evita una
@@ -140,6 +141,7 @@ var _tiempo_estado: float = 0.0
 var _tiempo_estado_proceso: float = 0.0
 var _tiempo_rutina_auxiliar: float = 0.0
 const INTERVALO_RUTINA_AUXILIAR: float = 0.20
+const CLAVES_CONTEXTO_AMBIENTAL: PackedStringArray = ["bioma_id", "ecosistema_id", "habitat_id"]
 var _tiempo_accion: float = 0.0
 var _tiempo_recuperacion: float = 0.0
 var _tiempo_adherido: float = 0.0
@@ -158,6 +160,7 @@ var _velocidad_base_actual: float = 20.0
 var _ultimo_modificador_ambiental: float = -1.0
 var _tiempo_revision_ambiental: float = 0.0
 var _debug_performance_node: Node = null
+var _climate_system_node: Node = null
 var _estado_ambiental_cache: Dictionary = {}
 var _estado_ambiental_cache_valido: bool = false
 var objeto_robado: Dictionary = {}
@@ -1732,11 +1735,14 @@ func _refrescar_estado_ambiental_cache() -> Dictionary:
 func _consultar_estado_ambiental() -> Dictionary:
 	if criatura == null or world_atmosphere == null or not is_instance_valid(world_atmosphere):
 		return {}
-	var sistema := world_atmosphere.get_node_or_null("ClimateSystem")
-	if sistema == null or not sistema.has_method("obtener_estado_para_contexto"):
+	var sistema := _climate_system_node
+	if not is_instance_valid(sistema):
+		sistema = world_atmosphere.get_node_or_null("ClimateSystem")
+		_climate_system_node = sistema
+	if not is_instance_valid(sistema) or not sistema.has_method("obtener_estado_para_contexto"):
 		return {}
 	var contexto: Dictionary = {}
-	for clave in ["bioma_id", "ecosistema_id", "habitat_id"]:
+	for clave in CLAVES_CONTEXTO_AMBIENTAL:
 		var valor := str(criatura.datos.get(clave, "")).strip_edges()
 		if not valor.is_empty():
 			contexto[clave] = valor
