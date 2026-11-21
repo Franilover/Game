@@ -386,6 +386,30 @@ func _run() -> void:
 	menu_probe.queue_free()
 	await get_tree().process_frame
 
+	# Si Supabase no responde, la restauración vital debe tener una salida
+	# local y no bloquear los guardados indefinidamente.
+	var timeout_probe := GameStateScript.new() as GameStateService
+	add_child(timeout_probe)
+	var timeout_player := PlayerScene.instantiate() as Player
+	add_child(timeout_player)
+	await get_tree().process_frame
+	timeout_probe._player = timeout_player
+	timeout_probe.player_state.health = 73
+	timeout_probe.player_state.mana = 41
+	timeout_probe._partida_aplicada_en_escena = true
+	timeout_probe._estado_vital_restaurado_en_escena = false
+	timeout_probe._actualizar_timeout_restauracion_vital(GameStateScript.RESTAURACION_VITAL_TIMEOUT_S - 0.1)
+	if timeout_probe._estado_vital_restaurado_en_escena:
+		errores.append("La restauración vital expiró antes de completar el tiempo de espera.")
+	timeout_probe._actualizar_timeout_restauracion_vital(0.2)
+	if not timeout_probe._estado_vital_restaurado_en_escena:
+		errores.append("El modo offline dejó bloqueada la restauración vital después del timeout.")
+	if timeout_player.health != 73 or timeout_player.mana != 41:
+		errores.append("El fallback offline no restauró vida y Eterium del snapshot.")
+	timeout_probe.queue_free()
+	timeout_player.queue_free()
+	await get_tree().process_frame
+
 	# Integración real del guardado narrativo: jugador + ZoneManager + JSON.
 	# Comprueba el mismo punto de entrada que usan autosave, pausa y cierre.
 	var mundo_runtime := Node2D.new()
