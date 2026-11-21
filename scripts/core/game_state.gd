@@ -304,7 +304,7 @@ func precalentar_indice_metadata_partidas() -> void:
 		var resultado: Array[Dictionary] = []
 		for i in range(ids.size()):
 			var id := ids[i]
-			var datos := _leer_archivo_partida(id)
+			var datos := save_repository.leer_metadata_partida(id)
 			if _datos_partida_cargables(id, datos):
 				resultado.append(_extraer_metadata_partida(datos))
 			# Repartir la lectura de saves entre frames: el menú permanece
@@ -338,7 +338,7 @@ func obtener_partidas() -> Array[Dictionary]:
 	# archivos fuera de GameState: construirlo una vez y reutilizarlo después.
 	var resultado: Array[Dictionary] = []
 	for id in ids:
-		var datos := _leer_archivo_partida(id)
+		var datos := save_repository.leer_metadata_partida(id)
 		if not _datos_partida_cargables(id, datos):
 			continue
 		resultado.append(_extraer_metadata_partida(datos))
