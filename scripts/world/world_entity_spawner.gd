@@ -176,7 +176,7 @@ func _ready() -> void:
 func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 	if _entity_manager == null or _entity_factory == null or _world_data == null:
 		return false
-	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "criaturas")
+	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "criaturas", false)
 	if datos.is_empty():
 		return false
 
@@ -648,7 +648,7 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 		return false
 	if _entity_manager.tiene_props_chunk(chunk_coord):
 		return true
-	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "props")
+	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "props", false)
 	if datos.is_empty():
 		return false
 	var limite_chunk := Rect2(
