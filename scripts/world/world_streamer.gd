@@ -84,7 +84,7 @@ var _diag_transition_last_ms: float = 0.0
 var _diag_transition_max_ms: float = 0.0
 var _diag_transition_unload_ms: float = 0.0
 var _diag_transition_lod_ms: float = 0.0
-var _diag_transition_entities_ms: float = 0.0
+var _diag_transition_entity_queue_ms: float = 0.0
 var _diag_transition_data_queue_ms: float = 0.0
 
 
@@ -477,7 +477,7 @@ func _actualizar_streaming() -> void:
 	if cambio_chunk or centro != _last_entity_lod_center:
 		var entities_start_usec := Time.get_ticks_usec()
 		_actualizar_entidades_activas(centro)
-		_diag_transition_entities_ms = float(Time.get_ticks_usec() - entities_start_usec) / 1000.0
+		_diag_transition_entity_queue_ms = float(Time.get_ticks_usec() - entities_start_usec) / 1000.0
 		_last_entity_lod_center = centro
 
 		var data_queue_start_usec := Time.get_ticks_usec()
@@ -1071,7 +1071,7 @@ func obtener_diagnostico() -> Dictionary:
 			"max_ms": _diag_transition_max_ms,
 			"unload_schedule_ms": _diag_transition_unload_ms,
 			"lod_update_ms": _diag_transition_lod_ms,
-			"entity_materialize_ms": _diag_transition_entities_ms,
+			"entity_queue_schedule_ms": _diag_transition_entity_queue_ms,
 			"data_queue_ms": _diag_transition_data_queue_ms
 		},
 		"prefetch_activo": _prefetch_activo,
