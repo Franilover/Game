@@ -95,6 +95,8 @@ var world_atmosphere: WorldAtmosphere = null
 var actividad_horaria: String = "explorar"
 var _brillo_horario_activo: bool = false
 var _objetivo_alimento: WorldItem = null
+var _ids_alimento_cache: Array[String] = []
+var _ids_alimento_cache_valido: bool = false
 var _alimentacion_realizada: bool = false
 var _hambre_actual: float = 0.0
 var _fatiga_actual: float = 0.0
@@ -1122,6 +1124,7 @@ func _buscar_nodo_jugador(nodo: Node) -> Node:
 # ============================================================
 
 func _refrescar_configuracion() -> void:
+	_ids_alimento_cache_valido = false
 	if criatura == null:
 		configuracion_ia = {}
 		perfil = Perfil.GENERICO
@@ -1537,21 +1540,26 @@ func _restaurar_necesidades_runtime() -> void:
 
 
 func _obtener_ids_alimento() -> Array[String]:
+	if _ids_alimento_cache_valido:
+		return _ids_alimento_cache
+
 	var resultado: Array[String] = []
 	var alimentacion_variant: Variant = configuracion_ia.get("alimentacion", {})
-	if not alimentacion_variant is Dictionary:
-		return resultado
-	var ids_variant: Variant = (alimentacion_variant as Dictionary).get("item_ids", [])
-	if ids_variant is String:
-		var id_unico := (ids_variant as String).strip_edges()
-		if not id_unico.is_empty():
-			resultado.append(id_unico)
-	elif ids_variant is Array:
-		for id_variant in ids_variant as Array:
-			var item_id := str(id_variant).strip_edges()
-			if not item_id.is_empty() and item_id not in resultado:
-				resultado.append(item_id)
-	return resultado
+	if alimentacion_variant is Dictionary:
+		var ids_variant: Variant = (alimentacion_variant as Dictionary).get("item_ids", [])
+		if ids_variant is String:
+			var id_unico := (ids_variant as String).strip_edges()
+			if not id_unico.is_empty():
+				resultado.append(id_unico)
+		elif ids_variant is Array:
+			for id_variant in ids_variant as Array:
+				var item_id := str(id_variant).strip_edges()
+				if not item_id.is_empty() and item_id not in resultado:
+					resultado.append(item_id)
+
+	_ids_alimento_cache = resultado
+	_ids_alimento_cache_valido = true
+	return _ids_alimento_cache
 
 
 func _es_alimento_configurado(item: WorldItem) -> bool:
