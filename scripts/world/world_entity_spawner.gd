@@ -751,7 +751,7 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 		var instance_key := str(dato.get("runtime_instance_key", "")).strip_edges()
 		if not instance_key.is_empty() and claves_existentes.has(instance_key):
 			continue
-		var estado := _entity_manager.obtener_estado_prop(chunk_coord, instance_key)
+		var estado := _entity_manager.obtener_estado_prop_materializacion(chunk_coord, instance_key)
 		if not estado.is_empty() and not bool(estado.get("is_present", true)):
 			continue
 		var materialize_step_start_usec := Time.get_ticks_usec()
