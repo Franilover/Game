@@ -8,6 +8,7 @@ var _entities_root: Node = null
 var _entity_factory: WorldEntityFactory = null
 
 var _by_chunk: Dictionary = {}
+var _chunk_by_entity: Dictionary = {}
 var _active_chunks: Dictionary = {}
 var _active_creature_chunks: Dictionary = {}
 var _active_prop_chunks: Dictionary = {}
@@ -154,6 +155,7 @@ func registrar(
 	if not entity in bucket:
 		bucket.append(entity)
 	_by_chunk[chunk_coord] = bucket
+	_chunk_by_entity[entity] = chunk_coord
 
 	return true
 
@@ -294,28 +296,25 @@ func _al_salir_entidad(entity: Node) -> void:
 			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_recolectado as Vector2i)
 
 	_global_entities.erase(entity)
-	for chunk_variant in _by_chunk.keys():
-		var chunk_coord: Vector2i = chunk_variant
+	var chunk_variant: Variant = _chunk_by_entity.get(entity, null)
+	if chunk_variant is Vector2i:
+		var chunk_coord := chunk_variant as Vector2i
 		var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
-		if not bucket_variant is Array:
-			continue
-		var bucket: Array = bucket_variant
-		bucket.erase(entity)
-		if bucket.is_empty():
-			_by_chunk.erase(chunk_coord)
-		else:
-			_by_chunk[chunk_coord] = bucket
+		if bucket_variant is Array:
+			var bucket := bucket_variant as Array
+			bucket.erase(entity)
+			if bucket.is_empty():
+				_by_chunk.erase(chunk_coord)
+			else:
+				_by_chunk[chunk_coord] = bucket
+	_chunk_by_entity.erase(entity)
 	_limpiar_referencias_replica(_replicas_red_by_key, entity)
 	_limpiar_referencias_replica(_replicas_red_props_by_key, entity)
 	_remover_persistencia(entity)
 
 
 func _obtener_chunk_de_entidad(entity: Node) -> Variant:
-	for chunk_variant in _by_chunk.keys():
-		var bucket_variant: Variant = _by_chunk.get(chunk_variant, [])
-		if bucket_variant is Array and entity in (bucket_variant as Array):
-			return chunk_variant
-	return null
+	return _chunk_by_entity.get(entity, null)
 
 
 func _guardar_tombstone_prop_recolectado(prop: WorldProp, chunk_coord: Vector2i) -> void:
