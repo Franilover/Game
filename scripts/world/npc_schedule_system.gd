@@ -1447,6 +1447,10 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var indice := posmod(hash(nombre + "|" + edificio_id + "|" + str(minutos / 5)), puntos.size())
 	var destino_local := Vector2.ZERO
 	var destino_disponible := false
+	var ruta_seleccionada := PackedVector2Array()
+	var contenedor := npc.get_parent() as Node2D
+	if not is_instance_valid(contenedor):
+		return
 	# La lista no cambia mientras se prueban los puntos: reutilizar una sola
 	# instantánea evita volver a consultar el grupo por cada mueble candidato.
 	var otros_npcs := _obtener_npcs_torres()
@@ -1462,22 +1466,33 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 			if otro.position.distance_to(candidato) < 38.0:
 				ocupado = true
 				break
-		if not ocupado:
+		if ocupado:
+			continue
+		var candidato_global := contenedor.to_global(candidato)
+		if npc.global_position.distance_to(candidato_global) <= DISTANCIA_LLEGADA:
 			destino_local = candidato
 			destino_disponible = true
 			break
+		# No usar una ruta directa de un solo segmento: el mueble, las paredes
+		# y otros obstáculos del interior también deben respetar la malla AStar.
+		var ruta_candidata := _crear_ruta(npc.global_position, candidato_global)
+		if ruta_candidata.is_empty():
+			continue
+		destino_local = candidato
+		ruta_seleccionada = ruta_candidata
+		destino_disponible = true
+		break
 	if not destino_disponible:
 		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + 3, 1440))
-		return
-	var contenedor := npc.get_parent() as Node2D
-	if not is_instance_valid(contenedor):
 		return
 	var destino_global := contenedor.to_global(destino_local)
 	if npc.global_position.distance_to(destino_global) <= DISTANCIA_LLEGADA:
 		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + 3, 1440))
 		return
-	var ruta := PackedVector2Array([destino_global])
-	movimiento.establecer_ruta(ruta)
+	if ruta_seleccionada.is_empty():
+		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + 3, 1440))
+		return
+	movimiento.establecer_ruta(ruta_seleccionada)
 	npc.set_meta("rutina_paseo_interior_activo", true)
 	npc.set_meta("rutina_paseo_interior_actividad", actividad.strip_edges().to_lower())
 	npc.set_meta("rutina_en_transito", true)
