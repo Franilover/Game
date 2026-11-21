@@ -33,7 +33,27 @@ func _run() -> void:
 	manager._replicas_red_props_by_key = {"zona|prop": replica_prop}
 	manager._runtime_state_by_key = {"0:0:criatura": {"health": 10}}
 	manager._runtime_prop_state_by_key = {"0:0:prop": {"position": Vector2.ZERO}}
-	manager._data_by_chunk = {Vector2i.ZERO: {"criaturas": [{"id": "criatura"}]}}
+	manager._data_by_chunk = {
+		Vector2i.ZERO: {
+			"criaturas": [{"id": "criatura", "nested": {"health": 10}}],
+			"props": [{"id": "prop", "nested": {"present": true}}]
+		}
+	}
+
+	# La lectura predeterminada mantiene aislamiento profundo para consumidores
+	# que puedan modificar los datos recibidos.
+	var copia_profunda: Array = manager.obtener_datos_chunk(Vector2i.ZERO, "criaturas")
+	(copia_profunda[0] as Dictionary)["nested"]["health"] = 1
+	if int(manager._data_by_chunk[Vector2i.ZERO]["criaturas"][0]["nested"]["health"]) != 10:
+		errores.append("La lectura profunda permitió mutar los datos internos.")
+
+	# El modo superficial sólo comparte los Dictionaries; el materializador
+	# debe duplicar cada registro antes de aplicar cambios runtime.
+	var copia_superficial: Array = manager.obtener_datos_chunk(Vector2i.ZERO, "props", false)
+	var prop_local: Dictionary = (copia_superficial[0] as Dictionary).duplicate(true)
+	prop_local["nested"]["present"] = false
+	if not bool(manager._data_by_chunk[Vector2i.ZERO]["props"][0]["nested"]["present"]):
+		errores.append("La lectura superficial, usada con duplicación por registro, alteró los datos internos.")
 
 	manager.limpiar_todo()
 
