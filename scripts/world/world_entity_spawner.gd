@@ -1763,6 +1763,12 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 		_entity_manager.despawn_chunk(chunk_coord)
 
 
+func obtener_diagnostico_despawn() -> Dictionary:
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
+		return {}
+	return _entity_manager.obtener_diagnostico_despawn()
+
+
 func despawn_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	cancelar_spawn_chunk(chunk_coord)
 	if _entity_manager != null:
