@@ -68,7 +68,7 @@ func _run() -> void:
 	await get_tree().process_frame
 	creation.call("open", "nueva_partida")
 	await get_tree().process_frame
-	var species_control := creation.get_node_or_null("Panel/Margin/Column/Content/Fields/Species") as OptionButton
+	var species_control := creation.find_child("Species", true, false) as OptionButton
 	if species_control == null or species_control.item_count < 1:
 		_fail("CharacterCreation no recibió las especies recuperadas de la caché. count=%d" % (species_control.item_count if species_control != null else -1))
 		return
