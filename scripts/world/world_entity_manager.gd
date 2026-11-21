@@ -700,10 +700,12 @@ func obtener_estado_prop_materializacion(chunk_coord: Vector2i, instance_key: St
 	if not estado_variant is Dictionary:
 		return {}
 	var estado := estado_variant as Dictionary
-	return {
-		"is_present": bool(estado.get("is_present", true)),
-		"position": estado.get("position", Vector2.ZERO)
+	var snapshot := {
+		"is_present": bool(estado.get("is_present", true))
 	}
+	if estado.has("position"):
+		snapshot["position"] = estado["position"]
+	return snapshot
 
 
 func despawn_criaturas_chunk(chunk_coord: Vector2i) -> void:
