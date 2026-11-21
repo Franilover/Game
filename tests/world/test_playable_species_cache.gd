@@ -69,7 +69,7 @@ func _run() -> void:
 	creation.call("open", "nueva_partida")
 	# Reemitir el catálogo desde el mismo autoload reproduce el evento que recibe
 	# una escena abierta después de que la caché ya se hidrató.
-	client.get("especies_jugables_cargadas").emit(recuperadas.duplicate(true))
+	client.emit_signal("especies_jugables_cargadas", recuperadas.duplicate(true))
 	await get_tree().process_frame
 	var species_control := creation.find_child("Species", true, false) as OptionButton
 	if species_control == null or species_control.item_count < 1:
