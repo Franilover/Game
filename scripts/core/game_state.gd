@@ -138,7 +138,13 @@ func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
 	# El menú principal no es una sesión jugable. La sesión ya se confirma
 	# antes de abandonar Main; no intentes capturar un Player que ya fue liberado.
 	if not _hay_runtime_partida_activo():
+		if _historia_reserva_activa or not active_save_id.is_empty():
+			return _rechazar_guardado(
+				"hay una partida activa, pero no se reconoce el runtime. Escena: "
+				+ str(get_tree().current_scene.scene_file_path if is_instance_valid(get_tree().current_scene) else "<sin escena>")
+			)
 		return true
+	print("GameState: solicitando guardado → ", motivo)
 	var resultado := true
 	if _historia_reserva_activa:
 		resultado = guardar_progreso_historia()
@@ -155,8 +161,14 @@ func _hay_runtime_partida_activo() -> bool:
 		return false
 	if str(escena.scene_file_path) == MAIN_SCENE_PATH:
 		return true
-	# En escenas envueltas, la pareja Player + ZoneManager identifica el runtime.
-	return is_instance_valid(_player) and is_instance_valid(escena.get_node_or_null("World/ZoneManager"))
+	# Main puede estar dentro de una escena contenedora (por ejemplo, un
+	# runtime integrado). Buscar ZoneManager de forma recursiva evita que
+	# el guardado confunda esa sesión con el menú principal.
+	if not is_instance_valid(_player) or not _player.is_inside_tree():
+		return false
+	if not escena.is_ancestor_of(_player):
+		return false
+	return is_instance_valid(escena.find_child("ZoneManager", true, false))
 
 
 func _rechazar_guardado(motivo: String) -> bool:
