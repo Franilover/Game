@@ -326,20 +326,20 @@ func _presupuesto_generacion() -> int:
 	if _terrain != null:
 		var estado: Dictionary = _terrain.obtener_estado_generacion()
 		var etapa := str(estado.get("etapa", "IDLE"))
-		if _render_manager != null and (
-			etapa == "DATOS" or etapa == "PINTADO"
-		):
-			# Generación DATA/PINTADO también debe respetar un objetivo de
-			# tiempo por frame. 128/64 celdas fijas permiten lotes de 8-16 ms
-			# en el Celeron y producen tirones visibles.
-			var trabajo := "terrain_data" if etapa == "DATOS" else "terrain_paint"
+		if _render_manager != null and etapa == "DATOS":
+			# DATOS también adelanta una tanda de PINTADO para las celdas cuyos
+			# vecinos ya están listos. Repartir el objetivo entre ambas fases evita
+			# que el presupuesto mida sólo la mitad del trabajo real del frame.
+			var presupuesto_datos := int(_render_manager.call(
+				"presupuesto_unidades_terreno", "terrain_data", base, 8, 64, 1.5
+			))
+			var presupuesto_pintado := int(_render_manager.call(
+				"presupuesto_unidades_terreno", "terrain_paint", base, 8, 64, 1.5
+			))
+			return mini(presupuesto_datos, presupuesto_pintado)
+		if _render_manager != null and etapa == "PINTADO":
 			return int(_render_manager.call(
-				"presupuesto_unidades_terreno",
-				trabajo,
-				base,
-				8,
-				64,
-				3.0
+				"presupuesto_unidades_terreno", "terrain_paint", base, 8, 64, 3.0
 			))
 
 		if etapa == "DATOS":
