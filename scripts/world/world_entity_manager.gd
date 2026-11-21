@@ -13,6 +13,7 @@ var _active_chunks: Dictionary = {}
 var _active_creature_chunks: Dictionary = {}
 var _active_prop_chunks: Dictionary = {}
 var _persistent_by_key: Dictionary = {}
+var _persistent_keys_by_entity: Dictionary = {}
 var _global_entities: Array = []
 var _runtime_state_by_key: Dictionary = {}
 var _runtime_prop_state_by_key: Dictionary = {}
@@ -147,7 +148,7 @@ func registrar(
 	if not persistent_key.is_empty():
 		if not entity in _global_entities:
 			_global_entities.append(entity)
-		_persistent_by_key[persistent_key] = entity
+		_registrar_clave_persistente(entity, persistent_key)
 		return true
 
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
@@ -219,7 +220,7 @@ func registrar_global(entity: Node, persistent_key: String = "") -> bool:
 		_global_entities.append(entity)
 	_conectar_lifecycle(entity)
 	if not persistent_key.is_empty():
-		_persistent_by_key[persistent_key] = entity
+		_registrar_clave_persistente(entity, persistent_key)
 	return true
 
 
@@ -690,6 +691,7 @@ func limpiar_todo() -> void:
 		if entity_variant is Node and is_instance_valid(entity_variant):
 			(entity_variant as Node).queue_free()
 	_persistent_by_key.clear()
+	_persistent_keys_by_entity.clear()
 	_global_entities.clear()
 	_chunk_by_entity.clear()
 	_active_chunks.clear()
@@ -702,10 +704,30 @@ func limpiar_todo() -> void:
 	_data_by_chunk.clear()
 
 
+func _registrar_clave_persistente(entity: Node, persistent_key: String) -> void:
+	if persistent_key.is_empty():
+		return
+	var anterior_variant: Variant = _persistent_by_key.get(persistent_key, null)
+	if anterior_variant is Node and anterior_variant != entity:
+		var claves_anteriores_variant: Variant = _persistent_keys_by_entity.get(anterior_variant, [])
+		if claves_anteriores_variant is Array:
+			(claves_anteriores_variant as Array).erase(persistent_key)
+			if (claves_anteriores_variant as Array).is_empty():
+				_persistent_keys_by_entity.erase(anterior_variant)
+	_persistent_by_key[persistent_key] = entity
+	var claves_variant: Variant = _persistent_keys_by_entity.get(entity, null)
+	var claves: Array = claves_variant if claves_variant is Array else []
+	if persistent_key not in claves:
+		claves.append(persistent_key)
+	_persistent_keys_by_entity[entity] = claves
+
+
 func _remover_persistencia(entity: Node) -> void:
-	var keys := _persistent_by_key.keys()
-	for key_variant in keys:
-		var key := str(key_variant)
-		var value_variant: Variant = _persistent_by_key.get(key)
-		if value_variant == entity:
-			_persistent_by_key.erase(key)
+	var claves_variant: Variant = _persistent_keys_by_entity.get(entity, [])
+	if not claves_variant is Array:
+		return
+	for clave_variant in claves_variant as Array:
+		var clave := str(clave_variant)
+		if _persistent_by_key.get(clave, null) == entity:
+			_persistent_by_key.erase(clave)
+	_persistent_keys_by_entity.erase(entity)
