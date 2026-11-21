@@ -789,18 +789,17 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i) -> void:
 			origin_y + local_y
 		)
 
-		var bioma: Dictionary = (
-			_terrain.get_bioma_at(tile)
-		)
-
-		if bioma.is_empty():
+		# Leer bioma, ecosistema y zona desde una única consulta del chunk.
+		# obtener_contexto_data_at accede directamente a los arrays compactos
+		# cargados; el cache evita repetir esa consulta si un tile se reutiliza.
+		var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
+		var bioma_variant: Variant = contexto.get("bioma", {})
+		var ecosistema_variant: Variant = contexto.get("ecosistema", {})
+		if not bioma_variant is Dictionary or not ecosistema_variant is Dictionary:
 			continue
-
-		var ecosistema: Dictionary = (
-			_terrain.get_ecosistema_at(tile)
-		)
-
-		if ecosistema.is_empty():
+		var bioma := bioma_variant as Dictionary
+		var ecosistema := ecosistema_variant as Dictionary
+		if bioma.is_empty() or ecosistema.is_empty():
 			continue
 
 		var candidatos: Array = (
@@ -860,9 +859,7 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i) -> void:
 				)
 			)
 
-			var zona: int = (
-				_terrain.get_zona_at(tile)
-			)
+			var zona := int(contexto.get("zona", -1))
 
 			if not _spawn_rules.ubicacion_valida(bioma, habitat_clave, zona):
 				continue
