@@ -203,13 +203,17 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 	for dato_variant in datos:
 		if not dato_variant is Dictionary:
 			continue
-		var dato := (dato_variant as Dictionary).duplicate(true)
-		var criatura_id := str(dato.get("criatura_id", "")).strip_edges()
+		var dato_base := dato_variant as Dictionary
+		var criatura_id := str(dato_base.get("criatura_id", "")).strip_edges()
 		if criatura_id.is_empty():
 			continue
-		var instance_key := str(dato.get("runtime_instance_key", criatura_id)).strip_edges()
+		var instance_key := str(dato_base.get("runtime_instance_key", criatura_id)).strip_edges()
+		# La mayoría de las llamadas de transición FULL revisitan chunks que ya
+		# tienen sus criaturas instanciadas. Comprobar la clave antes de duplicar
+		# recursivamente el registro evita copias profundas que se descartan.
 		if not instance_key.is_empty() and claves_existentes.has(instance_key):
 			continue
+		var dato := dato_base.duplicate(true)
 		if _entity_manager.has_method("obtener_estado_criatura"):
 			var estado_runtime := _entity_manager.obtener_estado_criatura(chunk_coord, criatura_id, instance_key)
 			if not estado_runtime.is_empty():
