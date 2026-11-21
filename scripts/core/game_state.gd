@@ -125,15 +125,7 @@ func _process(delta: float) -> void:
 		world_state.elapsed_time += delta
 	_autosave_timer += delta
 
-	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
-		_espera_restauracion_vital_elapsed += delta
-		if _espera_restauracion_vital_elapsed >= RESTAURACION_VITAL_TIMEOUT_S:
-			push_warning(
-				"GameState: Supabase no terminó de configurar Eterium tras "
-				+ str(RESTAURACION_VITAL_TIMEOUT_S)
-				+ " s; restaurando vida y Eterium con las capacidades locales disponibles."
-			)
-			_restaurar_estado_vital_jugador(_player)
+	_actualizar_timeout_restauracion_vital(delta)
 
 	if _primer_guardado_pendiente:
 		_primer_guardado_elapsed += delta
@@ -1639,6 +1631,20 @@ func jugador_listo_para_restaurar() -> bool:
 func _al_estar_lista_configuracion_eterium() -> void:
 	_esperando_configuracion_eterium_jugador = false
 	call_deferred("_restaurar_estado_vital_pendiente")
+
+
+func _actualizar_timeout_restauracion_vital(delta: float) -> void:
+	if not _partida_aplicada_en_escena or _estado_vital_restaurado_en_escena:
+		return
+	_espera_restauracion_vital_elapsed += maxf(delta, 0.0)
+	if _espera_restauracion_vital_elapsed < RESTAURACION_VITAL_TIMEOUT_S:
+		return
+	push_warning(
+		"GameState: Supabase no terminó de configurar Eterium tras "
+		+ str(RESTAURACION_VITAL_TIMEOUT_S)
+		+ " s; restaurando vida y Eterium con las capacidades locales disponibles."
+	)
+	_restaurar_estado_vital_jugador(_player)
 
 
 func _restaurar_estado_vital_pendiente() -> void:
