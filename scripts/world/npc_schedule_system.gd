@@ -692,9 +692,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				var reintento_en := int(npc.get_meta("rutina_ruta_reintento_ms", 0))
 				if ruta_fallida and Time.get_ticks_msec() < reintento_en:
 					return
-				var destino_guardado: Variant = npc.get_meta("rutina_destino_global", Vector2.ZERO)
+				var destino_guardado: Variant = npc.get_meta("rutina_destino_global", null)
 				var destino_reintento_global: Vector2
-				if destino_guardado is Vector2 and destino_guardado != Vector2.ZERO:
+				if destino_guardado is Vector2:
+					# Vector2.ZERO también es un destino válido; la ausencia de
+					# metadato se distingue usando null, no una coordenada centinela.
 					destino_reintento_global = destino_guardado
 				else:
 					var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
