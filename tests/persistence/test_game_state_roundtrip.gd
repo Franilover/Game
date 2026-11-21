@@ -99,6 +99,14 @@ func _run() -> void:
 	}
 	if not repositorio.escribir_partida("roundtrip_contract", archivo_snapshot):
 		errores.append("No pudo persistir el snapshot completo en el contrato de roundtrip.")
+	# El selector debe poder leer el archivo para crear su índice sin clonar
+	# profundamente los miles de datos que contiene el mundo.
+	var metadata_leida := repositorio.leer_metadata_partida("roundtrip_contract")
+	if str(metadata_leida.get("id", "")) != "roundtrip_contract":
+		errores.append("La lectura ligera de metadatos no devolvió el ID del save.")
+	var metadata_estado: Variant = metadata_leida.get("estado", {})
+	if not metadata_estado is Dictionary or int((metadata_estado as Dictionary).get("player", {}).get("health", 0)) != 73:
+		errores.append("La lectura ligera de metadatos no conservó el snapshot para validación.")
 	var archivo_reabierto := repositorio.leer_partida("roundtrip_contract")
 	if archivo_reabierto.is_empty():
 		errores.append("No pudo reabrir el snapshot persistido desde disco.")
