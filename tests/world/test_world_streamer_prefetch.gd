@@ -2,8 +2,10 @@ extends Node
 
 const WorldStreamerScript = preload("res://scripts/world/world_streamer.gd")
 const WorldTerrainScript = preload("res://scripts/world/world_terrain.gd")
+const WorldTerrainVisualScript = preload("res://scripts/world/world_terrain_visual.gd")
 
 var _terrain: WorldTerrain
+var _visual: WorldTerrainVisual
 var _streamer: WorldStreamer
 var _player: CharacterBody2D
 
@@ -16,6 +18,25 @@ func _run_tests() -> void:
 	_terrain = WorldTerrainScript.new()
 	_terrain.chunk_size_tiles = 32
 	_terrain.tile_size = 32
+	_visual = WorldTerrainVisualScript.new()
+	add_child(_visual)
+	_terrain.visual = _visual
+
+	# Un unload no puede mezclarse con pintura mientras mantiene bloqueado
+	# el lote visual, pero sí debe permitir generación cuando ya está en FLUSH.
+	_visual._clear_task = {"coord": Vector2i.ZERO, "stage": 0}
+	_terrain._unload_task = {"coord": Vector2i.ZERO}
+	if _terrain.puede_iniciar_generacion_durante_descarga():
+		push_error("WorldStreamerPrefetch: permitió generación durante clear/batch.")
+		_terminar(1)
+		return
+	_visual._clear_task["stage"] = 1
+	if not _terrain.puede_iniciar_generacion_durante_descarga():
+		push_error("WorldStreamerPrefetch: bloqueó generación durante flush del unload.")
+		_terminar(1)
+		return
+	_visual._clear_task.clear()
+	_terrain._unload_task.clear()
 
 	_streamer = WorldStreamerScript.new()
 	add_child(_streamer)
@@ -122,4 +143,6 @@ func _terminar(codigo: int) -> void:
 		_player.free()
 	if is_instance_valid(_terrain):
 		_terrain.free()
+	if is_instance_valid(_visual):
+		_visual.free()
 	get_tree().quit(codigo)
