@@ -325,6 +325,49 @@ func _run() -> void:
 	if not bool(misiones_destino._recompensas_reclamadas.get("mision_recompensa_test", false)):
 		errores.append("La reclamación de recompensa no sobrevivió al roundtrip.")
 
+	# La ruta de introducción no puede reemplazar una historia existente
+	# aunque algún acceso todavía invoque preparar_historia(..., true).
+	var historia_probe := GameStateScript.new() as GameStateService
+	var historia_dir := "user://contracts/story_resume_guard"
+	historia_probe.story_save_repository.configurar(historia_dir)
+	historia_probe.story_save_repository.asegurar_directorio()
+	historia_probe.story_save_repository.eliminar_partida("reserva_carmesi")
+	var estado_historia := {
+		"player": PlayerStateScript.new().to_dictionary(),
+		"elapsed_time": 456.0,
+		"flags": {
+			"story_resume_marker": 73,
+			"tiempo_mundo": {
+				"dia_del_anio": 8,
+				"anio": 12,
+				"hora_del_dia": 14.5
+			}
+		},
+		"scene": "res://scenes/world/main.tscn"
+	}
+	var archivo_historia := {
+		"version": 1,
+		"id": "reserva_carmesi",
+		"nombre": "La Reserva Carmesí",
+		"estado": estado_historia
+	}
+	if not historia_probe.story_save_repository.escribir_partida("reserva_carmesi", archivo_historia):
+		errores.append("No pudo preparar el snapshot narrativo de reanudación.")
+	historia_probe.preparar_historia_reserva_carmesi(true)
+	if int(historia_probe.world_state.flags.get("story_resume_marker", 0)) != 73:
+		errores.append("El inicio narrativo reemplazó una partida existente por una nueva.")
+	if not historia_probe._historia_requiere_aplicar:
+		errores.append("La historia existente no quedó marcada para restaurarse en la escena.")
+	if historia_probe.guardar_progreso_historia():
+		errores.append("Se permitió guardar sobre un snapshot antes de aplicarlo al Player real.")
+	var historia_persistida := historia_probe.story_save_repository.leer_partida("reserva_carmesi")
+	var estado_historia_persistida: Dictionary = historia_persistida.get("estado", {}) as Dictionary
+	var flags_historia_persistida: Dictionary = estado_historia_persistida.get("flags", {}) as Dictionary
+	if int(flags_historia_persistida.get("story_resume_marker", 0)) != 73:
+		errores.append("El snapshot narrativo original fue sobrescrito antes de restaurarse.")
+	historia_probe.story_save_repository.eliminar_partida("reserva_carmesi")
+	historia_probe.free()
+
 	misiones.free()
 	misiones_destino.free()
 	origen.free()
