@@ -383,7 +383,7 @@ func configurar(
 func actualizar(
 	delta: float,
 	jugador: Node2D,
-	dialogo: DialogueSystem,
+	dialogo: Variant,
 	gestor_misiones: Node
 ) -> void:
 	_tiempo_sistema += maxf(delta, 0.0)
@@ -486,7 +486,7 @@ func intentar_observar_conversacion(npc_interactuado: Creature, jugador: Node2D,
 ## Permite que el jugador intervenga en una conversación ambiental sin sustituir
 ## la cadena entre NPC. El diálogo modal pausa el avance de las burbujas y,
 ## al cerrarse, la conversación continúa desde la intervención siguiente.
-func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2D, dialogo: DialogueSystem) -> bool:
+func intentar_intervenir_conversacion(npc_interactuado: Creature, jugador: Node2D, dialogo: Variant) -> bool:
 	if _conversacion_activa.is_empty():
 		return false
 	if not is_instance_valid(npc_interactuado) or not is_instance_valid(jugador) or not is_instance_valid(dialogo):
@@ -655,7 +655,7 @@ func _guardar_iniciativas(iniciativas: Dictionary) -> void:
 
 func _actualizar_iniciativas(
 	jugador: Node2D,
-	dialogo: DialogueSystem,
+	dialogo: Variant,
 	gestor_misiones: Node
 ) -> bool:
 	if not is_instance_valid(jugador) or not jugador.is_inside_tree() or not is_instance_valid(dialogo):
@@ -745,7 +745,7 @@ func _npc_puede_acercarse(npc: Creature) -> bool:
 func _intentar_iniciativa_o_acercamiento(
 	npc: Creature,
 	jugador: Node2D,
-	dialogo: DialogueSystem,
+	dialogo: Variant,
 	datos_dialogo: Dictionary,
 	tipo: String,
 	mision_id: String,
@@ -779,7 +779,7 @@ func _intentar_iniciativa_o_acercamiento(
 	return true
 
 
-func _actualizar_acercamiento(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+func _actualizar_acercamiento(delta: float, jugador: Node2D, dialogo: Variant) -> void:
 	var npc := _acercamiento_activo.get("npc") as Creature
 	if not is_instance_valid(npc):
 		_cancelar_acercamiento()
@@ -1525,7 +1525,7 @@ func _procesar_reacciones_evento_comunitario(tipo_evento: String) -> void:
 
 ## Los habitantes reaccionan si el jugador pasa rápidamente muy cerca.
 ## La reacción es breve, individual y tiene enfriamiento propio por NPC.
-func _actualizar_reacciones_al_jugador(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+func _actualizar_reacciones_al_jugador(delta: float, jugador: Node2D, dialogo: Variant) -> void:
 	if not is_instance_valid(jugador) or not jugador.is_inside_tree():
 		return
 	if is_instance_valid(dialogo) and dialogo.esta_abierto():
@@ -2450,7 +2450,7 @@ func finalizar_cinematica_historia(clave: String, completada: bool = true) -> vo
 	_finalizar_conversacion(completada)
 
 
-func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: Variant) -> void:
 	if bool(_conversacion_activa.get("_social_autonoma", false)):
 		_actualizar_conversacion_social_autonoma(delta, jugador, dialogo)
 		return
@@ -2527,7 +2527,7 @@ func _actualizar_conversacion(delta: float, jugador: Node2D, dialogo: DialogueSy
 		_mostrar_linea_actual()
 
 
-func _actualizar_conversacion_social_autonoma(delta: float, jugador: Node2D, dialogo: DialogueSystem) -> void:
+func _actualizar_conversacion_social_autonoma(delta: float, jugador: Node2D, dialogo: Variant) -> void:
 	if _conversacion_activa.is_empty():
 		return
 	var npc_a := _npc_por_nombre.get(str(_conversacion_activa.get("npc_a", ""))) as Creature
