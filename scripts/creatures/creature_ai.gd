@@ -98,6 +98,7 @@ var _brillo_horario_activo: bool = false
 var _objetivo_alimento: WorldItem = null
 var _ids_alimento_cache: Array[String] = []
 var _ids_alimento_cache_valido: bool = false
+var _tiempo_busqueda_alimento: float = 0.0
 var _alimentacion_realizada: bool = false
 var _hambre_actual: float = 0.0
 var _fatiga_actual: float = 0.0
@@ -500,7 +501,7 @@ func _procesar_estado(delta: float) -> void:
 		if respuesta_amenaza == "perseguir" and not _es_seguimiento_ecologico(objetivo):
 			interrumpe_comida = true
 		if not interrumpe_comida:
-			_procesar_alimentacion()
+			_procesar_alimentacion(delta)
 			return
 
 	match estado:
@@ -1603,12 +1604,28 @@ func _buscar_alimento() -> WorldItem:
 	return mejor
 
 
-func _procesar_alimentacion() -> void:
+func _debe_buscar_alimento(delta: float) -> bool:
+	_tiempo_busqueda_alimento = maxf(
+		_tiempo_busqueda_alimento - maxf(delta, 0.0),
+		0.0
+	)
+	if _tiempo_busqueda_alimento > 0.0:
+		return false
+	# Sin alimento disponible, espaciar el barrido de entidades a 4 Hz.
+	# Al iniciar la rutina o invalidarse el objetivo, la búsqueda sigue siendo inmediata.
+	_tiempo_busqueda_alimento = 0.25
+	return true
+
+
+func _procesar_alimentacion(delta: float) -> void:
 	if _alimentacion_realizada:
 		criatura.detener_movimiento()
 		criatura.tomar_control_movimiento()
 		return
-	if _objetivo_alimento == null or not _es_alimento_configurado(_objetivo_alimento):
+	if _objetivo_alimento != null and not _es_alimento_configurado(_objetivo_alimento):
+		_objetivo_alimento = null
+		_tiempo_busqueda_alimento = 0.0
+	if _objetivo_alimento == null and _debe_buscar_alimento(delta):
 		_objetivo_alimento = _buscar_alimento()
 	if _objetivo_alimento == null:
 		# Sin alimento a la vista, la criatura sigue recorriendo su entorno
