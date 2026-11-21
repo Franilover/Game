@@ -191,7 +191,7 @@ func procesar() -> void:
 				abs(chunk_coord.y - _player_chunk.y)
 			)
 			if distancia_chunk > _unload_radius:
-				_terrain.descargar_chunk(chunk_coord)
+				_encolar_descarga_chunk(chunk_coord, _player_chunk)
 			else:
 				var lod_generado := obtener_lod_chunk(chunk_coord)
 				if lod_generado == LOD_TERRAIN or lod_generado == LOD_FULL:
@@ -1021,15 +1021,19 @@ func _descargar_lejanos(
 	_pending_unload_chunks = pendientes_validos
 
 	for chunk_variant in _terrain.chunks_cargados():
-		if not chunk_variant is Vector2i:
-			continue
-		var chunk_coord := chunk_variant as Vector2i
-		if _distancia_chunk(chunk_coord, centro) <= _unload_radius:
-			continue
-		if _pending_unload_lookup.has(chunk_coord):
-			continue
-		_pending_unload_chunks.append(chunk_coord)
-		_pending_unload_lookup[chunk_coord] = true
+		if chunk_variant is Vector2i:
+			_encolar_descarga_chunk(chunk_variant as Vector2i, centro)
+
+
+func _encolar_descarga_chunk(chunk_coord: Vector2i, centro: Vector2i) -> void:
+	if not _terrain.chunk_cargado(chunk_coord):
+		return
+	if _distancia_chunk(chunk_coord, centro) <= _unload_radius:
+		return
+	if _pending_unload_lookup.has(chunk_coord):
+		return
+	_pending_unload_chunks.append(chunk_coord)
+	_pending_unload_lookup[chunk_coord] = true
 
 func _world_to_chunk(
 	position: Vector2
