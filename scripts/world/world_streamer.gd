@@ -142,7 +142,7 @@ func procesar() -> void:
 	# La limpieza sigue teniendo presupuesto propio, pero se ejecuta después
 	# de la generación. Así un chunk visible nunca espera a que termine de
 	# borrarse otro que ya quedó atrás.
-	var descarga_pendiente := _terrain.tiene_descarga_activa() or not _pending_unload_chunks.is_empty()
+	var descarga_pendiente := _terrain.tiene_descarga_activa() or _entity_unload_active or not _pending_unload_chunks.is_empty()
 
 	var nuevo_chunk: Vector2i = (
 		_world_to_chunk(
