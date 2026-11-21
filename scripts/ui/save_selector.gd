@@ -32,9 +32,15 @@ func _ready() -> void:
 	# que el Control raiz use el rectangulo de su padre antes de calcular margenes.
 	_normalizar_geometria_raiz()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	var aviso_carga := Label.new()
+	aviso_carga.name = "LoadingSaves"
+	aviso_carga.text = "Preparando mundos guardados..."
+	aviso_carga.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	list_container.add_child(aviso_carga)
 	var inicio_lista_ms := Time.get_ticks_msec()
+	await GameState.precalentar_indice_metadata_partidas()
 	actualizar_lista()
-	print("SaveSelector: lista de partidas preparada → ", list_container.get_child_count(), " entradas | ", Time.get_ticks_msec() - inicio_lista_ms, " ms")
+	print("SaveSelector: lista construida → ", list_container.get_child_count(), " entradas | ", Time.get_ticks_msec() - inicio_lista_ms, " ms")
 	_configurar_diseno_responsive()
 	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_diseno_responsive)
@@ -56,7 +62,10 @@ func actualizar_lista() -> void:
 	for child in list_container.get_children():
 		child.queue_free()
 
+	var inicio_datos_ms := Time.get_ticks_msec()
 	var partidas := GameState.obtener_partidas()
+	print("SaveSelector: obtención de metadatos → ", partidas.size(), " | ", Time.get_ticks_msec() - inicio_datos_ms, " ms")
+	var inicio_filas_ms := Time.get_ticks_msec()
 
 	if partidas.is_empty():
 		var vacio := Label.new()
@@ -67,6 +76,7 @@ func actualizar_lista() -> void:
 	else:
 		for partida in partidas:
 			_crear_fila_partida(partida)
+	print("SaveSelector: creación de filas → ", Time.get_ticks_msec() - inicio_filas_ms, " ms")
 
 
 func _crear_fila_partida(partida: Dictionary) -> void:
