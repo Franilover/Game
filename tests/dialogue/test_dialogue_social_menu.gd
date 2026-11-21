@@ -270,6 +270,10 @@ func _run() -> void:
 		errores.append("Una escena de historia terminó mostrando el menú social casual.")
 	if not dialogo._debe_usar_menu_social({"clave": "principal"}, false, false):
 		errores.append("Un diálogo cotidiano perdió el menú social compartido.")
+	if not dialogo._debe_usar_menu_social({"clave": "iniciativa_npc_sin_respuestas", "_iniciativa_npc": true}, false, false):
+		errores.append("Una iniciativa cotidiana sin opciones propias no recibió el menú social de respaldo.")
+	if dialogo._debe_usar_menu_social({"tipo_contenido": "lineal", "_sin_menu_social": true}, false, false):
+		errores.append("Un diálogo marcado explícitamente sin menú social mostró opciones casuales.")
 
 	npc.nombre_individual = "Ivo"
 	var recuerdo_ivo := dialogo._crear_dialogo_recuerdo_social({
