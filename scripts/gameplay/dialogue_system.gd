@@ -1529,14 +1529,15 @@ func _actualizar_boton_accion() -> void:
 	if _respuestas_container != null:
 		_respuestas_container.visible = mostrar_respuestas
 	if mostrar_respuestas:
-		if _respuestas_container.get_child_count() == 0:
-			_crear_botones_respuesta()
-		if _respuestas_container.get_child_count() > 0:
-			action_button.visible = false
-			if cancel_button != null:
-				cancel_button.visible = false
-			return
-		# Un conjunto vacío o inválido de controles no puede bloquear el avance.
+		if _respuestas_container != null and is_instance_valid(_respuestas_container):
+			if _respuestas_container.get_child_count() == 0:
+				_crear_botones_respuesta()
+			if _respuestas_container.get_child_count() > 0:
+				action_button.visible = false
+				if cancel_button != null:
+					cancel_button.visible = false
+				return
+		# Un conjunto vacío o sin contenedor no puede bloquear el avance.
 		_respuestas.clear()
 	if _respuestas_container != null:
 		_respuestas_container.visible = false
