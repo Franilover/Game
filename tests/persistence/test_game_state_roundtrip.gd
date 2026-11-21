@@ -483,6 +483,30 @@ func _run() -> void:
 		aventura_runtime.save_repository.eliminar_partida(id_aventura)
 	aventura_runtime.queue_free()
 
+	# El runtime también puede estar anidado dentro de una escena contenedora.
+	# En ese caso el guardado no debe confundirse con el menú principal.
+	var wrapper_runtime := Node2D.new()
+	wrapper_runtime.name = "RuntimeWrapper"
+	add_child(wrapper_runtime)
+	var main_anidado := Node2D.new()
+	main_anidado.name = "Main"
+	wrapper_runtime.add_child(main_anidado)
+	var world_anidado := Node2D.new()
+	world_anidado.name = "World"
+	main_anidado.add_child(world_anidado)
+	var zone_anidado := ZoneManagerScript.new() as Node2D
+	zone_anidado.name = "ZoneManager"
+	world_anidado.add_child(zone_anidado)
+	var entities_anidado := Node2D.new()
+	entities_anidado.name = "Entities"
+	main_anidado.add_child(entities_anidado)
+	var player_anidado := PlayerScene.instantiate() as Player
+	entities_anidado.add_child(player_anidado)
+	guardado_runtime._player = player_anidado
+	if not guardado_runtime._hay_runtime_partida_activo():
+		errores.append("No reconoció el runtime jugable cuando Main está anidado en una escena contenedora.")
+	wrapper_runtime.queue_free()
+
 	guardado_runtime.queue_free()
 	entidades_runtime.queue_free()
 	mundo_runtime.queue_free()
