@@ -35,6 +35,27 @@ func _run() -> void:
 	ai.actividad_horaria = "explorar"
 	ai.perfil = AIScript.Perfil.GENERICO
 
+	# La fábrica publica una instantánea ecológica compartida e inmutable.
+	# La IA debe conservar la referencia en vez de duplicar todos sus registros.
+	var relaciones_compartidas: Array = [{"tipo_relacion": "competencia"}]
+	ai.configurar_dependencias(null, null, null, null, null, relaciones_compartidas)
+	relaciones_compartidas.append({"tipo_relacion": "depredacion"})
+	if ai.relaciones_ecologicas.size() != 2:
+		_fail("La configuración de IA volvió a copiar profundamente las relaciones ecológicas.")
+		return
+	ai.configurar_relaciones_ecologicas(relaciones_compartidas)
+	relaciones_compartidas.append({"tipo_relacion": "cooperacion"})
+	if ai.relaciones_ecologicas.size() != 3:
+		_fail("La actualización ecológica no compartió la nueva instantánea.")
+		return
+	ai._al_recibir_relaciones_ecologicas(relaciones_compartidas)
+	relaciones_compartidas.append({"tipo_relacion": "neutralidad"})
+	if ai.relaciones_ecologicas.size() != 4:
+		_fail("La recepción ecológica volvió a duplicar los registros.")
+		return
+	ai.relaciones_ecologicas = []
+	ai.jugador = player
+
 	# La política de estados clasifica intenciones sin ejecutar conductas.
 	if StateDecisionScript.resolver("atacar") != StateDecisionScript.Decision.ATACAR:
 		_fail("La política no reconoció la intención de atacar.")
