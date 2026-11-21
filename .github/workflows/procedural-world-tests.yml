@@ -365,6 +365,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run continuous directional chunk prefetch regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . --script res://tests/world/test_world_streamer_prefetch.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldStreamerPrefetch: FAIL:' <<<"$output"; then
+            echo "World streamer prefetch regression reported errors."
+            exit 1
+          fi
+          if ! grep -q 'WorldStreamerPrefetch: PASS' <<<"$output"; then
+            echo "World streamer prefetch regression did not report PASS."
+            exit 1
+          fi
+
       - name: Run render budget backpressure regression
         shell: bash
         run: |
