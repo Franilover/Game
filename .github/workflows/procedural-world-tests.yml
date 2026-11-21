@@ -188,6 +188,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run world map NPC portrait regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_world_map_npc_portraits.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldMapNPCPortraits: FAIL:' <<<"$output"; then
+            echo "World map NPC portrait regression reported errors."
+            exit 1
+          fi
+          if ! grep -q 'WorldMapNPCPortraits: PASS' <<<"$output"; then
+            echo "World map NPC portrait regression did not report PASS."
+            exit 1
+          fi
+
       - name: Run NPC schedule context integration test
         shell: bash
         run: |
