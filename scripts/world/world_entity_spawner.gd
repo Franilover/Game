@@ -584,6 +584,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 		return
 
 	var datos: Array = []
+	var candidatos_props_por_contexto: Dictionary = {}
 	var rng := RandomNumberGenerator.new()
 	rng.seed = abs(_terrain.map_seed + chunk_coord.x * 92837111 + chunk_coord.y * 689287499) + 1
 
@@ -612,34 +613,46 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 			var bioma_id := str(bioma.get("id", ""))
 			var ecosistema_id := str(ecosistema.get("id", ""))
 			var habitat_ids: Array[String] = []
+			var habitat_id_set: Dictionary = {}
 			for habitat_variant in habitats:
 				if habitat_variant is Dictionary:
 					var habitat_id := str((habitat_variant as Dictionary).get("id", ""))
-					if not habitat_id.is_empty() and habitat_id not in habitat_ids:
+					if not habitat_id.is_empty() and not habitat_id_set.has(habitat_id):
 						habitat_ids.append(habitat_id)
+						habitat_id_set[habitat_id] = true
 			if bioma_id.is_empty() or ecosistema_id.is_empty():
 				continue
 
-			var candidatos: Array[Dictionary] = []
-			var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
-			for prop_variant in candidatos_bioma:
-				if not prop_variant is Dictionary:
-					continue
-				var prop := prop_variant as Dictionary
-				var nombre := str(prop.get("nombre", "")).strip_edges()
-				if nombre.is_empty():
-					continue
-				var coincide := (
-					str(prop.get("ecosistema_id", "")) == ecosistema_id
-					and (habitat_ids.is_empty() or str(prop.get("habitat_id", "")) in habitat_ids)
-				)
-				if coincide:
-					candidatos.append(prop)
-
-			if candidatos.is_empty():
+			# Los intentos suelen reutilizar combinaciones ecológicas dentro del
+			# mismo chunk. Resolver candidatos una vez por contexto evita volver
+			# a recorrer todo el catálogo de props en cada intento.
+			var clave_contexto := bioma_id + "\u001f" + ecosistema_id
+			for habitat_id in habitat_ids:
+				clave_contexto += "\u001f" + habitat_id
+			var candidatos: Array[Dictionary]
+			if candidatos_props_por_contexto.has(clave_contexto):
+				candidatos = candidatos_props_por_contexto[clave_contexto]
+			else:
+				candidatos = []
+				var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
 				for prop_variant in candidatos_bioma:
-					if prop_variant is Dictionary and not str((prop_variant as Dictionary).get("nombre", "")).strip_edges().is_empty():
-						candidatos.append(prop_variant as Dictionary)
+					if not prop_variant is Dictionary:
+						continue
+					var prop := prop_variant as Dictionary
+					if str(prop.get("nombre", "")).strip_edges().is_empty():
+						continue
+					var coincide := (
+						str(prop.get("ecosistema_id", "")) == ecosistema_id
+						and (habitat_ids.is_empty() or habitat_id_set.has(str(prop.get("habitat_id", ""))))
+					)
+					if coincide:
+						candidatos.append(prop)
+
+				if candidatos.is_empty():
+					for prop_variant in candidatos_bioma:
+						if prop_variant is Dictionary and not str((prop_variant as Dictionary).get("nombre", "")).strip_edges().is_empty():
+							candidatos.append(prop_variant as Dictionary)
+				candidatos_props_por_contexto[clave_contexto] = candidatos
 			if candidatos.is_empty():
 				continue
 			var elegido_base := _spawn_rules.elegir_prop(candidatos, rng)
