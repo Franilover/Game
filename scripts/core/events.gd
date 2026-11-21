@@ -24,6 +24,7 @@ signal dialog_closed
 
 @warning_ignore("unused_signal")
 signal notification_pushed(message: String)
+signal community_event_started(message: String)
 
 signal interaction_executed(
 	objeto: Node,
