@@ -63,6 +63,52 @@ func obtener_peso_criatura(candidato: Dictionary) -> float:
 	return 1.0
 
 
+func elegir_criatura_excluyendo(
+	candidatos: Array,
+	excluidas: Dictionary,
+	rng: RandomNumberGenerator
+) -> Dictionary:
+	# Evita construir dos arrays temporales por intento de aparición.
+	# Mantiene el orden y el mismo sorteo ponderado que elegir_criatura().
+	var peso_total := 0.0
+	var ultimo_valido: Dictionary = {}
+	for candidato_variant in candidatos:
+		if not candidato_variant is Dictionary:
+			continue
+		var candidato := candidato_variant as Dictionary
+		var criatura_variant: Variant = candidato.get("criatura", {})
+		if not criatura_variant is Dictionary:
+			continue
+		var criatura := criatura_variant as Dictionary
+		var criatura_id := str(criatura.get("id", "")).strip_edges()
+		if criatura_id.is_empty() or excluidas.has(criatura_id):
+			continue
+		ultimo_valido = candidato
+		peso_total += maxf(obtener_peso_criatura(candidato), 0.0)
+
+	if peso_total <= 0.0:
+		return {}
+
+	var objetivo := rng.randf_range(0.0, peso_total)
+	var acumulado := 0.0
+	for candidato_variant in candidatos:
+		if not candidato_variant is Dictionary:
+			continue
+		var candidato := candidato_variant as Dictionary
+		var criatura_variant: Variant = candidato.get("criatura", {})
+		if not criatura_variant is Dictionary:
+			continue
+		var criatura := criatura_variant as Dictionary
+		var criatura_id := str(criatura.get("id", "")).strip_edges()
+		if criatura_id.is_empty() or excluidas.has(criatura_id):
+			continue
+		acumulado += maxf(obtener_peso_criatura(candidato), 0.0)
+		if objetivo <= acumulado:
+			return candidato
+
+	return ultimo_valido
+
+
 func obtener_candidatos(ecosistema: Dictionary) -> Array:
 	var ecosistema_id := str(ecosistema.get("id", "")).strip_edges()
 	if not ecosistema_id.is_empty() and _candidatos_por_ecosistema.has(ecosistema_id):
