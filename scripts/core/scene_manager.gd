@@ -27,7 +27,9 @@ func go_to(path: String) -> void:
 	var tiempo_instancia_ms := Time.get_ticks_msec()
 	_current = packed.instantiate()
 	print("SceneManager: instancia creada → ", path, " | ", Time.get_ticks_msec() - tiempo_instancia_ms, " ms")
+	var inicio_ready_ms := Time.get_ticks_msec()
 	get_tree().root.add_child(_current)
 	get_tree().current_scene = _current
+	print("SceneManager: _ready y arranque de escena completados → ", path, " | ", Time.get_ticks_msec() - inicio_ready_ms, " ms")
 
 	Events.scene_changed.emit(path)
