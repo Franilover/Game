@@ -48,6 +48,17 @@ func _run() -> void:
 		_fail("La caché de alimentos no se invalidó al cambiar la configuración.")
 		return
 
+	var alimento := WorldItemScript.new() as WorldItem
+	alimento.datos_objeto = {"item_id": "meat", "cantidad": 1}
+	if not ai._es_alimento_configurado(alimento):
+		_fail("La lectura directa no reconoció un alimento válido.")
+		return
+	alimento.datos_objeto["cantidad"] = 0
+	if ai._es_alimento_configurado(alimento):
+		_fail("La lectura directa aceptó un objeto sin cantidad disponible.")
+		return
+	alimento.free()
+
 	# El índice ecológico debe priorizar la regla del ecosistema y conservar
 	# la regla general como fallback, sin cambiar el orden de desempate.
 	var depredador := CreatureScript.new() as Creature
