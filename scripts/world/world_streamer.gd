@@ -777,10 +777,10 @@ func _iniciar_siguiente_chunk() -> bool:
 	if _queue.is_empty():
 		return false
 
-	# La fase de borrado mantiene un lote visual bloqueado y no admite
-	# pintura concurrente. Una vez que entra en FLUSH, el lote está liberado:
-	# podemos empezar DATA del siguiente chunk y usar esa fase para drenar el
-	# dirty queue del unload sin mezclar dos escrituras de TileMap en el frame.
+	# La fase CLEAR mantiene un lote visual bloqueado y no admite pintura
+	# concurrente. En FLUSH el lote está liberado y puede empezar DATA del
+	# siguiente chunk; como DATA también puede pintar celdas cercanas, el
+	# servicio del unload sólo se intercala antes de esa pintura parcial.
 	if not _terrain.puede_iniciar_generacion_durante_descarga():
 		return false
 
