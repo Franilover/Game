@@ -31,6 +31,8 @@ var _render_manager: Node = null
 var _props_por_bioma: Dictionary = {}
 var _asset_path_por_prop: Dictionary = {}
 var _data_context_por_chunk: Dictionary = {}
+var _garumis_catalogo_cache: Array[Dictionary] = []
+var _garumis_catalogo_cache_valido: bool = false
 const MAX_DATA_CONTEXT_CHUNKS: int = 64
 
 # Diagnóstico universal del pipeline de entidades. No decide el spawn;
@@ -67,6 +69,8 @@ func configurar(
 	_props_por_bioma.clear()
 	_asset_path_por_prop.clear()
 	_data_context_por_chunk.clear()
+	_garumis_catalogo_cache.clear()
+	_garumis_catalogo_cache_valido = false
 	if _world_data != null:
 		if not _world_data.mundo_listo.is_connected(_al_catalogo_props_actualizado):
 			_world_data.mundo_listo.connect(_al_catalogo_props_actualizado)
@@ -85,7 +89,18 @@ func configurar(
 
 
 func _al_catalogo_props_actualizado() -> void:
+	_garumis_catalogo_cache.clear()
+	_garumis_catalogo_cache_valido = false
 	_actualizar_catalogo_props()
+
+
+func _obtener_catalogo_garumis_cacheado() -> Array[Dictionary]:
+	if not _garumis_catalogo_cache_valido:
+		_garumis_catalogo_cache.clear()
+		if _world_data != null and is_instance_valid(_world_data):
+			_garumis_catalogo_cache = _world_data.obtener_garumis_game()
+		_garumis_catalogo_cache_valido = true
+	return _garumis_catalogo_cache
 
 
 func _actualizar_catalogo_props() -> void:
@@ -459,7 +474,7 @@ func _preparar_datos_garumis_en_chunk(
 	if max_garumis_per_chunk <= 0:
 		return resultado
 
-	var catalogo := _world_data.obtener_garumis_game()
+	var catalogo := _obtener_catalogo_garumis_cacheado()
 	if catalogo.is_empty():
 		return await _preparar_datos_garumi_debug(chunk_coord, rng)
 
@@ -1099,7 +1114,7 @@ func _spawn_garumis_en_chunk(
 	if max_garumis_per_chunk <= 0:
 		return
 
-	var catalogo := _world_data.obtener_garumis_game()
+	var catalogo := _obtener_catalogo_garumis_cacheado()
 	if catalogo.is_empty():
 		var datos_debug: Array[Dictionary] = await _preparar_datos_garumi_debug(chunk_coord, rng)
 		if _creature_spawn_tasks.get(chunk_coord) != token:
