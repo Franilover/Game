@@ -56,6 +56,31 @@ func _run() -> void:
 		_fail("Los campos del catálogo no sobrevivieron a la caché.")
 		return
 
+	var creation_scene := load("res://scenes/ui/character_creation.tscn") as PackedScene
+	if creation_scene == null:
+		_fail("No se pudo cargar CharacterCreation.")
+		return
+	var creation := creation_scene.instantiate() as Control
+	if creation == null:
+		_fail("No se pudo instanciar CharacterCreation.")
+		return
+	add_child(creation)
+	creation.call("open", "nueva_partida")
+	await get_tree().process_frame
+	var species_control := creation.get_node_or_null("Panel/Margin/Column/Content/Fields/Species") as OptionButton
+	if species_control == null or species_control.item_count != 1:
+		_fail("CharacterCreation no recibió las especies recuperadas de la caché.")
+		return
+	if species_control.selected < 0:
+		_fail("CharacterCreation no seleccionó la especie Humano desde la caché.")
+		return
+	var selected_species: Dictionary = species_control.get_item_metadata(species_control.selected) as Dictionary
+	if str(selected_species.get("clave", "")) != "humano":
+		_fail("CharacterCreation seleccionó una especie distinta a la del catálogo local.")
+		return
+	creation.queue_free()
+	await get_tree().process_frame
+
 	var corrupto := FileAccess.open(ruta, FileAccess.WRITE)
 	if corrupto == null:
 		_fail("No se pudo preparar el caso de caché corrupta.")
@@ -74,7 +99,7 @@ func _run() -> void:
 	client.set("_especies_jugables_remotas_cargadas", remotas_original)
 	if FileAccess.file_exists(ruta):
 		DirAccess.remove_absolute(ruta_absoluta)
-	print("PlayableSpeciesCache: PASS roundtrip=true invalid_entries_filtered=true corrupt_cache_safe=true")
+	print("PlayableSpeciesCache: PASS roundtrip=true ui_consumes_cache=true invalid_entries_filtered=true corrupt_cache_safe=true")
 	get_tree().quit(0)
 
 
