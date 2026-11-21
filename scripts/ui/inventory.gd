@@ -116,19 +116,19 @@ func _inicializar_navegacion_tabs() -> void:
 		tabs.current_tab = 1
 	)
 	boton_mapa.pressed.connect(func() -> void:
-		tabs.current_tab = 3
+		tabs.current_tab = 2
 	)
 	boton_relaciones.pressed.connect(func() -> void:
-		tabs.current_tab = 4
+		tabs.current_tab = 3
 	)
 	boton_admin.pressed.connect(func() -> void:
-		tabs.current_tab = 5
+		tabs.current_tab = 4
 		var admin_tab := $Window/Margin/Column/Tabs/Admin as AdminInventory
 		if admin_tab != null:
 			admin_tab.abrir(_player)
 	)
 	boton_notas.pressed.connect(func() -> void:
-		tabs.current_tab = 6
+		tabs.current_tab = 5
 	)
 	boton_cerrar.pressed.connect(cerrar)
 
