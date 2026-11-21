@@ -270,6 +270,31 @@ func _run() -> void:
 		errores.append("Una escena de historia terminó mostrando el menú social casual.")
 	if not dialogo._debe_usar_menu_social({"clave": "principal"}, false, false):
 		errores.append("Un diálogo cotidiano perdió el menú social compartido.")
+	# Una opción incompleta no puede dejar una conversación esperando una
+	# respuesta que no tiene texto para mostrar.
+	if dialogo._respuesta_es_utilizable({"texto": "Opción sin respuesta", "jugador": "¿Qué tal?"}):
+		errores.append("Una respuesta sin reacción del NPC se considera seleccionable.")
+	if not dialogo._respuesta_es_utilizable({"texto": "Preguntar", "tipo_menu": "preguntar"}):
+		errores.append("Una entrada válida del menú social fue descartada.")
+	# Si falta el selector secundario, Preguntar/Hablar debe recuperar el menú
+	# principal en lugar de dejar el diálogo sin controles.
+	dialogo._abierto = true
+	dialogo._usa_menu_social = true
+	dialogo._fuente = npc
+	dialogo._respuestas.clear()
+	dialogo._selector_conversacion = null
+	dialogo._selector_conversacion_grid = null
+	dialogo._abrir_submenu_social("preguntar")
+	if dialogo._respuestas.size() != 4:
+		errores.append("La ausencia del selector secundario dejó el diálogo sin menú social de respaldo.")
+	# Una respuesta mal formada se descarta y no bloquea el resto del menú.
+	dialogo._respuestas = [{"texto": "Respuesta incompleta", "jugador": "¿Qué tal?"}]
+	dialogo._seleccionar_respuesta(0)
+	if dialogo._respuestas.size() != 4:
+		errores.append("Una respuesta incompleta dejó al jugador sin opciones ni salida.")
+	dialogo._abierto = false
+	dialogo._usa_menu_social = false
+	dialogo._respuestas.clear()
 	if not dialogo._debe_usar_menu_social({"clave": "iniciativa_npc_sin_respuestas", "_iniciativa_npc": true}, false, false):
 		errores.append("Una iniciativa cotidiana sin opciones propias no recibió el menú social de respaldo.")
 	if dialogo._debe_usar_menu_social({"tipo_contenido": "lineal", "_sin_menu_social": true}, false, false):
