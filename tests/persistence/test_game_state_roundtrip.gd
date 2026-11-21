@@ -412,15 +412,23 @@ func _run() -> void:
 		await get_tree().process_frame
 		if not guardado_runtime.guardar_progreso_actual("prueba de cierre"):
 			errores.append("El guardado narrativo integrado no confirmó la escritura al solicitar cierre.")
+	# La misma partida narrativa debe seguir guardándose tras entrar a otra zona.
+	zone_runtime.set("tipo_actual", "hogar")
+	jugador_runtime.global_position = Vector2(412.0, 735.5)
+	guardado_runtime.world_state.flags["integration_progress_marker"] = 92
+	if not guardado_runtime.guardar_progreso_actual("prueba de salida de zona narrativa"):
+		errores.append("El guardado narrativo dejó de funcionar al cambiar a otra zona del runtime.")
 	var archivo_integracion := guardado_runtime.story_save_repository.leer_partida("reserva_carmesi")
 	var estado_integracion: Dictionary = archivo_integracion.get("estado", {}) as Dictionary
 	var flags_integracion: Dictionary = estado_integracion.get("flags", {}) as Dictionary
-	if int(flags_integracion.get("integration_progress_marker", 0)) != 91:
-		errores.append("El guardado narrativo integrado no persistió el progreso de la sesión.")
+	if int(flags_integracion.get("integration_progress_marker", 0)) != 92:
+		errores.append("El guardado narrativo integrado no persistió el progreso después del cambio de zona.")
 	var jugador_guardado: Dictionary = estado_integracion.get("player", {}) as Dictionary
+	if str(flags_integracion.get("zona_actual_tipo", "")) != "hogar":
+		errores.append("El guardado narrativo no registró el tipo de la nueva zona activa.")
 	var posicion_guardada: Dictionary = jugador_guardado.get("position", {}) as Dictionary
-	if not is_equal_approx(float(posicion_guardada.get("x", 0.0)), 321.5) or not is_equal_approx(float(posicion_guardada.get("y", 0.0)), 654.25):
-		errores.append("El guardado narrativo integrado no conservó la posición del jugador.")
+	if not is_equal_approx(float(posicion_guardada.get("x", 0.0)), 412.0) or not is_equal_approx(float(posicion_guardada.get("y", 0.0)), 735.5):
+		errores.append("El guardado narrativo integrado no conservó la posición tras el cambio de zona.")
 	var reapertura_runtime := GameStateScript.new() as GameStateService
 	reapertura_runtime.name = "GameStateSaveReloadIntegration"
 	add_child(reapertura_runtime)
@@ -428,7 +436,7 @@ func _run() -> void:
 	reapertura_runtime.story_save_repository.configurar(directorio_integracion)
 	if not reapertura_runtime.preparar_historia_reserva_carmesi(false):
 		errores.append("No pudo preparar la reapertura del guardado narrativo integrado.")
-	if int(reapertura_runtime.world_state.flags.get("integration_progress_marker", 0)) != 91:
+	if int(reapertura_runtime.world_state.flags.get("integration_progress_marker", 0)) != 92:
 		errores.append("El progreso narrativo integrado no sobrevivió a cerrar y reabrir el estado.")
 	reapertura_runtime.story_save_repository.eliminar_partida("reserva_carmesi")
 	reapertura_runtime.queue_free()
