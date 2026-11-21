@@ -106,6 +106,7 @@ var _cargando_mundo: bool = false
 func _ready() -> void:
 	# Diagnóstico de arranque: se registra antes de inicializar servicios o layouts.
 	call_deferred("_debug_ventana_inicio")
+	call_deferred("_precalentar_partidas_menu")
 	# El servidor dedicado reutiliza el runtime del mundo, no el menú ni una partida local.
 	if OS.get_cmdline_user_args().has("--garlia-server"):
 		call_deferred("_entrar_runtime_servidor")
@@ -433,6 +434,12 @@ func _cerrar_configuracion() -> void:
 	if _settings_panel != null and is_instance_valid(_settings_panel):
 		_settings_panel.queue_free()
 	_settings_panel = null
+
+
+func _precalentar_partidas_menu() -> void:
+	# Construye el índice de saves durante la pantalla principal, repartiendo
+	# la lectura entre frames para no congelar el menú.
+	GameState.precalentar_indice_metadata_partidas()
 
 
 func _actualizar_estado_mundo() -> void:
