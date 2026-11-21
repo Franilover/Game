@@ -195,6 +195,7 @@ func obtener_diagnostico() -> Dictionary:
 		"display_candidates": 0,
 		"rule_evaluations": 0,
 		"redundant_tiles": 0,
+		"cached_rule_skips": 0,
 		"set_cells": 0,
 		"flush_calls": 0,
 		"flush_ms_total": 0.0,
@@ -207,7 +208,7 @@ func obtener_diagnostico() -> Dictionary:
 	for child in get_children():
 		if child is DisplayLayer:
 			var diag: Dictionary = child.obtener_diagnostico()
-			for key in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells", "flush_calls", "sample_count"]:
+			for key in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "cached_rule_skips", "set_cells", "flush_calls", "sample_count"]:
 				out[key] = int(out[key]) + int(diag.get(key, 0))
 			for key in ["flush_ms_total", "sample_path_ms", "sample_rule_ms", "sample_write_ms"]:
 				out[key] = float(out[key]) + float(diag.get(key, 0.0))
