@@ -979,21 +979,13 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i, token: RefCounted) -> void
 				candidatos_contexto.append(candidato)
 			candidatos_validos_por_contexto[clave_contexto] = candidatos_contexto
 
-		var validos: Array = []
-		for candidato in candidatos_contexto:
-			var criatura_variant: Variant = (candidato as Dictionary).get("criatura", {})
-			if not criatura_variant is Dictionary:
-				continue
-			var criatura_data := criatura_variant as Dictionary
-			var criatura_id := str(criatura_data.get("id", "")).strip_edges()
-			if not criatura_id.is_empty() and not especies_creadas.has(criatura_id):
-				validos.append(candidato)
-		if validos.is_empty():
-			continue
-
-		var elegido: Dictionary = (
-			_spawn_rules.elegir_criatura(validos, rng)
+		var elegido: Dictionary = _spawn_rules.elegir_criatura_excluyendo(
+			candidatos_contexto,
+			especies_creadas,
+			rng
 		)
+		if elegido.is_empty():
+			continue
 
 		if elegido.is_empty():
 			continue
