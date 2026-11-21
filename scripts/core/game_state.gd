@@ -150,6 +150,14 @@ func _notification(what: int) -> void:
 
 
 func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
+	var escena_log := get_tree().current_scene
+	print(
+		"GameState: solicitud de guardado → ", motivo,
+		" | escena=", escena_log.scene_file_path if is_instance_valid(escena_log) else "<sin escena>",
+		" | runtime=", _hay_runtime_partida_activo(),
+		" | save_id=", active_save_id,
+		" | jugador_valido=", is_instance_valid(_player)
+	)
 	# El menú principal no es una sesión jugable. La sesión ya se confirma
 	# antes de abandonar Main; no intentes capturar un Player que ya fue liberado.
 	if not _hay_runtime_partida_activo():
@@ -188,7 +196,9 @@ func _hay_runtime_partida_activo() -> bool:
 
 func _rechazar_guardado(motivo: String) -> bool:
 	if _ultimo_motivo_fallo_guardado != motivo:
-		push_warning("GameState: guardado aplazado: " + motivo)
+		push_warning("GameState: guardado rechazado: " + motivo)
+	else:
+		print("GameState: guardado sigue rechazado → ", motivo)
 	_ultimo_motivo_fallo_guardado = motivo
 	return false
 
