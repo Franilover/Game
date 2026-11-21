@@ -152,6 +152,7 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
 	if sample:
 		_diag_sample_rule_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
+		_diag_sample_count += 1
 		sample_start_usec = Time.get_ticks_usec()
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
@@ -170,7 +171,6 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	set_cell(cell, sid, tile)
 	if sample:
 		_diag_sample_write_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
-		_diag_sample_count += 1
 
 
 func follow_path(cell: Vector2i, path: Array) -> Vector2i:
