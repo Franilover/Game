@@ -115,8 +115,16 @@ func _run() -> void:
 
 	# La fábrica publica una instantánea ecológica compartida e inmutable.
 	# La IA debe conservar la referencia en vez de duplicar todos sus registros.
-	var relaciones_compartidas: Array = [{"tipo_relacion": "competencia"}]
+	var relaciones_compartidas: Array = [{
+		"criatura_origen_id": "species-predator",
+		"criatura_destino_id": "species-prey",
+		"ecosistema_id": "",
+		"tipo_relacion": "competencia"
+	}]
 	ai.configurar_dependencias(null, null, null, null, null, relaciones_compartidas)
+	if ai._obtener_relacion_ecologica_ids(depredador, presa) != "competencia":
+		_fail("La configuración inicial no construyó el índice ecológico.")
+		return
 	relaciones_compartidas.append({"tipo_relacion": "depredacion"})
 	if ai.relaciones_ecologicas.size() != 2:
 		_fail("La configuración de IA volvió a copiar profundamente las relaciones ecológicas.")
