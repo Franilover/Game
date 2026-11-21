@@ -1,6 +1,7 @@
 extends Node
 
 const INVENTORY_SCENE: PackedScene = preload("res://scenes/ui/inventory.tscn")
+const GARUMI_HUB_SCENE: PackedScene = preload("res://scenes/ui/garumi_hub.tscn")
 
 var _failed: bool = false
 
@@ -11,17 +12,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	_failed = false
-	const ACTION := "garumi_hub"
-	_check(InputMap.has_action(ACTION), "Debe existir el acceso rápido al panel de Garumis.")
-	var tecla_g_encontrada := false
-	if InputMap.has_action(ACTION):
-		for evento in InputMap.action_get_events(ACTION):
-			if evento is InputEventKey:
-				var tecla := evento as InputEventKey
-				if tecla.physical_keycode == KEY_G or tecla.keycode == KEY_G:
-					tecla_g_encontrada = true
-					break
-	_check(tecla_g_encontrada, "El acceso rápido debe estar vinculado físicamente a G.")
+	_check(not InputMap.has_action("garumi_hub"), "El acceso rápido G debe retirarse: los Garumis se consultan en el edificio de exploración.")
 
 	var inventario := INVENTORY_SCENE.instantiate() as Control
 	_check(inventario != null, "Debe poder instanciarse la UI de inventario.")
@@ -30,62 +21,23 @@ func _run() -> void:
 		return
 	add_child(inventario)
 	await get_tree().process_frame
-
 	var tabs := inventario.get_node("Window/Margin/Column/Tabs") as TabContainer
-	var enciclopedia := inventario.get_node_or_null("Window/Margin/Column/Tabs/Enciclopedia") as Control
-	var garumis_tab := inventario.get_node("Window/Margin/Column/Tabs/Garumis") as Control
-	var boton_enciclopedia := inventario.get_node_or_null("Window/Margin/Column/TabButtons/Enciclopedia") as Button
-	var boton_garumis := inventario.get_node("Window/Margin/Column/TabButtons/Garumis") as Button
-	_check(enciclopedia == null, "La página de Enciclopedia ya no debe instanciarse dentro del inventario.")
-	_check(garumis_tab.has_method("abrir_en_garumis"), "Garumis debe ser una pestaña independiente.")
-	_check(boton_enciclopedia == null and not boton_garumis.visible, "Garumis debe iniciar oculto sin descubrimientos y Enciclopedia no debe aparecer en el inventario.")
-
-	# G no debe abrir una pestaña bloqueada.
-	var tecla_bloqueada := InputEventKey.new()
-	tecla_bloqueada.pressed = true
-	tecla_bloqueada.keycode = KEY_G
-	tecla_bloqueada.physical_keycode = KEY_G
-	Input.parse_input_event(tecla_bloqueada)
+	var garumis_tab := inventario.get_node_or_null("Window/Margin/Column/Tabs/Garumis")
+	var boton_garumis := inventario.get_node_or_null("Window/Margin/Column/TabButtons/Garumis")
+	_check(garumis_tab == null and boton_garumis == null, "El inventario no debe contener una pestaña ni un botón de Garumis.")
+	_check(tabs.get_tab_count() == 6, "Al retirar Garumis, el inventario debe conservar sus seis páginas restantes.")
+	var hub := GARUMI_HUB_SCENE.instantiate() as Control
+	_check(hub != null, "La mesa de Garumis debe disponer de una interfaz independiente.")
+	if hub == null:
+		get_tree().quit(1)
+		return
+	add_child(hub)
 	await get_tree().process_frame
-	_check(not inventario.visible, "G no debe abrir Garumis antes del primer descubrimiento.")
-	var soltar_bloqueada := InputEventKey.new()
-	soltar_bloqueada.keycode = KEY_G
-	soltar_bloqueada.physical_keycode = KEY_G
-	soltar_bloqueada.pressed = false
-	Input.parse_input_event(soltar_bloqueada)
+	_check(hub.is_in_group("garumi_hub"), "La interfaz independiente debe registrarse para recibir resultados de amistad.")
+	_check(hub.has_method("mostrar_resultado_amistad_garumi"), "La mesa debe conservar los avisos de amistad.")
+	_check(hub.has_method("actualizar"), "La mesa debe mostrar los vínculos y amistades guardados.")
+	hub.queue_free()
 	await get_tree().process_frame
-
-	# Descubrir un Garumi desbloquea el panel de vínculos.
-	_check(GameState.registrar_garumi_descubierto("garumi-desbloqueo-test"), "Debe registrar el primer Garumi descubierto.")
-	await get_tree().process_frame
-	_check(boton_enciclopedia == null and boton_garumis.visible, "Descubrir un Garumi debe mostrar Garumis, pero no Enciclopedia.")
-
-	# El descubrimiento de una criatura también desbloquea el panel de Garumis.
-	GameState.world_state.flags.erase("enciclopedia_garumis")
-	GameState.discovery_state = DiscoveryState.new()
-	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
-	_check(boton_enciclopedia == null and not boton_garumis.visible, "Sin descubrimientos de criaturas ni Garumis, la pestaña Garumis vuelve a ocultarse.")
-	_check(GameState.registrar_descubrimiento_mundo({"id": "bioma-test"}, {"id": "ecosistema-test"}, [], [{"id": "criatura-desbloqueo-test"}]), "Debe registrar el descubrimiento de una criatura.")
-	await get_tree().process_frame
-	_check(boton_enciclopedia == null and boton_garumis.visible, "Descubrir una criatura debe mostrar Garumis sin devolver Enciclopedia al inventario.")
-
-	# El desbloqueo debe sobrevivir a la serialización y carga de la partida.
-	var estado_guardado: Dictionary = GameState.call("_serializar_estado")
-	GameState.discovery_state = DiscoveryState.new()
-	GameState.call("_aplicar_estado_memoria", estado_guardado)
-	inventario.call("_actualizar_visibilidad_tabs_descubrimiento")
-	_check(boton_enciclopedia == null and boton_garumis.visible, "El descubrimiento debe mantenerse tras guardar y cargar la partida.")
-
-	# Recorrer el pipeline real de entrada de Godot; no llamar _input() directamente.
-	var tecla := InputEventKey.new()
-	tecla.pressed = true
-	tecla.keycode = KEY_G
-	tecla.physical_keycode = KEY_G
-	Input.parse_input_event(tecla)
-	await get_tree().process_frame
-	_check(inventario.visible, "Pulsar G debe abrir la ventana del inventario.")
-	_check(tabs.current_tab == 2, "Pulsar G debe seleccionar la pestaña Garumis.")
-	_check(garumis_tab.has_method("abrir_en_garumis"), "El panel de Garumis debe conservar el acceso a vínculos.")
 
 	# La enciclopedia sólo debe exponer el linaje descendiente de Orumi.
 	const orumi_id := "24f86486-aced-4a23-bd1b-f025561a8aa3"
@@ -119,27 +71,11 @@ func _run() -> void:
 	_check(item_oruvan != null and item_oruvan.get_text(0) == "1", "El número normal/de origen debe aparecer a la izquierda.")
 	_check(item_oruvan != null and item_oruvan.get_text(1) == "Oruvan", "El nombre debe quedar en la columna central.")
 	_check(item_oruvan != null and item_oruvan.get_text(2) == "4", "El número global debe aparecer a la derecha.")
-
-	# Soltar G y pulsarla de nuevo para verificar el cierre por la misma ruta.
-	var soltar_tecla := InputEventKey.new()
-	soltar_tecla.keycode = KEY_G
-	soltar_tecla.physical_keycode = KEY_G
-	soltar_tecla.pressed = false
-	Input.parse_input_event(soltar_tecla)
-	await get_tree().process_frame
-
-	var segunda_tecla := InputEventKey.new()
-	segunda_tecla.pressed = true
-	segunda_tecla.keycode = KEY_G
-	segunda_tecla.physical_keycode = KEY_G
-	Input.parse_input_event(segunda_tecla)
-	await get_tree().process_frame
-	_check(not inventario.visible, "Pulsar G de nuevo en Garumis debe cerrar la ventana.")
 	if _failed:
 		push_error("GarumiEncyclopedia: FAIL")
 		get_tree().quit(1)
 		return
-	print("GarumiEncyclopedia: PASS — Garudex independiente y acceso G al panel de vínculos.")
+	print("GarumiEncyclopedia: PASS — Garudex independiente y mesa de Garumis fuera del inventario.")
 	get_tree().quit(0)
 
 
