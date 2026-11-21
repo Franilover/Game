@@ -101,7 +101,8 @@ func _ready() -> void:
 func _process(delta: float) -> void:
 	if not _hay_runtime_partida_activo():
 		return
-	world_state.elapsed_time += delta
+	if not get_tree().paused:
+		world_state.elapsed_time += delta
 	_autosave_timer += delta
 
 	if _primer_guardado_pendiente:
