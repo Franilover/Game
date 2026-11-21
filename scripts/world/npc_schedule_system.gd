@@ -2323,6 +2323,7 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 					_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 					return false
 				movimiento.establecer_ruta(ruta_recalculada)
+				npc.set_meta("npc_objetivo_social_en_curso", true)
 				npc.set_meta("npc_objetivo_social_ultima_posicion", npc.global_position)
 				npc.set_meta("npc_objetivo_social_ultimo_progreso_ms", ahora_ms)
 			return true
