@@ -523,7 +523,16 @@ func _avanzar() -> void:
 
 	if _indice_linea >= _lineas.size() - 1 and not _respuestas.is_empty():
 		_actualizar_boton_accion()
-		return
+		if (
+			_respuestas_container != null
+			and is_instance_valid(_respuestas_container)
+			and _respuestas_container.visible
+			and _respuestas_container.get_child_count() > 0
+		):
+			return
+		# Si las respuestas no pudieron materializarse, nunca dejar el diálogo
+		# esperando una selección invisible.
+		_respuestas.clear()
 
 	_indice_linea += 1
 
@@ -1522,15 +1531,20 @@ func _actualizar_boton_accion() -> void:
 	if mostrar_respuestas:
 		if _respuestas_container.get_child_count() == 0:
 			_crear_botones_respuesta()
-		action_button.visible = false
-		if cancel_button != null:
-			cancel_button.visible = false
-		return
+		if _respuestas_container.get_child_count() > 0:
+			action_button.visible = false
+			if cancel_button != null:
+				cancel_button.visible = false
+			return
+		# Un conjunto vacío o inválido de controles no puede bloquear el avance.
+		_respuestas.clear()
 	if _respuestas_container != null:
 		_respuestas_container.visible = false
 
 	if _acciones.is_empty():
-		action_button.visible = false
+		# Toda línea terminal sin decisiones ofrece un cierre explícito.
+		action_button.text = "Cerrar"
+		action_button.visible = true
 		if cancel_button != null:
 			cancel_button.visible = false
 		return
@@ -1556,8 +1570,20 @@ func _actualizar_boton_accion() -> void:
 		cancel_button.visible = true
 
 
+func _mostrar_cierre_dialogo() -> void:
+	_acciones.clear()
+	_respuestas.clear()
+	_limpiar_botones_respuesta()
+	if action_button != null:
+		action_button.text = "Cerrar"
+		action_button.visible = true
+	if cancel_button != null:
+		cancel_button.visible = false
+
+
 func _ejecutar_accion_dialogo() -> void:
 	if _acciones.is_empty():
+		cerrar()
 		return
 
 	var accion: Dictionary = _acciones[0]
@@ -1566,6 +1592,7 @@ func _ejecutar_accion_dialogo() -> void:
 	match tipo:
 		"evento_social":
 			if not is_instance_valid(_fuente) or relationship_system == null:
+				_mostrar_cierre_dialogo()
 				return
 			var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 			var evento := str(accion.get("evento", "")).strip_edges()
@@ -1574,6 +1601,7 @@ func _ejecutar_accion_dialogo() -> void:
 			var contexto: Dictionary = contexto_variant.duplicate(true) if contexto_variant is Dictionary else {}
 			var resultado: Dictionary = relationship_system.registrar_evento_social(personaje_id, evento, evento_id, contexto)
 			if resultado.is_empty():
+				_mostrar_cierre_dialogo()
 				return
 			_acciones.clear()
 			action_button.visible = false
@@ -1585,6 +1613,7 @@ func _ejecutar_accion_dialogo() -> void:
 		"aceptar_mision":
 			var clave := str(accion.get("mision_clave", "")).strip_edges()
 			if clave.is_empty():
+				_mostrar_cierre_dialogo()
 				return
 
 			var mission_manager_local: MissionManagerService = mission_manager
