@@ -334,8 +334,6 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if _modo_historia and event is InputEventKey:
-		var tecla_historia := event as InputEventKey
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
 
@@ -372,7 +370,6 @@ func establecer_modo_historia(activo: bool) -> void:
 		_actualizar_admin_tab()
 	else:
 		_actualizar_admin_tab()
-	_actualizar_visibilidad_tabs_descubrimiento()
 
 
 func _cargar_notas_historia() -> void:
