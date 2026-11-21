@@ -370,6 +370,14 @@ func _run() -> void:
 	historia_probe.story_save_repository.eliminar_partida("reserva_carmesi")
 	historia_probe.free()
 
+	var menu_probe := GameStateScript.new() as GameStateService
+	add_child(menu_probe)
+	await get_tree().process_frame
+	if not menu_probe.guardar_progreso_actual("prueba desde el menú sin sesión activa"):
+		errores.append("El menú principal intentó guardar un runtime que ya no está activo.")
+	menu_probe.queue_free()
+	await get_tree().process_frame
+
 	# Integración real del guardado narrativo: jugador + ZoneManager + JSON.
 	# Comprueba el mismo punto de entrada que usan autosave, pausa y cierre.
 	var mundo_runtime := Node2D.new()
