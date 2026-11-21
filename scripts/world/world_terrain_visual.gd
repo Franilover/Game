@@ -98,6 +98,9 @@ var tilemap_dual: TileMapDual
 # Una capa por zona permite que la misma zona continúe entre biomas.
 # Así un cambio de bioma no se interpreta como un borde de terreno.
 var _layers_by_zone: Dictionary = {}
+# Materiales originales para comparar el coste GPU sin perder el estilo del terreno.
+var _shader_materials_by_zone: Dictionary = {}
+var _terrain_shaders_enabled: bool = true
 var _shared_terrain_layer: TileMapDual
 # No usar un underlay opaco: rellenaría las esquinas transparentes de cada
 # terreno con un cuadrado del mismo bioma e impediría ver la transición vecina.
@@ -183,6 +186,7 @@ func obtener_estado_flush() -> Dictionary:
 		"pendientes_total": pendientes_total,
 		"pendientes_por_zona": pendientes_por_zona,
 		"zonas": _layers_by_zone.size(),
+		"shaders_activos": _terrain_shaders_enabled,
 		"zona_cursor": _dirty_zone_cursor,
 		"ultima_zona": _flush_last_zone,
 		"ultima_cantidad": _flush_last_cells,
@@ -212,6 +216,26 @@ func obtener_profiler() -> Dictionary:
 		"set_cell_calls": _profiler_set_cell_calls,
 	}
 
+
+
+func establecer_shaders_terreno_activos(activos: bool) -> void:
+	if _terrain_shaders_enabled == activos:
+		return
+	_terrain_shaders_enabled = activos
+	for clave_variant in _layers_by_zone.keys():
+		var clave := str(clave_variant)
+		var layer := _layers_by_zone[clave] as TileMapDual
+		if layer == null:
+			continue
+		# Capturar el material ya preparado por TileMapDual._ready(). No se
+		# duplica ni modifica el ShaderMaterial compartido al alternar el modo.
+		if not _shader_materials_by_zone.has(clave):
+			_shader_materials_by_zone[clave] = layer.display_material
+		layer.display_material = _shader_materials_by_zone[clave] if activos else null
+
+
+func tiene_shaders_terreno_activos() -> bool:
+	return _terrain_shaders_enabled
 
 func iniciar_clear_chunk(chunk_coord: Vector2i, chunk_size_tiles: int) -> void:
 	if not _clear_task.is_empty():
