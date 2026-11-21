@@ -440,7 +440,7 @@ func abrir_iniciativa_npc(datos: Dictionary, fuente: Creature) -> bool:
 
 func _debe_usar_menu_social(
 	datos_dialogo: Dictionary,
-	iniciativa_directa: bool,
+	_iniciativa_directa: bool,
 	tiene_accion_exclusiva: bool
 ) -> bool:
 	if not is_instance_valid(_fuente) or _dialogo_en_transito or tiene_accion_exclusiva:
