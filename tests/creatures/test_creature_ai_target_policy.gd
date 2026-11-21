@@ -587,6 +587,11 @@ func _run() -> void:
 	if jugador_nuevo not in snapshot_siguiente_frame:
 		_fail("El snapshot de jugadores no se actualizó en el siguiente physics frame.")
 		return
+	jugador_nuevo.remove_from_group("player")
+	var snapshot_tras_salida := PerceptionScript.obtener_candidatos(actor, player, refugio_manager)
+	if jugador_nuevo in snapshot_tras_salida:
+		_fail("La percepción conservó como jugador a un nodo que salió del grupo durante el frame.")
+		return
 	# GarumiBrain reutiliza el mismo snapshot, sin volver a consultar el grupo
 	# por cada Garumi. La selección conserva el radio y el jugador más cercano.
 	jugador_grupo.position = Vector2(30.0, 0.0)
