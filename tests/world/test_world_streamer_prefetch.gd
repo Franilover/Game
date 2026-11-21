@@ -128,6 +128,21 @@ func _run_tests() -> void:
 		push_error("WorldStreamerPrefetch: no canceló una descarga que volvió al radio.")
 		_terminar(1)
 		return
+	_terrain._loaded_chunks[Vector2i(-4, 0)] = {}
+	_streamer._descargar_lejanos(Vector2i(3, 0))
+	if _streamer._pending_unload_chunks.size() != 2:
+		push_error("WorldStreamerPrefetch: no conservó la segunda descarga pendiente.")
+		_terminar(1)
+		return
+	# Sin renderer, descargar_chunk completa el clear inmediatamente. Una
+	# llamada al servicio debe iniciar/terminar sólo un chunk de la cola.
+	_terrain.visual = null
+	_streamer._procesar_descarga_si_hay_presupuesto()
+	_terrain.visual = _visual
+	if _streamer._pending_unload_chunks.size() != 1:
+		push_error("WorldStreamerPrefetch: procesó más de una descarga en un mismo turno.")
+		_terminar(1)
+		return
 
 	_streamer._queue = [
 		Vector2i.UP,
