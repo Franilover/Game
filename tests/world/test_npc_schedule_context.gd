@@ -53,6 +53,7 @@ func _run() -> void:
 	await get_tree().process_frame
 
 	_comprobar_contexto_compartido(agenda, npc_a, npc_b, errores)
+	_comprobar_reservas_sociales(agenda, npc_a, npc_b, errores)
 	_comprobar_memoria_diaria(agenda, npc_a, errores)
 	_comprobar_seleccion_rutina_y_copia(agenda, npc_a, errores)
 	_comprobar_destinos_rutina(npc_a, errores)
@@ -99,6 +100,33 @@ func _comprobar_contexto_compartido(
 		errores.append("Fuera del tick debe consultarse el grupo actual de NPC.")
 	if not agenda._obtener_tiempo_actual().is_empty():
 		errores.append("Sin WorldAtmosphere, el contexto temporal externo debe devolver un diccionario vacío.")
+
+
+func _comprobar_reservas_sociales(
+	agenda: NPCScheduleSystem,
+	npc_a: Creature,
+	npc_b: Creature,
+	errores: Array[String]
+) -> void:
+	npc_a.datos = {"personaje_game_id": "habitante_a"}
+	npc_b.datos = {"personaje_game_id": "habitante_b"}
+	npc_b.set_meta("npc_objetivo_social_reservado_por", "habitante_a")
+	var objetivo_a: Dictionary = {
+		"id": "encuentro_a_b",
+		"objetivo_personaje": "habitante_b"
+	}
+	npc_a.set_meta("npc_objetivo_social", objetivo_a)
+	if not agenda._tiene_reserva_social_activa(npc_b):
+		errores.append("Una reserva respaldada por un objetivo social activo debe mantenerse.")
+	agenda._liberar_reserva_objetivo_social(npc_a, "habitante_b")
+	if npc_b.has_meta("npc_objetivo_social_reservado_por"):
+		errores.append("Al cancelar el objetivo debe liberarse la reserva de la pareja.")
+	npc_b.set_meta("npc_objetivo_social_reservado_por", "habitante_a")
+	npc_a.remove_meta("npc_objetivo_social")
+	if agenda._tiene_reserva_social_activa(npc_b):
+		errores.append("Una reserva cuyo propietario ya no tiene objetivo debe limpiarse.")
+	if npc_b.has_meta("npc_objetivo_social_reservado_por"):
+		errores.append("La limpieza de reservas obsoletas debe quitar su metadata.")
 
 
 func _comprobar_memoria_diaria(
