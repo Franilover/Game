@@ -843,6 +843,8 @@ func cerrar_sesion() -> void:
 
 
 func _limpiar_sesion() -> void:
+	if _restore_retry_timer != null:
+		_restore_retry_timer.stop()
 	access_token = ""
 	refresh_token = ""
 
