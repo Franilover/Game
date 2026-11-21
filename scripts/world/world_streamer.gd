@@ -254,15 +254,22 @@ func _procesar_variaciones_si_hay_presupuesto() -> void:
 	if limite <= 0:
 		return
 
+	var profiler_before: Dictionary = _terrain.visual.obtener_profiler()
+	var processed_before := int(profiler_before.get("flush_variation_cells", 0))
 	var inicio_usec := Time.get_ticks_usec()
 	var terminado: bool = _terrain.visual.procesar_variaciones(limite)
 	var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
-	if _render_manager != null:
+	var profiler_after: Dictionary = _terrain.visual.obtener_profiler()
+	var processed_after := int(profiler_after.get("flush_variation_cells", 0))
+	var processed := maxi(processed_after - processed_before, 0)
+	if _render_manager != null and processed > 0:
+		# Calibrar el coste por celda con las variaciones realmente procesadas,
+		# no con el máximo solicitado (la última tanda suele ser más pequeña).
 		_render_manager.call(
 			"registrar_trabajo",
 			"terrain_variation",
 			ms,
-			limite
+			processed
 		)
 
 	# Si la cola se vació, el siguiente frame puede dedicar el presupuesto
