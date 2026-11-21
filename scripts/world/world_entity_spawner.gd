@@ -147,16 +147,15 @@ func _reintentar_props_en_chunks_cargados() -> void:
 		return
 	var chunk_coord := _chunk_full_activo
 	var tiene_prop_real := false
-		for entidad in _entity_manager.obtener_por_chunk(chunk_coord):
-			if entidad is WorldProp and is_instance_valid(entidad):
-				tiene_prop_real = true
-				break
-		if tiene_prop_real:
-			continue
-		cancelar_prop_spawn_chunk(chunk_coord)
-		_entity_manager.despawn_props_chunk(chunk_coord)
-		spawn_props_chunk(chunk_coord)
-
+	for entidad in _entity_manager.obtener_por_chunk(chunk_coord):
+		if entidad is WorldProp and is_instance_valid(entidad):
+			tiene_prop_real = true
+			break
+	if tiene_prop_real:
+		return
+	cancelar_prop_spawn_chunk(chunk_coord)
+	_entity_manager.despawn_props_chunk(chunk_coord)
+	spawn_props_chunk(chunk_coord)
 
 func configurar_render_manager(render_manager: Node) -> void:
 	_render_manager = render_manager
