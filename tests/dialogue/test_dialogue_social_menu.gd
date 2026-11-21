@@ -165,40 +165,42 @@ func _run() -> void:
 	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
 	# Una intervención terminal siempre muestra una salida explícita.
+	var dialogo_prueba_cierre = DialogueSystemScript.new()
+	add_child(dialogo_prueba_cierre)
 	var boton_cierre_prueba := Button.new()
 	var respuestas_prueba := GridContainer.new()
-	dialogo.add_child(boton_cierre_prueba)
-	dialogo.add_child(respuestas_prueba)
-	dialogo.action_button = boton_cierre_prueba
-	dialogo.cancel_button = Button.new()
-	dialogo.add_child(dialogo.cancel_button)
-	dialogo._respuestas_container = respuestas_prueba
-	dialogo._lineas = [{"hablante": "Mara", "texto": "Hasta luego."}]
-	dialogo._indice_linea = 0
-	dialogo._texto_completo = "Hasta luego."
-	dialogo._indice_caracter = dialogo._texto_completo.length()
-	dialogo._respuestas.clear()
-	dialogo._acciones.clear()
-	dialogo._actualizar_boton_accion()
+	dialogo_prueba_cierre.add_child(boton_cierre_prueba)
+	dialogo_prueba_cierre.add_child(respuestas_prueba)
+	dialogo_prueba_cierre.action_button = boton_cierre_prueba
+	dialogo_prueba_cierre.cancel_button = Button.new()
+	dialogo_prueba_cierre.add_child(dialogo_prueba_cierre.cancel_button)
+	dialogo_prueba_cierre._respuestas_container = respuestas_prueba
+	dialogo_prueba_cierre._lineas = [{"hablante": "Mara", "texto": "Hasta luego."}]
+	dialogo_prueba_cierre._indice_linea = 0
+	dialogo_prueba_cierre._texto_completo = "Hasta luego."
+	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
+	dialogo_prueba_cierre._respuestas.clear()
+	dialogo_prueba_cierre._acciones.clear()
+	dialogo_prueba_cierre._actualizar_boton_accion()
 	if not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
 		errores.append("Una despedida sin opciones no ofrece un botón explícito para cerrar.")
 	# Una acción desconocida o fallida no puede dejar el diálogo bloqueado.
-	dialogo._acciones = [{"tipo": "accion_no_registrada"}]
-	dialogo._ejecutar_accion_dialogo()
-	if not dialogo._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
+	dialogo_prueba_cierre._acciones = [{"tipo": "accion_no_registrada"}]
+	dialogo_prueba_cierre._ejecutar_accion_dialogo()
+	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
 		errores.append("Una acción de diálogo no resuelta no ofrece una salida segura.")
 	# Si las opciones no tienen un contenedor visible, el avance debe cerrar.
-	dialogo._abierto = true
-	dialogo._lineas = [{"hablante": "Mara", "texto": "Nos vemos."}]
-	dialogo._indice_linea = 0
-	dialogo._texto_completo = "Nos vemos."
-	dialogo._indice_caracter = dialogo._texto_completo.length()
-	dialogo._respuestas = [{"texto": "Opción invisible"}]
-	dialogo._respuestas_container = null
-	dialogo._avanzar()
-	if dialogo.esta_abierto():
+	dialogo_prueba_cierre._abierto = true
+	dialogo_prueba_cierre._lineas = [{"hablante": "Mara", "texto": "Nos vemos."}]
+	dialogo_prueba_cierre._indice_linea = 0
+	dialogo_prueba_cierre._texto_completo = "Nos vemos."
+	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
+	dialogo_prueba_cierre._respuestas = [{"texto": "Opción invisible"}]
+	dialogo_prueba_cierre._respuestas_container = null
+	dialogo_prueba_cierre._avanzar()
+	if dialogo_prueba_cierre.esta_abierto():
 		errores.append("El diálogo queda abierto cuando sus opciones no pueden mostrarse.")
-	dialogo._respuestas_container = respuestas_prueba
+	dialogo_prueba_cierre._respuestas_container = respuestas_prueba
 	# Toda ubicación que puede recibir una rutina debe tener un nombre natural
 	# en los diálogos de tránsito; no dejar destinos válidos como "su próximo destino".
 	var destinos_rutina: Array[String] = [
@@ -529,6 +531,7 @@ func _run() -> void:
 	if jugador_prueba.velocity.length_squared() > 0.01 or jugador_prueba.state != Player.State.IDLE:
 		errores.append("La finalización no restableció la locomoción del jugador.")
 
+	dialogo_prueba_cierre.queue_free()
 	conversacion_visual.queue_free()
 	director_prueba.queue_free()
 	camara_prueba.queue_free()
