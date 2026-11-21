@@ -23,6 +23,8 @@ var save_repository := SaveFileRepository.new()
 var story_save_repository := SaveFileRepository.new()
 var _partidas_metadata_cache: Array[Dictionary] = []
 var _partidas_metadata_cache_valida: bool = false
+var _partidas_metadata_precalentando: bool = false
+signal partidas_metadata_precalentadas
 
 var _historia_reserva_activa: bool = false
 var _historia_requiere_aplicar: bool = false
@@ -285,6 +287,38 @@ func guardar_progreso_historia() -> bool:
 # ============================================================
 # PARTIDAS
 # ============================================================
+
+func precalentar_indice_metadata_partidas() -> void:
+	if _partidas_metadata_cache_valida:
+		return
+	if _partidas_metadata_precalentando:
+		await partidas_metadata_precalentadas
+		return
+	_partidas_metadata_precalentando = true
+	var inicio_ms := Time.get_ticks_msec()
+	var ids := save_repository.listar_ids_partidas()
+	var indice := _leer_indice_metadata_partidas()
+	if _indice_metadata_coincide_con_ids(indice, ids):
+		_partidas_metadata_cache = indice
+	else:
+		var resultado: Array[Dictionary] = []
+		for i in range(ids.size()):
+			var id := ids[i]
+			var datos := _leer_archivo_partida(id)
+			if _datos_partida_cargables(id, datos):
+				resultado.append(_extraer_metadata_partida(datos))
+			# Repartir la lectura de saves entre frames: el menú permanece
+			# interactivo mientras se prepara el índice inicial.
+			if i % 2 == 1:
+				await get_tree().process_frame
+		_ordenar_metadata_partidas(resultado)
+		_partidas_metadata_cache = resultado
+		_guardar_indice_metadata_partidas(resultado)
+	_partidas_metadata_cache_valida = true
+	_partidas_metadata_precalentando = false
+	print("GameState: precalentamiento de partidas → ", _partidas_metadata_cache.size(), " | ", Time.get_ticks_msec() - inicio_ms, " ms")
+	partidas_metadata_precalentadas.emit()
+
 
 func obtener_partidas() -> Array[Dictionary]:
 	var inicio_ms := Time.get_ticks_msec()
