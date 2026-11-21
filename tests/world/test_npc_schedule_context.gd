@@ -31,6 +31,12 @@ func _run() -> void:
 	var destino_respaldo := NPCScheduleScript.resolver_destino_reintento(null, Vector2(80.0, 40.0))
 	if destino_respaldo != Vector2(80.0, 40.0):
 		errores.append("La recuperación de rutas no usa el destino alternativo cuando no hay uno guardado.")
+	if not NPCScheduleScript.ruta_sin_progreso(Vector2(10.0, 10.0), Vector2(10.0, 10.0), 5000, 1000):
+		errores.append("La vigilancia no detecta una ruta inmóvil tras superar el tiempo límite.")
+	if NPCScheduleScript.ruta_sin_progreso(Vector2(20.0, 10.0), Vector2(10.0, 10.0), 5000, 1000):
+		errores.append("La vigilancia marca como atascado a un NPC que sí avanzó.")
+	if NPCScheduleScript.ruta_sin_progreso(Vector2(10.0, 10.0), Vector2(10.0, 10.0), 3000, 1000):
+		errores.append("La vigilancia interrumpe una ruta antes del tiempo de tolerancia.")
 	var agenda := NPCScheduleScript.new() as NPCScheduleSystem
 	var npc_a := CreatureScene.instantiate() as Creature
 	var npc_b := CreatureScene.instantiate() as Creature
