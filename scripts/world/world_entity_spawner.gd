@@ -447,8 +447,12 @@ func _preparar_datos_garumis_en_chunk(
 		return await _preparar_datos_garumi_debug(chunk_coord, rng)
 
 	var candidatos_probables: Array[Dictionary] = []
-	for garumi in catalogo:
-		await get_tree().process_frame
+	for indice_garumi in range(catalogo.size()):
+		# Filtrar el catálogo en lotes: ceder cada frame por registro alarga
+		# innecesariamente DATA cuando el catálogo contiene muchos Garumis.
+		if indice_garumi > 0 and indice_garumi % 8 == 0:
+			await get_tree().process_frame
+		var garumi: Dictionary = catalogo[indice_garumi]
 		var garumi_id := str(garumi.get("id", "")).strip_edges()
 		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
 		if garumi_id.is_empty() or garumi_nombre.is_empty():
