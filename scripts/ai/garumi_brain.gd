@@ -1,6 +1,8 @@
 extends Node
 class_name GarumiBrain
 
+const CreaturePerceptionScript = preload("res://scripts/creatures/creature_perception.gd")
+
 ## Intérprete genérico de conducta para Garumis.
 ## Supabase aporta el perfil y sus parámetros; este nodo solo traduce perfiles
 ## soportados a órdenes para CreatureMovement. No define relaciones persistentes.
@@ -237,13 +239,12 @@ func _direccion_exploracion() -> Vector2:
 
 func _buscar_jugador_cercano(radio: float) -> Node2D:
 	var mejor: Node2D = null
-	var mejor_distancia := radio
-	for nodo in get_tree().get_nodes_in_group("player"):
-		if not nodo is Node2D or not is_instance_valid(nodo):
+	var mejor_distancia_cuadrada := radio * radio
+	for candidato in CreaturePerceptionScript.obtener_jugadores_del_grupo(get_tree()):
+		if not is_instance_valid(candidato) or not candidato.is_inside_tree() or candidato.is_queued_for_deletion():
 			continue
-		var candidato := nodo as Node2D
-		var distancia := garumi.global_position.distance_to(candidato.global_position)
-		if distancia <= mejor_distancia:
+		var distancia_cuadrada := garumi.global_position.distance_squared_to(candidato.global_position)
+		if distancia_cuadrada <= mejor_distancia_cuadrada:
 			mejor = candidato
-			mejor_distancia = distancia
+			mejor_distancia_cuadrada = distancia_cuadrada
 	return mejor
