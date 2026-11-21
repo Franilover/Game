@@ -144,10 +144,9 @@ func _volver() -> void:
 func _volver_al_menu() -> void:
 	# El menú se ejecuta mientras el árbol está pausado,
 	# por eso el guardado debe ocurrir antes de reanudar.
-	if _modo_historia:
-		GameState.guardar_progreso_historia()
-	else:
-		GameState.guardar_partida()
+	if not GameState.guardar_progreso_actual("salir al menú principal"):
+		push_warning("PauseMenu: no se cerró la sesión porque el guardado no pudo confirmarse.")
+		return
 
 	abierto = false
 	$Overlay.visible = false
