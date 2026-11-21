@@ -666,9 +666,13 @@ func spawn_props_chunk(chunk_coord: Vector2i) -> void:
 
 
 func procesar_spawn_queue(max_chunks: int = 1) -> void:
+	# Un único chunk de criaturas activo evita que varios coroutines reanuden
+	# sus intentos simultáneamente y vuelvan a concentrar trabajo en el mismo frame.
+	if not _creature_spawn_tasks.is_empty():
+		return
 	var limite := maxi(max_chunks, 1)
 	var procesados := 0
-	while procesados < limite and not _spawn_queue.is_empty():
+	while procesados < limite and not _spawn_queue.is_empty() and _creature_spawn_tasks.is_empty():
 		var chunk_coord: Vector2i = _spawn_queue.pop_front()
 		_spawn_queued.erase(chunk_coord)
 		if _entity_manager != null and _entity_manager.tiene_criaturas_chunk(chunk_coord):
@@ -716,8 +720,8 @@ func _spawn_chunk_interno(chunk_coord: Vector2i, token: RefCounted) -> void:
 	var duracion_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
 	_diag_spawn_criaturas_ms_ultimo = duracion_ms
 	_diag_spawn_criaturas_ms_maximo = maxf(_diag_spawn_criaturas_ms_maximo, duracion_ms)
-	if _render_manager != null and is_instance_valid(_render_manager):
-		_render_manager.call("registrar_trabajo", "creature_spawn", duracion_ms, 1)
+	# Esta duración incluye los frames de espera del coroutine; no debe
+	# registrarse como coste CPU del frame en RenderManager.
 	if _creature_spawn_tasks.get(chunk_coord) == token:
 		_creature_spawn_tasks.erase(chunk_coord)
 
