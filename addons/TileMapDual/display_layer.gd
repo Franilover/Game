@@ -21,6 +21,9 @@ var _reverse_display_paths: Array[Array] = []
 var _terrain_neighbors_scratch: Array = []
 # Reutilizado entre flushes para evitar crear un Dictionary por actualización.
 var _already_updated: Dictionary = {}
+# Cache de vecindad por celda dual. Si los terrenos vecinos no cambian y el
+# tile actual sigue presente, no hace falta volver a recorrer las reglas.
+var _terrain_signature_by_cell: Dictionary = {}
 
 # Diagnóstico acumulado del camino caliente del Dual Grid.
 var _diag_update_calls: int = 0
@@ -28,6 +31,7 @@ var _diag_world_cells: int = 0
 var _diag_display_candidates: int = 0
 var _diag_rule_evaluations: int = 0
 var _diag_redundant_tiles: int = 0
+var _diag_cached_rule_skips: int = 0
 var _diag_set_cells: int = 0
 # Tiempos acumulados: flush completo y muestreo ligero de fases internas.
 var _diag_flush_calls: int = 0
@@ -112,6 +116,8 @@ func update_properties(parent: TileMapDual) -> void:
 
 ## Updates all display tiles to reflect the current changes.
 func update_tiles_all(cache: TileCache) -> void:
+	# Una reconstrucción completa debe volver a evaluar todas las reglas.
+	_terrain_signature_by_cell.clear()
 	update_tiles(cache, cache.cells.keys())
 
 
@@ -154,6 +160,18 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 		_diag_sample_path_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
 		sample_start_usec = Time.get_ticks_usec()
 
+	var cached_variant: Variant = _terrain_signature_by_cell.get(cell, null)
+	if cached_variant is Dictionary:
+		var cached := cached_variant as Dictionary
+		var vecinos_variant: Variant = cached.get("neighbors", [])
+		if vecinos_variant is Array and vecinos_variant == _terrain_neighbors_scratch:
+			var cached_sid := int(cached.get("sid", -1))
+			var cached_tile: Vector2i = cached.get("tile", Vector2i(-1, -1))
+			var current_sid := get_cell_source_id(cell)
+			if current_sid == cached_sid and (cached_sid == -1 or get_cell_atlas_coords(cell) == cached_tile):
+				_diag_cached_rule_skips += 1
+				return
+
 	_diag_update_calls += 1
 	_diag_world_cells += 1
 	_diag_rule_evaluations += 1
@@ -164,6 +182,11 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 		sample_start_usec = Time.get_ticks_usec()
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
+	_terrain_signature_by_cell[cell] = {
+		"neighbors": _terrain_neighbors_scratch.duplicate(),
+		"sid": sid,
+		"tile": tile,
+	}
 
 	var current_sid: int = get_cell_source_id(cell)
 	if current_sid == sid:
@@ -193,6 +216,7 @@ func obtener_diagnostico() -> Dictionary:
 		"display_candidates": candidates,
 		"rule_evaluations": _diag_rule_evaluations,
 		"redundant_tiles": redundant,
+		"cached_rule_skips": _diag_cached_rule_skips,
 		"set_cells": writes,
 		"candidate_per_world_cell": (
 			float(candidates) / float(maxi(_diag_world_cells, 1))
