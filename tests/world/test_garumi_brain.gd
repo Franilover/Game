@@ -45,8 +45,10 @@ func _run() -> void:
 		var ia_config_actual: Dictionary = garumi.datos.get("ia_config", {})
 		ia_config_actual["garumi"] = {"movimiento": {"perfil": "errante"}}
 		garumi.datos["ia_config"] = ia_config_actual
+		cerebro._tiempo_decision = 1.5
 		garumi.configuracion_actualizada.emit()
 		_expect(cerebro._perfil == "errante", "El cerebro debe recargar su configuración al recibir la señal, sin depender del tick físico.")
+		_expect(cerebro._tiempo_decision == 0.0, "Un cambio de perfil debe recalcular la intención sin esperar el intervalo anterior.")
 		garumi.configurar({
 			"id": "garumi-brain-unknown-test",
 			"nombre": "Perfil desconocido",
