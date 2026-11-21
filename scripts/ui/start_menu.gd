@@ -1,6 +1,4 @@
 extends Control
-const MAIN_SCENE_PRELOAD_PATH := "res://scenes/world/main.tscn"
-var _main_scene_preload_requested: bool = false
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
@@ -108,7 +106,6 @@ var _cargando_mundo: bool = false
 func _ready() -> void:
 	# Diagnóstico de arranque: se registra antes de inicializar servicios o layouts.
 	call_deferred("_debug_ventana_inicio")
-	call_deferred("_precalentar_menu_y_runtime")
 	# El servidor dedicado reutiliza el runtime del mundo, no el menú ni una partida local.
 	if OS.get_cmdline_user_args().has("--garlia-server"):
 		call_deferred("_entrar_runtime_servidor")
@@ -436,32 +433,6 @@ func _cerrar_configuracion() -> void:
 	if _settings_panel != null and is_instance_valid(_settings_panel):
 		_settings_panel.queue_free()
 	_settings_panel = null
-
-
-func _precalentar_menu_y_runtime() -> void:
-	# La lectura de saves se distribuye entre frames antes de que el jugador
-	# abra Aventura. Main se prepara en un worker, sin instanciarlo todavía.
-	GameState.precalentar_indice_metadata_partidas()
-	if _main_scene_preload_requested:
-		return
-	_main_scene_preload_requested = true
-	var estado := ResourceLoader.load_threaded_get_status(MAIN_SCENE_PRELOAD_PATH)
-	if estado == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-		var error := ResourceLoader.load_threaded_request(MAIN_SCENE_PRELOAD_PATH, "PackedScene", false)
-		if error != OK and error != ERR_BUSY:
-			push_warning("StartMenu: no se pudo precargar Main en segundo plano (error %d)." % error)
-			_main_scene_preload_requested = false
-			return
-	print("StartMenu: precarga de Main solicitada en segundo plano.")
-	var inicio_ms := Time.get_ticks_msec()
-	estado = ResourceLoader.load_threaded_get_status(MAIN_SCENE_PRELOAD_PATH)
-	while estado == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
-		await get_tree().process_frame
-		estado = ResourceLoader.load_threaded_get_status(MAIN_SCENE_PRELOAD_PATH)
-	if estado == ResourceLoader.THREAD_LOAD_LOADED:
-		print("StartMenu: Main listo en caché → ", Time.get_ticks_msec() - inicio_ms, " ms")
-	else:
-		push_warning("StartMenu: la precarga de Main no terminó correctamente; se usará la carga normal.")
 
 
 func _actualizar_estado_mundo() -> void:
