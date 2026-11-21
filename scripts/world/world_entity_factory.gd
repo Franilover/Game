@@ -173,3 +173,13 @@ func configurar_relaciones_ecologicas(relaciones_ecologicas: Array) -> void:
 	for entidad in _entity_manager.obtener_entidades_activas():
 		if entidad is Creature:
 			(entidad as Creature).configurar_relaciones_ecologicas(_relaciones_ecologicas)
+
+
+## Métricas bajo demanda: no se recorren los pools durante el streaming.
+func obtener_diagnostico_pool() -> Dictionary:
+	return {
+		"criaturas": _creature_pool.size(),
+		"garumis": _garumi_pool.size(),
+		"props": _prop_pool.size(),
+		"total": _creature_pool.size() + _garumi_pool.size() + _prop_pool.size(),
+	}
