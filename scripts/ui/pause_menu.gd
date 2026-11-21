@@ -14,6 +14,7 @@ var abierto: bool = false
 var _inventory: Node = null
 var _settings_panel: SettingsPanel = null
 var _modo_historia: bool = false
+var _salida_en_curso: bool = false
 
 
 func configurar(inventario: Node) -> void:
@@ -142,23 +143,24 @@ func _volver() -> void:
 
 
 func _volver_al_menu() -> void:
-	# El menú se ejecuta mientras el árbol está pausado,
-	# por eso el guardado debe ocurrir antes de reanudar.
-	if not GameState.guardar_progreso_actual("salir al menú principal"):
-		push_warning("PauseMenu: no se cerró la sesión porque el guardado no pudo confirmarse.")
+	if _salida_en_curso:
 		return
+	_salida_en_curso = true
+
+	# Intentar confirmar el progreso antes de desmontar el runtime. Un fallo
+	# de escritura no debe dejar al jugador atrapado dentro del menú de pausa.
+	var guardado := GameState.guardar_progreso_actual("salir al menú principal")
+	if not guardado:
+		push_error(
+			"PauseMenu: el guardado falló, pero se permitirá volver al menú. "
+			+ "Revisar el motivo informado por GameState."
+		)
 
 	abierto = false
 	$Overlay.visible = false
 	$Panel.visible = false
 	get_tree().paused = false
 
-	var error := get_tree().change_scene_to_file(
-		START_MENU_PATH
-	)
-
-	if error != OK:
-		push_error(
-			"PauseMenu: no se pudo volver al menú. Error: "
-			+ str(error)
-		)
+	# Todos los cambios de escena pasan por el gestor central para evitar
+	# competir con una transición que ya esté en curso.
+	SceneManager.go_to(START_MENU_PATH)
