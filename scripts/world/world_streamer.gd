@@ -8,14 +8,14 @@ var _entity_spawner: WorldEntitySpawner
 var _player: Node = null
 var _render_manager: Node = null
 
-const MAX_VISIBLE_CHUNKS: int = 25
-# TERRAIN visual mantiene 5x5; FULL lógico mantiene 3x3.
-# TERRAIN ocupa 5x5. FULL ocupa 3x3 y DATA 7x7.
-const VISIBLE_RADIUS: int = 2
-const FULL_RADIUS: int = 1
-const DATA_RADIUS: int = 3
+const MAX_VISIBLE_CHUNKS: int = 9
+# LOD acordado: FULL sólo en el chunk del jugador; TERRAIN en 3x3;
+# DATA en 5x5. Los chunks DATA conservan registros, nunca Nodes de entidades.
+const VISIBLE_RADIUS: int = 1
+const FULL_RADIUS: int = 0
+const DATA_RADIUS: int = 2
 const EDGE_PRIORITY_MARGIN_TILES: int = 6
-const MAX_DATA_CHUNKS: int = 49
+const MAX_DATA_CHUNKS: int = 25
 
 var _load_radius: int = VISIBLE_RADIUS
 var _unload_radius: int = VISIBLE_RADIUS
@@ -26,7 +26,7 @@ var _unload_radius: int = VISIBLE_RADIUS
 # Las entidades pueden aparecer en el chunk del jugador y sus vecinos
 # ya cargados. El terreno sigue siendo la autoridad: sólo se invoca al
 # spawner después de que un chunk terminó de generarse.
-var _prop_active_radius: int = VISIBLE_RADIUS
+var _prop_active_radius: int = FULL_RADIUS
 var _creature_active_radius: int = FULL_RADIUS
 var _cells_per_frame: int = 128
 var _prefetch_margin_tiles: int = 28
@@ -211,7 +211,7 @@ func procesar() -> void:
 				_encolar_descarga_chunk(chunk_coord, _player_chunk)
 			else:
 				var lod_generado := obtener_lod_chunk(chunk_coord)
-				if lod_generado == LOD_TERRAIN or lod_generado == LOD_FULL:
+				if lod_generado == LOD_FULL:
 					_entity_spawner.spawn_props_chunk(chunk_coord)
 				if lod_generado == LOD_FULL:
 					_entity_spawner.spawn_chunk(chunk_coord)
@@ -544,8 +544,8 @@ func _actualizar_streaming() -> void:
 			cola_filtrada.append(queued)
 	_queue = cola_filtrada
 
-	# TERRAIN mantiene un cuadrado 5x5: centro + 24 vecinos.
-	# FULL es un LOD lógico más pequeño y no cambia el límite visual.
+	# TERRAIN mantiene un cuadrado 3x3: centro + 8 vecinos.
+	# FULL sólo materializa entidades en el chunk central; el resto es DATA.
 	var nuevos: Array = []
 	_agregar_chunk_a_cola(centro, nuevos)
 
@@ -1011,7 +1011,7 @@ func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void
 			continue
 		if manager != null:
 			var lod := obtener_lod_chunk(chunk_coord)
-			var necesita_props := lod == LOD_TERRAIN or lod == LOD_FULL
+			var necesita_props := lod == LOD_FULL
 			var necesita_criaturas := lod == LOD_FULL
 			var props_activos := manager.tiene_props_chunk(chunk_coord)
 			var criaturas_activas := manager.tiene_criaturas_chunk(chunk_coord)
@@ -1051,12 +1051,12 @@ func _procesar_siguiente_chunk_entidades() -> void:
 	# instancias. Esperarlas es esencial: invocarlas sin await las detenía
 	# en su primer yield y podía dejar la materialización incompleta.
 	var props_materializados := false
-	if lod == LOD_TERRAIN or lod == LOD_FULL:
+	if lod == LOD_FULL:
 		if _entity_spawner.has_method("materializar_props_datos_chunk"):
 			props_materializados = await _entity_spawner.materializar_props_datos_chunk(chunk_coord)
 
 	var lod_despues_props := obtener_lod_chunk(chunk_coord)
-	if lod_despues_props == LOD_TERRAIN or lod_despues_props == LOD_FULL:
+	if lod_despues_props == LOD_FULL:
 		if not props_materializados:
 			_entity_spawner.spawn_props_chunk(chunk_coord)
 	else:
