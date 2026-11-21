@@ -269,7 +269,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          output="$(godot --headless --path . res://tests/creatures/test_creature_ai_target_policy.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
+          output="$(timeout 30s godot --headless --path . res://tests/creatures/test_creature_ai_target_policy.tscn 2>&1)" || { printf '%s\n' "$output"; exit 1; }
           printf '%s\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|Failed to load script|CreatureAITargetPolicy: FAIL:' <<<"$output"; then
             echo "Creature AI regression test reported script or assertion errors."
