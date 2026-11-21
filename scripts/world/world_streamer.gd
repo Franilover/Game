@@ -925,17 +925,24 @@ func _procesar_siguiente_chunk_entidades() -> void:
 		var props_materializados := false
 		if _entity_spawner.has_method("materializar_props_datos_chunk"):
 			props_materializados = await _entity_spawner.materializar_props_datos_chunk(chunk_coord)
-		if not props_materializados:
+		if not props_materializados and obtener_lod_chunk(chunk_coord) in [LOD_TERRAIN, LOD_FULL]:
 			_entity_spawner.spawn_props_chunk(chunk_coord)
 	else:
 		_entity_spawner.cancelar_prop_spawn_chunk(chunk_coord)
 		_entity_spawner.despawn_props_chunk(chunk_coord)
 
+	# El jugador puede cruzar otra frontera mientras el lote anterior cede el
+	# frame. Releer el LOD evita crear criaturas para un chunk que ya pasó a
+	# TERRAIN/DATA durante la materialización de props.
+	if not _terrain.chunks_cargados().has(chunk_coord):
+		_entity_activation_active = false
+		return
+	lod = obtener_lod_chunk(chunk_coord)
 	if lod == LOD_FULL:
 		var criaturas_materializadas := false
 		if _entity_spawner.has_method("materializar_criaturas_datos_chunk"):
 			criaturas_materializadas = await _entity_spawner.materializar_criaturas_datos_chunk(chunk_coord)
-		if not criaturas_materializadas:
+		if not criaturas_materializadas and obtener_lod_chunk(chunk_coord) == LOD_FULL:
 			_entity_spawner.spawn_chunk(chunk_coord)
 	else:
 		_entity_spawner.cancelar_spawn_chunk(chunk_coord)
