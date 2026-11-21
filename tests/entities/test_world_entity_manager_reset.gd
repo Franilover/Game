@@ -12,8 +12,19 @@ func _run() -> void:
 	var manager: Variant = WorldEntityManagerScript.new()
 	var replica_criatura := Node.new()
 	var replica_prop := Node.new()
+	var persistente_extra := Node.new()
+
+	manager._registrar_clave_persistente(persistente_extra, "extra:1")
+	manager._registrar_clave_persistente(persistente_extra, "extra:2")
+	manager._remover_persistencia(persistente_extra)
+	if manager._persistent_by_key.has("extra:1") or manager._persistent_by_key.has("extra:2"):
+		errores.append("La limpieza de persistencia conservó claves del índice inverso.")
+	if manager._persistent_keys_by_entity.has(persistente_extra):
+		errores.append("La limpieza de persistencia conservó el índice inverso de la entidad.")
+	persistente_extra.free()
 
 	manager._persistent_by_key = {"personaje:1": replica_criatura}
+	manager._persistent_keys_by_entity = {replica_criatura: ["personaje:1"]}
 	manager._global_entities = [replica_criatura]
 	manager._active_chunks = {Vector2i.ZERO: true}
 	manager._active_creature_chunks = {Vector2i.ZERO: true}
@@ -28,6 +39,7 @@ func _run() -> void:
 
 	var registros: Array[Dictionary] = [
 		manager._persistent_by_key,
+		manager._persistent_keys_by_entity,
 		manager._active_chunks,
 		manager._active_creature_chunks,
 		manager._active_prop_chunks,
