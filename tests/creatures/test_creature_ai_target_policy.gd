@@ -47,6 +47,41 @@ func _run() -> void:
 	if ai._obtener_ids_alimento() != ["meat"]:
 		_fail("La caché de alimentos no se invalidó al cambiar la configuración.")
 		return
+
+	# El índice ecológico debe priorizar la regla del ecosistema y conservar
+	# la regla general como fallback, sin cambiar el orden de desempate.
+	var depredador := CreatureScript.new() as Creature
+	depredador.criatura_id = "species-predator"
+	depredador.datos = {"ecosistema_id": "forest"}
+	var presa := CreatureScript.new() as Creature
+	presa.criatura_id = "species-prey"
+	ai.configurar_relaciones_ecologicas([
+		{
+			"criatura_origen_id": "species-predator",
+			"criatura_destino_id": "species-prey",
+			"ecosistema_id": "",
+			"tipo_relacion": "competencia"
+		},
+		{
+			"criatura_origen_id": "species-predator",
+			"criatura_destino_id": "species-prey",
+			"ecosistema_id": "forest",
+			"tipo_relacion": "depredacion"
+		},
+		{
+			"criatura_origen_id": "species-predator",
+			"criatura_destino_id": "species-prey",
+			"ecosistema_id": "forest",
+			"tipo_relacion": "parasitismo"
+		}
+	])
+	if ai._obtener_relacion_ecologica_ids(depredador, presa) != "depredacion":
+		_fail("El índice ecológico no priorizó la regla específica del ecosistema.")
+		return
+	depredador.datos["ecosistema_id"] = "desert"
+	if ai._obtener_relacion_ecologica_ids(depredador, presa) != "competencia":
+		_fail("El índice ecológico no conservó la regla general como fallback.")
+		return
 	ai.configuracion_ia = {}
 	ai.actividad_horaria = "explorar"
 	ai.perfil = AIScript.Perfil.GENERICO
