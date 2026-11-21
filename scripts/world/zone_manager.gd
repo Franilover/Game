@@ -624,7 +624,7 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 	# viva mientras se prepara el destino, evitando congelar la interfaz.
 	var estado_carga := ResourceLoader.load_threaded_get_status(path)
 	if estado_carga == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-		var solicitud := ResourceLoader.load_threaded_request(path, "PackedScene", true)
+		var solicitud := ResourceLoader.load_threaded_request(path, "PackedScene", false)
 		if solicitud != OK and solicitud != ERR_BUSY:
 			push_error("ZoneManager: no se pudo solicitar la zona '%s' (error %d)." % [path, solicitud])
 			_transicionando = false
