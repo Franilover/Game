@@ -49,6 +49,21 @@ func _run_tests() -> void:
 	_streamer._player = _player
 	_streamer._player_chunk = Vector2i.ZERO
 
+	# Contrato LOD acordado: 9 chunks de terreno (3x3), un chunk FULL
+	# y 25 chunks DATA (5x5), sin materializar entidades en TERRAIN/DATA.
+	if WorldStreamerScript.MAX_VISIBLE_CHUNKS != 9:
+		push_error("WorldStreamerPrefetch: el límite visual debe ser 9 chunks.")
+		_terminar(1)
+		return
+	if WorldStreamerScript.VISIBLE_RADIUS != 1 or WorldStreamerScript.FULL_RADIUS != 0:
+		push_error("WorldStreamerPrefetch: radios TERRAIN/FULL no respetan el LOD acordado.")
+		_terminar(1)
+		return
+	if WorldStreamerScript.DATA_RADIUS != 2 or WorldStreamerScript.MAX_DATA_CHUNKS != 25:
+		push_error("WorldStreamerPrefetch: el anillo DATA debe ser 5x5 sin Nodes.")
+		_terminar(1)
+		return
+
 	# La activación de entidades se prepara como cola y pone primero el chunk
 	# actual; no debe materializar todo el anillo en el frame de transición.
 	_streamer._ordenar_cola_activacion_entidades(
@@ -94,12 +109,12 @@ func _run_tests() -> void:
 		[Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN],
 		Vector2i.ZERO
 	)
-	if _streamer._entity_activation_queue.size() != 2:
-		push_error("WorldStreamerPrefetch: no filtró chunks cuyo LOD ya estaba satisfecho.")
+	if _streamer._entity_activation_queue.size() != 1 or _streamer._entity_activation_queue[0] != Vector2i.RIGHT:
+		push_error("WorldStreamerPrefetch: materializó entidades fuera del único chunk FULL.")
 		_terminar(1)
 		return
-	if Vector2i.ZERO in _streamer._entity_activation_queue:
-		push_error("WorldStreamerPrefetch: volvió a encolar un chunk ya activo.")
+	if Vector2i.ZERO in _streamer._entity_activation_queue or Vector2i.DOWN in _streamer._entity_activation_queue:
+		push_error("WorldStreamerPrefetch: volvió a encolar FULL activo o materializó LOD TERRAIN.")
 		_terminar(1)
 		return
 	_streamer._entity_spawner = null
