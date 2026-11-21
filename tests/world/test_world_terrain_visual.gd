@@ -175,8 +175,15 @@ func _run() -> void:
 	var metricas_antes: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
 	var reglas_antes := int(metricas_antes.get("rule_evaluations", 0))
 	var cache_skips_antes := int(metricas_antes.get("cached_rule_skips", 0))
-	var repeated_cells: Array[Vector2i] = [Vector2i(0, 0)]
-	grass_layer._update_cells(repeated_cells, false)
+	var display_layer: DisplayLayer = null
+	for child in grass_layer._display.get_children():
+		if child is DisplayLayer:
+			display_layer = child as DisplayLayer
+			break
+	if display_layer == null:
+		_fail("Pradera no tiene DisplayLayer para comprobar el cache.")
+		return
+	display_layer.update_tile(grass_layer._display.cached_cells, Vector2i.ZERO)
 	var metricas_despues: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
 	if int(metricas_despues.get("rule_evaluations", 0)) != reglas_antes:
 		_fail("Una actualización idéntica volvió a evaluar reglas Dual Grid.")
