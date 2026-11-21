@@ -5,6 +5,8 @@ const MissionManagerScript = preload("res://scripts/gameplay/mission_manager.gd"
 const RelationshipSystemScript = preload("res://scripts/gameplay/relationship_system.gd")
 const PlayerStateScript = preload("res://scripts/state/player_state.gd")
 const SaveRepositoryScript = preload("res://scripts/infrastructure/save_file_repository.gd")
+const PlayerScene: PackedScene = preload("res://scenes/characters/player.tscn")
+const ZoneManagerScript = preload("res://scripts/world/zone_manager.gd")
 
 
 func _ready() -> void:
@@ -367,6 +369,62 @@ func _run() -> void:
 		errores.append("El snapshot narrativo original fue sobrescrito antes de restaurarse.")
 	historia_probe.story_save_repository.eliminar_partida("reserva_carmesi")
 	historia_probe.free()
+
+	# Integración real del guardado narrativo: jugador + ZoneManager + JSON.
+	# Comprueba el mismo punto de entrada que usan autosave, pausa y cierre.
+	var mundo_runtime := Node2D.new()
+	mundo_runtime.name = "World"
+	add_child(mundo_runtime)
+	var zone_runtime := ZoneManagerScript.new() as Node2D
+	zone_runtime.name = "ZoneManager"
+	zone_runtime.set("tipo_actual", "historia:reserva_carmesi")
+	mundo_runtime.add_child(zone_runtime)
+	var jugador_runtime := PlayerScene.instantiate() as Player
+	if jugador_runtime == null:
+		errores.append("No pudo instanciar al jugador para la integración del guardado narrativo.")
+	else:
+		jugador_runtime.global_position = Vector2(321.5, 654.25)
+		add_child(jugador_runtime)
+	var guardado_runtime := GameStateScript.new() as GameStateService
+	guardado_runtime.name = "GameStateSaveIntegration"
+	add_child(guardado_runtime)
+	await get_tree().process_frame
+	var directorio_integracion := "user://contracts/story_save_integration"
+	guardado_runtime.story_save_repository.configurar(directorio_integracion)
+	guardado_runtime.story_save_repository.asegurar_directorio()
+	guardado_runtime.story_save_repository.eliminar_partida("reserva_carmesi")
+	guardado_runtime.preparar_historia_reserva_carmesi(true)
+	guardado_runtime.world_state.flags["integration_progress_marker"] = 91
+	if jugador_runtime != null:
+		guardado_runtime.configurar_dependencias(null, jugador_runtime)
+		await get_tree().process_frame
+		await get_tree().process_frame
+		if not guardado_runtime.guardar_progreso_actual("prueba de cierre"):
+			errores.append("El guardado narrativo integrado no confirmó la escritura al solicitar cierre.")
+	var archivo_integracion := guardado_runtime.story_save_repository.leer_partida("reserva_carmesi")
+	var estado_integracion: Dictionary = archivo_integracion.get("estado", {}) as Dictionary
+	var flags_integracion: Dictionary = estado_integracion.get("flags", {}) as Dictionary
+	if int(flags_integracion.get("integration_progress_marker", 0)) != 91:
+		errores.append("El guardado narrativo integrado no persistió el progreso de la sesión.")
+	var jugador_guardado: Dictionary = estado_integracion.get("player", {}) as Dictionary
+	if not is_equal_approx(float(jugador_guardado.get("position_x", 0.0)), 321.5):
+		errores.append("El guardado narrativo integrado no conservó la posición del jugador.")
+	var reapertura_runtime := GameStateScript.new() as GameStateService
+	reapertura_runtime.name = "GameStateSaveReloadIntegration"
+	add_child(reapertura_runtime)
+	await get_tree().process_frame
+	reapertura_runtime.story_save_repository.configurar(directorio_integracion)
+	if not reapertura_runtime.preparar_historia_reserva_carmesi(false):
+		errores.append("No pudo preparar la reapertura del guardado narrativo integrado.")
+	if int(reapertura_runtime.world_state.flags.get("integration_progress_marker", 0)) != 91:
+		errores.append("El progreso narrativo integrado no sobrevivió a cerrar y reabrir el estado.")
+	reapertura_runtime.story_save_repository.eliminar_partida("reserva_carmesi")
+	reapertura_runtime.queue_free()
+	guardado_runtime.queue_free()
+	if jugador_runtime != null:
+		jugador_runtime.queue_free()
+	mundo_runtime.queue_free()
+	await get_tree().process_frame
 
 	misiones.free()
 	misiones_destino.free()
