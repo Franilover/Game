@@ -999,11 +999,11 @@ func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void
 	var manager: WorldEntityManager = null
 	if _entity_spawner != null and _entity_spawner.has_method("obtener_entity_manager"):
 		manager = _entity_spawner.obtener_entity_manager()
+	var unloading_variant: Variant = _terrain.obtener_chunk_en_descarga()
 	for chunk_variant in claves:
 		if not chunk_variant is Vector2i:
 			continue
 		var chunk_coord := chunk_variant as Vector2i
-		var unloading_variant: Variant = _terrain.obtener_chunk_en_descarga()
 		if (unloading_variant is Vector2i and unloading_variant == chunk_coord) or _pending_unload_lookup.has(chunk_coord) or _distancia_chunk(chunk_coord, centro) > _unload_radius:
 			continue
 		if manager != null:
@@ -1037,7 +1037,7 @@ func _procesar_siguiente_chunk_entidades() -> void:
 	var chunk_coord: Vector2i = _entity_activation_queue.pop_front()
 	# El jugador puede cambiar de chunk mientras la cola avanza. Ignorar
 	# entradas que ya fueron descargadas o dejaron de pertenecer al terreno.
-	if not _terrain.chunks_cargados().has(chunk_coord):
+	if not _terrain.chunk_cargado(chunk_coord):
 		_entity_activation_active = false
 		return
 
@@ -1063,7 +1063,7 @@ func _procesar_siguiente_chunk_entidades() -> void:
 	# El jugador puede cruzar otra frontera mientras el lote anterior cede el
 	# frame. Releer el LOD evita crear criaturas para un chunk que ya pasó a
 	# TERRAIN/DATA durante la materialización de props.
-	if not _terrain.chunks_cargados().has(chunk_coord):
+	if not _terrain.chunk_cargado(chunk_coord):
 		_entity_activation_active = false
 		return
 	lod = obtener_lod_chunk(chunk_coord)
