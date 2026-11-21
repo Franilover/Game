@@ -126,6 +126,7 @@ func configurar_dependencias(
 	# actualizar las reglas. Las IA sólo la consultan: compartirla evita una
 	# copia profunda completa por cada criatura materializada.
 	relaciones_ecologicas = nuevas_relaciones_ecologicas
+	_reconstruir_indice_relaciones_ecologicas()
 
 
 
