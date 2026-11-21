@@ -85,6 +85,13 @@ var cached_cells := TileCache.new()
 var _tileset_watcher: TileSetWatcher
 var _last_synced_world_properties: Dictionary = {}
 
+# Perfilado por lote para separar cache de terreno y recomposición visual.
+var _diag_update_calls: int = 0
+var _diag_update_ms: float = 0.0
+var _diag_cache_ms: float = 0.0
+var _diag_renderer_ms: float = 0.0
+var _diag_update_ms_max: float = 0.0
+
 
 # TODO: phase out GridShape and simply transpose everything when the offset axis is vertical
 ##[br] Returns what kind of grid a TileSet is.
@@ -132,8 +139,18 @@ func update(updated: Array) -> void:
 		return
 	_sync_properties_if_changed()
 	if not updated.is_empty():
+		var update_started_usec: int = Time.get_ticks_usec()
+		var cache_started_usec: int = update_started_usec
 		cached_cells.update(world, updated)
+		var cache_elapsed_ms: float = float(Time.get_ticks_usec() - cache_started_usec) / 1000.0
+		_diag_cache_ms += cache_elapsed_ms
+		var renderer_started_usec: int = Time.get_ticks_usec()
 		world_tiles_changed.emit(updated)
+		_diag_renderer_ms += float(Time.get_ticks_usec() - renderer_started_usec) / 1000.0
+		var update_elapsed_ms: float = float(Time.get_ticks_usec() - update_started_usec) / 1000.0
+		_diag_update_calls += 1
+		_diag_update_ms += update_elapsed_ms
+		_diag_update_ms_max = maxf(_diag_update_ms_max, update_elapsed_ms)
 
 
 ## Activates when the TerrainDual changes.
@@ -179,12 +196,28 @@ func obtener_diagnostico() -> Dictionary:
 		"rule_evaluations": 0,
 		"redundant_tiles": 0,
 		"set_cells": 0,
+		"flush_calls": 0,
+		"flush_ms_total": 0.0,
+		"flush_ms_max": 0.0,
+		"sample_count": 0,
+		"sample_path_ms": 0.0,
+		"sample_rule_ms": 0.0,
+		"sample_write_ms": 0.0,
 	}
 	for child in get_children():
 		if child is DisplayLayer:
 			var diag: Dictionary = child.obtener_diagnostico()
-			for key in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells"]:
+			for key in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells", "flush_calls", "sample_count"]:
 				out[key] = int(out[key]) + int(diag.get(key, 0))
+			for key in ["flush_ms_total", "sample_path_ms", "sample_rule_ms", "sample_write_ms"]:
+				out[key] = float(out[key]) + float(diag.get(key, 0.0))
+			out["flush_ms_max"] = maxf(float(out["flush_ms_max"]), float(diag.get("flush_ms_max", 0.0)))
+	out["update_calls"] = _diag_update_calls
+	out["update_ms_total"] = _diag_update_ms
+	out["update_ms_max"] = _diag_update_ms_max
+	out["cache_ms_total"] = _diag_cache_ms
+	out["renderer_ms_total"] = _diag_renderer_ms
+	out["cache"] = cached_cells.obtener_diagnostico()
 	return out
 
 
