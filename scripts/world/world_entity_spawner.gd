@@ -396,18 +396,13 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 				candidatos_validos_por_contexto[clave_contexto] = candidatos_contexto
 			if candidatos_contexto.is_empty():
 				continue
-			var validos: Array[Dictionary] = []
-			for candidato in candidatos_contexto:
-				var criatura_variant: Variant = candidato.get("criatura", {})
-				if not criatura_variant is Dictionary:
-					continue
-				var criatura := criatura_variant as Dictionary
-				var criatura_id := str(criatura.get("id", criatura.get("criatura_id", ""))).strip_edges()
-				if not criatura_id.is_empty() and not especies.has(criatura_id):
-					validos.append(candidato)
-			if validos.is_empty():
+			var candidato_elegido: Dictionary = _spawn_rules.elegir_candidato_uniforme_excluyendo(
+				candidatos_contexto,
+				especies,
+				rng
+			)
+			if candidato_elegido.is_empty():
 				continue
-			var candidato_elegido := validos[rng.randi_range(0, validos.size() - 1)] as Dictionary
 			var criatura_elegida: Variant = candidato_elegido.get("criatura", {})
 			if not criatura_elegida is Dictionary:
 				continue
