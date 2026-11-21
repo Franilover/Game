@@ -72,6 +72,7 @@ var _profiler_flushes: int = 0
 var _profiler_biome_ms: float = 0.0
 var _profiler_ecosystem_ms: float = 0.0
 var _profiler_zone_ms: float = 0.0
+var _profiler_noise_samples: int = 0
 var _profiler_data_max_ms: float = 0.0
 var _profiler_paint_max_ms: float = 0.0
 var _profiler_flush_max_ms: float = 0.0
@@ -353,6 +354,7 @@ func iniciar_generacion_chunk(
 	_profiler_biome_ms = 0.0
 	_profiler_ecosystem_ms = 0.0
 	_profiler_zone_ms = 0.0
+	_profiler_noise_samples = 0
 	_profiler_data_max_ms = 0.0
 	_profiler_paint_max_ms = 0.0
 	_profiler_flush_max_ms = 0.0
@@ -605,21 +607,32 @@ func _procesar_datos_chunk(
 			cursor += 1
 			continue
 
-		# Este es el camino caliente del generador. No medir cada llamada a
-		# FastNoiseLite: tres get_ticks_usec() por celda añadían miles de
-		# llamadas al profiler y contaminaban precisamente el rendimiento que
-		# estamos intentando medir. El costo total de DATOS se mide una vez
-		# por lote más abajo.
+		# Muestrear una celda de cada 64 evita instrumentar cada consulta
+		# FastNoiseLite. Los acumuladores son tiempo de muestra, no coste total
+		# extrapolado; permiten comparar el coste relativo sin contaminar el loop.
+		var medir_ruido := cursor % 64 == 0
+		var inicio_ruido_usec := 0
+		if medir_ruido:
+			inicio_ruido_usec = Time.get_ticks_usec()
 		var bioma_index: int = _bioma_index_at_tile(tile)
+		if medir_ruido:
+			_profiler_biome_ms += float(Time.get_ticks_usec() - inicio_ruido_usec) / 1000.0
+			inicio_ruido_usec = Time.get_ticks_usec()
 		var ecosistema_index: int = _ecosistema_index_at_tile(
 			tile,
 			bioma_index
 		)
+		if medir_ruido:
+			_profiler_ecosystem_ms += float(Time.get_ticks_usec() - inicio_ruido_usec) / 1000.0
+			inicio_ruido_usec = Time.get_ticks_usec()
 		var zona: int = _zona_base_at_tile(
 			tile,
 			bioma_index,
 			ecosistema_index
 		)
+		if medir_ruido:
+			_profiler_zone_ms += float(Time.get_ticks_usec() - inicio_ruido_usec) / 1000.0
+			_profiler_noise_samples += 1
 
 		# Reutilizar el índice lineal ya calculado para las tres matrices.
 		biomas[indice_dato] = bioma_index
@@ -965,7 +978,7 @@ func _finalizar_chunk() -> void:
 		"%.2f" % _profiler_ecosystem_ms,
 		" ms | zona=",
 		"%.2f" % _profiler_zone_ms,
-		" ms | pintura=",
+		" ms (muestras=", _profiler_noise_samples, ") | pintura=",
 		"%.2f" % _profiler_paint_ms,
 		" ms total / max_step=",
 		"%.2f" % _profiler_paint_max_ms,
@@ -1634,6 +1647,7 @@ func obtener_diagnostico() -> Dictionary:
 		"bioma_ms": _profiler_biome_ms,
 		"ecosistema_ms": _profiler_ecosystem_ms,
 		"zona_ms": _profiler_zone_ms,
+		"ruido_muestras": _profiler_noise_samples,
 		"pintado_ms": _profiler_paint_ms,
 		"pintado_max_step_ms": _profiler_paint_max_ms,
 		"flush_ms": _profiler_flush_ms,
