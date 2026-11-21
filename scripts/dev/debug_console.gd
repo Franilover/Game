@@ -321,6 +321,13 @@ func _vista_entidades() -> String:
 		out.append("%s: %d" % [grupo, nodos.size()])
 		for nodo in nodos.slice(0, mini(nodos.size(), 12)):
 			out.append("  - %s | %s" % [nodo.get_path(), _script(nodo)])
+	var spawner := _buscar_por_nombre("WorldEntitySpawner")
+	if spawner != null and spawner.has_method("obtener_diagnostico"):
+		out.append("")
+		out.append("SPAWNER / COSTE DE CRIATURAS")
+		var diagnostico: Variant = spawner.call("obtener_diagnostico")
+		if diagnostico is Dictionary:
+			out.append("  " + JSON.stringify(diagnostico))
 	return "\n".join(out)
 
 func _vista_datos() -> String:
