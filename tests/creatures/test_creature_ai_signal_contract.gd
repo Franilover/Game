@@ -3,6 +3,19 @@ extends Node
 const CreatureScene = preload("res://scenes/creatures/creature.tscn")
 const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
 const EntityScript = preload("res://scripts/characters/entity.gd")
+const AtmosphereScript = preload("res://scripts/world/world_atmosphere.gd")
+
+
+class MockClimateSystem extends Node:
+	var consultas: int = 0
+
+	func obtener_estado_para_contexto(_contexto: Dictionary) -> Dictionary:
+		consultas += 1
+		return {
+			"ambiente": {"temperatura_c": 20.0},
+			"clima": {"visibilidad": 0.8},
+			"eventos": []
+		}
 
 
 func _ready() -> void:
@@ -42,6 +55,27 @@ func _run() -> void:
 
 	if ai.perfil != CreatureAI.Perfil.ESPIRITU_ESTELAR:
 		errores.append("CreatureAI no recibió la configuración actualizada de su Creature.")
+
+	# El contexto climático se consulta una vez y se reutiliza hasta el siguiente
+	# tick ambiental; evita una copia profunda por criatura en cada physics frame.
+	var atmosfera := AtmosphereScript.new() as WorldAtmosphere
+	var modulacion := CanvasModulate.new()
+	modulacion.name = "DayNightModulation"
+	atmosfera.add_child(modulacion)
+	var clima := MockClimateSystem.new()
+	clima.name = "ClimateSystem"
+	atmosfera.add_child(clima)
+	get_tree().root.add_child(atmosfera)
+	criatura.datos["bioma_id"] = "bioma-cache-test"
+	ai.world_atmosphere = atmosfera
+	ai._estado_ambiental_cache_valido = false
+	var ambiente_a := ai._obtener_estado_ambiental()
+	var ambiente_b := ai._obtener_estado_ambiental()
+	if clima.consultas != 1 or ambiente_a != ambiente_b:
+		errores.append("CreatureAI consultó repetidamente el mismo contexto climático dentro del intervalo.")
+	ai._refrescar_estado_ambiental_cache()
+	if clima.consultas != 2:
+		errores.append("CreatureAI no actualizó el contexto climático al solicitar un refresh.")
 
 	if (
 		criatura.max_health != 140
@@ -99,6 +133,7 @@ func _run() -> void:
 
 	atacante.queue_free()
 	criatura.queue_free()
+	atmosfera.queue_free()
 	await get_tree().process_frame
 
 	if not errores.is_empty():
