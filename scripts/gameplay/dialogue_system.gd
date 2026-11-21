@@ -1614,10 +1614,8 @@ func _ejecutar_accion_dialogo() -> void:
 				_mostrar_cierre_dialogo()
 				return
 			_acciones.clear()
-			action_button.visible = false
-			if cancel_button != null:
-				cancel_button.visible = false
 			Events.notification_pushed.emit(_obtener_mensaje_reaccion_social(evento, _fuente.get_nombre()))
+			_mostrar_cierre_dialogo()
 			return
 
 		"aceptar_mision":
@@ -1629,18 +1627,18 @@ func _ejecutar_accion_dialogo() -> void:
 			var mission_manager_local: MissionManagerService = mission_manager
 			if mission_manager_local != null and mission_manager_local.aceptar_mision(clave, _fuente.get_personaje_game_id() if is_instance_valid(_fuente) else ""):
 				_acciones.clear()
-				action_button.visible = false
 				Events.notification_pushed.emit(
 					"Misión aceptada: "
 					+ str(mission_manager_local.buscar_mision_por_clave(clave).get("nombre", clave))
 				)
+				_mostrar_cierre_dialogo()
 				return
 
 		"seguir_jugador":
 			if is_instance_valid(_fuente):
 				if _fuente.iniciar_seguimiento_jugador(player):
 					_acciones.clear()
-					action_button.visible = false
+					_mostrar_cierre_dialogo()
 					return
 
 
