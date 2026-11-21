@@ -45,28 +45,28 @@ func _run_tests() -> void:
 		return
 	if _streamer._queue[0] != Vector2i.RIGHT:
 		push_error("WorldStreamerPrefetch: la cola no priorizó el chunk derecho.")
-		get_tree().quit(1)
+		_terminar(1)
 		return
 
 	# Cambia la velocidad a un dash hacia abajo, todavía sin cambiar de chunk.
-	player.global_position = Vector2(16.0 * 32.0 + 16.0, 8.0 * 32.0 + 16.0)
-	player.velocity = Vector2.DOWN * 500.0
-	streamer._actualizar_direccion_jugador()
-	streamer._actualizar_prioridad_cola()
+	_player.global_position = Vector2(16.0 * 32.0 + 16.0, 8.0 * 32.0 + 16.0)
+	_player.velocity = Vector2.DOWN * 500.0
+	_streamer._actualizar_direccion_jugador()
+	_streamer._actualizar_prioridad_cola()
 
-	if not streamer._prefetch_activo or streamer._prefetch_chunk != Vector2i.DOWN:
+	if not _streamer._prefetch_activo or _streamer._prefetch_chunk != Vector2i.DOWN:
 		push_error("WorldStreamerPrefetch: no actualizó el prefetch al cambiar la dirección.")
-		get_tree().quit(1)
+		_terminar(1)
 		return
-	if streamer._queue[0] != Vector2i.DOWN:
+	if _streamer._queue[0] != Vector2i.DOWN:
 		push_error("WorldStreamerPrefetch: la cola conservó una prioridad direccional obsoleta.")
-		get_tree().quit(1)
+		_terminar(1)
 		return
 
 	var sorts := int(_streamer.obtener_diagnostico().get("priority_queue_sorts", 0))
 	if sorts < 2:
 		push_error("WorldStreamerPrefetch: no reordenó la cola en ambos cambios de dirección.")
-		get_tree().quit(1)
+		_terminar(1)
 		return
 
 	print("WorldStreamerPrefetch: PASS sorts=%d" % sorts)
