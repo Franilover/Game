@@ -31,6 +31,7 @@ var _primer_guardado_elapsed: float = 0.0
 var _ultimo_motivo_fallo_guardado: String = ""
 var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
+var _runtime_no_detectado_reportado: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
 var _esperando_configuracion_eterium_jugador: bool = false
@@ -100,7 +101,16 @@ func _ready() -> void:
 
 func _process(delta: float) -> void:
 	if not _hay_runtime_partida_activo():
+		if (_historia_reserva_activa or not active_save_id.is_empty()) and not _runtime_no_detectado_reportado:
+			var escena := get_tree().current_scene
+			push_warning(
+				"GameState: hay una partida activa, pero el runtime no se detectó; "
+				+ "escena=" + str(escena.scene_file_path if is_instance_valid(escena) else "<sin escena>")
+				+ ", jugador_valido=" + str(is_instance_valid(_player))
+			)
+			_runtime_no_detectado_reportado = true
 		return
+	_runtime_no_detectado_reportado = false
 	if not get_tree().paused:
 		world_state.elapsed_time += delta
 	_autosave_timer += delta
@@ -112,6 +122,7 @@ func _process(delta: float) -> void:
 			_guardar_progreso_diferido()
 
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
+		print("GameState: autosave solicitado.")
 		var guardado := false
 		if _historia_reserva_activa:
 			guardado = guardar_progreso_historia()
