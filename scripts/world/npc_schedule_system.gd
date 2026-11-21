@@ -2217,13 +2217,15 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 		return false
 	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
 		return false
-	if bool(npc.get_meta("rutina_en_edificio", false)):
-		return false
 
 	var personaje_id := npc.get_personaje_game_id().strip_edges()
 	if personaje_id.is_empty():
 		return false
 	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	if bool(npc.get_meta("rutina_en_edificio", false)):
+		if not objetivo.is_empty():
+			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
 	if minutos < 540 or minutos >= 1200:
 		if not objetivo.is_empty():
 			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
