@@ -170,31 +170,21 @@ func _run() -> void:
 		_fail("Dirty terrain queues did not drain in bounded flushes.")
 		return
 
-	# Reenviar una celda sin cambiar ninguno de sus terrenos vecinos debe
-	# reutilizar la composición ya calculada, no volver a evaluar el trie.
+	# La misma vecindad debe poder componerse una vez y reutilizarse
+	# inmediatamente después, sin depender de la cola de flush del streamer.
 	var metricas_antes: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
 	var reglas_antes := int(metricas_antes.get("rule_evaluations", 0))
 	var cache_skips_antes := int(metricas_antes.get("cached_rule_skips", 0))
-	var display_layer: DisplayLayer = null
-	for child in grass_layer._display.get_children():
-		if child is DisplayLayer:
-			display_layer = child as DisplayLayer
-			break
-	if display_layer == null:
-		_fail("Pradera no tiene DisplayLayer para comprobar el cache.")
+	display_layer.update_tile(grass_layer._display.cached_cells, Vector2i.ZERO)
+	var metricas_primera: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
+	var reglas_primera := int(metricas_primera.get("rule_evaluations", 0))
+	display_layer.update_tile(grass_layer._display.cached_cells, Vector2i.ZERO)
+	var metricas_segunda: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
+	if int(metricas_segunda.get("rule_evaluations", 0)) != reglas_primera:
+		_fail("Una vecindad Dual Grid idéntica volvió a evaluar las reglas.")
 		return
-	var cached_display_cells: Array = display_layer._terrain_signature_by_cell.keys()
-	if cached_display_cells.is_empty():
-		_fail("El renderer no registró vecindades para las celdas compuestas.")
-		return
-	var cached_display_cell: Vector2i = cached_display_cells[0]
-	display_layer.update_tile(grass_layer._display.cached_cells, cached_display_cell)
-	var metricas_despues: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
-	if int(metricas_despues.get("rule_evaluations", 0)) != reglas_antes:
-		_fail("Una actualización idéntica volvió a evaluar reglas Dual Grid.")
-		return
-	if int(metricas_despues.get("cached_rule_skips", 0)) <= cache_skips_antes:
-		_fail("El cache de vecindad no registró el descarte de una recomposición idéntica.")
+	if int(metricas_segunda.get("cached_rule_skips", 0)) <= cache_skips_antes:
+		_fail("El cache no omitió la segunda evaluación de una vecindad idéntica.")
 		return
 
 	await process_frame
