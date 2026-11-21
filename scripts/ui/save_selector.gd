@@ -32,7 +32,9 @@ func _ready() -> void:
 	# que el Control raiz use el rectangulo de su padre antes de calcular margenes.
 	_normalizar_geometria_raiz()
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	var inicio_lista_ms := Time.get_ticks_msec()
 	actualizar_lista()
+	print("SaveSelector: lista de partidas preparada → ", list_container.get_child_count(), " entradas | ", Time.get_ticks_msec() - inicio_lista_ms, " ms")
 	_configurar_diseno_responsive()
 	PIXEL_UI_THEME.apply(self)
 	get_viewport().size_changed.connect(_configurar_diseno_responsive)
