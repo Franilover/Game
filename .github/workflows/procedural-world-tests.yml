@@ -383,6 +383,21 @@ jobs:
       - name: Run procedural kernel smoke tests
         run: godot --headless --path . --script res://tests/world/test_world_generator_kernel.gd
 
+      - name: Run bounded world entity pool regression test
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/entities/test_world_entity_pool.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|WorldEntityPool: FAIL:' <<<"$output"; then
+            echo "World entity pool regression reported errors."
+            exit 1
+          fi
+          if ! grep -q 'WorldEntityPool: PASS' <<<"$output"; then
+            echo "World entity pool regression did not report PASS."
+            exit 1
+          fi
+
       - name: Run entity lifecycle regression test
         shell: bash
         run: |
