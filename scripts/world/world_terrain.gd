@@ -1193,6 +1193,12 @@ func tiene_descarga_activa() -> bool:
 	return not _unload_task.is_empty()
 
 
+func obtener_chunk_en_descarga() -> Variant:
+	if _unload_task.is_empty():
+		return null
+	return _unload_task.get("coord", null)
+
+
 func puede_iniciar_generacion_durante_descarga() -> bool:
 	if _unload_task.is_empty() or visual == null:
 		return true
