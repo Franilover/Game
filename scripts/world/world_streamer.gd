@@ -338,8 +338,23 @@ func _procesar_descarga_si_hay_presupuesto() -> void:
 	var presupuesto_descarga := _presupuesto_descarga()
 	if presupuesto_descarga <= 0:
 		return
+	var chunk_descargado_variant: Variant = _terrain.obtener_chunk_en_descarga()
 	var descarga_inicio_usec := Time.get_ticks_usec()
-	_terrain.procesar_descargas(presupuesto_descarga)
+	var descarga_terminada := _terrain.procesar_descargas(presupuesto_descarga)
+	if descarga_terminada and chunk_descargado_variant is Vector2i:
+		var chunk_descargado := chunk_descargado_variant as Vector2i
+		# Si el jugador regresó mientras el clear estaba activo, el chunk ya
+		# no existe visualmente: volver a encolarlo para reconstruirlo.
+		if _distancia_chunk(chunk_descargado, _player_chunk) <= _load_radius:
+			var nuevos: Array = []
+			_agregar_chunk_a_cola(chunk_descargado, nuevos)
+			for nuevo_variant in nuevos:
+				if nuevo_variant is Vector2i:
+					_queue.append(nuevo_variant as Vector2i)
+			_queue.sort_custom(
+				func(a: Vector2i, b: Vector2i) -> bool:
+					return _prioridad_chunk(a, _player_chunk) < _prioridad_chunk(b, _player_chunk)
+			)
 	if _render_manager != null:
 		_render_manager.call(
 			"registrar_trabajo",
@@ -923,7 +938,8 @@ func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void
 		if not chunk_variant is Vector2i:
 			continue
 		var chunk_coord := chunk_variant as Vector2i
-		if _pending_unload_lookup.has(chunk_coord) or _distancia_chunk(chunk_coord, centro) > _unload_radius:
+		var unloading_variant: Variant = _terrain.obtener_chunk_en_descarga()
+		if (unloading_variant is Vector2i and unloading_variant == chunk_coord) or _pending_unload_lookup.has(chunk_coord) or _distancia_chunk(chunk_coord, centro) > _unload_radius:
 			continue
 		if manager != null:
 			var lod := obtener_lod_chunk(chunk_coord)
