@@ -321,10 +321,10 @@ func _restaurar_sesion() -> void:
 			"GarliaAuth: no se pudo abrir la sesión guardada."
 		)
 
-		_eliminar_sesion_guardada()
-
+		_restauracion_reintentable = true
 		_restaurando_sesion = false
-
+		if _restore_retry_timer != null:
+			_restore_retry_timer.start()
 		session_restore_finished.emit()
 
 		return
@@ -790,15 +790,11 @@ func _guardar_sesion() -> void:
 
 
 func _eliminar_sesion_guardada() -> void:
-	if not FileAccess.file_exists(
-		SESSION_FILE_PATH
-	):
+	if not FileAccess.file_exists(_session_file_path):
 		return
 
 	DirAccess.remove_absolute(
-		ProjectSettings.globalize_path(
-			SESSION_FILE_PATH
-		)
+		ProjectSettings.globalize_path(_session_file_path)
 	)
 
 
