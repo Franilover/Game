@@ -3,6 +3,7 @@ extends SceneTree
 const ConfigScript = preload("res://scripts/world/procedural/world_generation_config.gd")
 const KernelScript = preload("res://scripts/world/procedural/world_generator_kernel.gd")
 const SeedScript = preload("res://scripts/world/procedural/world_seed.gd")
+const SpawnRulesScript = preload("res://scripts/world/world_spawn_rules.gd")
 
 func _initialize() -> void:
 	call_deferred("_run_tests")
