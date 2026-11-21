@@ -117,6 +117,7 @@ func configurar_dependencias(
 	combat_system = nuevo_combat_system
 	world_items = nuevo_world_items
 	world_atmosphere = nuevo_world_atmosphere
+	_estado_ambiental_cache_valido = false
 	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
 
 
@@ -151,6 +152,8 @@ var _velocidad_normal: float = 20.0
 var _velocidad_base_actual: float = 20.0
 var _ultimo_modificador_ambiental: float = -1.0
 var _tiempo_revision_ambiental: float = 0.0
+var _estado_ambiental_cache: Dictionary = {}
+var _estado_ambiental_cache_valido: bool = false
 var objeto_robado: Dictionary = {}
 
 
@@ -181,6 +184,7 @@ func configurar_relaciones_ecologicas(nuevas_relaciones_ecologicas: Array) -> vo
 
 
 func configurar_criatura() -> void:
+	_estado_ambiental_cache_valido = false
 	_refrescar_configuracion()
 	_aplicar_configuracion_movimiento()
 
@@ -211,6 +215,7 @@ func _physics_process(delta: float) -> void:
 	_tiempo_revision_ambiental += delta
 	if _tiempo_revision_ambiental >= 0.75:
 		_tiempo_revision_ambiental = 0.0
+		_refrescar_estado_ambiental_cache()
 		_actualizar_velocidad_ambiental()
 
 	_actualizar_memoria_interaccion(delta)
@@ -1652,6 +1657,18 @@ func _obtener_distancia_deteccion() -> float:
 
 
 func _obtener_estado_ambiental() -> Dictionary:
+	if not _estado_ambiental_cache_valido:
+		return _refrescar_estado_ambiental_cache()
+	return _estado_ambiental_cache
+
+
+func _refrescar_estado_ambiental_cache() -> Dictionary:
+	_estado_ambiental_cache = _consultar_estado_ambiental()
+	_estado_ambiental_cache_valido = true
+	return _estado_ambiental_cache
+
+
+func _consultar_estado_ambiental() -> Dictionary:
 	if criatura == null or world_atmosphere == null or not is_instance_valid(world_atmosphere):
 		return {}
 	var sistema := world_atmosphere.get_node_or_null("ClimateSystem")
@@ -1671,18 +1688,11 @@ func _obtener_estado_ambiental() -> Dictionary:
 
 func _obtener_respuesta_ambiental() -> Dictionary:
 	var valor: Variant = configuracion_ia.get("respuesta_ambiental", {})
-	var respuesta: Dictionary = valor.duplicate(true) if valor is Dictionary else {}
-	# Valores fisiológicos generales de partida; cada especie puede sustituirlos
-	# desde su ia_config en Supabase.
-	if not respuesta.has("temperatura_minima_c"):
-		respuesta["temperatura_minima_c"] = 0.0
-	if not respuesta.has("temperatura_maxima_c"):
-		respuesta["temperatura_maxima_c"] = 28.0
-	if not respuesta.has("velocidad_bajo_minimo"):
-		respuesta["velocidad_bajo_minimo"] = 0.78
-	if not respuesta.has("velocidad_sobre_maximo"):
-		respuesta["velocidad_sobre_maximo"] = 0.82
-	return respuesta
+	# Los consumidores leen el bloque y ya aplican sus valores por defecto
+	# mediante Dictionary.get(); no hace falta duplicarlo ni completarlo.
+	if valor is Dictionary:
+		return valor as Dictionary
+	return {}
 
 
 func _obtener_modificador_velocidad_ambiental() -> float:
