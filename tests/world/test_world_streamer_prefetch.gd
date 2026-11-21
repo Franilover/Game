@@ -69,6 +69,48 @@ func _run_tests() -> void:
 		_terminar(1)
 		return
 
+	# La generación puede cederse antes de pintar, pero no durante una
+	# pintura parcial ni durante el flush final.
+	_terrain._generation_task = {"coord": Vector2i(3, 0), "stage": 0}
+	if not _terrain.puede_pausar_generacion_actual():
+		push_error("WorldStreamerPrefetch: DATA debería permitir preempción segura.")
+		_terminar(1)
+		return
+	if not _terrain.pausar_generacion_actual():
+		push_error("WorldStreamerPrefetch: no pudo pausar la etapa DATA.")
+		_terminar(1)
+		return
+	if _terrain.tiene_generacion_activa() or not _terrain.tiene_generacion_pausada():
+		push_error("WorldStreamerPrefetch: la tarea DATA no quedó preservada.")
+		_terminar(1)
+		return
+	if _terrain.puede_pausar_generacion_actual():
+		push_error("WorldStreamerPrefetch: permitió una segunda tarea pausada.")
+		_terminar(1)
+		return
+
+	_terrain._paused_generation_task.clear()
+	_terrain._generation_task = {
+		"coord": Vector2i(4, 0),
+		"stage": 1,
+		"cursor_pintado": 0,
+	}
+	if not _terrain.puede_pausar_generacion_actual():
+		push_error("WorldStreamerPrefetch: PINTADO sin celdas debería ser pausible.")
+		_terminar(1)
+		return
+	_terrain._generation_task["cursor_pintado"] = 1
+	if _terrain.puede_pausar_generacion_actual():
+		push_error("WorldStreamerPrefetch: permitió interrumpir pintura parcial.")
+		_terminar(1)
+		return
+	_terrain._generation_task["stage"] = 2
+	if _terrain.puede_pausar_generacion_actual():
+		push_error("WorldStreamerPrefetch: permitió interrumpir FLUSH.")
+		_terminar(1)
+		return
+	_terrain._generation_task.clear()
+
 	print("WorldStreamerPrefetch: PASS sorts=%d" % sorts)
 	_terminar(0)
 
