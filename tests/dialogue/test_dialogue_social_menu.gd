@@ -203,6 +203,12 @@ func _run() -> void:
 	dialogo_prueba_cierre._ejecutar_accion_dialogo()
 	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
 		errores.append("Una acción de diálogo no resuelta no ofrece una salida segura.")
+	# La tecla de avanzar debe ejecutar la acción terminal en vez de saltarla.
+	dialogo_prueba_cierre._abierto = true
+	dialogo_prueba_cierre._acciones = accion_desconocida.duplicate(true)
+	dialogo_prueba_cierre._avanzar()
+	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
+		errores.append("Avanzar con teclado omitió la acción final o dejó el diálogo bloqueado.")
 	# Si las opciones no tienen un contenedor visible, el avance debe cerrar.
 	dialogo_prueba_cierre._abierto = true
 	var lineas_sin_respuestas_visibles: Array[Dictionary] = [{"hablante": "Mara", "texto": "Nos vemos."}]
