@@ -443,6 +443,8 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 		npc.set_meta("rutina_ruta_fallida", false)
 		npc.remove_meta("rutina_ruta_reintento_ms")
 		npc.remove_meta("rutina_destino_global")
+		npc.remove_meta("rutina_ultima_posicion_vigilada")
+		npc.remove_meta("rutina_ultimo_progreso_ms")
 		npc.set_meta("rutina_firma", "")
 
 
@@ -760,6 +762,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 						npc.set_meta("rutina_en_transito", true)
 						npc.set_meta("rutina_ruta_fallida", false)
 						npc.remove_meta("rutina_ruta_reintento_ms")
+						npc.set_meta("rutina_ultima_posicion_vigilada", npc.global_position)
+						npc.set_meta("rutina_ultimo_progreso_ms", Time.get_ticks_msec())
 						npc.set_meta("rutina_error_firma", "")
 					else:
 						npc.set_meta("rutina_ruta_fallida", true)
