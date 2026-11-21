@@ -275,7 +275,7 @@ func _debe_actualizar_rutina_auxiliar(delta: float) -> bool:
 	# Se agrupan en un tick corto; necesidades y memoria siguen acumulando delta
 	# en cada paso para no alterar su evolución temporal.
 	_tiempo_rutina_auxiliar += maxf(delta, 0.0)
-	if _tiempo_rutina_auxiliar < INTERVALO_RUTINA_AUXILIAR:
+	if _tiempo_rutina_auxiliar + 0.000001 < INTERVALO_RUTINA_AUXILIAR:
 		return false
 	_tiempo_rutina_auxiliar = fposmod(_tiempo_rutina_auxiliar, INTERVALO_RUTINA_AUXILIAR)
 	return true
