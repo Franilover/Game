@@ -312,6 +312,11 @@ func _vista_mundo() -> String:
 		var candidatos: float = float(dual.get("display_candidates", 0))
 		var set_count: float = float(dual.get("set_cells", 0))
 		out.append("  eficiencia: %.1f%% sin set_cell" % [100.0 * (1.0 - set_count / candidatos)])
+	out.append("  TIEMPOS ACUMULADOS (ms desde carga de la escena; no son ms/frame)")
+	out.append("    Display total=%.3f | cache=%.3f | señal/renderers=%.3f" % [float(dual.get("update_ms_total", 0.0)), float(dual.get("cache_ms_total", 0.0)), float(dual.get("renderer_ms_total", 0.0))])
+	out.append("    Cache: lotes=%d celdas=%d max_lote=%.3fms" % [int(dual.get("cache_update_calls", 0)), int(dual.get("cache_cells_processed", 0)), float(dual.get("cache_elapsed_ms_max", 0.0))])
+	out.append("    DisplayLayer: flushes=%d total=%.3fms max=%.3fms" % [int(dual.get("flush_calls", 0)), float(dual.get("flush_ms_total", 0.0)), float(dual.get("flush_ms_max", 0.0))])
+	out.append("    Muestras cada 64 celdas: n=%d vecindad=%.3fms reglas=%.3fms escritura=%.3fms" % [int(dual.get("sample_count", 0)), float(dual.get("sample_path_ms", 0.0)), float(dual.get("sample_rule_ms", 0.0)), float(dual.get("sample_write_ms", 0.0))])
 	return "\n".join(out)
 
 func _vista_entidades() -> String:
@@ -547,6 +552,20 @@ func _diagnostico_dual_grid() -> Dictionary:
 		"rule_evaluations": 0,
 		"redundant_tiles": 0,
 		"set_cells": 0,
+		"flush_calls": 0,
+		"flush_ms_total": 0.0,
+		"flush_ms_max": 0.0,
+		"sample_count": 0,
+		"sample_path_ms": 0.0,
+		"sample_rule_ms": 0.0,
+		"sample_write_ms": 0.0,
+		"update_ms_total": 0.0,
+		"cache_ms_total": 0.0,
+		"renderer_ms_total": 0.0,
+		"cache_update_calls": 0,
+		"cache_cells_processed": 0,
+		"cache_elapsed_ms_total": 0.0,
+		"cache_elapsed_ms_max": 0.0,
 	}
 	var raiz: Node = get_tree().root
 	if raiz == null:
@@ -562,8 +581,16 @@ func _diagnostico_dual_grid() -> Dictionary:
 			continue
 		var metricas: Dictionary = diag.get("renderer_metrics", {})
 		out["layers"] = int(out["layers"]) + int(metricas.get("layers", 0))
-		for clave in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells"]:
+		for clave in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells", "flush_calls", "sample_count"]:
 			out[clave] = int(out[clave]) + int(metricas.get(clave, 0))
+		for clave in ["flush_ms_total", "sample_path_ms", "sample_rule_ms", "sample_write_ms", "update_ms_total", "cache_ms_total", "renderer_ms_total"]:
+			out[clave] = float(out[clave]) + float(metricas.get(clave, 0.0))
+		out["flush_ms_max"] = maxf(float(out["flush_ms_max"]), float(metricas.get("flush_ms_max", 0.0)))
+		var cache_diag: Dictionary = metricas.get("cache", {})
+		out["cache_update_calls"] = int(out["cache_update_calls"]) + int(cache_diag.get("update_calls", 0))
+		out["cache_cells_processed"] = int(out["cache_cells_processed"]) + int(cache_diag.get("cells_processed", 0))
+		out["cache_elapsed_ms_total"] = float(out["cache_elapsed_ms_total"]) + float(cache_diag.get("elapsed_ms_total", 0.0))
+		out["cache_elapsed_ms_max"] = maxf(float(out["cache_elapsed_ms_max"]), float(cache_diag.get("elapsed_ms_max", 0.0)))
 	return out
 
 
