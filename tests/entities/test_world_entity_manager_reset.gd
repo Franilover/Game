@@ -48,6 +48,40 @@ func _run() -> void:
 	elif int(perfil_despawn["creatures"]["entities"]) != 0 or int(perfil_despawn["props"]["entities"]) != 0:
 		errores.append("El diagnóstico de despawn no comenzó en cero.")
 
+	# Un trabajo de descarga debe avanzar por lotes y mantener los flags del
+	# chunk hasta terminar. Los Nodes genéricos se conservan como entidades
+	# ajenas a Creature/WorldProp.
+	var chunk_lote := Vector2i(7, -2)
+	var lote_a := Node.new()
+	var lote_b := Node.new()
+	var lote_c := Node.new()
+	manager._by_chunk[chunk_lote] = [lote_a, lote_b, lote_c]
+	manager._active_chunks[chunk_lote] = true
+	manager._active_creature_chunks[chunk_lote] = true
+	manager._active_prop_chunks[chunk_lote] = true
+	if not manager.iniciar_despawn_chunk(chunk_lote):
+		errores.append("No se pudo iniciar el trabajo incremental de descarga.")
+	if manager.procesar_despawn_chunk(chunk_lote, 1):
+		errores.append("La descarga terminó antes de consumir el primer lote.")
+	if int(manager._despawn_jobs[chunk_lote]["cursor"]) != 1:
+		errores.append("El primer lote no procesó exactamente una entrada.")
+	if not manager._active_chunks.has(chunk_lote):
+		errores.append("El chunk perdió su estado activo antes de completar el despawn.")
+	if manager.procesar_despawn_chunk(chunk_lote, 1):
+		errores.append("La descarga terminó antes de consumir el segundo lote.")
+	if not manager.procesar_despawn_chunk(chunk_lote, 1):
+		errores.append("El último lote no completó la descarga.")
+	if manager._despawn_jobs.has(chunk_lote):
+		errores.append("El trabajo incremental permaneció registrado después de terminar.")
+	if manager._by_chunk.get(chunk_lote, []).size() != 3:
+		errores.append("La descarga perdió entidades ajenas al tipo Creature/WorldProp.")
+	if manager._active_chunks.has(chunk_lote):
+		errores.append("El chunk conservó su estado activo tras completar el despawn.")
+	manager._by_chunk.erase(chunk_lote)
+	lote_a.free()
+	lote_b.free()
+	lote_c.free()
+
 	# La lectura predeterminada mantiene aislamiento profundo para consumidores
 	# que puedan modificar los datos recibidos.
 	var copia_profunda: Array = manager.obtener_datos_chunk(Vector2i.ZERO, "criaturas")
