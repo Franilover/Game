@@ -786,12 +786,12 @@ func procesar_despawn_chunk(chunk_coord: Vector2i, max_entities: int = 8) -> boo
 	var snapshot_ids: Dictionary = job.get("snapshot_ids", {})
 	var bucket_actual_variant: Variant = _by_chunk.get(chunk_coord, [])
 	if bucket_actual_variant is Array:
-		for entity_variant in bucket_actual_variant as Array:
-			if not entity_variant is Node:
+		for nuevo_variant in bucket_actual_variant as Array:
+			if not nuevo_variant is Node:
 				continue
-			var entity := entity_variant as Node
-			if is_instance_valid(entity) and not snapshot_ids.has(entity.get_instance_id()) and not entity in restantes:
-				restantes.append(entity)
+			var entidad_nueva := nuevo_variant as Node
+			if is_instance_valid(entidad_nueva) and not snapshot_ids.has(entidad_nueva.get_instance_id()) and not entidad_nueva in restantes:
+				restantes.append(entidad_nueva)
 
 	if restantes.is_empty():
 		_by_chunk.erase(chunk_coord)
