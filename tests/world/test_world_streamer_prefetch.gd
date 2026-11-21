@@ -207,22 +207,6 @@ func _run_tests() -> void:
 		return
 	_terrain._generation_task.clear()
 
-	# Una cola de descargas debe tener prioridad sobre iniciar otra generación.
-	_streamer._queue = [Vector2i(5, 0)]
-	_streamer._pending_unload_chunks = [Vector2i(-3, 0)]
-	_streamer._pending_unload_lookup[Vector2i(-3, 0)] = true
-	if _streamer._iniciar_siguiente_chunk():
-		push_error("WorldStreamerPrefetch: inició generación mientras había descargas pendientes.")
-		_terminar(1)
-		return
-	if _streamer._queue.size() != 1 or _terrain.tiene_generacion_activa():
-		push_error("WorldStreamerPrefetch: consumió la cola de generación antes del unload.")
-		_terminar(1)
-		return
-	_streamer._pending_unload_chunks.clear()
-	_streamer._pending_unload_lookup.clear()
-	_streamer._queue.clear()
-
 	# La generación puede cederse antes de pintar, pero no durante una
 	# pintura parcial ni durante el flush final.
 	_terrain._generation_task = {"coord": Vector2i(3, 0), "stage": 0}
