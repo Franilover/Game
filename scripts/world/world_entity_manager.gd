@@ -23,6 +23,8 @@ var _replica_keys_by_entity: Dictionary = {}
 var _replica_prop_keys_by_entity: Dictionary = {}
 var _data_by_chunk: Dictionary = {}
 var _despawn_jobs: Dictionary = {}
+var _active_entities_cache: Array = []
+var _active_entities_cache_dirty: bool = true
 
 var _diag_despawn_creature_count: int = 0
 var _diag_despawn_prop_count: int = 0
@@ -200,6 +202,7 @@ func registrar(
 		entities.add_child(entity)
 
 	_conectar_lifecycle(entity)
+	_active_entities_cache_dirty = true
 
 	# Una entidad persistente no pertenece al ciclo de vida del chunk.
 	# Se registra como global para que el streaming nunca la destruya.
@@ -277,6 +280,7 @@ func registrar_global(entity: Node, persistent_key: String = "") -> bool:
 	if not entity in _global_entities:
 		_global_entities.append(entity)
 	_conectar_lifecycle(entity)
+	_active_entities_cache_dirty = true
 	if not persistent_key.is_empty():
 		_registrar_clave_persistente(entity, persistent_key)
 	return true
@@ -347,6 +351,7 @@ func _conectar_lifecycle(entity: Node) -> void:
 
 
 func _al_salir_entidad(entity: Node) -> void:
+	_active_entities_cache_dirty = true
 	# Una recolección elimina el prop del árbol antes de descargar el chunk.
 	# Registrar el tombstone aquí evita que los datos originales lo regeneren.
 	if entity is WorldProp and entity.is_queued_for_deletion() and not bool(entity.get_meta("world_manager_unloading", false)):
@@ -462,20 +467,25 @@ func _limpiar_referencias_replica(
 
 
 func obtener_entidades_activas() -> Array:
-	var resultado: Array = []
-	var vistos: Dictionary = {}
-	for bucket_variant in _by_chunk.values():
-		if not bucket_variant is Array:
-			continue
-		for entity_variant in bucket_variant as Array:
+	# La percepción de cada criatura consulta este conjunto varias veces por
+	# segundo. Reconstruirlo por IA recorría todos los chunks y asignaba un
+	# Array/Dictionary por consulta. Se conserva hasta un cambio de membresía.
+	if _active_entities_cache_dirty:
+		_active_entities_cache.clear()
+		var vistos: Dictionary = {}
+		for bucket_variant in _by_chunk.values():
+			if not bucket_variant is Array:
+				continue
+			for entity_variant in bucket_variant as Array:
+				if entity_variant is Node and is_instance_valid(entity_variant) and not vistos.has(entity_variant):
+					vistos[entity_variant] = true
+					_active_entities_cache.append(entity_variant)
+		for entity_variant in _global_entities:
 			if entity_variant is Node and is_instance_valid(entity_variant) and not vistos.has(entity_variant):
 				vistos[entity_variant] = true
-				resultado.append(entity_variant)
-	for entity_variant in _global_entities:
-		if entity_variant is Node and is_instance_valid(entity_variant) and not vistos.has(entity_variant):
-			vistos[entity_variant] = true
-			resultado.append(entity_variant)
-	return resultado
+				_active_entities_cache.append(entity_variant)
+		_active_entities_cache_dirty = false
+	return _active_entities_cache
 
 
 func obtener_por_chunk(chunk_coord: Vector2i) -> Array:
