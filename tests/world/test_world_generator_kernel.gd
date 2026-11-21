@@ -25,6 +25,18 @@ func _run_tests() -> void:
 	assert(chunk_b.origin_tile == Vector2i(-16, 32), "El origen debe derivarse de las coordenadas globales.")
 	assert(chunk_a.index_at(-1, 0) == -1, "Un índice fuera del chunk debe rechazarse.")
 	var spawn_rules = SpawnRulesScript.new()
+	# La caché de props del spawner es un Array dinámico, no Array[Dictionary].
+	# La selección debe aceptar ese contrato sin error de tipo en runtime.
+	var candidatos_props: Array = [
+		{"id": "prop_a", "peso": 1.0},
+		{"id": "prop_b", "peso": 3.0}
+	]
+	var rng_prop := RandomNumberGenerator.new()
+	rng_prop.seed = 17
+	var prop_elegido: Dictionary = spawn_rules.elegir_prop(candidatos_props, rng_prop)
+	assert(not prop_elegido.is_empty(), "elegir_prop debe aceptar la caché dinámica de candidatos.")
+	assert(str(prop_elegido.get("id", "")) in ["prop_a", "prop_b"], "elegir_prop debe devolver un registro válido.")
+	assert(spawn_rules.elegir_prop([], RandomNumberGenerator.new()).is_empty(), "elegir_prop debe tolerar una caché vacía.")
 	var candidatos := [
 		{"criatura": {"id": "especie_a"}, "peso_spawn": 1.0},
 		{"criatura": {"id": "especie_b"}, "peso_spawn": 3.0},
