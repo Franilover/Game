@@ -48,16 +48,16 @@ func _run() -> void:
 		_fail("La caché de alimentos no se invalidó al cambiar la configuración.")
 		return
 
-	var alimento := WorldItemScript.new() as WorldItem
-	alimento.datos_objeto = {"item_id": "meat", "cantidad": 1}
-	if not ai._es_alimento_configurado(alimento):
+	var alimento_prueba := WorldItemScript.new() as WorldItem
+	alimento_prueba.datos_objeto = {"item_id": "meat", "cantidad": 1}
+	if not ai._es_alimento_configurado(alimento_prueba):
 		_fail("La lectura directa no reconoció un alimento válido.")
 		return
-	alimento.datos_objeto["cantidad"] = 0
-	if ai._es_alimento_configurado(alimento):
+	alimento_prueba.datos_objeto["cantidad"] = 0
+	if ai._es_alimento_configurado(alimento_prueba):
 		_fail("La lectura directa aceptó un objeto sin cantidad disponible.")
 		return
-	alimento.free()
+	alimento_prueba.free()
 	print("CreatureAITargetPolicy: checkpoint food cache")
 
 	# El índice ecológico debe priorizar la regla del ecosistema y conservar
