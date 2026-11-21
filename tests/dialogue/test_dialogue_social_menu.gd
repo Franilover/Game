@@ -164,6 +164,20 @@ func _run() -> void:
 	# Ivo, Mara y Nima deben recorrer la misma política de opciones que
 	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
+	# Una segunda interacción no debe sustituir el diálogo activo ni dejar
+	# pausado al NPC que estaba hablando.
+	var npc_alternativo := CreatureScene.instantiate() as Creature
+	add_child(npc_alternativo)
+	dialogo._abierto = true
+	dialogo._fuente = npc
+	var reemplazo_dialogo_aceptado := dialogo.abrir(
+		{"lineas": [{"hablante": "Otro NPC", "texto": "No debería reemplazar la conversación."}]},
+		npc_alternativo
+	)
+	if reemplazo_dialogo_aceptado or dialogo._fuente != npc:
+		errores.append("Una interacción nueva sustituyó una conversación que seguía abierta.")
+	dialogo._abierto = false
+	dialogo._fuente = npc
 	# Una iniciativa explícita de Elian debe conservar el menú aunque su saludo
 	# reutilice una etiqueta lineal en los datos narrativos.
 	var saludo_elian := {
