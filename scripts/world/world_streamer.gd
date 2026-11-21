@@ -19,13 +19,9 @@ const MAX_DATA_CHUNKS: int = 25
 
 var _load_radius: int = VISIBLE_RADIUS
 var _unload_radius: int = VISIBLE_RADIUS
-# El terreno visible se limita al chunk actual y, como máximo, a los
-# vecinos necesarios para anticipar el movimiento. No mantener un 3x3
-# completo: en TileMapDual cada celda genera trabajo de render.
-# Test de rendimiento: terreno y entidades usan radios independientes.
-# Las entidades pueden aparecer en el chunk del jugador y sus vecinos
-# ya cargados. El terreno sigue siendo la autoridad: sólo se invoca al
-# spawner después de que un chunk terminó de generarse.
+# El terreno visible mantiene el 3x3 acordado. Sólo el chunk central
+# materializa props/criaturas como Nodes; los ocho vecinos son terreno,
+# y el anillo DATA exterior conserva únicamente registros ligeros.
 var _prop_active_radius: int = FULL_RADIUS
 var _creature_active_radius: int = FULL_RADIUS
 var _cells_per_frame: int = 128
@@ -522,7 +518,7 @@ func _actualizar_streaming() -> void:
 	var cambio_stream := centro != _last_stream_center
 
 	# Mientras el jugador siga en el mismo chunk, la topología del streaming
-	# no cambia: no hace falta recalcular bordes ni recorrer los 25 chunks.
+	# no cambia: no hace falta recalcular bordes ni recorrer los 9 chunks.
 	if not cambio_stream:
 		return
 
@@ -845,7 +841,7 @@ func _iniciar_siguiente_chunk() -> bool:
 	if not _terrain.puede_iniciar_generacion_durante_descarga():
 		return false
 
-	# Límite duro: nunca más de 25 chunks TERRAIN visuales cargados.
+	# Límite duro: nunca más de 9 chunks TERRAIN visuales cargados.
 	if _terrain.chunks_cargados().size() >= MAX_VISIBLE_CHUNKS:
 		return false
 
@@ -992,6 +988,10 @@ func obtener_estado_lod() -> Dictionary:
 func _actualizar_entidades_activas(
 	centro: Vector2i
 ) -> void:
+	# Informar al spawner del único chunk que puede materializar props si el
+	# catálogo llega tarde. El resto conserva DATA sin crear Nodes.
+	if _entity_spawner != null and _entity_spawner.has_method("establecer_chunk_full_activo"):
+		_entity_spawner.call("establecer_chunk_full_activo", centro)
 	# Sólo preparar la cola aquí. No crear/destruir Nodes durante el cambio
 	# de frontera, que ocurre dentro del mismo frame del movimiento.
 	_ordenar_cola_activacion_entidades(_terrain.chunks_cargados(), centro)
