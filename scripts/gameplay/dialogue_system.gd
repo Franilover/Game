@@ -1935,13 +1935,24 @@ func _abrir_selector_conversacion() -> void:
 
 
 func _abrir_submenu_social(categoria: String) -> void:
-	if not _abierto or _selector_conversacion == null or not is_instance_valid(_fuente):
+	if not _abierto or not is_instance_valid(_fuente):
+		return
+	if (
+		_selector_conversacion == null
+		or not is_instance_valid(_selector_conversacion)
+		or _selector_conversacion_grid == null
+		or not is_instance_valid(_selector_conversacion_grid)
+	):
+		_recuperar_menu_social_o_cerrar()
 		return
 	_menu_social_actual = categoria
 	for hijo in _selector_conversacion_grid.get_children():
 		_selector_conversacion_grid.remove_child(hijo)
 		hijo.queue_free()
 	var opciones := _crear_opciones_submenu_social(categoria)
+	if opciones.is_empty():
+		_recuperar_menu_social_o_cerrar()
+		return
 	for opcion in opciones:
 		var boton := Button.new()
 		boton.text = str(opcion.get("texto", "Conversar"))
@@ -2925,12 +2936,28 @@ func _obtener_respuesta_tema(
 	return repetida if not repetida.is_empty() else respuesta_inicial
 
 
+func _recuperar_menu_social_o_cerrar() -> void:
+	_menu_social_actual = ""
+	if _selector_conversacion != null and is_instance_valid(_selector_conversacion):
+		_selector_conversacion.visible = false
+	if _dialogue_content_row != null and is_instance_valid(_dialogue_content_row):
+		_dialogue_content_row.visible = true
+	if _abierto and _usa_menu_social and is_instance_valid(_fuente):
+		_respuestas = _crear_menu_principal_social()
+		_limpiar_botones_respuesta()
+		_actualizar_boton_accion()
+		return
+	_mostrar_cierre_dialogo()
+	_actualizar_boton_accion()
+
+
 func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	if not _abierto or not is_instance_valid(_fuente):
 		return
 	var jugador := str(opcion.get("jugador", "")).strip_edges()
 	var respuesta := str(opcion.get("respuesta", "")).strip_edges()
 	if jugador.is_empty() or respuesta.is_empty():
+		_recuperar_menu_social_o_cerrar()
 		return
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var clave_tema := str(opcion.get("clave", "")).strip_edges()
@@ -2984,11 +3011,22 @@ func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
 	_actualizar_boton_accion()
 
 
+func _respuesta_es_utilizable(opcion: Dictionary) -> bool:
+	var tipo_menu := str(opcion.get("tipo_menu", "")).strip_edges()
+	if tipo_menu in ["preguntar", "hablar", "cumplido", "despedirse"]:
+		return not str(opcion.get("texto", "")).strip_edges().is_empty()
+	var texto_jugador := str(opcion.get("jugador", opcion.get("texto_jugador", opcion.get("texto", "")))).strip_edges()
+	var texto_npc := str(opcion.get("respuesta", opcion.get("reaccion", ""))).strip_edges()
+	return not texto_jugador.is_empty() and not texto_npc.is_empty()
+
+
 func _crear_botones_respuesta() -> void:
-	if _respuestas_container == null:
+	if _respuestas_container == null or not is_instance_valid(_respuestas_container):
 		return
 	for indice in range(_respuestas.size()):
 		var opcion: Dictionary = _respuestas[indice]
+		if not _respuesta_es_utilizable(opcion):
+			continue
 		var boton := Button.new()
 		boton.text = str(opcion.get("texto", "Responder"))
 		boton.custom_minimum_size = Vector2(0, 34)
@@ -3012,6 +3050,14 @@ func _seleccionar_respuesta(indice: int) -> void:
 	if indice < 0 or indice >= _respuestas.size() or not _abierto:
 		return
 	var opcion: Dictionary = _respuestas[indice]
+	if not _respuesta_es_utilizable(opcion):
+		_respuestas.remove_at(indice)
+		_limpiar_botones_respuesta()
+		if _respuestas.is_empty():
+			_recuperar_menu_social_o_cerrar()
+		else:
+			_actualizar_boton_accion()
+		return
 	var invitacion_variant: Variant = opcion.get("invitacion", {})
 	if invitacion_variant is Dictionary and not (invitacion_variant as Dictionary).is_empty():
 		var invitacion := (invitacion_variant as Dictionary).duplicate(true)
@@ -3042,6 +3088,12 @@ func _seleccionar_respuesta(indice: int) -> void:
 		opcion.get("respuesta_variantes_relacion", {})
 	)
 	if texto_jugador.is_empty() or texto_npc.is_empty():
+		_respuestas.remove_at(indice)
+		_limpiar_botones_respuesta()
+		if _respuestas.is_empty():
+			_recuperar_menu_social_o_cerrar()
+		else:
+			_actualizar_boton_accion()
 		return
 
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges() if is_instance_valid(_fuente) else ""
