@@ -453,6 +453,15 @@ func _precalentar_menu_y_runtime() -> void:
 			_main_scene_preload_requested = false
 			return
 	print("StartMenu: precarga de Main solicitada en segundo plano.")
+	var inicio_ms := Time.get_ticks_msec()
+	estado = ResourceLoader.load_threaded_get_status(MAIN_SCENE_PRELOAD_PATH)
+	while estado == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+		estado = ResourceLoader.load_threaded_get_status(MAIN_SCENE_PRELOAD_PATH)
+	if estado == ResourceLoader.THREAD_LOAD_LOADED:
+		print("StartMenu: Main listo en caché → ", Time.get_ticks_msec() - inicio_ms, " ms")
+	else:
+		push_warning("StartMenu: la precarga de Main no terminó correctamente; se usará la carga normal.")
 
 
 func _actualizar_estado_mundo() -> void:
