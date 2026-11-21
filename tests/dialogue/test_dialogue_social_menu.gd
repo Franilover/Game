@@ -211,7 +211,7 @@ func _run() -> void:
 	if dialogo._debe_usar_menu_social({"_sin_menu_social": true, "_continuar_menu_social": true}, true, false):
 		errores.append("La excepción explícita sin menú social dejó de respetarse.")
 	# Una intervención terminal siempre muestra una salida explícita.
-	var dialogo_prueba_cierre = DialogueSystemScript.new()
+	var dialogo_prueba_cierre := DialogueSystemScript.new() as DialogueSystem
 	add_child(dialogo_prueba_cierre)
 	var boton_cierre_prueba := Button.new()
 	var respuestas_prueba := GridContainer.new()
