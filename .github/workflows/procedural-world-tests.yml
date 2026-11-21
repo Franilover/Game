@@ -846,6 +846,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run offline main menu readiness integration contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 60s godot --headless --path . res://tests/world/test_offline_menu_start.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|OfflineMenuStart: FAIL:' <<<"$output"; then
+            echo "Offline main menu reported errors."
+            exit 1
+          fi
+          if ! grep -q 'OfflineMenuStart: PASS' <<<"$output"; then
+            echo "Offline main menu did not report PASS."
+            exit 1
+          fi
+
       - name: Run world snapshot validator contract test
         shell: bash
         run: |
