@@ -1324,7 +1324,8 @@ func _iniciar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
 		"intento": 0,
 		"creados": 0,
 		"max_props": 6,
-		"intentos_maximos": 48
+		"intentos_maximos": 48,
+		"candidatos_por_contexto": {}
 	}
 
 
@@ -1352,7 +1353,10 @@ func _procesar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
 		_entity_manager.activar_props_chunk(chunk_coord)
 		return
 	var inicio_usec := Time.get_ticks_usec()
-	var creado := _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados)
+	var candidatos_cache_variant: Variant = tarea.get("candidatos_por_contexto", {})
+	var candidatos_cache: Dictionary = candidatos_cache_variant if candidatos_cache_variant is Dictionary else {}
+	var creado := _intentar_crear_prop(chunk_coord, limite_chunk, rng, creados, candidatos_cache)
+	tarea["candidatos_por_contexto"] = candidatos_cache
 	if _render_manager != null and is_instance_valid(_render_manager):
 		_render_manager.call("registrar_trabajo", "prop_spawn", float(Time.get_ticks_usec() - inicio_usec) / 1000.0, 1)
 	if creado:
@@ -1366,7 +1370,7 @@ func _procesar_tarea_prop_spawn(chunk_coord: Vector2i) -> void:
 		_prop_spawn_tasks[chunk_coord] = tarea
 
 
-func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int) -> bool:
+func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: RandomNumberGenerator, slot: int, candidatos_cache: Dictionary = {}) -> bool:
 	_diag_prop_intentos += 1
 	if _props_por_bioma.is_empty():
 		_diag_prop_sin_datos += 1
@@ -1393,26 +1397,31 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 				habitat_ids.append(habitat_id)
 	# Algunos ecosistemas no entregan hábitats en todos los tiles.
 	# El bioma y ecosistema siguen siendo suficientes para elegir sus props.
-	var candidatos: Array[Dictionary] = []
-	var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
-	for prop_variant in candidatos_bioma:
-		if not prop_variant is Dictionary:
-			continue
-		var prop := prop_variant as Dictionary
-		var nombre := str(prop.get("nombre", "")).strip_edges()
-		if nombre.is_empty():
-			continue
-		var coincide_contexto := (
-			str(prop.get("ecosistema_id", "")) == ecosistema_id
-			and (habitat_ids.is_empty() or str(prop.get("habitat_id", "")) in habitat_ids)
-		)
-		if coincide_contexto:
-			candidatos.append(prop)
-
-	if candidatos.is_empty():
+	var clave_contexto := bioma_id + "\u001f" + ecosistema_id + "\u001f" + "\u001e".join(habitat_ids)
+	var candidatos: Array = []
+	if candidatos_cache.has(clave_contexto):
+		candidatos = candidatos_cache[clave_contexto]
+	else:
+		var candidatos_bioma: Array = _props_por_bioma.get(bioma_id, [])
 		for prop_variant in candidatos_bioma:
-			if prop_variant is Dictionary and not str((prop_variant as Dictionary).get("nombre", "")).strip_edges().is_empty():
-				candidatos.append(prop_variant as Dictionary)
+			if not prop_variant is Dictionary:
+				continue
+			var prop := prop_variant as Dictionary
+			var nombre := str(prop.get("nombre", "")).strip_edges()
+			if nombre.is_empty():
+				continue
+			var coincide_contexto := (
+				str(prop.get("ecosistema_id", "")) == ecosistema_id
+				and (habitat_ids.is_empty() or str(prop.get("habitat_id", "")) in habitat_ids)
+			)
+			if coincide_contexto:
+				candidatos.append(prop)
+
+		if candidatos.is_empty():
+			for prop_variant in candidatos_bioma:
+				if prop_variant is Dictionary and not str((prop_variant as Dictionary).get("nombre", "")).strip_edges().is_empty():
+					candidatos.append(prop_variant as Dictionary)
+		candidatos_cache[clave_contexto] = candidatos
 	if candidatos.is_empty():
 		_diag_prop_sin_candidato += 1
 		return false
