@@ -256,7 +256,7 @@ func _physics_process(delta: float) -> void:
 		criatura.detener_movimiento()
 		criatura.tomar_control_movimiento()
 
-	var en_descanso_programado := actividad_horaria in ["dormir", "reposar"]
+	var en_descanso_programado := actividad_horaria == "dormir" or actividad_horaria == "reposar"
 
 	_tiempo_pensamiento -= delta
 
