@@ -164,6 +164,41 @@ func _run() -> void:
 	# Ivo, Mara y Nima deben recorrer la misma política de opciones que
 	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
+	# Una intervención terminal siempre muestra una salida explícita.
+	var boton_cierre_prueba := Button.new()
+	var respuestas_prueba := GridContainer.new()
+	dialogo.add_child(boton_cierre_prueba)
+	dialogo.add_child(respuestas_prueba)
+	dialogo.action_button = boton_cierre_prueba
+	dialogo.cancel_button = Button.new()
+	dialogo.add_child(dialogo.cancel_button)
+	dialogo._respuestas_container = respuestas_prueba
+	dialogo._lineas = [{"hablante": "Mara", "texto": "Hasta luego."}]
+	dialogo._indice_linea = 0
+	dialogo._texto_completo = "Hasta luego."
+	dialogo._indice_caracter = dialogo._texto_completo.length()
+	dialogo._respuestas.clear()
+	dialogo._acciones.clear()
+	dialogo._actualizar_boton_accion()
+	if not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
+		errores.append("Una despedida sin opciones no ofrece un botón explícito para cerrar.")
+	# Una acción desconocida o fallida no puede dejar el diálogo bloqueado.
+	dialogo._acciones = [{"tipo": "accion_no_registrada"}]
+	dialogo._ejecutar_accion_dialogo()
+	if not dialogo._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
+		errores.append("Una acción de diálogo no resuelta no ofrece una salida segura.")
+	# Si las opciones no tienen un contenedor visible, el avance debe cerrar.
+	dialogo._abierto = true
+	dialogo._lineas = [{"hablante": "Mara", "texto": "Nos vemos."}]
+	dialogo._indice_linea = 0
+	dialogo._texto_completo = "Nos vemos."
+	dialogo._indice_caracter = dialogo._texto_completo.length()
+	dialogo._respuestas = [{"texto": "Opción invisible"}]
+	dialogo._respuestas_container = null
+	dialogo._avanzar()
+	if dialogo.esta_abierto():
+		errores.append("El diálogo queda abierto cuando sus opciones no pueden mostrarse.")
+	dialogo._respuestas_container = respuestas_prueba
 	# Toda ubicación que puede recibir una rutina debe tener un nombre natural
 	# en los diálogos de tránsito; no dejar destinos válidos como "su próximo destino".
 	var destinos_rutina: Array[String] = [
