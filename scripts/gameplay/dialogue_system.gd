@@ -538,6 +538,13 @@ func _avanzar() -> void:
 		# esperando una selección invisible.
 		_respuestas.clear()
 
+	# La acción final debe poder ejecutarse también con la tecla de avanzar.
+	# De lo contrario, el botón funciona con ratón pero el teclado cierra la
+	# conversación y omite la misión, evento o seguimiento pendiente.
+	if _indice_linea >= _lineas.size() - 1 and not _acciones.is_empty():
+		_ejecutar_accion_dialogo()
+		return
+
 	_indice_linea += 1
 
 	if _indice_linea >= _lineas.size():
