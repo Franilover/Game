@@ -21,7 +21,7 @@ var _replicas_red_by_key: Dictionary = {}
 var _replicas_red_props_by_key: Dictionary = {}
 var _replica_keys_by_entity: Dictionary = {}
 var _replica_prop_keys_by_entity: Dictionary = {}
-var _data_by_chunk: Dictionary = {}
+var _data_by_chunk: Dictionary = {}\nvar _despawn_jobs: Dictionary = {}
 
 var _diag_despawn_creature_count: int = 0
 var _diag_despawn_prop_count: int = 0
@@ -691,31 +691,38 @@ func despawn_chunk(chunk_coord: Vector2i) -> void:
 	_despawn_chunk_entities(chunk_coord, true, true)
 
 
-func _despawn_chunk_entities(
-	chunk_coord: Vector2i,
-	retirar_criaturas: bool,
-	retirar_props: bool
-) -> void:
+func iniciar_despawn_chunk(chunk_coord: Vector2i) -> bool:
+	if _despawn_jobs.has(chunk_coord):
+		return true
 	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
-	if not bucket_variant is Array:
-		if retirar_criaturas:
-			_active_creature_chunks.erase(chunk_coord)
-		if retirar_props:
-			_active_prop_chunks.erase(chunk_coord)
-		_recalcular_chunk_activo(chunk_coord)
-		if retirar_criaturas and retirar_props:
-			_active_chunks.erase(chunk_coord)
-		return
+	var entidades: Array = (bucket_variant as Array).duplicate() if bucket_variant is Array else []
+	_despawn_jobs[chunk_coord] = {
+		"entities": entidades,
+		"snapshot_ids": _crear_set_instancias(entidades),
+		"cursor": 0,
+		"remaining": [],
+		"creatures": true,
+		"props": true
+	}
+	return true
 
-	# Snapshot obligatorio: reciclar una entidad la saca del árbol y dispara
-	# _al_salir_entidad(), que también actualiza los índices del manager.
-	var entidades: Array = (bucket_variant as Array).duplicate()
-	var restantes: Array = []
+
+func procesar_despawn_chunk(chunk_coord: Vector2i, max_entities: int = 8) -> bool:
+	if not _despawn_jobs.has(chunk_coord):
+		return true
+	var job: Dictionary = _despawn_jobs[chunk_coord]
+	var entidades: Array = job.get("entities", [])
+	var restantes: Array = job.get("remaining", [])
+	var cursor := int(job.get("cursor", 0))
+	var limite := mini(cursor + maxi(max_entities, 1), entidades.size())
 	var creature_elapsed_usec: int = 0
 	var prop_elapsed_usec: int = 0
 	var creature_count: int = 0
 	var prop_count: int = 0
-	for entity_variant in entidades:
+
+	while cursor < limite:
+		var entity_variant: Variant = entidades[cursor]
+		cursor += 1
 		if not entity_variant is Node:
 			continue
 		var entity := entity_variant as Node
@@ -724,13 +731,13 @@ func _despawn_chunk_entities(
 
 		var es_criatura := entity is Creature
 		var es_prop := entity is WorldProp
-		var retirar := (es_criatura and retirar_criaturas) or (es_prop and retirar_props)
-		if not retirar:
+		if not es_criatura and not es_prop:
 			restantes.append(entity)
 			continue
 
 		if es_prop and entity.is_queued_for_deletion():
 			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_coord)
+			prop_count += 1
 			continue
 
 		var entity_despawn_start_usec := Time.get_ticks_usec()
@@ -743,8 +750,6 @@ func _despawn_chunk_entities(
 		if es_criatura and _entity_factory != null and is_instance_valid(_entity_factory):
 			_entity_factory.reciclar_criatura(entity as Creature)
 		elif es_prop and _entity_factory != null and is_instance_valid(_entity_factory):
-			# El prop se conserva en el pool; no debe llevar una marca de
-			# queue_free a su siguiente aparición.
 			_entity_factory.reciclar_prop(entity as WorldProp)
 		else:
 			if es_prop:
@@ -755,6 +760,10 @@ func _despawn_chunk_entities(
 			creature_elapsed_usec += entity_elapsed_usec
 		elif es_prop:
 			prop_elapsed_usec += entity_elapsed_usec
+
+	job["cursor"] = cursor
+	job["remaining"] = restantes
+	_despawn_jobs[chunk_coord] = job
 
 	if creature_count > 0:
 		var creature_ms := float(creature_elapsed_usec) / 1000.0
@@ -767,11 +776,79 @@ func _despawn_chunk_entities(
 		_diag_despawn_prop_last_ms = prop_ms
 		_diag_despawn_prop_max_ms = maxf(_diag_despawn_prop_max_ms, prop_ms)
 
+	if cursor < entidades.size():
+		return false
+
+	# Conservar entidades registradas durante el trabajo que no pertenecían
+	# al snapshot inicial. Los spawns del chunk ya fueron cancelados antes
+	# de iniciar este proceso, pero esta comprobación evita perder registros
+	# ajenos ante callbacks o altas externas.
+	var snapshot_ids: Dictionary = job.get("snapshot_ids", {})
+	var bucket_actual_variant: Variant = _by_chunk.get(chunk_coord, [])
+	if bucket_actual_variant is Array:
+		for entity_variant in bucket_actual_variant as Array:
+			if not entity_variant is Node:
+				continue
+			var entity := entity_variant as Node
+			if is_instance_valid(entity) and not snapshot_ids.has(entity.get_instance_id()) and not entity in restantes:
+				restantes.append(entity)
+
 	if restantes.is_empty():
 		_by_chunk.erase(chunk_coord)
 	else:
 		_by_chunk[chunk_coord] = restantes
+	_active_creature_chunks.erase(chunk_coord)
+	_active_prop_chunks.erase(chunk_coord)
+	_active_chunks.erase(chunk_coord)
+	_despawn_jobs.erase(chunk_coord)
+	return true
 
+
+func _crear_set_instancias(entidades: Array) -> Dictionary:
+	var resultado: Dictionary = {}
+	for entity_variant in entidades:
+		if entity_variant is Node and is_instance_valid(entity_variant):
+			resultado[(entity_variant as Node).get_instance_id()] = true
+	return resultado
+
+
+func _despawn_chunk_entities(
+	chunk_coord: Vector2i,
+	retirar_criaturas: bool,
+	retirar_props: bool
+) -> void:
+	# API síncrona de compatibilidad para limpiezas globales y herramientas.
+	# El streaming usa iniciar/procesar_despawn_chunk para repartir el trabajo.
+	var bucket_variant: Variant = _by_chunk.get(chunk_coord, [])
+	var entidades: Array = (bucket_variant as Array).duplicate() if bucket_variant is Array else []
+	var restantes: Array = []
+	for entity_variant in entidades:
+		if not entity_variant is Node:
+			continue
+		var entity := entity_variant as Node
+		if not is_instance_valid(entity):
+			continue
+		var retirar := (entity is Creature and retirar_criaturas) or (entity is WorldProp and retirar_props)
+		if not retirar:
+			restantes.append(entity)
+			continue
+		if entity is WorldProp and entity.is_queued_for_deletion():
+			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_coord)
+			continue
+		guardar_estado_entidad(entity, chunk_coord)
+		_remover_persistencia(entity)
+		if entity is Creature and _entity_factory != null and is_instance_valid(_entity_factory):
+			_entity_factory.reciclar_criatura(entity as Creature)
+		elif entity is WorldProp and _entity_factory != null and is_instance_valid(_entity_factory):
+			_entity_factory.reciclar_prop(entity as WorldProp)
+		else:
+			if entity is WorldProp:
+				entity.set_meta("world_manager_unloading", true)
+			entity.queue_free()
+	if restantes.is_empty():
+		_by_chunk.erase(chunk_coord)
+	else:
+		_by_chunk[chunk_coord] = restantes
 	if retirar_criaturas:
 		_active_creature_chunks.erase(chunk_coord)
 	if retirar_props:
@@ -780,6 +857,20 @@ func _despawn_chunk_entities(
 	if retirar_criaturas and retirar_props:
 		_active_chunks.erase(chunk_coord)
 
+
+func obtener_diagnostico_despawn() -> Dictionary:
+	return {
+		"creatures": {
+			"entities": _diag_despawn_creature_count,
+			"last_ms": _diag_despawn_creature_last_ms,
+			"max_ms": _diag_despawn_creature_max_ms
+		},
+		"props": {
+			"entities": _diag_despawn_prop_count,
+			"last_ms": _diag_despawn_prop_last_ms,
+			"max_ms": _diag_despawn_prop_max_ms
+		}
+	}
 
 ## Retira las entidades generadas por chunks cuando una zona procedural se descarga.
 ## Las entidades globales/persistentes (por ejemplo, personajes registrados por ID)
