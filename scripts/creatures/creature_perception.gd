@@ -43,7 +43,7 @@ static func obtener_candidatos(
 	var arbol := Engine.get_main_loop() as SceneTree
 	if arbol != null:
 		for jugador_actual in obtener_jugadores_del_grupo(arbol):
-			if not _es_candidato_activo(jugador_actual):
+			if not jugador_actual.is_in_group("player") or not _es_candidato_activo(jugador_actual):
 				continue
 			var jugador_id := jugador_actual.get_instance_id()
 			if not vistos.has(jugador_id):
