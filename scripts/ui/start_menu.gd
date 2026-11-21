@@ -3,6 +3,7 @@ extends Control
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const SETTINGS_SCENE = preload("res://scenes/ui/settings_panel.tscn")
 const COMMUNITY_SERVER_MANAGER_SCENE = preload("res://scenes/ui/community_server_manager.tscn")
+const SAVE_SELECTOR_SCENE: PackedScene = preload("res://scenes/ui/save_selector.tscn")
 
 
 @onready var start_button: Button = (
@@ -98,8 +99,6 @@ var _config_personaje_multijugador: Dictionary = {}
 
 var _mundo_preparado: bool = false
 var _cargando_mundo: bool = false
-const SAVE_SELECTOR_SCENE: PackedScene = preload("res://scenes/ui/save_selector.tscn")
-
 # Creación de personaje antes de entrar a cualquier partida.
 @onready var _character_creation: Control = $CharacterCreation
 
