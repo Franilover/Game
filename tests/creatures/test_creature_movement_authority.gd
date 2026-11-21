@@ -21,6 +21,22 @@ func _run() -> void:
 		_fail(["La escena Creature debe contener su componente CreatureMovement."])
 		return
 
+	# La comprobación de movilidad usada en cada physics tick debe conservar
+	# las reglas de IA sin requerir una copia profunda del catálogo.
+	npc.datos = {}
+	if not npc.tiene_movimiento_autonomo_permitido():
+		errores.append("La configuración ausente debe permitir el movimiento por defecto.")
+	npc.datos = {"ia_config": {"movimiento": {"tipo": "inmovil"}}}
+	if npc.tiene_movimiento_autonomo_permitido():
+		errores.append("El tipo inmóvil debe bloquear el movimiento autónomo.")
+	npc.datos = {"ia_config": {"movimiento": {"desplazamiento_propio": false}}}
+	if npc.tiene_movimiento_autonomo_permitido():
+		errores.append("desplazamiento_propio=false debe bloquear el movimiento.")
+	npc.datos = {"ia_config": {"movimiento_permitido": false}}
+	if npc.tiene_movimiento_autonomo_permitido():
+		errores.append("movimiento_permitido=false debe bloquear el movimiento.")
+	npc.datos = {}
+
 	var ruta := PackedVector2Array([npc.global_position + Vector2(120.0, 0.0)])
 	movimiento.establecer_ruta(ruta)
 	if not movimiento.rutina_en_ejecucion():
