@@ -233,10 +233,11 @@ func guardar_progreso_historia() -> bool:
 	if not is_instance_valid(escena):
 		return _rechazar_guardado("no hay una escena activa")
 	var zone_manager := escena.get_node_or_null("World/ZoneManager")
-	if not is_instance_valid(zone_manager):
-		return _rechazar_guardado("la escena activa no contiene World/ZoneManager")
-	if str(zone_manager.call("obtener_tipo_actual")) != "historia:reserva_carmesi":
-		return _rechazar_guardado("la zona activa no es historia:reserva_carmesi")
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("obtener_tipo_actual"):
+		return _rechazar_guardado("la escena activa no contiene un ZoneManager listo")
+	var tipo_zona_actual := str(zone_manager.call("obtener_tipo_actual")).strip_edges()
+	if tipo_zona_actual.is_empty():
+		return _rechazar_guardado("el ZoneManager todavía no ha establecido una zona activa")
 
 	_guardado_en_curso = true
 	capturar_estado_desde_juego(jugador)
