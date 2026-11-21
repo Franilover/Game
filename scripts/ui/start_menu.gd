@@ -98,6 +98,9 @@ var _config_personaje_multijugador: Dictionary = {}
 
 var _mundo_preparado: bool = false
 var _cargando_mundo: bool = false
+var _selector_cargando: bool = false
+const SAVE_SELECTOR_PATH := "res://scenes/ui/save_selector.tscn"
+const MAIN_SCENE_PATH := "res://scenes/world/main.tscn"
 
 # Creación de personaje antes de entrar a cualquier partida.
 @onready var _character_creation: Control = $CharacterCreation
@@ -490,32 +493,47 @@ func _iniciar_partida() -> void:
 	_abrir_selector_partidas()
 
 func _abrir_selector_partidas() -> void:
-	var selector_scene: PackedScene = load(
-		"res://scenes/ui/save_selector.tscn"
-	) as PackedScene
-
+	if _selector_cargando or get_node_or_null("LocalSaveSelector") != null:
+		return
+	_selector_cargando = true
+	# Aprovechar el tiempo que el jugador dedica a elegir/crear mundo para
+	# preparar el runtime. SceneManager mantiene la escena actual hasta terminar.
+	SceneManager.preparar(MAIN_SCENE_PATH)
+	var estado := ResourceLoader.load_threaded_get_status(SAVE_SELECTOR_PATH)
+	if estado == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
+		var solicitud := ResourceLoader.load_threaded_request(SAVE_SELECTOR_PATH, "PackedScene", true)
+		if solicitud != OK and solicitud != ERR_BUSY:
+			push_error("StartMenu: no se pudo solicitar save_selector.tscn (error %d)." % solicitud)
+			_selector_cargando = false
+			return
+		estado = ResourceLoader.load_threaded_get_status(SAVE_SELECTOR_PATH)
+	while estado == ResourceLoader.THREAD_LOAD_IN_PROGRESS:
+		await get_tree().process_frame
+		estado = ResourceLoader.load_threaded_get_status(SAVE_SELECTOR_PATH)
+	if not is_inside_tree():
+		_selector_cargando = false
+		return
+	if estado != ResourceLoader.THREAD_LOAD_LOADED:
+		push_error("StartMenu: no se pudo preparar save_selector.tscn (estado %d)." % estado)
+		_selector_cargando = false
+		return
+	var selector_scene := ResourceLoader.load_threaded_get(SAVE_SELECTOR_PATH) as PackedScene
 	if selector_scene == null:
-		push_error(
-			"StartMenu: no se pudo cargar save_selector.tscn."
-		)
+		push_error("StartMenu: save_selector.tscn no es una PackedScene.")
+		_selector_cargando = false
 		return
-
-	if get_node_or_null("LocalSaveSelector") != null:
-		return
-
 	var selector := selector_scene.instantiate() as Control
 	if selector == null:
 		push_error("StartMenu: save_selector.tscn no tiene una raiz Control.")
+		_selector_cargando = false
 		return
 	selector.name = "LocalSaveSelector"
 	add_child(selector)
-	# La escena se agrega en tiempo de ejecucion: fuerza el rectangulo completo
-	# respecto al StartMenu, y vuelve a aplicar el layout tras el primer frame.
 	selector.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	selector.position = Vector2.ZERO
 	selector.call_deferred("set_anchors_and_offsets_preset", Control.PRESET_FULL_RECT)
 	selector.call_deferred("_configurar_diseno_responsive")
-
+	_selector_cargando = false
 	print("StartMenu: selector de partidas abierto.")
 
 func _iniciar_aventura_con_personaje(config: Dictionary = {}) -> void:
