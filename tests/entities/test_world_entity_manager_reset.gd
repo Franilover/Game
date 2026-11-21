@@ -40,6 +40,14 @@ func _run() -> void:
 		}
 	}
 
+	# El perfil expone costes separados sin asumir que ambos tipos
+	# necesariamente estuvieron presentes en la última descarga.
+	var perfil_despawn: Dictionary = manager.obtener_diagnostico_despawn()
+	if not perfil_despawn.has("creatures") or not perfil_despawn.has("props"):
+		errores.append("El diagnóstico de despawn no separó criaturas y props.")
+	elif int(perfil_despawn["creatures"]["entities"]) != 0 or int(perfil_despawn["props"]["entities"]) != 0:
+		errores.append("El diagnóstico de despawn no comenzó en cero.")
+
 	# La lectura predeterminada mantiene aislamiento profundo para consumidores
 	# que puedan modificar los datos recibidos.
 	var copia_profunda: Array = manager.obtener_datos_chunk(Vector2i.ZERO, "criaturas")
