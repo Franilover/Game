@@ -118,7 +118,10 @@ func configurar_dependencias(
 	world_items = nuevo_world_items
 	world_atmosphere = nuevo_world_atmosphere
 	_estado_ambiental_cache_valido = false
-	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
+	# WorldEntityFactory mantiene una instantánea aislada y la reemplaza al
+	# actualizar las reglas. Las IA sólo la consultan: compartirla evita una
+	# copia profunda completa por cada criatura materializada.
+	relaciones_ecologicas = nuevas_relaciones_ecologicas
 
 
 
@@ -205,7 +208,8 @@ static func calcular_fase_inicial(instance_id: int) -> float:
 
 
 func configurar_relaciones_ecologicas(nuevas_relaciones_ecologicas: Array) -> void:
-	relaciones_ecologicas = nuevas_relaciones_ecologicas.duplicate(true)
+	# La fábrica publica una nueva instantánea; esta referencia es de sólo lectura.
+	relaciones_ecologicas = nuevas_relaciones_ecologicas
 
 
 func configurar_criatura() -> void:
@@ -1093,7 +1097,8 @@ func _obtener_relacion_ecologica(
 func _al_recibir_relaciones_ecologicas(
 	relaciones: Array
 ) -> void:
-	relaciones_ecologicas = relaciones.duplicate(true)
+	# El emisor conserva la propiedad de la instantánea y la reemplaza al cambiarla.
+	relaciones_ecologicas = relaciones
 
 
 func _buscar_nodo_jugador(nodo: Node) -> Node:
