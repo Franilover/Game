@@ -4,6 +4,12 @@ extends Resource
 
 var cells: Dictionary[Vector2i, Dictionary] = { }
 
+# Coste del mantenimiento del cache por lote (no por celda).
+var _diag_update_calls: int = 0
+var _diag_cells_processed: int = 0
+var _diag_elapsed_ms: float = 0.0
+var _diag_elapsed_ms_max: float = 0.0
+
 
 func _init() -> void:
 	pass
@@ -15,6 +21,9 @@ func update(world: TileMapLayer, edited: Array[Vector2i] = cells.keys()) -> void
 		push_error("Attempted to update TileCache while tile set was null")
 		return
 
+	var started_usec: int = Time.get_ticks_usec()
+	_diag_update_calls += 1
+	_diag_cells_processed += edited.size()
 	for cell: Vector2i in edited:
 		var sid: int = world.get_cell_source_id(cell)
 		if sid == -1:
@@ -54,6 +63,18 @@ func update(world: TileMapLayer, edited: Array[Vector2i] = cells.keys()) -> void
 			"tile": tile,
 			"terrain": data.terrain,
 		}
+	var elapsed_ms: float = float(Time.get_ticks_usec() - started_usec) / 1000.0
+	_diag_elapsed_ms += elapsed_ms
+	_diag_elapsed_ms_max = maxf(_diag_elapsed_ms_max, elapsed_ms)
+
+
+func obtener_diagnostico() -> Dictionary:
+	return {
+		"update_calls": _diag_update_calls,
+		"cells_processed": _diag_cells_processed,
+		"elapsed_ms_total": _diag_elapsed_ms,
+		"elapsed_ms_max": _diag_elapsed_ms_max,
+	}
 
 
 func xor(other: TileCache) -> Array[Vector2i]:
