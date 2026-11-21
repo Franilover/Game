@@ -1190,20 +1190,46 @@ func _nombre_ubicacion_rutina(ubicacion: String) -> String:
 	var destinos := {
 		"plaza": "la plaza",
 		"panaderia": "la panadería",
+		"posada": "la posada",
 		"forja": "la forja",
+		"herbolario": "el herbolario",
+		"vivero": "el vivero",
 		"cuartel": "el cuartel de la guardia",
 		"registro": "el registro",
 		"casa_comercio": "la casa de comercio",
-		"casa_estudio": "la casa de estudio",
 		"archivo_real": "el archivo real",
+		"sala_consejo": "la sala del consejo",
+		"casa_estudio": "la casa de estudio",
 		"casa_elian": "su casa",
 		"casa_bruna": "su casa",
 		"casa_darven": "su casa",
 		"casa_saira": "su casa",
 		"casa_narel": "su casa",
-		"castillo": "el castillo"
+		"castillo": "el castillo",
+		"vivienda_oeste_01": "su casa",
+		"vivienda_oeste_02": "su casa",
+		"vivienda_oeste_03": "su casa",
+		"vivienda_oeste_04": "una casa del barrio oeste",
+		"vivienda_oeste_05": "una casa del barrio oeste",
+		"vivienda_oeste_06": "una casa del barrio oeste",
+		"vivienda_oeste_07": "una casa del barrio oeste",
+		"vivienda_oeste_08": "una casa del barrio oeste",
+		"vivienda_oeste_10": "una casa del barrio oeste",
+		"vivienda_oeste_11": "una casa del barrio oeste",
+		"casa_granjeros": "la casa de los granjeros",
+		"biblioteca": "la biblioteca",
+		"centro_expediciones": "el centro de expediciones",
+		"taberna": "la taberna",
+		"escuela": "la escuela",
+		"clinica": "la clínica",
+		"casa_comun": "una vivienda",
+		"reparaciones": "el taller de reparaciones",
+		"carpinteria": "la carpintería",
+		"granero": "el granero",
+		"molino": "el molino",
+		"corrales": "los corrales"
 	}
-	return str(destinos.get(ubicacion, "su próximo destino"))
+	return str(destinos.get(ubicacion.strip_edges().to_lower(), "un lugar de Torres"))
 
 
 func _obtener_texto_rutina_personaje(
