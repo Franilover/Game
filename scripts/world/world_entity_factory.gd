@@ -5,6 +5,12 @@ const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tsc
 const GARUMI_SCENE: PackedScene = preload("res://scenes/creatures/garumi.tscn")
 const WORLD_PROP_SCENE: PackedScene = preload("res://scenes/world/world_prop.tscn")
 
+# Capacidad equivalente al máximo materializado por los radios LOD actuales:
+# criaturas: 5 por chunk en 3x3; props: 6 por chunk en 5x5.
+# Los Garumis no se reciclan: cada instancia conserva identidad social propia.
+const MAX_POOLED_CREATURES: int = 45
+const MAX_POOLED_PROPS: int = 150
+
 var _player: Node = null
 var _entity_manager: WorldEntityManager = null
 var _inventory: GarliaInventory = null
@@ -20,6 +26,9 @@ var _relaciones_ecologicas: Array = []
 var _creature_pool: Array[Creature] = []
 var _garumi_pool: Array[Garumi] = []
 var _prop_pool: Array[WorldProp] = []
+var _pool_descartadas_criaturas: int = 0
+var _pool_descartadas_garumis: int = 0
+var _pool_descartadas_props: int = 0
 
 
 func configurar_dependencias(
@@ -93,12 +102,20 @@ func reciclar_criatura(node: Creature) -> void:
 	node.desactivar_como_proxy()
 	if node.get_parent() != null:
 		node.get_parent().remove_child(node)
+
+	# La identidad social de un Garumi pertenece a esa instancia. Reutilizar
+	# el nodo entre apariciones distintas podría arrastrar su ID anterior.
 	if node is Garumi:
-		if not node in _garumi_pool:
-			_garumi_pool.append(node as Garumi)
-	else:
-		if not node in _creature_pool:
-			_creature_pool.append(node)
+		_pool_descartadas_garumis += 1
+		node.queue_free()
+		return
+
+	if _creature_pool.size() >= MAX_POOLED_CREATURES:
+		_pool_descartadas_criaturas += 1
+		node.queue_free()
+		return
+	if not node in _creature_pool:
+		_creature_pool.append(node)
 
 
 func _tomar_criatura_del_pool() -> Creature:
@@ -153,6 +170,10 @@ func reciclar_prop(node: WorldProp) -> void:
 	node.desactivar_como_proxy()
 	if node.get_parent() != null:
 		node.get_parent().remove_child(node)
+	if _prop_pool.size() >= MAX_POOLED_PROPS:
+		_pool_descartadas_props += 1
+		node.queue_free()
+		return
 	if not node in _prop_pool:
 		_prop_pool.append(node)
 
@@ -182,4 +203,7 @@ func obtener_diagnostico_pool() -> Dictionary:
 		"garumis": _garumi_pool.size(),
 		"props": _prop_pool.size(),
 		"total": _creature_pool.size() + _garumi_pool.size() + _prop_pool.size(),
+		"descartadas_criaturas": _pool_descartadas_criaturas,
+		"descartadas_garumis": _pool_descartadas_garumis,
+		"descartadas_props": _pool_descartadas_props,
 	}
