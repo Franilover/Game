@@ -33,6 +33,8 @@ var _last_player_position: Vector2 = Vector2.ZERO
 var _player_direction: Vector2 = Vector2.ZERO
 var _prefetch_chunk: Vector2i = Vector2i.ZERO
 var _prefetch_activo: bool = false
+var _last_priority_direction: Vector2 = Vector2.ZERO
+var _diag_priority_queue_sorts: int = 0
 var _centro_cache: Vector2i = Vector2i.ZERO
 var _local_x_cache: int = 0
 var _local_y_cache: int = 0
@@ -128,6 +130,7 @@ func procesar() -> void:
 		_player_chunk = nuevo_chunk
 
 	_actualizar_streaming()
+	_actualizar_prioridad_cola()
 
 	# El terreno base recibe el primer turno visual. Las variaciones son
 	# decoración secundaria y nunca deben consumir el servicio reservado
@@ -434,6 +437,37 @@ func _actualizar_streaming() -> void:
 		_actualizar_data_entidades(centro)
 
 
+func _actualizar_prioridad_cola() -> void:
+	if _player == null or _terrain == null:
+		return
+
+	# La topología de chunks sólo cambia al cruzar una frontera, pero la
+	# predicción debe seguir la posición/dirección dentro del chunk. En
+	# particular, un dash puede recorrer el margen de prefetch en pocos frames.
+	_actualizar_cache_borde_jugador(_player_chunk)
+	var prefetch_anterior := _prefetch_chunk if _prefetch_activo else Vector2i.ZERO
+	var prefetch_nuevo := _obtener_chunk_prefetch(_player_chunk)
+	var direccion_cambio := false
+	if _player_direction.length_squared() <= 0.01:
+		direccion_cambio = _last_priority_direction.length_squared() > 0.01
+	elif _last_priority_direction.length_squared() <= 0.01:
+		direccion_cambio = true
+	else:
+		direccion_cambio = _player_direction.dot(_last_priority_direction) < 0.995
+
+	_prefetch_chunk = prefetch_nuevo
+	if prefetch_nuevo != prefetch_anterior or direccion_cambio:
+		_last_priority_direction = _player_direction
+		if not _queue.is_empty():
+			_queue.sort_custom(
+				func(a: Vector2i, b: Vector2i) -> bool:
+					var prioridad_a: float = _prioridad_chunk(a, _player_chunk)
+					var prioridad_b: float = _prioridad_chunk(b, _player_chunk)
+					return prioridad_a < prioridad_b
+			)
+			_diag_priority_queue_sorts += 1
+
+
 func _actualizar_cache_borde_jugador(centro: Vector2i) -> void:
 	_centro_cache = centro
 	_cerca_arriba_cache = false
@@ -489,8 +523,12 @@ func _actualizar_direccion_jugador() -> void:
 			if velocidad.length_squared() > 4.0:
 				direccion = velocidad
 
+	# No conservar indefinidamente la última dirección: al detenerse,
+	# la cola vuelve a priorizar cercanía en vez de preparar un corredor viejo.
 	if direccion.length_squared() > 0.25:
 		_player_direction = direccion.normalized()
+	else:
+		_player_direction = Vector2.ZERO
 
 
 func _obtener_chunk_prefetch(centro: Vector2i) -> Vector2i:
@@ -935,6 +973,7 @@ func obtener_diagnostico() -> Dictionary:
 		"descargando": _terrain != null and _terrain.tiene_descarga_activa(),
 		"player_direction": _player_direction,
 		"prefetch_margin_tiles": _prefetch_margin_tiles,
+		"priority_queue_sorts": _diag_priority_queue_sorts,
 		"prefetch_activo": _prefetch_activo,
 		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null,
 		"borde_cache": {
