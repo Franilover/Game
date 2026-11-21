@@ -96,17 +96,10 @@ func procesar(delta: float) -> void:
 	# no puede desplazarse por la patrulla autónoma ni por órdenes de la IA.
 	# Se comprueban ambas formas de expresar la restricción para tolerar
 	# snapshots antiguos que solo contengan una de las claves.
-	if creature is Creature:
-		var configuracion: Dictionary = (creature as Creature).obtener_config_ia()
-		var movimiento_variant: Variant = configuracion.get("movimiento", {})
-		var movimiento: Dictionary = movimiento_variant if movimiento_variant is Dictionary else {}
-		var tipo_movimiento := str(movimiento.get("tipo", "")).strip_edges().to_lower()
-		var desplazamiento_propio: Variant = movimiento.get("desplazamiento_propio", true)
-		var movimiento_permitido: Variant = configuracion.get("movimiento_permitido", true)
-		if tipo_movimiento == "inmovil" or desplazamiento_propio == false or movimiento_permitido == false:
-			detener()
-			_move_timer = maxf(_move_timer, 0.1)
-			return
+	if creature is Creature and not (creature as Creature).tiene_movimiento_autonomo_permitido():
+		detener()
+		_move_timer = maxf(_move_timer, 0.1)
+		return
 
 	_move_timer -= delta
 
