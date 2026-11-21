@@ -1497,6 +1497,18 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 			_detener_paseo_interior(npc)
 			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos, 1440))
 		elif movimiento.rutina_terminada():
+			var puesto_guardado: Variant = npc.get_meta("rutina_puesto_interior_reservado", null)
+			if puesto_guardado is Vector2:
+				var distancia_puesto := npc.global_position.distance_to(puesto_guardado)
+				if distancia_puesto > DISTANCIA_LLEGADA:
+					# Si la ruta terminó lejos del puesto (por ejemplo, tras
+					# reconstruir navegación), reintentar antes de dar la tarea
+					# por completada.
+					var ruta_reanudada := _crear_ruta(npc.global_position, puesto_guardado)
+					if not ruta_reanudada.is_empty():
+						movimiento.establecer_ruta(ruta_reanudada)
+						npc.set_meta("rutina_en_transito", true)
+						return
 			npc.remove_meta("rutina_paseo_interior_activo")
 			npc.remove_meta("rutina_paseo_interior_actividad")
 			npc.remove_meta("rutina_puesto_interior_reservado")
