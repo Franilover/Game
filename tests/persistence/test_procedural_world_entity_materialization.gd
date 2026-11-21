@@ -65,7 +65,7 @@ func _run() -> void:
 	# Generación DATA auténtica: el spawner elige especies y posiciones a
 	# partir del ecosistema, bioma y semilla del chunk. No se inyectan
 	# criaturas ni registros runtime de prueba.
-	spawner.preparar_datos_criaturas_chunk(CHUNK)
+	await spawner.preparar_datos_criaturas_chunk(CHUNK)
 	var datos_generados := manager.obtener_datos_chunk(CHUNK, "criaturas")
 	var datos_criatura: Dictionary = {}
 	for dato_variant in datos_generados:
@@ -98,7 +98,7 @@ func _run() -> void:
 
 	# Preparar también props desde el catálogo/bioma real. La prueba los
 	# verifica cuando el chunk tiene candidatos válidos; no inyecta datos.
-	spawner.preparar_datos_props_chunk(CHUNK)
+	await spawner.preparar_datos_props_chunk(CHUNK)
 	var datos_props := manager.obtener_datos_chunk(CHUNK, "props")
 	var prop_runtime_key := ""
 	var prop_posicion_modificada := Vector2.ZERO
