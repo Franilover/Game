@@ -2364,6 +2364,17 @@ func _buscar_amenaza_para_refugio() -> Creature:
 			if candidata != criatura and is_instance_valid(candidata) and candidata.is_alive and not candidata.is_in_group("garumis"):
 				criaturas_activas.append(candidata)
 
+	# Perfil y actividad no cambian durante este barrido. Resolverlos una vez
+	# por criatura evita repetir lecturas de configuración/meta en cada par.
+	var cazador_por_instancia: Dictionary = {}
+	var actividad_por_instancia: Dictionary = {}
+	for candidata in criaturas_activas:
+		var instance_id := candidata.get_instance_id()
+		cazador_por_instancia[instance_id] = _es_cazador_por_configuracion(candidata)
+		actividad_por_instancia[instance_id] = str(
+			candidata.get_meta("actividad_horaria", "explorar")
+		).to_lower()
+
 	var mejor: Creature = null
 	var mejor_distancia_cuadrada := INF
 	for presa in criaturas_activas:
@@ -2372,15 +2383,16 @@ func _buscar_amenaza_para_refugio() -> Creature:
 		for depredador in criaturas_activas:
 			if depredador == presa:
 				continue
+			var depredador_id := depredador.get_instance_id()
 			var actividad_depredador := str(
-				depredador.get_meta("actividad_horaria", "explorar")
-			).to_lower()
+				actividad_por_instancia.get(depredador_id, "explorar")
+			)
 			if actividad_depredador == "dormir" or actividad_depredador == "reposar":
 				continue
 			var distancia_cuadrada := depredador.global_position.distance_squared_to(presa.global_position)
 			if distancia_cuadrada > radio_cuadrado:
 				continue
-			if _es_cazador_por_configuracion(depredador):
+			if bool(cazador_por_instancia.get(depredador_id, false)):
 				if distancia_cuadrada < mejor_distancia_cuadrada:
 					mejor = depredador
 					mejor_distancia_cuadrada = distancia_cuadrada
