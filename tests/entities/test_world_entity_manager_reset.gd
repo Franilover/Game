@@ -117,6 +117,10 @@ func _run() -> void:
 	estado_prop_minimo["position"] = Vector2.ZERO
 	if manager.obtener_estado_prop_materializacion(Vector2i.ZERO, "prop").get("position") != Vector2(12.0, 24.0):
 		errores.append("Modificar el snapshot de materialización alteró el estado persistente.")
+	manager._runtime_prop_state_by_key["0:0:prop_sin_posicion"] = {"is_present": true}
+	var estado_sin_posicion: Dictionary = manager.obtener_estado_prop_materializacion(Vector2i.ZERO, "prop_sin_posicion")
+	if estado_sin_posicion.has("position"):
+		errores.append("El snapshot inventó una posición cuando el estado persistente no la tenía.")
 
 	# Descargar todos los chunks debe invalidar el snapshot inmediatamente,
 	# sin depender de que queue_free dispare tree_exiting al final del frame.
