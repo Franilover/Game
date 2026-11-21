@@ -478,22 +478,25 @@ func _presupuesto_generacion() -> int:
 			# DATOS también adelanta una tanda de PINTADO para las celdas cuyos
 			# vecinos ya están listos. Repartir el objetivo entre ambas fases evita
 			# que el presupuesto mida sólo la mitad del trabajo real del frame.
+			# El límite superior sólo se alcanza si la EMA confirma que el
+			# coste por celda cabe en el objetivo temporal. Elevar el techo no
+			# fuerza lotes grandes ni elimina el presupuesto adaptativo.
 			var presupuesto_datos := int(_render_manager.call(
-				"presupuesto_unidades_terreno", "terrain_data", base, 8, 64, 1.5
+				"presupuesto_unidades_terreno", "terrain_data", base, 8, 96, 1.5
 			))
 			var presupuesto_pintado := int(_render_manager.call(
-				"presupuesto_unidades_terreno", "terrain_paint", base, 8, 64, 1.5
+				"presupuesto_unidades_terreno", "terrain_paint", base, 8, 96, 1.5
 			))
 			return mini(presupuesto_datos, presupuesto_pintado)
 		if _render_manager != null and etapa == "PINTADO":
 			return int(_render_manager.call(
-				"presupuesto_unidades_terreno", "terrain_paint", base, 8, 64, 3.0
+				"presupuesto_unidades_terreno", "terrain_paint", base, 8, 96, 3.0
 			))
 
 		if etapa == "DATOS":
-			return mini(base, 64)
+			return mini(base, 96)
 		if etapa == "PINTADO":
-			return mini(base, 64)
+			return mini(base, 96)
 
 	# FLUSH: aquí sí manda el presupuesto visual.
 	if _render_manager == null:
