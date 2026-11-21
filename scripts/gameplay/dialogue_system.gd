@@ -2968,7 +2968,11 @@ func _recuperar_menu_social_o_cerrar() -> void:
 
 
 func _seleccionar_tema_conversacion(opcion: Dictionary) -> void:
-	if not _abierto or not is_instance_valid(_fuente):
+	if not _abierto:
+		return
+	if not is_instance_valid(_fuente):
+		_mostrar_cierre_dialogo()
+		_actualizar_boton_accion()
 		return
 	var jugador := str(opcion.get("jugador", "")).strip_edges()
 	var respuesta := str(opcion.get("respuesta", "")).strip_edges()
@@ -3064,7 +3068,13 @@ func _limpiar_botones_respuesta() -> void:
 
 
 func _seleccionar_respuesta(indice: int) -> void:
-	if indice < 0 or indice >= _respuestas.size() or not _abierto:
+	if not _abierto:
+		return
+	if not is_instance_valid(_fuente):
+		_mostrar_cierre_dialogo()
+		_actualizar_boton_accion()
+		return
+	if indice < 0 or indice >= _respuestas.size():
 		return
 	var opcion: Dictionary = _respuestas[indice]
 	if not _respuesta_es_utilizable(opcion):
