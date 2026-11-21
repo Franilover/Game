@@ -155,11 +155,8 @@ func _hay_runtime_partida_activo() -> bool:
 		return false
 	if str(escena.scene_file_path) == MAIN_SCENE_PATH:
 		return true
-	# Permite verificar el mismo contrato en escenas de integración aisladas.
-	return (
-		is_instance_valid(escena.get_node_or_null("World/ZoneManager"))
-		and is_instance_valid(escena.get_node_or_null("Entities/Player"))
-	)
+	# En escenas envueltas, la pareja Player + ZoneManager identifica el runtime.
+	return is_instance_valid(_player) and is_instance_valid(escena.get_node_or_null("World/ZoneManager"))
 
 
 func _rechazar_guardado(motivo: String) -> bool:
