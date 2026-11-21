@@ -40,6 +40,10 @@ func _ready() -> void:
 	PIXEL_UI_THEME.apply(self)
 	_configurar_panel_texto()
 	_actualizar_pagina()
+	# La escena de introducción puede abrirse desde una ruta antigua o un
+	# acceso directo. Si ya existe progreso, reanudarlo sin volver a mostrar
+	# la cinemática ni reiniciar el día.
+	call_deferred("_reanudar_progreso_existente")
 
 
 func _configurar_panel_texto() -> void:
@@ -113,6 +117,15 @@ func _pagina_siguiente() -> void:
 		return
 
 	_comenzar_capitulo()
+
+
+func _reanudar_progreso_existente() -> void:
+	if not GameState.historia_reserva_tiene_progreso():
+		return
+	GameState.preparar_historia_reserva_carmesi(false)
+	var error := get_tree().change_scene_to_file("res://scenes/world/main.tscn")
+	if error != OK:
+		push_error("Historia: no se pudo reanudar La Reserva Carmesí. Error: %s" % error)
 
 
 func _comenzar_capitulo() -> void:
