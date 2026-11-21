@@ -43,12 +43,18 @@ const PERFILES_MECANICOS := [
 
 
 func configurar(nuevo_garumi: Garumi) -> void:
-	if is_instance_valid(garumi) and garumi.configuracion_actualizada.is_connected(_recargar_configuracion):
-		garumi.configuracion_actualizada.disconnect(_recargar_configuracion)
+	if is_instance_valid(garumi) and garumi.configuracion_actualizada.is_connected(_al_actualizar_configuracion):
+		garumi.configuracion_actualizada.disconnect(_al_actualizar_configuracion)
 	garumi = nuevo_garumi
 	if is_instance_valid(garumi) and not garumi.configuracion_actualizada.is_connected(_recargar_configuracion):
-		garumi.configuracion_actualizada.connect(_recargar_configuracion)
+		garumi.configuracion_actualizada.connect(_al_actualizar_configuracion)
 	_rng.randomize()
+	_recargar_configuracion()
+	_tiempo_decision = 0.0
+	_aplicar_control()
+
+
+func _al_actualizar_configuracion() -> void:
 	_recargar_configuracion()
 	_tiempo_decision = 0.0
 	_aplicar_control()
