@@ -56,6 +56,7 @@ var _diag_entity_data_ms_ultimo: float = 0.0
 var _diag_entity_data_ms_maximo: float = 0.0
 var _diag_creature_data_ms_maximo: float = 0.0
 var _diag_prop_data_ms_maximo: float = 0.0
+var _data_preparation_active: bool = false
 
 # Estado logico de representacion por chunk.
 const LOD_DATA: String = "DATA"
@@ -235,7 +236,7 @@ func _procesar_variaciones_si_hay_presupuesto() -> void:
 
 
 func _procesar_entidades_si_hay_presupuesto() -> void:
-	if _entity_spawner == null:
+	if _entity_spawner == null or _data_preparation_active:
 		return
 	var limite := _presupuesto_entidades()
 	if limite <= 0:
@@ -246,23 +247,23 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	if not _data_entity_queue.is_empty():
 		var data_coord: Vector2i = _data_entity_queue.pop_front()
 		_data_entity_queued.erase(data_coord)
+		_data_preparation_active = true
 		var duracion_total_ms := 0.0
 		if _entity_spawner.has_method("preparar_datos_criaturas_chunk"):
 			var inicio_criaturas_usec := Time.get_ticks_usec()
-			_entity_spawner.preparar_datos_criaturas_chunk(data_coord)
+			await _entity_spawner.preparar_datos_criaturas_chunk(data_coord)
 			var criaturas_ms := float(Time.get_ticks_usec() - inicio_criaturas_usec) / 1000.0
 			duracion_total_ms += criaturas_ms
 			_diag_creature_data_ms_maximo = maxf(_diag_creature_data_ms_maximo, criaturas_ms)
-			if _render_manager != null and is_instance_valid(_render_manager):
-				_render_manager.call("registrar_trabajo", "entity_data_creatures", criaturas_ms, 1)
+			# La duración incluye esperas entre frames; no reportarla como CPU de un frame.
 		if limite >= 2 and _entity_spawner.has_method("preparar_datos_props_chunk"):
 			var inicio_props_usec := Time.get_ticks_usec()
-			_entity_spawner.preparar_datos_props_chunk(data_coord)
+			await _entity_spawner.preparar_datos_props_chunk(data_coord)
 			var props_ms := float(Time.get_ticks_usec() - inicio_props_usec) / 1000.0
 			duracion_total_ms += props_ms
 			_diag_prop_data_ms_maximo = maxf(_diag_prop_data_ms_maximo, props_ms)
-			if _render_manager != null and is_instance_valid(_render_manager):
-				_render_manager.call("registrar_trabajo", "entity_data_props", props_ms, 1)
+			# La duración incluye esperas entre frames; no reportarla como CPU de un frame.
+		_data_preparation_active = false
 		_diag_entity_data_calls += 1
 		_diag_entity_data_ms_ultimo = duracion_total_ms
 		_diag_entity_data_ms_maximo = maxf(_diag_entity_data_ms_maximo, duracion_total_ms)
