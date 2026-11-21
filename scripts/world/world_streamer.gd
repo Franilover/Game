@@ -171,11 +171,10 @@ func procesar() -> void:
 			)
 		)
 
-		# DATOS sólo escribe buffers; no toca TileMap ni mantiene un lote visual.
-		# Durante esta fase podemos avanzar el FLUSH pendiente de un unload que
-		# ya terminó de borrar sus celdas. Así la descarga no queda serializada
-		# detrás de toda la generación del siguiente chunk.
-		if etapa_generacion == "DATOS" and descarga_pendiente:
+		# DATOS también puede pintar celdas cercanas cuando sus vecinos ya
+		# están listos. Sólo intercalar el clear si esta generación todavía no
+		# inició pintura parcial; después, ambos trabajos visuales se serializan.
+		if etapa_generacion == "DATOS" and descarga_pendiente and _terrain.puede_intercalar_descarga_durante_generacion():
 			_procesar_descarga_si_hay_presupuesto()
 
 		if terminado:
