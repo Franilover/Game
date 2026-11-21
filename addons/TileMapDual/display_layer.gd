@@ -15,8 +15,7 @@ var _tileset_watcher: TileSetWatcher
 var _terrain: TerrainLayer
 # Paths invertidos cacheados: el Dual-Grid los usa en cada actualización.
 # Evita reconstruir Arrays con map(Util.reverse_neighbor) para cada flush.
-var _reversed_display_offsets: Array[Vector2i] = []
-var _terrain_world_offsets: Array[Vector2i] = []
+var _reverse_display_paths: Array[Array] = []
 # Buffer reutilizable: update_tile() se ejecuta miles de veces durante un flush.
 # Evita crear un Array temporal por cada celda recompuesta.
 var _terrain_neighbors_scratch: Array = []
@@ -44,6 +43,14 @@ func _init(
 	offset = fields.offset
 	_tileset_watcher = tileset_watcher
 	_terrain = layer
+	# Invertir cada ruta una sola vez. El resultado es idéntico a map()
+	# en cada flush, pero evita crear Arrays y Callable temporales por lote.
+	_reverse_display_paths.clear()
+	for path: Array in _terrain.display_to_world_neighborhood:
+		var reverse_path: Array = []
+		for neighbor: TileSet.CellNeighbor in path:
+			reverse_path.append(Util.reverse_neighbor(neighbor))
+		_reverse_display_paths.append(reverse_path)
 	tile_set = tileset_watcher.tile_set
 	tileset_watcher.tileset_resized.connect(reposition, 1)
 	reposition()
@@ -103,29 +110,28 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 	# Restaurar la semántica original del addon: cada DisplayLayer calcula
 	# la celda dual afectada siguiendo la ruta inversa exacta. La optimización
 	# por offsets precomputados puede alterar la semántica de las esquinas.
-	var already_updated: Dictionary = {}
-	for path: Array in _terrain.display_to_world_neighborhood:
-		var reverse_path: Array = path.map(Util.reverse_neighbor)
+	_already_updated.clear()
+	for reverse_path: Array in _reverse_display_paths:
 		for world_cell: Vector2i in updated_world_cells:
 			var display_cell: Vector2i = follow_path(world_cell, reverse_path)
-			if not already_updated.has(display_cell):
-				already_updated[display_cell] = true
+			if not _already_updated.has(display_cell):
+				_already_updated[display_cell] = true
 				_diag_display_candidates += 1
 				update_tile(cache, display_cell)
 
 
 ## Updates a specific world cell.
 func update_tile(cache: TileCache, cell: Vector2i) -> void:
-	var terrain_neighbors: Array = []
+	_terrain_neighbors_scratch.clear()
 	for path: Array in _terrain.display_to_world_neighborhood:
-		terrain_neighbors.append(
+		_terrain_neighbors_scratch.append(
 			cache.get_terrain_at(follow_path(cell, path))
 		)
 
 	_diag_update_calls += 1
 	_diag_world_cells += 1
 	_diag_rule_evaluations += 1
-	var mapping: Dictionary = _terrain.apply_rule(terrain_neighbors, cell)
+	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 
