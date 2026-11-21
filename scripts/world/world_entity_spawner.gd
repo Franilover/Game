@@ -200,6 +200,7 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		float(_terrain.chunk_size_tiles * _terrain.tile_size)
 	)
 
+	var procesados_desde_yield := 0
 	for dato_variant in datos:
 		if not dato_variant is Dictionary:
 			continue
@@ -274,6 +275,12 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 
 		claves_existentes[instance_key] = true
 		hay_criaturas = true
+		procesados_desde_yield += 1
+		# DATA puede contener varias criaturas. Ceder periódicamente evita que
+		# crear/configurar todas las instancias de un chunk ocupe un solo frame.
+		if procesados_desde_yield >= 2:
+			procesados_desde_yield = 0
+			await get_tree().process_frame
 
 	if hay_criaturas:
 		_entity_manager.activar_criaturas_chunk(chunk_coord)
@@ -650,8 +657,6 @@ func _obtener_contexto_data_cacheado(
 func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 	if _entity_manager == null or _entity_factory == null:
 		return false
-	if _entity_manager.tiene_props_chunk(chunk_coord):
-		return true
 	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "props", false)
 	if datos.is_empty():
 		return false
@@ -661,11 +666,21 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 		float(_terrain.chunk_size_tiles * _terrain.tile_size),
 		float(_terrain.chunk_size_tiles * _terrain.tile_size)
 	)
+	var claves_existentes: Dictionary = {}
+	for entidad_variant in _entity_manager.obtener_por_chunk(chunk_coord):
+		if entidad_variant is WorldProp and is_instance_valid(entidad_variant):
+			var existente := entidad_variant as WorldProp
+			var clave_existente := str(existente.get_meta("runtime_instance_key", "")).strip_edges()
+			if not clave_existente.is_empty():
+				claves_existentes[clave_existente] = true
+	var procesados_desde_yield := 0
 	for dato_variant in datos:
 		if not dato_variant is Dictionary:
 			continue
 		var dato := dato_variant as Dictionary
 		var instance_key := str(dato.get("runtime_instance_key", "")).strip_edges()
+		if not instance_key.is_empty() and claves_existentes.has(instance_key):
+			continue
 		var estado := _entity_manager.obtener_estado_prop(chunk_coord, instance_key)
 		if not estado.is_empty() and not bool(estado.get("is_present", true)):
 			continue
@@ -683,6 +698,11 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 			prop.global_position = dato.get("position", prop.global_position)
 		if prop.has_method("configurar_chunk"):
 			prop.call("configurar_chunk", chunk_coord, limite_chunk)
+		claves_existentes[instance_key] = true
+		procesados_desde_yield += 1
+		if procesados_desde_yield >= 2:
+			procesados_desde_yield = 0
+			await get_tree().process_frame
 	_entity_manager.activar_props_chunk(chunk_coord)
 	return true
 
