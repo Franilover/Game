@@ -137,6 +137,9 @@ func procesar() -> void:
 	# decoración secundaria y nunca deben consumir el servicio reservado
 	# antes del commit del suelo.
 	if _terrain.tiene_generacion_activa():
+		var etapa_generacion := str(
+			_terrain.obtener_estado_generacion().get("etapa", "IDLE")
+		)
 		var presupuesto_celdas := _presupuesto_generacion()
 		if presupuesto_celdas <= 0:
 			return
@@ -145,6 +148,13 @@ func procesar() -> void:
 				presupuesto_celdas
 			)
 		)
+
+		# DATOS sólo escribe buffers; no toca TileMap ni mantiene un lote visual.
+		# Durante esta fase podemos avanzar el FLUSH pendiente de un unload que
+		# ya terminó de borrar sus celdas. Así la descarga no queda serializada
+		# detrás de toda la generación del siguiente chunk.
+		if etapa_generacion == "DATOS" and descarga_pendiente:
+			_procesar_descarga_si_hay_presupuesto()
 
 		if terminado:
 			# El chunk base ya terminó. Sólo ahora se permite trabajo secundario.
@@ -186,18 +196,8 @@ func procesar() -> void:
 	# Sólo cuando no arrancamos generación en este frame cedemos el frame al
 	# unload. La limpieza sigue progresando, pero nunca compite con el primer
 	# avance del siguiente chunk visible.
-	if not inicio_generacion and descarga_pendiente and _terrain.tiene_descarga_activa():
-		var presupuesto_descarga := _presupuesto_descarga()
-		if presupuesto_descarga > 0:
-			var descarga_inicio_usec := Time.get_ticks_usec()
-			_terrain.procesar_descargas(presupuesto_descarga)
-			if _render_manager != null:
-				_render_manager.call(
-					"registrar_trabajo",
-					"terrain_clear",
-					float(Time.get_ticks_usec() - descarga_inicio_usec) / 1000.0,
-					maxi(presupuesto_descarga, 1)
-				)
+	if not inicio_generacion and descarga_pendiente:
+		_procesar_descarga_si_hay_presupuesto()
 
 
 
@@ -285,6 +285,23 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	_entity_spawner.procesar_spawn_queue(1)
 	if limite >= 2:
 		_entity_spawner.procesar_prop_spawn_queue(1)
+
+func _procesar_descarga_si_hay_presupuesto() -> void:
+	if _terrain == null or not _terrain.tiene_descarga_activa():
+		return
+	var presupuesto_descarga := _presupuesto_descarga()
+	if presupuesto_descarga <= 0:
+		return
+	var descarga_inicio_usec := Time.get_ticks_usec()
+	_terrain.procesar_descargas(presupuesto_descarga)
+	if _render_manager != null:
+		_render_manager.call(
+			"registrar_trabajo",
+			"terrain_clear",
+			float(Time.get_ticks_usec() - descarga_inicio_usec) / 1000.0,
+			maxi(presupuesto_descarga, 1)
+		)
+
 
 func _presupuesto_descarga() -> int:
 	var base := mini(_cells_per_frame, 128)
@@ -676,8 +693,11 @@ func _iniciar_siguiente_chunk() -> bool:
 	if _queue.is_empty():
 		return false
 
-	# Un unload debe liberar el slot antes de crear otro chunk visual.
-	if _terrain.tiene_descarga_activa():
+	# La fase de borrado mantiene un lote visual bloqueado y no admite
+	# pintura concurrente. Una vez que entra en FLUSH, el lote está liberado:
+	# podemos empezar DATA del siguiente chunk y usar esa fase para drenar el
+	# dirty queue del unload sin mezclar dos escrituras de TileMap en el frame.
+	if not _terrain.puede_iniciar_generacion_durante_descarga():
 		return false
 
 	# Límite duro: nunca más de 25 chunks TERRAIN visuales cargados.
