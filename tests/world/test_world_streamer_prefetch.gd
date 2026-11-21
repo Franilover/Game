@@ -67,7 +67,7 @@ func _run_tests() -> void:
 	# Una materialización puede ceder el frame. Una segunda llamada diferida
 	# no debe consumir otro chunk mientras la primera activación siga activa.
 	_streamer._entity_activation_active = true
-	await _streamer._procesar_siguiente_chunk_entidades()
+	_streamer.call("_procesar_siguiente_chunk_entidades")
 	if _streamer._entity_activation_queue.size() != 3:
 		push_error("WorldStreamerPrefetch: inició otra activación durante una tarea activa.")
 		_terminar(1)
