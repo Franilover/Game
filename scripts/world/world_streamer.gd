@@ -162,6 +162,11 @@ func procesar() -> void:
 	# decoración secundaria y nunca deben consumir el servicio reservado
 	# antes del commit del suelo.
 	if _terrain.tiene_generacion_activa():
+		# El despawn sólo toca estado/nodos de entidades, no el TileMap. Puede
+		# avanzar mientras una generación visual no admite intercalado; al
+		# terminar vuelve a la cola y espera a que el terreno pueda descargarse.
+		if _entity_unload_active and not _terrain.puede_intercalar_descarga_durante_generacion():
+			_procesar_lote_despawn_durante_generacion()
 		# El clear de fase 0 mantiene exclusivo el lote visual. Pausar también
 		# una generación ya iniciada: DATOS puede entrar en pintura parcial
 		# cuando sus vecinos quedan listos, aunque su etapa siga siendo DATOS.
@@ -229,6 +234,25 @@ func procesar() -> void:
 	if not inicio_generacion and descarga_pendiente:
 		_procesar_descarga_si_hay_presupuesto()
 
+
+
+func _procesar_lote_despawn_durante_generacion() -> void:
+	if not _entity_unload_active:
+		return
+	var inicio_usec := Time.get_ticks_usec()
+	var terminado := true
+	if _entity_spawner != null and _entity_spawner.has_method("procesar_despawn_chunk"):
+		terminado = _entity_spawner.procesar_despawn_chunk(_entity_unload_chunk, 6)
+	_diag_unload_entity_last_ms = float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+	_diag_unload_entity_max_ms = maxf(_diag_unload_entity_max_ms, _diag_unload_entity_last_ms)
+	_diag_unload_entity_count += 1
+	_diag_unload_entity_batches += 1
+	if not terminado:
+		return
+	var chunk_listo := _entity_unload_chunk
+	_entity_unload_active = false
+	if _terrain.chunk_cargado(chunk_listo) and _distancia_chunk(chunk_listo, _player_chunk) > _unload_radius:
+		_encolar_descarga_chunk(chunk_listo, _player_chunk)
 
 
 func _procesar_variaciones_si_hay_presupuesto() -> void:
