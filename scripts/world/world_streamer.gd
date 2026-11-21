@@ -57,6 +57,7 @@ var _diag_entity_data_ms_maximo: float = 0.0
 var _diag_creature_data_ms_maximo: float = 0.0
 var _diag_prop_data_ms_maximo: float = 0.0
 var _data_preparation_active: bool = false
+var _data_preparing_coord: Vector2i = Vector2i(999999, 999999)
 
 # Estado logico de representacion por chunk.
 const LOD_DATA: String = "DATA"
@@ -248,6 +249,7 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 		var data_coord: Vector2i = _data_entity_queue.pop_front()
 		_data_entity_queued.erase(data_coord)
 		_data_preparation_active = true
+		_data_preparing_coord = data_coord
 		var duracion_total_ms := 0.0
 		if _entity_spawner.has_method("preparar_datos_criaturas_chunk"):
 			var inicio_criaturas_usec := Time.get_ticks_usec()
@@ -264,6 +266,7 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 			_diag_prop_data_ms_maximo = maxf(_diag_prop_data_ms_maximo, props_ms)
 			# La duración incluye esperas entre frames; no reportarla como CPU de un frame.
 		_data_preparation_active = false
+		_data_preparing_coord = Vector2i(999999, 999999)
 		_diag_entity_data_calls += 1
 		_diag_entity_data_ms_ultimo = duracion_total_ms
 		_diag_entity_data_ms_maximo = maxf(_diag_entity_data_ms_maximo, duracion_total_ms)
@@ -694,7 +697,7 @@ func _actualizar_data_entidades(centro: Vector2i) -> void:
 		var lod := str(_chunk_lod.get(coord, LOD_DATA))
 		if lod == LOD_DATA:
 			activos[coord] = true
-			if _data_entity_queued.has(coord) or _data_entity_generated.has(coord):
+			if _data_entity_queued.has(coord) or _data_entity_generated.has(coord) or coord == _data_preparing_coord:
 				continue
 			_data_entity_queue.append(coord)
 			_data_entity_queued[coord] = true
@@ -766,6 +769,7 @@ func obtener_estado_lod() -> Dictionary:
 		"full_radius": _creature_active_radius,
 		"data_queue": _data_entity_queue.size(),
 		"data_preparing": _data_preparation_active,
+		"data_preparing_chunk": _data_preparing_coord,
 		"data_generated": _data_entity_generated.size(),
 		"entity_data_calls": _diag_entity_data_calls,
 		"entity_data_ms_ultimo": _diag_entity_data_ms_ultimo,
