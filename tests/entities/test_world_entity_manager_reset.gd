@@ -104,6 +104,7 @@ func _run() -> void:
 
 	# Descargar todos los chunks debe invalidar el snapshot inmediatamente,
 	# sin depender de que queue_free dispare tree_exiting al final del frame.
+	manager._global_entities.clear()
 	var chunk_cache := Vector2i(11, 4)
 	var entidad_cache := Node.new()
 	manager._by_chunk[chunk_cache] = [entidad_cache]
