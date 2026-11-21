@@ -41,5 +41,25 @@ func _run_tests() -> void:
 		assert(obtenido.get("criatura", {}).get("id", "") == esperado.get("criatura", {}).get("id", ""), "La selección sin arrays debe conservar el sorteo ponderado.")
 	var todos_excluidos := {"especie_a": true, "especie_b": true, "especie_c": true}
 	assert(spawn_rules.elegir_criatura_excluyendo(candidatos, todos_excluidos, RandomNumberGenerator.new()).is_empty(), "No debe elegir especies excluidas.")
+	var candidatos_uniformes := [
+		{"criatura": {"id": "criatura_a"}},
+		{"criatura": {"id": "criatura_b"}},
+		{"criatura": {"id": "criatura_c"}},
+		{"criatura": {"id": "criatura_d"}}
+	]
+	var excluidas_uniformes := {"criatura_b": true}
+	for seed_uniforme in range(1, 25):
+		var rng_uniforme_esperado := RandomNumberGenerator.new()
+		var rng_uniforme_nuevo := RandomNumberGenerator.new()
+		rng_uniforme_esperado.seed = seed_uniforme
+		rng_uniforme_nuevo.seed = seed_uniforme
+		var validos_uniformes: Array[Dictionary] = [
+			candidatos_uniformes[0],
+			candidatos_uniformes[2],
+			candidatos_uniformes[3]
+		]
+		var esperado_uniforme: Dictionary = validos_uniformes[rng_uniforme_esperado.randi_range(0, validos_uniformes.size() - 1)]
+		var obtenido_uniforme: Dictionary = spawn_rules.elegir_candidato_uniforme_excluyendo(candidatos_uniformes, excluidas_uniformes, rng_uniforme_nuevo)
+		assert(obtenido_uniforme.get("criatura", {}).get("id", "") == esperado_uniforme.get("criatura", {}).get("id", ""), "La selección uniforme sin arrays debe conservar el resultado del RNG.")
 	print("WorldGeneratorKernel: pruebas smoke completadas.")
 	quit(0)
