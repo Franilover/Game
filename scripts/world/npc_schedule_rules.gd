@@ -242,6 +242,7 @@ static func obtener_evento_comunitario(
 		return {
 			"clave": "celebracion_estacional",
 			"nombre": "Celebración de temporada",
+			"ubicacion": "la Plaza",
 			"actividad": "celebrar_el_cambio_de_estacion",
 			"aviso": "Hoy los vecinos celebran el comienzo de una nueva estación en la plaza."
 		}
@@ -250,7 +251,8 @@ static func obtener_evento_comunitario(
 	if minutos >= 540 and minutos < 1020:
 		return {
 			"clave": "mercado_vecinal",
-			"nombre": "Mercado vecinal",
+			"nombre": "Mercado Vecinal",
+			"ubicacion": "la Plaza",
 			"actividad": "visitar_el_mercado",
 			"aviso": "Hoy hay mercado vecinal en la plaza de Torres."
 		}
@@ -258,6 +260,7 @@ static func obtener_evento_comunitario(
 		return {
 			"clave": "comida_comunitaria",
 			"nombre": "Comida comunitaria",
+			"ubicacion": "la Plaza",
 			"actividad": "compartir_comida_con_vecinos",
 			"aviso": "Los vecinos se reúnen en la plaza para compartir comida."
 		}
