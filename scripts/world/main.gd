@@ -22,6 +22,8 @@ var _dialogue_system: DialogueSystem = null
 @onready var _debug_console: Node = $UI/DebugConsole
 var _world_entity_spawner: WorldEntitySpawner = null
 var _eterium_radial_menu: Control = null
+var _eterium_radial_menu_scene: PackedScene = null
+var _creature_scene: PackedScene = null
 @onready var _supabase_client: GarliaSupabaseClient = get_node_or_null("/root/SupabaseClient") as GarliaSupabaseClient
 @onready var _ium_repository: IUMRepository = $Systems/IUMRepository
 @onready var _combat_projectiles: Node2D = $CombatProjectiles
@@ -31,8 +33,6 @@ var _world_generator: WorldGenerator = null
 @onready var _world_context: WorldContext = $Systems/WorldContext
 @onready var _world_items: GarliaWorldItems = $Systems/WorldItems
 const ZONE_MANAGER_SCRIPT = preload("res://scripts/world/zone_manager.gd")
-const ETERIUM_RADIAL_MENU_SCENE: PackedScene = preload("res://scenes/ui/eterium_radial_menu.tscn")
-const CREATURE_SCENE: PackedScene = preload("res://scenes/creatures/creature.tscn")
 const NPC_SCHEDULE_SYSTEM_SCRIPT = preload("res://scripts/world/npc_schedule_system.gd")
 const HABITANTES_LOCALES: Array[Dictionary] = [
 	{
@@ -908,7 +908,7 @@ func _materializar_npcs_reino_torres() -> void:
 		if not dialogo.is_empty():
 			criatura_data["dialogo"] = dialogo
 
-		var npc := CREATURE_SCENE.instantiate() as Creature
+		var npc := _obtener_escena_criatura().instantiate() as Creature
 		if npc == null:
 			push_warning("Main: no se pudo instanciar el NPC " + nombre)
 			continue
@@ -1067,7 +1067,7 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 				}]
 			}]
 		}
-		var npc := CREATURE_SCENE.instantiate() as Creature
+		var npc := _obtener_escena_criatura().instantiate() as Creature
 		if npc == null:
 			continue
 		npc.move_speed = 30.0 if clave == "ivo" else (43.0 if clave == "mara" else 48.0)
@@ -2314,6 +2314,22 @@ func _inicializar_ium() -> void:
 
 	print("Main: IUMManager e IUMLab conectados.")
 
+func _obtener_escena_criatura() -> PackedScene:
+	if _creature_scene == null:
+		var inicio_ms := Time.get_ticks_msec()
+		_creature_scene = load("res://scenes/creatures/creature.tscn") as PackedScene
+		print("Main: escena Creature cargada bajo demanda | ", Time.get_ticks_msec() - inicio_ms, " ms")
+	return _creature_scene
+
+
+func _obtener_escena_menu_radial() -> PackedScene:
+	if _eterium_radial_menu_scene == null:
+		var inicio_ms := Time.get_ticks_msec()
+		_eterium_radial_menu_scene = load("res://scenes/ui/eterium_radial_menu.tscn") as PackedScene
+		print("Main: menú radial cargado bajo demanda | ", Time.get_ticks_msec() - inicio_ms, " ms")
+	return _eterium_radial_menu_scene
+
+
 func _configurar_menu_radial_eterium() -> void:
 	if _eterium_radial_menu != null and is_instance_valid(_eterium_radial_menu):
 		return
@@ -2321,7 +2337,7 @@ func _configurar_menu_radial_eterium() -> void:
 	if contenedor_ui == null or _player == null:
 		push_error("Main: no se pudo inicializar el menú radial de Eterium.")
 		return
-	_eterium_radial_menu = ETERIUM_RADIAL_MENU_SCENE.instantiate() as Control
+	_eterium_radial_menu = _obtener_escena_menu_radial().instantiate() as Control
 	if _eterium_radial_menu == null:
 		push_error("Main: no se pudo instanciar eterium_radial_menu.tscn.")
 		return
