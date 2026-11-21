@@ -134,8 +134,28 @@ func _run() -> void:
 	add_child(dialogo)
 	var conversacion_visual := NPCConversationSystemScript.new() as NPCConversationSystem
 	add_child(conversacion_visual)
+	var npc_ivo_historia := CreatureScene.instantiate() as Creature
+	add_child(npc_ivo_historia)
 	npc.nombre_individual = "Mara"
-	conversacion_visual._npc_por_nombre = {"mara": npc}
+	npc_ivo_historia.nombre_individual = "Ivo"
+	conversacion_visual._npc_por_nombre = {"mara": npc, "ivo": npc_ivo_historia}
+	# Si una cinemática narrativa se aborta, debe liberar a ambos NPC y no
+	# dejar la historia activa en un estado que impida nuevas conversaciones.
+	var clave_historia_abortada := "historia_abortada_test"
+	npc.set_meta("_conversacion_ambiental_activa", true)
+	npc_ivo_historia.set_meta("_conversacion_ambiental_activa", true)
+	conversacion_visual._conversacion_activa = {
+		"clave": clave_historia_abortada,
+		"tipo_contenido": "historia",
+		"npc_a": "mara",
+		"npc_b": "ivo",
+		"lineas": [{"npc": "mara", "texto": "La escena no pudo comenzar."}]
+	}
+	conversacion_visual.finalizar_cinematica_historia(clave_historia_abortada, false)
+	if not conversacion_visual._conversacion_activa.is_empty():
+		errores.append("Una cinemática abortada dejó una historia bloqueando el sistema de conversaciones.")
+	if npc.has_meta("_conversacion_ambiental_activa") or npc_ivo_historia.has_meta("_conversacion_ambiental_activa"):
+		errores.append("Una cinemática abortada dejó participantes bloqueados.")
 	conversacion_visual._conversacion_activa = {
 		"clave": "historia_dialogo_compartido_test",
 		"tipo_contenido": "historia",
@@ -625,6 +645,7 @@ func _run() -> void:
 
 	dialogo_prueba_cierre.queue_free()
 	conversacion_visual.queue_free()
+	npc_ivo_historia.queue_free()
 	director_prueba.queue_free()
 	camara_prueba.queue_free()
 	jugador_prueba.queue_free()
