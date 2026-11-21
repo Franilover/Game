@@ -249,7 +249,11 @@ func _procesar_variaciones_si_hay_presupuesto() -> void:
 	else:
 		limite = 8
 
-	limite = maxi(limite, 1)
+	# Si el presupuesto adaptativo devuelve 0, no forzar decoración
+	# cuando el frame ya consumió su cuota visual.
+	if limite <= 0:
+		return
+
 	var inicio_usec := Time.get_ticks_usec()
 	var terminado: bool = _terrain.visual.procesar_variaciones(limite)
 	var ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
