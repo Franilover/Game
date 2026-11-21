@@ -128,7 +128,7 @@ func _generar_criatura_natural(parts: Dictionary, snapshot: Dictionary = {}) -> 
 		return {}
 	if not snapshot.is_empty():
 		manager.restaurar_estado_persistente_mundo(snapshot)
-	var materializadas := await spawner.materializar_criaturas_datos_chunk(CHUNK)
+	var materializadas: bool = await spawner.materializar_criaturas_datos_chunk(CHUNK)
 	if not materializadas:
 		return {}
 	for entity in manager.obtener_por_chunk(CHUNK):
