@@ -103,7 +103,6 @@ func _inicializar_navegacion_tabs() -> void:
 
 	var boton_inventario: Button = $Window/Margin/Column/TabButtons/Inventario
 	var boton_crafteo: Button = $Window/Margin/Column/TabButtons/Crafteo
-	var boton_garumis: Button = $Window/Margin/Column/TabButtons/Garumis
 	var boton_mapa: Button = $Window/Margin/Column/TabButtons/Mapa
 	var boton_relaciones: Button = $Window/Margin/Column/TabButtons/Relaciones
 	var boton_admin: Button = $Window/Margin/Column/TabButtons/Admin
@@ -115,13 +114,6 @@ func _inicializar_navegacion_tabs() -> void:
 	)
 	boton_crafteo.pressed.connect(func() -> void:
 		tabs.current_tab = 1
-	)
-
-	boton_garumis.pressed.connect(func() -> void:
-		tabs.current_tab = 2
-		var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
-		if pagina_garumis.has_method("abrir_en_garumis"):
-			pagina_garumis.call("abrir_en_garumis")
 	)
 	boton_mapa.pressed.connect(func() -> void:
 		tabs.current_tab = 3
@@ -143,36 +135,6 @@ func _inicializar_navegacion_tabs() -> void:
 	boton_inventario.button_pressed = true
 	_actualizar_admin_tab()
 
-
-func _conectar_senales_descubrimiento_tabs() -> void:
-	if GameState.has_signal("enciclopedia_actualizada"):
-		if not GameState.enciclopedia_actualizada.is_connected(_actualizar_visibilidad_tabs_descubrimiento):
-			GameState.enciclopedia_actualizada.connect(_actualizar_visibilidad_tabs_descubrimiento)
-	if GameState.has_signal("descubrimientos_mundo_actualizados"):
-		if not GameState.descubrimientos_mundo_actualizados.is_connected(_actualizar_visibilidad_tabs_descubrimiento):
-			GameState.descubrimientos_mundo_actualizados.connect(_actualizar_visibilidad_tabs_descubrimiento)
-
-
-func _actualizar_visibilidad_tabs_descubrimiento(_dato = null) -> void:
-	var desbloqueadas := (
-		not _modo_historia
-		and GameState.has_method("ha_descubierto_criatura_o_garumi")
-		and bool(GameState.call("ha_descubierto_criatura_o_garumi"))
-	)
-	var botones := $Window/Margin/Column/TabButtons
-	for nombre in ["Garumis"]:
-		var boton := botones.get_node_or_null(nombre) as Button
-		if is_instance_valid(boton):
-			boton.visible = desbloqueadas
-
-	# Si el estado cambia por una carga o migración mientras una de estas
-	# páginas estaba seleccionada, regresar al inventario sin dejar una página
-	# inaccesible abierta.
-	if not desbloqueadas:
-		var tabs := $Window/Margin/Column/Tabs as TabContainer
-		if tabs.current_tab == 2:
-			tabs.current_tab = 0
-			$Window/Margin/Column/TabButtons/Inventario.button_pressed = true
 
 
 func configurar(
@@ -326,8 +288,6 @@ func _ready() -> void:
 	equip_button.pressed.connect(_al_equipar_seleccionado)
 	place_button.pressed.connect(_al_colocar_seleccionado)
 	_inicializar_navegacion_tabs()
-	_conectar_senales_descubrimiento_tabs()
-	_actualizar_visibilidad_tabs_descubrimiento()
 	_cargar_notas_historia()
 	_limpiar_informacion()
 	PIXEL_UI_THEME.apply(self, false)
@@ -376,9 +336,6 @@ func _input(event: InputEvent) -> void:
 func _unhandled_input(event: InputEvent) -> void:
 	if _modo_historia and event is InputEventKey:
 		var tecla_historia := event as InputEventKey
-		if tecla_historia.pressed and not tecla_historia.echo and (tecla_historia.keycode == KEY_G or tecla_historia.physical_keycode == KEY_G or event.is_action_pressed("garumi_hub")):
-			get_viewport().set_input_as_handled()
-			return
 	if event is InputEventKey:
 		var key_event := event as InputEventKey
 
@@ -388,10 +345,7 @@ func _unhandled_input(event: InputEvent) -> void:
 		if key_event.echo:
 			return
 
-		if event.is_action_pressed("garumi_hub"):
-			toggle_garumi_hub()
-			get_viewport().set_input_as_handled()
-		elif event.is_action_pressed("inventory"):
+		if event.is_action_pressed("inventory"):
 			toggle()
 			get_viewport().set_input_as_handled()
 
@@ -404,7 +358,7 @@ func _unhandled_input(event: InputEvent) -> void:
 func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
 	var botones := $Window/Margin/Column/TabButtons
-	for nombre in ["Crafteo", "Garumis", "Mapa", "Relaciones", "Admin"]:
+	for nombre in ["Crafteo", "Mapa", "Relaciones", "Admin"]:
 		var boton := botones.get_node_or_null(nombre) as Button
 		if is_instance_valid(boton):
 			boton.visible = not activo
@@ -448,7 +402,7 @@ func _actualizar_admin_tab() -> void:
 		push_warning("Inventario: no se encontró la pestaña Admin; se omite su actualización.")
 		return
 	admin_tab.visible = es_admin and not _modo_historia
-	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 5:
+	if not es_admin and $Window/Margin/Column/Tabs.current_tab == 4:
 		$Window/Margin/Column/Tabs.current_tab = 0
 	if es_admin:
 		admin_tab.abrir(jugador)
@@ -469,23 +423,6 @@ func toggle() -> void:
 
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
-	if _abierto and tabs.current_tab == 3:
-		cerrar()
-		return
-	if not _abierto:
-		_abierto = true
-		visible = true
-		_notificar_estado_inventario_a_hogar(true)
-		_actualizar_admin_tab()
-	tabs.current_tab = 3
-	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
-	actualizar()
-
-
-func toggle_garumi_hub() -> void:
-	if not GameState.has_method("ha_descubierto_criatura_o_garumi") or not bool(GameState.call("ha_descubierto_criatura_o_garumi")):
-		return
-	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	if _abierto and tabs.current_tab == 2:
 		cerrar()
 		return
@@ -495,10 +432,9 @@ func toggle_garumi_hub() -> void:
 		_notificar_estado_inventario_a_hogar(true)
 		_actualizar_admin_tab()
 	tabs.current_tab = 2
-	$Window/Margin/Column/TabButtons/Garumis.button_pressed = true
-	var pagina_garumis := $Window/Margin/Column/Tabs/Garumis
-	if pagina_garumis.has_method("abrir_en_garumis"):
-		pagina_garumis.call("abrir_en_garumis")
+	$Window/Margin/Column/TabButtons/Mapa.button_pressed = true
+	actualizar()
+
 
 
 func abrir() -> void:
