@@ -123,8 +123,9 @@ func _run_tests() -> void:
 		push_error("WorldStreamerPrefetch: duplicó chunks en la cola de descarga.")
 		_terminar(1)
 		return
+	_terrain._loaded_chunks.erase(Vector2i.ZERO)
 	_streamer._descargar_lejanos(Vector2i(3, 0))
-	if _streamer._pending_unload_chunks.size() != 2 or Vector2i(-3, 0) not in _streamer._pending_unload_chunks or Vector2i(3, 0) in _streamer._pending_unload_chunks:
+	if _streamer._pending_unload_chunks.size() != 1 or Vector2i(-3, 0) not in _streamer._pending_unload_chunks or Vector2i(3, 0) in _streamer._pending_unload_chunks:
 		push_error("WorldStreamerPrefetch: no canceló una descarga que volvió al radio.")
 		_terminar(1)
 		return
