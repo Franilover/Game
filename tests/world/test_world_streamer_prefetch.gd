@@ -1,4 +1,4 @@
-extends SceneTree
+extends Node
 
 const WorldStreamerScript = preload("res://scripts/world/world_streamer.gd")
 const WorldTerrainScript = preload("res://scripts/world/world_terrain.gd")
@@ -14,9 +14,9 @@ func _run_tests() -> void:
 	terrain.tile_size = 32
 
 	var streamer := WorldStreamerScript.new()
-	root.add_child(streamer)
+	add_child(streamer)
 	var player := CharacterBody2D.new()
-	root.add_child(player)
+	add_child(player)
 
 	streamer._terrain = terrain
 	streamer._player = player
@@ -37,7 +37,7 @@ func _run_tests() -> void:
 
 	if not streamer._prefetch_activo or streamer._prefetch_chunk != Vector2i.RIGHT:
 		push_error("WorldStreamerPrefetch: no anticipó el chunk derecho dentro del chunk actual.")
-		quit(1)
+		get_tree().quit(1)
 		return
 	if streamer._queue[0] != Vector2i.RIGHT:
 		push_error("WorldStreamerPrefetch: la cola no priorizó el chunk derecho.")
@@ -66,4 +66,4 @@ func _run_tests() -> void:
 		return
 
 	print("WorldStreamerPrefetch: PASS sorts=%d" % sorts)
-	quit(0)
+	get_tree().quit(0)
