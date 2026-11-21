@@ -103,6 +103,31 @@ func _run() -> void:
 					)
 					return
 
+	# Shader comparison mode must disable only display materials and restore
+	# the original shader resources without rebuilding terrain layers.
+	var grass_layer := visual._layers_by_zone["0"] as TileMapDual
+	if not grass_layer.display_material is ShaderMaterial:
+		_fail("Pradera shader material was not initialized.")
+		return
+	var original_grass_shader := (grass_layer.display_material as ShaderMaterial).shader
+	visual.establecer_shaders_terreno_activos(false)
+	await process_frame
+	if visual.tiene_shaders_terreno_activos() or grass_layer.display_material != null:
+		_fail("Shader comparison mode did not disable the terrain display material.")
+		return
+	for child in grass_layer._display.get_children():
+		if child is DisplayLayer and child.material != null:
+			_fail("Shader comparison mode left a material active on a DisplayLayer.")
+			return
+	visual.establecer_shaders_terreno_activos(true)
+	await process_frame
+	if not visual.tiene_shaders_terreno_activos():
+		_fail("Terrain shader mode did not return to enabled state.")
+		return
+	if not grass_layer.display_material is ShaderMaterial or (grass_layer.display_material as ShaderMaterial).shader != original_grass_shader:
+		_fail("Re-enabling shaders did not restore the original Pradera shader.")
+		return
+
 	# Preserve DisplayLayer identities across ordinary cell painting. A
 	# TileSet/rule rebuild during streaming would replace these nodes.
 	var display_ids_by_zone: Dictionary = {}
@@ -245,7 +270,7 @@ func _run() -> void:
 		_fail("Incrementally unloaded cell remains in TileMapDual's cache.")
 		return
 
-	print("PASS: 10 binary terrain layers, stable atlases, bounded flushes, display composition, cross-zone invalidation, and unload cache cleanup.")
+	print("PASS: 10 binary terrain layers, stable atlases, reversible shader comparison, bounded flushes, display composition, cross-zone invalidation, and unload cache cleanup.")
 	quit()
 
 
