@@ -38,6 +38,9 @@ var _diag_sample_count: int = 0
 var _diag_sample_path_ms: float = 0.0
 var _diag_sample_rule_ms: float = 0.0
 var _diag_sample_write_ms: float = 0.0
+var _diag_reverse_world_samples: int = 0
+var _diag_reverse_path_calls: int = 0
+var _diag_sample_reverse_path_ms: float = 0.0
 
 
 func _init(
@@ -127,6 +130,7 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 				_already_updated[display_cell] = true
 				_diag_display_candidates += 1
 				update_tile(cache, display_cell)
+		_diag_reverse_world_samples += 1
 	var flush_ms: float = float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
 	_diag_flush_calls += 1
 	_diag_flush_ms += flush_ms
@@ -206,6 +210,9 @@ func obtener_diagnostico() -> Dictionary:
 		"sample_path_ms": _diag_sample_path_ms,
 		"sample_rule_ms": _diag_sample_rule_ms,
 		"sample_write_ms": _diag_sample_write_ms,
+		"reverse_path_calls": _diag_reverse_path_calls,
+		"reverse_world_samples": _diag_reverse_world_samples,
+		"sample_reverse_path_ms": _diag_sample_reverse_path_ms,
 		"atlas_tiles": _diag_atlas_tiles,
 	}
 
