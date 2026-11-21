@@ -112,7 +112,49 @@ func obtener_diagnostico_datos() -> Dictionary:
 			props += (props_variant as Array).size()
 		if criaturas_variant is Array:
 			criaturas += (criaturas_variant as Array).size()
-	return {"chunks": _data_by_chunk.size(), "props": props, "criaturas": criaturas, "runtime_criaturas": _runtime_state_by_key.size(), "runtime_props": _runtime_prop_state_by_key.size()}
+
+	# Estas métricas sólo se calculan al abrir F4. Permiten distinguir el
+	# número de estados persistentes del número de chunks que los originaron.
+	var chunks_runtime_criaturas: Dictionary = {}
+	var chunks_runtime_props: Dictionary = {}
+	var aliases_criaturas := 0
+	for clave_variant in _runtime_state_by_key.keys():
+		var partes := str(clave_variant).split(":", true, 2)
+		if partes.size() < 3:
+			continue
+		var chunk_key := partes[0] + ":" + partes[1]
+		chunks_runtime_criaturas[chunk_key] = int(chunks_runtime_criaturas.get(chunk_key, 0)) + 1
+		var estado_variant: Variant = _runtime_state_by_key.get(clave_variant, {})
+		if estado_variant is Dictionary:
+			var criatura_id := str((estado_variant as Dictionary).get("criatura_id", ""))
+			if not criatura_id.is_empty() and partes[2] != criatura_id and not partes[2].begins_with("personaje:"):
+				aliases_criaturas += 1
+	for clave_variant in _runtime_prop_state_by_key.keys():
+		var partes := str(clave_variant).split(":", true, 2)
+		if partes.size() < 3:
+			continue
+		var chunk_key := partes[0] + ":" + partes[1]
+		chunks_runtime_props[chunk_key] = int(chunks_runtime_props.get(chunk_key, 0)) + 1
+
+	var max_criaturas_por_chunk := 0
+	for cantidad_variant in chunks_runtime_criaturas.values():
+		max_criaturas_por_chunk = maxi(max_criaturas_por_chunk, int(cantidad_variant))
+	var max_props_por_chunk := 0
+	for cantidad_variant in chunks_runtime_props.values():
+		max_props_por_chunk = maxi(max_props_por_chunk, int(cantidad_variant))
+
+	return {
+		"chunks": _data_by_chunk.size(),
+		"props": props,
+		"criaturas": criaturas,
+		"runtime_criaturas": _runtime_state_by_key.size(),
+		"runtime_props": _runtime_prop_state_by_key.size(),
+		"runtime_criaturas_chunks": chunks_runtime_criaturas.size(),
+		"runtime_props_chunks": chunks_runtime_props.size(),
+		"runtime_criaturas_aliases": aliases_criaturas,
+		"runtime_criaturas_max_por_chunk": max_criaturas_por_chunk,
+		"runtime_props_max_por_chunk": max_props_por_chunk
+	}
 
 
 func configurar(entities_root: Node, entity_factory: WorldEntityFactory = null) -> void:
