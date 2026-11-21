@@ -407,7 +407,8 @@ func _run() -> void:
 	if int(flags_integracion.get("integration_progress_marker", 0)) != 91:
 		errores.append("El guardado narrativo integrado no persistió el progreso de la sesión.")
 	var jugador_guardado: Dictionary = estado_integracion.get("player", {}) as Dictionary
-	if not is_equal_approx(float(jugador_guardado.get("position_x", 0.0)), 321.5):
+	var posicion_guardada: Dictionary = jugador_guardado.get("position", {}) as Dictionary
+	if not is_equal_approx(float(posicion_guardada.get("x", 0.0)), 321.5) or not is_equal_approx(float(posicion_guardada.get("y", 0.0)), 654.25):
 		errores.append("El guardado narrativo integrado no conservó la posición del jugador.")
 	var reapertura_runtime := GameStateScript.new() as GameStateService
 	reapertura_runtime.name = "GameStateSaveReloadIntegration"
