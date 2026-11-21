@@ -72,6 +72,10 @@ func configurar_dependencias(
 	_guardado_rapido_conectado = false
 	_conectar_guardado_rapido()
 	call_deferred("_revisar_escena_actual")
+	# Tras aplicar el snapshot y terminar la restauración vital, confirmar
+	# inmediatamente el estado de la sesión. No depender del primer intervalo
+	# de autosave para crear el primer punto de recuperación narrativo.
+	call_deferred("_guardar_progreso_diferido")
 
 
 func _ready() -> void:
@@ -93,11 +97,14 @@ func _process(delta: float) -> void:
 	_autosave_timer += delta
 
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
-		_autosave_timer = 0.0
+		var guardado := false
 		if _historia_reserva_activa:
-			guardar_progreso_historia()
-		else:
-			guardar_partida()
+			guardado = guardar_progreso_historia()
+		elif not active_save_id.is_empty():
+			guardado = guardar_partida()
+		# Si el runtime aún no está listo, reintentar en un segundo en vez de
+		# esperar otros diez segundos tras una tentativa que no pudo guardarse.
+		_autosave_timer = 0.0 if guardado else maxf(AUTOSAVE_INTERVAL - 1.0, 0.0)
 
 
 func _notification(what: int) -> void:
@@ -133,7 +140,10 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 	_estado_vital_restaurado_en_escena = false
 	_autosave_timer = 0.0
 
-	if nueva:
+	# Una llamada de inicio nueva nunca debe borrar silenciosamente una partida
+	# narrativa existente. Si ya hay progreso, prevalece la reanudación.
+	var iniciar_nueva := nueva and not historia_reserva_tiene_progreso()
+	if iniciar_nueva:
 		player_state = PlayerState.new()
 		world_state = WorldState.new()
 		discovery_state = DiscoveryState.new()
@@ -155,7 +165,7 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 
 
 func guardar_progreso_historia() -> bool:
-	if not _historia_reserva_activa or _guardado_en_curso:
+	if not _historia_reserva_activa or _guardado_en_curso or _historia_requiere_aplicar:
 		return false
 	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
 		return false
@@ -736,6 +746,24 @@ func _ejecutar_guardado_rapido() -> void:
 		guardar_progreso_historia()
 	elif not active_save_id.is_empty():
 		guardar_partida()
+
+
+func _guardar_progreso_diferido() -> void:
+	# Nunca escribir encima de un snapshot que todavía está pendiente de
+	# aplicarse al Player real. En partidas nuevas, el guardado inicial sí puede
+	# realizarse en cuanto Main haya conectado jugador, zona e inventario.
+	if _historia_reserva_activa:
+		if _historia_requiere_aplicar:
+			return
+		if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
+			return
+		guardar_progreso_historia()
+		return
+	if active_save_id.is_empty():
+		return
+	if not _partida_aplicada_en_escena or not _estado_vital_restaurado_en_escena:
+		return
+	guardar_partida()
 
 
 func _serializar_estado() -> Dictionary:
