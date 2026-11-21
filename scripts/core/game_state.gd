@@ -287,28 +287,126 @@ func guardar_progreso_historia() -> bool:
 # ============================================================
 
 func obtener_partidas() -> Array[Dictionary]:
-	# El selector puede abrirse varias veces durante una misma sesión.
-	# Leer y validar todos los JSON en cada apertura no aporta información nueva
-	# si GameState no ha escrito, renombrado ni eliminado ninguna partida.
+	var inicio_ms := Time.get_ticks_msec()
 	if _partidas_metadata_cache_valida:
+		print("GameState: metadatos de partidas desde RAM → ", _partidas_metadata_cache.size(), " | ", Time.get_ticks_msec() - inicio_ms, " ms")
 		return _partidas_metadata_cache.duplicate(true)
 
+	var ids := save_repository.listar_ids_partidas()
+	var indice := _leer_indice_metadata_partidas()
+	if _indice_metadata_coincide_con_ids(indice, ids):
+		_partidas_metadata_cache = indice
+		_partidas_metadata_cache_valida = true
+		print("GameState: metadatos de partidas desde índice → ", indice.size(), " | ", Time.get_ticks_msec() - inicio_ms, " ms")
+		return _partidas_metadata_cache.duplicate(true)
+
+	# Primera ejecución tras incorporar el índice, o si cambió el conjunto de
+	# archivos fuera de GameState: construirlo una vez y reutilizarlo después.
 	var resultado: Array[Dictionary] = []
-	for id in save_repository.listar_ids_partidas():
+	for id in ids:
 		var datos := _leer_archivo_partida(id)
 		if not _datos_partida_cargables(id, datos):
 			continue
 		resultado.append(_extraer_metadata_partida(datos))
 
-	resultado.sort_custom(
-		func(a: Dictionary, b: Dictionary) -> bool:
-			return str(a.get("actualizado_en", "")) > str(
-				b.get("actualizado_en", "")
-			)
-	)
+	_ordenar_metadata_partidas(resultado)
 	_partidas_metadata_cache = resultado.duplicate(true)
 	_partidas_metadata_cache_valida = true
+	_guardar_indice_metadata_partidas(resultado)
+	print("GameState: índice de metadatos reconstruido → ", resultado.size(), " partidas | ", Time.get_ticks_msec() - inicio_ms, " ms")
 	return resultado
+
+
+func _leer_indice_metadata_partidas() -> Array[Dictionary]:
+	if not FileAccess.file_exists("user://partidas_index.json"):
+		return []
+	var archivo := FileAccess.open("user://partidas_index.json", FileAccess.READ)
+	if archivo == null:
+		return []
+	var parser := JSON.new()
+	var error := parser.parse(archivo.get_as_text())
+	archivo.close()
+	if error != OK or not parser.data is Dictionary:
+		return []
+	var partidas_variant: Variant = (parser.data as Dictionary).get("partidas", [])
+	if not partidas_variant is Array:
+		return []
+	var resultado: Array[Dictionary] = []
+	for entrada in partidas_variant:
+		if not entrada is Dictionary:
+			return []
+		var metadata := (entrada as Dictionary).duplicate(true)
+		var id := str(metadata.get("id", ""))
+		if id.is_empty() or not metadata.has("nombre"):
+			return []
+		resultado.append(metadata)
+	return resultado
+
+
+func _indice_metadata_coincide_con_ids(indice: Array[Dictionary], ids: Array[String]) -> bool:
+	if indice.size() != ids.size():
+		return false
+	var ids_indice: Dictionary = {}
+	for metadata in indice:
+		ids_indice[str(metadata.get("id", ""))] = true
+	for id in ids:
+		if not ids_indice.has(id):
+			return false
+	return true
+
+
+func _ordenar_metadata_partidas(partidas: Array[Dictionary]) -> void:
+	partidas.sort_custom(
+		func(a: Dictionary, b: Dictionary) -> bool:
+			return str(a.get("actualizado_en", "")) > str(b.get("actualizado_en", ""))
+	)
+
+
+func _guardar_indice_metadata_partidas(partidas: Array[Dictionary]) -> void:
+	var archivo := FileAccess.open("user://partidas_index.json.tmp", FileAccess.WRITE)
+	if archivo == null:
+		push_warning("GameState: no se pudo escribir el índice de metadatos de partidas.")
+		return
+	archivo.store_string(JSON.stringify({"version": 1, "partidas": partidas}))
+	archivo.close()
+	var temporal := ProjectSettings.globalize_path("user://partidas_index.json.tmp")
+	var destino := ProjectSettings.globalize_path("user://partidas_index.json")
+	if FileAccess.file_exists("user://partidas_index.json"):
+		DirAccess.remove_absolute(destino)
+	var error := DirAccess.rename_absolute(temporal, destino)
+	if error != OK:
+		push_warning("GameState: no se pudo confirmar el índice de metadatos (error %d)." % error)
+
+
+func _actualizar_indice_metadata_partida(id: String, datos: Dictionary) -> void:
+	var metadata := _extraer_metadata_partida(datos)
+	if _partidas_metadata_cache_valida:
+		var encontrada := false
+		for i in range(_partidas_metadata_cache.size()):
+			if str(_partidas_metadata_cache[i].get("id", "")) == id:
+				_partidas_metadata_cache[i] = metadata
+				encontrada = true
+				break
+		if not encontrada:
+			_partidas_metadata_cache.append(metadata)
+		_ordenar_metadata_partidas(_partidas_metadata_cache)
+		_guardar_indice_metadata_partidas(_partidas_metadata_cache)
+		return
+
+	var indice := _leer_indice_metadata_partidas()
+	if indice.is_empty():
+		indice.append(metadata)
+	else:
+		var encontrada := false
+		for i in range(indice.size()):
+			if str(indice[i].get("id", "")) == id:
+				indice[i] = metadata
+				encontrada = true
+				break
+		if not encontrada:
+			indice.append(metadata)
+	_ordenar_metadata_partidas(indice)
+	_guardar_indice_metadata_partidas(indice)
 
 
 func crear_partida(
@@ -446,7 +544,14 @@ func establecer_zona_mundo_global(id: String, tipo_zona: String, reinos_globales
 func eliminar_partida(id: String) -> bool:
 	if not save_repository.eliminar_partida(id):
 		return false
-	_partidas_metadata_cache_valida = false
+	if _partidas_metadata_cache_valida:
+		_partidas_metadata_cache = _partidas_metadata_cache.filter(func(item: Dictionary) -> bool: return str(item.get("id", "")) != id)
+		_guardar_indice_metadata_partidas(_partidas_metadata_cache)
+	else:
+		var indice := _leer_indice_metadata_partidas()
+		if not indice.is_empty():
+			indice = indice.filter(func(item: Dictionary) -> bool: return str(item.get("id", "")) != id)
+			_guardar_indice_metadata_partidas(indice)
 
 	if active_save_id == id:
 		active_save_id = ""
@@ -1787,7 +1892,7 @@ func _escribir_archivo_partida(
 ) -> bool:
 	var escrito := save_repository.escribir_partida(id, datos)
 	if escrito:
-		_partidas_metadata_cache_valida = false
+		_actualizar_indice_metadata_partida(id, datos)
 	return escrito
 
 
