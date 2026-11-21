@@ -186,9 +186,10 @@ static func puesto_interior_ocupado(
 			continue
 		if otro.global_position.distance_to(destino_global) < limite:
 			return true
-		var reserva_variant: Variant = otro.get_meta("rutina_puesto_interior_reservado", null)
-		if reserva_variant is Vector2 and (reserva_variant as Vector2).distance_to(destino_global) < limite:
-			return true
+		if otro.has_meta("rutina_puesto_interior_reservado"):
+			var reserva_variant: Variant = otro.get_meta("rutina_puesto_interior_reservado")
+			if reserva_variant is Vector2 and (reserva_variant as Vector2).distance_to(destino_global) < limite:
+				return true
 	return false
 
 
