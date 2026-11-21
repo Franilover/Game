@@ -429,7 +429,7 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			if criatura_id.is_empty():
 				continue
 			especies[criatura_id] = true
-			var registro := elegido.duplicate(true)
+			var registro := elegido
 			registro["criatura_id"] = criatura_id
 			registro["runtime_instance_key"] = "criatura:" + str(slot) + ":" + criatura_id
 			registro["chunk"] = chunk_coord
@@ -531,7 +531,7 @@ func _preparar_datos_garumis_en_chunk(
 			var garumi_id := str(elegido.get("id", "")).strip_edges()
 			if garumi_id.is_empty():
 				continue
-			var registro := elegido.duplicate(true)
+			var registro := elegido
 			registro["criatura_id"] = garumi_id
 			registro["categoria_entidad"] = "garumi"
 			registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", "")))
