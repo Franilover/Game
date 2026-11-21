@@ -2263,6 +2263,9 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 		}
 		if not bool(mind.call("establecer_objetivo", personaje_id, objetivo)):
 			return false
+		# Reservar a la pareja en el mismo ciclo en que se crea el objetivo.
+		# Evita que dos NPC elijan simultáneamente al mismo habitante libre.
+		pareja.set_meta("npc_objetivo_social_reservado_por", personaje_id.to_lower())
 		npc.set_meta("npc_objetivo_social", objetivo.duplicate(true))
 		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
 		npc.set_meta("npc_objetivo_social_espera", 0.0)
@@ -2270,6 +2273,12 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 
 	var pareja_actual := _buscar_npc_por_id_social(str(objetivo.get("objetivo_personaje", "")))
 	if not is_instance_valid(pareja_actual) or not pareja_actual.is_alive:
+		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+		return false
+	var reserva_pareja := str(pareja_actual.get_meta("npc_objetivo_social_reservado_por", "")).to_lower()
+	if reserva_pareja.is_empty():
+		pareja_actual.set_meta("npc_objetivo_social_reservado_por", personaje_id.to_lower())
+	elif reserva_pareja != personaje_id.to_lower():
 		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
 	if bool(pareja_actual.get_meta("rutina_en_edificio", false)) or bool(pareja_actual.get_meta("_conversacion_ambiental_activa", false)):
@@ -2407,6 +2416,10 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
 			continue
 		if bool(candidato.get_meta("actividad_social_activa", false)):
+			continue
+		# Un habitante reservado ya está comprometido con otro encuentro,
+		# aunque todavía no haya comenzado a caminar hacia él.
+		if not str(candidato.get_meta("npc_objetivo_social_reservado_por", "")).is_empty():
 			continue
 		var movimiento_candidato := candidato.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento_candidato == null:
@@ -2778,6 +2791,7 @@ func _finalizar_objetivo_social_npc(
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
+	_liberar_reserva_objetivo_social(npc, pareja_id)
 	npc.remove_meta("npc_objetivo_social")
 	npc.remove_meta("npc_objetivo_social_tiempo")
 	npc.remove_meta("npc_objetivo_social_espera")
@@ -2793,6 +2807,8 @@ func _finalizar_objetivo_social_npc(
 
 func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: String) -> void:
 	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
+	var pareja_id := str(objetivo.get("objetivo_personaje", ""))
+	_liberar_reserva_objetivo_social(npc, pareja_id)
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento != null:
 		movimiento.detener_por_rutina()
@@ -2803,6 +2819,15 @@ func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: Stri
 	npc.remove_meta("npc_objetivo_social_en_curso")
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
+
+
+func _liberar_reserva_objetivo_social(npc: Creature, pareja_id: String) -> void:
+	var pareja := _buscar_npc_por_id_social(pareja_id)
+	if not is_instance_valid(pareja):
+		return
+	var propietario := str(pareja.get_meta("npc_objetivo_social_reservado_por", "")).to_lower()
+	if propietario == npc.get_personaje_game_id().strip_edges().to_lower():
+		pareja.remove_meta("npc_objetivo_social_reservado_por")
 
 
 func _clave_fecha_actual() -> String:
