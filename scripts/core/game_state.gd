@@ -21,6 +21,8 @@ var active_save_name: String = ""
 
 var save_repository := SaveFileRepository.new()
 var story_save_repository := SaveFileRepository.new()
+var _partidas_metadata_cache: Array[Dictionary] = []
+var _partidas_metadata_cache_valida: bool = false
 
 var _historia_reserva_activa: bool = false
 var _historia_requiere_aplicar: bool = false
@@ -285,8 +287,13 @@ func guardar_progreso_historia() -> bool:
 # ============================================================
 
 func obtener_partidas() -> Array[Dictionary]:
-	var resultado: Array[Dictionary] = []
+	# El selector puede abrirse varias veces durante una misma sesión.
+	# Leer y validar todos los JSON en cada apertura no aporta información nueva
+	# si GameState no ha escrito, renombrado ni eliminado ninguna partida.
+	if _partidas_metadata_cache_valida:
+		return _partidas_metadata_cache.duplicate(true)
 
+	var resultado: Array[Dictionary] = []
 	for id in save_repository.listar_ids_partidas():
 		var datos := _leer_archivo_partida(id)
 		if not _datos_partida_cargables(id, datos):
@@ -299,6 +306,8 @@ func obtener_partidas() -> Array[Dictionary]:
 				b.get("actualizado_en", "")
 			)
 	)
+	_partidas_metadata_cache = resultado.duplicate(true)
+	_partidas_metadata_cache_valida = true
 	return resultado
 
 
@@ -437,6 +446,7 @@ func establecer_zona_mundo_global(id: String, tipo_zona: String, reinos_globales
 func eliminar_partida(id: String) -> bool:
 	if not save_repository.eliminar_partida(id):
 		return false
+	_partidas_metadata_cache_valida = false
 
 	if active_save_id == id:
 		active_save_id = ""
@@ -1775,7 +1785,10 @@ func _escribir_archivo_partida(
 	id: String,
 	datos: Dictionary
 ) -> bool:
-	return save_repository.escribir_partida(id, datos)
+	var escrito := save_repository.escribir_partida(id, datos)
+	if escrito:
+		_partidas_metadata_cache_valida = false
+	return escrito
 
 
 func _extraer_metadata_partida(
