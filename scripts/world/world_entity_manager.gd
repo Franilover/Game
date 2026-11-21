@@ -21,7 +21,8 @@ var _replicas_red_by_key: Dictionary = {}
 var _replicas_red_props_by_key: Dictionary = {}
 var _replica_keys_by_entity: Dictionary = {}
 var _replica_prop_keys_by_entity: Dictionary = {}
-var _data_by_chunk: Dictionary = {}\nvar _despawn_jobs: Dictionary = {}
+var _data_by_chunk: Dictionary = {}
+var _despawn_jobs: Dictionary = {}
 
 var _diag_despawn_creature_count: int = 0
 var _diag_despawn_prop_count: int = 0
