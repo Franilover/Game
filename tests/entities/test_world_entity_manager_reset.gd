@@ -102,6 +102,22 @@ func _run() -> void:
 	if not bool(manager._data_by_chunk[Vector2i.ZERO]["props"][0]["nested"]["present"]):
 		errores.append("La lectura superficial, usada con duplicación por registro, alteró los datos internos.")
 
+	# El materializador de props sólo necesita presencia y posición. Su
+	# snapshot no debe copiar el payload anidado de datos del objeto.
+	manager._runtime_prop_state_by_key["0:0:prop"] = {
+		"is_present": true,
+		"position": Vector2(12.0, 24.0),
+		"datos": {"nested": {"large_payload": [1, 2, 3]}}
+	}
+	var estado_prop_minimo: Dictionary = manager.obtener_estado_prop_materializacion(Vector2i.ZERO, "prop")
+	if estado_prop_minimo.size() != 2 or not estado_prop_minimo.has("position") or not estado_prop_minimo.has("is_present"):
+		errores.append("El snapshot de materialización de props incluyó campos innecesarios o perdió los requeridos.")
+	if estado_prop_minimo.has("datos"):
+		errores.append("El snapshot de materialización copió el payload completo del prop.")
+	estado_prop_minimo["position"] = Vector2.ZERO
+	if manager.obtener_estado_prop_materializacion(Vector2i.ZERO, "prop").get("position") != Vector2(12.0, 24.0):
+		errores.append("Modificar el snapshot de materialización alteró el estado persistente.")
+
 	# Descargar todos los chunks debe invalidar el snapshot inmediatamente,
 	# sin depender de que queue_free dispare tree_exiting al final del frame.
 	manager._global_entities.clear()
