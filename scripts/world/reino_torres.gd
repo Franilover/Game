@@ -730,7 +730,10 @@ func _crear_ventanas_hogares() -> void:
 		"Sprite_casa_granjeros"
 	]
 	for nombre_casa in hogares_ocupados:
-		var casa := get_node_or_null(NodePath(nombre_casa)) as Sprite2D
+		# Las viviendas están dentro de grupos (Grupo_casa_*), no como
+		# hijos directos de ReinoTorres. La búsqueda recursiva resuelve la ruta
+		# real sin generar advertencias falsas ni omitir sus ventanas.
+		var casa := find_child(nombre_casa, true, false) as Sprite2D
 		if not is_instance_valid(casa):
 			push_warning("ReinoTorres: no se encontró la vivienda para iluminar: " + nombre_casa)
 			continue
