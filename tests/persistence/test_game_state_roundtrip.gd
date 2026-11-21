@@ -379,12 +379,15 @@ func _run() -> void:
 	zone_runtime.name = "ZoneManager"
 	zone_runtime.set("tipo_actual", "historia:reserva_carmesi")
 	mundo_runtime.add_child(zone_runtime)
+	var entidades_runtime := Node2D.new()
+	entidades_runtime.name = "Entities"
+	add_child(entidades_runtime)
 	var jugador_runtime := PlayerScene.instantiate() as Player
 	if jugador_runtime == null:
 		errores.append("No pudo instanciar al jugador para la integración del guardado narrativo.")
 	else:
 		jugador_runtime.global_position = Vector2(321.5, 654.25)
-		add_child(jugador_runtime)
+		entidades_runtime.add_child(jugador_runtime)
 	var guardado_runtime := GameStateScript.new() as GameStateService
 	guardado_runtime.name = "GameStateSaveIntegration"
 	add_child(guardado_runtime)
@@ -465,8 +468,7 @@ func _run() -> void:
 	aventura_runtime.queue_free()
 
 	guardado_runtime.queue_free()
-	if jugador_runtime != null:
-		jugador_runtime.queue_free()
+	entidades_runtime.queue_free()
 	mundo_runtime.queue_free()
 	await get_tree().process_frame
 
