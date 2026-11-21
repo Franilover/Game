@@ -33,6 +33,9 @@ var _modulacion: CanvasModulate
 var _color_iluminacion_actual: Color = Color.WHITE
 var _iluminacion_inicializada: bool = false
 var _world_data: WorldDataService = null
+var _claves_luz_actuales: Array[Dictionary] = []
+var _claves_luz_predeterminadas: Array[Dictionary] = []
+var _cache_iluminacion_preparada: bool = false
 
 
 func configurar_dependencias(world_data: WorldDataService) -> void:
@@ -253,6 +256,7 @@ func _obtener_estaciones_ordenadas() -> Array:
 func _actualizar_estacion() -> void:
 	estacion_actual = {}
 	if estaciones.is_empty():
+		_preparar_cache_iluminacion()
 		return
 
 	var estaciones_ordenadas := _obtener_estaciones_ordenadas()
@@ -263,6 +267,7 @@ func _actualizar_estacion() -> void:
 		duracion_total += maxi(int((estacion_variant as Dictionary).get("duracion_dias", 0)), 0)
 
 	if duracion_total <= 0:
+		_preparar_cache_iluminacion()
 		return
 
 	# Resolver el día usando la duración real de las estaciones evita
@@ -282,9 +287,12 @@ func _actualizar_estacion() -> void:
 		if dia_del_anio >= inicio_dia and dia_del_anio < inicio_dia + duracion:
 			estacion_actual = estacion.duplicate(true)
 			estacion_actual["dia_de_estacion"] = dia_del_anio - inicio_dia + 1
+			_preparar_cache_iluminacion()
 			return
 
 		inicio_dia += duracion
+
+	_preparar_cache_iluminacion()
 
 
 func _actualizar_iluminacion(delta: float = 0.0) -> void:
@@ -311,13 +319,15 @@ func _actualizar_iluminacion(delta: float = 0.0) -> void:
 
 
 func _obtener_config_visual_estacion() -> Dictionary:
+	# Los consumidores sólo leen esta configuración. No duplicar recursivamente
+	# el Dictionary en cada actualización del reloj/iluminación.
 	var config_variant: Variant = estacion_actual.get("config_visual", {})
 	if config_variant is Dictionary:
-		return (config_variant as Dictionary).duplicate(true)
+		return config_variant as Dictionary
 	return {}
 
 
-func calcular_color_iluminacion(hora_normalizada: float) -> Color:
+func _preparar_cache_iluminacion() -> void:
 	const CLAVES_LUZ_PREDETERMINADAS: Array[Dictionary] = [
 		{"hora": 0.00, "color": "#263454"},
 		{"hora": 0.08, "color": "#293B63"},
@@ -337,19 +347,22 @@ func calcular_color_iluminacion(hora_normalizada: float) -> Color:
 		{"hora": 0.95, "color": "#2C3A63"},
 		{"hora": 1.00, "color": "#263454"},
 	]
-
-	var hora := clampf(hora_normalizada, 0.0, 1.0)
+	_claves_luz_predeterminadas = _normalizar_claves_luz(CLAVES_LUZ_PREDETERMINADAS)
 	var config_visual := _obtener_config_visual_estacion()
 	var claves_variant: Variant = config_visual.get("claves_luz", [])
+	_claves_luz_actuales.clear()
 	if claves_variant is Array and (claves_variant as Array).size() >= 2:
-		var claves_configuradas := _normalizar_claves_luz(claves_variant as Array)
-		if claves_configuradas.size() >= 2:
-			return _interpolar_claves_luz(claves_configuradas, hora)
+		_claves_luz_actuales = _normalizar_claves_luz(claves_variant as Array)
+	_cache_iluminacion_preparada = true
 
-	return _interpolar_claves_luz(
-		_normalizar_claves_luz(CLAVES_LUZ_PREDETERMINADAS),
-		hora
-	)
+
+func calcular_color_iluminacion(hora_normalizada: float) -> Color:
+	var hora := clampf(hora_normalizada, 0.0, 1.0)
+	if not _cache_iluminacion_preparada:
+		_preparar_cache_iluminacion()
+	if _claves_luz_actuales.size() >= 2:
+		return _interpolar_claves_luz(_claves_luz_actuales, hora)
+	return _interpolar_claves_luz(_claves_luz_predeterminadas, hora)
 
 
 func _normalizar_claves_luz(claves: Array) -> Array[Dictionary]:
