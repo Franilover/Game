@@ -106,7 +106,6 @@ var _cargando_mundo: bool = false
 func _ready() -> void:
 	# Diagnóstico de arranque: se registra antes de inicializar servicios o layouts.
 	call_deferred("_debug_ventana_inicio")
-	call_deferred("_precalentar_partidas_menu")
 	# El servidor dedicado reutiliza el runtime del mundo, no el menú ni una partida local.
 	if OS.get_cmdline_user_args().has("--garlia-server"):
 		call_deferred("_entrar_runtime_servidor")
@@ -116,6 +115,8 @@ func _ready() -> void:
 	if not chapter_argument.is_empty():
 		call_deferred("_entrar_capitulo_desde_argumento", chapter_argument)
 		return
+
+	call_deferred("_precalentar_partidas_menu")
 
 	SupabaseClient.configurar_dependencias(GarliaAuth)
 	GarliaMultiplayer.configurar_dependencias(GarliaAuth)
