@@ -301,7 +301,9 @@ func _guardar() -> void:
 		}
 	}
 
-	GameState.guardar_partida()
+	if not GameState.guardar_progreso_actual("edición de personaje"):
+		_estado.text = "No se pudo confirmar el guardado."
+		return
 	_estado.text = "Cambios guardados en esta partida."
 
 
