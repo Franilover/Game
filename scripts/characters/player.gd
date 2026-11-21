@@ -1097,7 +1097,7 @@ func admin_guardar_estado() -> void:
 			"energia": max_stamina
 		}
 	})
-	_game_state_ref.guardar_partida()
+	_game_state_ref.guardar_progreso_actual("cambio de estado del jugador")
 
 func reproducir_animacion_comer(objeto: Dictionary) -> void:
 	if not is_instance_valid(visual_controller):
