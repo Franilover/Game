@@ -421,6 +421,49 @@ func _run() -> void:
 		errores.append("El progreso narrativo integrado no sobrevivió a cerrar y reabrir el estado.")
 	reapertura_runtime.story_save_repository.eliminar_partida("reserva_carmesi")
 	reapertura_runtime.queue_free()
+
+	# El modo Aventura usa partidas con ID propio; también debe persistir y
+	# reabrir por el mismo punto de entrada de guardado.
+	var aventura_runtime := GameStateScript.new() as GameStateService
+	aventura_runtime.name = "GameStateAdventureSaveIntegration"
+	add_child(aventura_runtime)
+	await get_tree().process_frame
+	var directorio_aventura := "user://contracts/adventure_save_integration"
+	aventura_runtime.save_repository.configurar(directorio_aventura)
+	aventura_runtime.save_repository.asegurar_directorio()
+	var id_aventura := aventura_runtime.crear_partida("Contrato de guardado normal")
+	if id_aventura.is_empty():
+		errores.append("No pudo crear el archivo base para la integración de Aventura.")
+	elif jugador_runtime != null:
+		zone_runtime.set("tipo_actual", "reino_torres")
+		jugador_runtime.global_position = Vector2(777.25, 888.5)
+		aventura_runtime.active_save_id = id_aventura
+		aventura_runtime.active_save_name = "Contrato de guardado normal"
+		aventura_runtime._player = jugador_runtime
+		aventura_runtime.world_state.flags["adventure_progress_marker"] = 92
+		if not aventura_runtime.guardar_progreso_actual("prueba de cierre de Aventura"):
+			errores.append("El guardado normal integrado no confirmó la escritura al solicitar cierre.")
+		var archivo_aventura := aventura_runtime._leer_archivo_partida(id_aventura)
+		var estado_aventura: Dictionary = archivo_aventura.get("estado", {}) as Dictionary
+		var flags_aventura: Dictionary = estado_aventura.get("flags", {}) as Dictionary
+		if int(flags_aventura.get("adventure_progress_marker", 0)) != 92:
+			errores.append("El guardado normal integrado no persistió el progreso de Aventura.")
+		var jugador_aventura: Dictionary = estado_aventura.get("player", {}) as Dictionary
+		var posicion_aventura: Dictionary = jugador_aventura.get("position", {}) as Dictionary
+		if not is_equal_approx(float(posicion_aventura.get("x", 0.0)), 777.25) or not is_equal_approx(float(posicion_aventura.get("y", 0.0)), 888.5):
+			errores.append("El guardado normal integrado no conservó la posición del jugador.")
+		var aventura_reabierta := GameStateScript.new() as GameStateService
+		aventura_reabierta.name = "GameStateAdventureReloadIntegration"
+		add_child(aventura_reabierta)
+		await get_tree().process_frame
+		aventura_reabierta.save_repository.configurar(directorio_aventura)
+		aventura_reabierta._aplicar_estado_memoria(estado_aventura)
+		if int(aventura_reabierta.world_state.flags.get("adventure_progress_marker", 0)) != 92:
+			errores.append("El progreso normal no sobrevivió a cerrar y reabrir el estado.")
+		aventura_reabierta.queue_free()
+		aventura_runtime.save_repository.eliminar_partida(id_aventura)
+	aventura_runtime.queue_free()
+
 	guardado_runtime.queue_free()
 	if jugador_runtime != null:
 		jugador_runtime.queue_free()
