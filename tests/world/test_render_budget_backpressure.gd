@@ -19,7 +19,7 @@ func _run_tests() -> void:
 	var exhausted_budget := manager.presupuesto_unidades_adaptativo(
 		"terrain_variation", 64, 16, 64, 0.85
 	)
-	assert(exhausted_budget == 1, "Sin presupuesto debe ceder el frame y procesar como máximo una unidad.")
+	assert(exhausted_budget == 0, "Sin presupuesto el trabajo visual secundario debe ceder por completo el frame.")
 
 	print("RenderBudgetBackpressure: PASS normal=%d exhausted=%d" % [normal_budget, exhausted_budget])
 	quit(0)
