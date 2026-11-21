@@ -361,9 +361,6 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			var ecosistema := ecosistema_variant as Dictionary
 			if ecosistema.is_empty():
 				continue
-			var candidatos := _spawn_rules.obtener_candidatos(ecosistema)
-			if candidatos.is_empty():
-				continue
 			var bioma_contexto_variant: Variant = contexto.get("bioma", {})
 			var bioma_contexto_id := str((bioma_contexto_variant as Dictionary).get("id", "")) if bioma_contexto_variant is Dictionary else ""
 			var zona_contexto := int(contexto.get("zona", -1))
@@ -373,6 +370,10 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 				candidatos_contexto = candidatos_validos_por_contexto[clave_contexto]
 			else:
 				candidatos_contexto = []
+				var candidatos := _spawn_rules.obtener_candidatos(ecosistema)
+				if candidatos.is_empty():
+					candidatos_validos_por_contexto[clave_contexto] = candidatos_contexto
+					continue
 				for candidato_variant in candidatos:
 					if not candidato_variant is Dictionary:
 						continue
@@ -950,10 +951,6 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i, token: RefCounted) -> void
 		if bioma.is_empty() or ecosistema.is_empty():
 			continue
 
-		var candidatos: Array = _spawn_rules.obtener_candidatos(ecosistema)
-		if candidatos.is_empty():
-			continue
-
 		var zona := int(contexto.get("zona", -1))
 		var clave_contexto := str(bioma.get("id", "")) + "\u001f" + str(ecosistema.get("id", "")) + "\u001f" + str(zona)
 		var candidatos_contexto: Array
@@ -961,6 +958,10 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i, token: RefCounted) -> void
 			candidatos_contexto = candidatos_validos_por_contexto[clave_contexto]
 		else:
 			candidatos_contexto = []
+			var candidatos: Array = _spawn_rules.obtener_candidatos(ecosistema)
+			if candidatos.is_empty():
+				candidatos_validos_por_contexto[clave_contexto] = candidatos_contexto
+				continue
 			for candidato_variant in candidatos:
 				if not candidato_variant is Dictionary:
 					continue
