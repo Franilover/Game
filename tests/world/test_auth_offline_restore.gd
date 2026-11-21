@@ -4,6 +4,9 @@ const MockAuthScript = preload("res://tests/world/mock_garlia_auth.gd")
 
 const TEST_SESSION_PATH := "user://contracts/auth_offline_restore.json"
 
+var restauraciones_finalizadas: int = 0
+var sesiones_restauradas: int = 0
+
 
 func _ready() -> void:
 	call_deferred("_run")
@@ -26,14 +29,10 @@ func _run() -> void:
 
 	var auth = MockAuthScript.new()
 	auth.set("_session_file_path", TEST_SESSION_PATH)
-	var restauraciones_finalizadas := 0
-	var sesiones_restauradas := 0
-	auth.session_restore_finished.connect(func() -> void:
-		restauraciones_finalizadas += 1
-	)
-	auth.session_restored.connect(func() -> void:
-		sesiones_restauradas += 1
-	)
+	restauraciones_finalizadas = 0
+	sesiones_restauradas = 0
+	auth.session_restore_finished.connect(_al_finalizar_restauracion)
+	auth.session_restored.connect(_al_restaurar_sesion)
 	add_child(auth)
 
 	var frames := 0
@@ -83,3 +82,11 @@ func _finalizar(errores: Array[String]) -> void:
 		return
 	print("AuthOfflineRestore: PASS transient_failure_preserves_session=true reconnect_restores=true")
 	get_tree().quit(0)
+
+
+func _al_finalizar_restauracion() -> void:
+	restauraciones_finalizadas += 1
+
+
+func _al_restaurar_sesion() -> void:
+	sesiones_restauradas += 1
