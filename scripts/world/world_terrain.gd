@@ -836,14 +836,18 @@ func _procesar_flush_incremental() -> void:
 	if flush_cells <= 0:
 		return
 
+	var profiler_before: Dictionary = visual.obtener_profiler()
+	var flush_cells_before := int(profiler_before.get("flush_cells", 0))
 	var inicio_usec := Time.get_ticks_usec()
 	visual.procesar_flush(flush_cells)
 	var flush_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
 	_profiler_flush_ms += flush_ms
 	_profiler_flushes += 1
+	var visual_profiler: Dictionary = visual.obtener_profiler()
+	var flush_cells_after := int(visual_profiler.get("flush_cells", 0))
+	var flush_cells_procesadas := maxi(flush_cells_after - flush_cells_before, 0)
 	if visual != null:
-		var visual_profiler: Dictionary = visual.obtener_profiler()
-		var visible_cells_now := int(visual_profiler.get("flush_cells", 0))
+		var visible_cells_now := flush_cells_after
 		if visible_cells_now > _profiler_visible_cells:
 			_profiler_visible_cells = visible_cells_now
 			var elapsed_ms := float(Time.get_ticks_usec() - _profiler_chunk_start_usec) / 1000.0
@@ -860,7 +864,7 @@ func _procesar_flush_incremental() -> void:
 			"registrar_trabajo",
 			"terrain_flush",
 			flush_ms,
-			maxi(flush_cells, 1)
+			maxi(flush_cells_procesadas, 1)
 		)
 
 
@@ -900,9 +904,12 @@ func _procesar_flush_chunk(
 			1.5
 		))
 		flush_cells = mini(flush_cells, visual_flush_cells)
+	var profiler_before: Dictionary = visual.obtener_profiler()
+	var flush_cells_before := int(profiler_before.get("flush_cells", 0))
 	var terminado: bool = visual.procesar_flush(flush_cells)
 	var visual_profiler: Dictionary = visual.obtener_profiler()
 	var visible_cells_now := int(visual_profiler.get("flush_cells", 0))
+	var flush_cells_procesadas := maxi(visible_cells_now - flush_cells_before, 0)
 	if visible_cells_now > _profiler_visible_cells:
 		_profiler_visible_cells = visible_cells_now
 		var elapsed_ms := float(Time.get_ticks_usec() - _profiler_chunk_start_usec) / 1000.0
@@ -919,7 +926,7 @@ func _procesar_flush_chunk(
 	_profiler_flush_max_ms = maxf(_profiler_flush_max_ms, flush_ms)
 	_profiler_flushes += 1
 	if _render_manager != null:
-		_render_manager.call("registrar_trabajo", "terrain_flush", flush_ms, max(flush_cells, 1))
+		_render_manager.call("registrar_trabajo", "terrain_flush", flush_ms, maxi(flush_cells_procesadas, 1))
 
 	if not terminado:
 		return false
