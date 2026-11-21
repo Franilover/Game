@@ -873,9 +873,14 @@ func _refrescar_objetivo(candidatos: Array[Node2D] = [], usar_candidatos_provist
 	elif criatura != null and criatura.has_meta("garlia_objetivo_liberacion"):
 		criatura.remove_meta("garlia_objetivo_liberacion")
 
+	# Reutilizar el mismo conjunto para la reacción del bosque y la selección
+	# normal. Antes, las especies reactivas volvían a consultar el manager y
+	# recorrían todos los candidatos dos veces durante una misma percepción.
+	var entidades := candidatos if usar_candidatos_provistos else _obtener_candidatos_entidad()
+
 	# Las respuestas especiales del bosque se asignan al jugador conectado
 	# que realmente provocó la reacción, no al ancla oculta de Main.
-	var jugador_bosque := _buscar_jugador_reactivo_bosque()
+	var jugador_bosque := _buscar_jugador_reactivo_bosque(entidades)
 	if is_instance_valid(jugador_bosque):
 		objetivo = jugador_bosque
 		return
@@ -890,7 +895,6 @@ func _refrescar_objetivo(candidatos: Array[Node2D] = [], usar_candidatos_provist
 			objetivo = refugio
 			return
 
-	var entidades := candidatos if usar_candidatos_provistos else _obtener_candidatos_entidad()
 	objetivo = CreatureTargetSelectorScript.seleccionar_mas_cercano(
 		criatura,
 		entidades,
@@ -942,12 +946,12 @@ func _jugador_debe_reaccionar_en_bosque(jugador_objetivo: Node = null) -> bool:
 	return _jugador_es_asesino_bosque(jugador_objetivo)
 
 
-func _buscar_jugador_reactivo_bosque() -> Node2D:
+func _buscar_jugador_reactivo_bosque(candidatos: Array[Node2D]) -> Node2D:
 	if not _es_reactivo_bosque():
 		return null
 	var mejor: Node2D = null
 	var mejor_distancia := INF
-	for candidato in _obtener_candidatos_entidad():
+	for candidato in candidatos:
 		if candidato != jugador and not candidato.is_in_group("player"):
 			continue
 		if not is_instance_valid(candidato) or not candidato.is_inside_tree():
