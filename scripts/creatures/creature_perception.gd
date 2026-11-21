@@ -3,6 +3,27 @@ class_name CreaturePerception
 
 ## Descubre entidades que la IA puede percibir.
 ## No decide si una especie debe atacar, huir, perseguir o ignorar al candidato.
+# Todas las criaturas consultan el grupo en sus ticks de percepción. La
+# membresía del grupo cambia poco; compartir el snapshot por physics frame
+# evita recorrer el SceneTree una vez por criatura.
+static var _jugadores_cache_frame: int = -1
+static var _jugadores_cache_tree_id: int = 0
+static var _jugadores_cache: Array[Node2D] = []
+
+
+static func _obtener_jugadores_del_grupo(arbol: SceneTree) -> Array[Node2D]:
+	var frame_actual := Engine.get_physics_frames()
+	var tree_id := arbol.get_instance_id()
+	if frame_actual != _jugadores_cache_frame or tree_id != _jugadores_cache_tree_id:
+		_jugadores_cache.clear()
+		for jugador_variant in arbol.get_nodes_in_group("player"):
+			if jugador_variant is Node2D:
+				_jugadores_cache.append(jugador_variant as Node2D)
+		_jugadores_cache_frame = frame_actual
+		_jugadores_cache_tree_id = tree_id
+	return _jugadores_cache
+
+
 static func obtener_candidatos(
 	criatura: Creature,
 	jugador: Node2D,
@@ -21,10 +42,7 @@ static func obtener_candidatos(
 	# puede apuntar al ancla del mundo, por eso no sustituye esta búsqueda.
 	var arbol := Engine.get_main_loop() as SceneTree
 	if arbol != null:
-		for jugador_variant in arbol.get_nodes_in_group("player"):
-			if not jugador_variant is Node2D:
-				continue
-			var jugador_actual := jugador_variant as Node2D
+		for jugador_actual in _obtener_jugadores_del_grupo(arbol):
 			if not _es_candidato_activo(jugador_actual):
 				continue
 			var jugador_id := jugador_actual.get_instance_id()
