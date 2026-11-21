@@ -91,6 +91,7 @@ on:
       - "tests/persistence/**"
       - "tests/inventory/**"
       - "scripts/infrastructure/save_file_repository.gd"
+      - "scripts/infrastructure/garlia_auth.gd"
       - "scripts/state/world_snapshot_validator.gd"
       - "tests/combat/**"
       - "tests/creatures/**"
