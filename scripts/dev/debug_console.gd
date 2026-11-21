@@ -13,6 +13,7 @@ var _abierto := false
 var _modo := "resumen"
 var _auto_scroll := true
 var _actualizando_vista := false
+var _boton_shaders: Button
 
 const MODOS := [
 	"resumen", "sistemas", "mundo", "entidades", "datos",
@@ -114,6 +115,12 @@ func _crear_interfaz() -> void:
 	copiar_terreno.focus_mode = Control.FOCUS_NONE
 	copiar_terreno.pressed.connect(_copiar_diagnostico_terreno_real)
 	botones.add_child(copiar_terreno)
+	_boton_shaders = Button.new()
+	_boton_shaders.text = "Shaders: ON"
+	_boton_shaders.tooltip_text = "Alterna los shaders del terreno para comparar el coste de renderizado."
+	_boton_shaders.focus_mode = Control.FOCUS_NONE
+	_boton_shaders.pressed.connect(_alternar_shaders_terreno)
+	botones.add_child(_boton_shaders)
 	var limpiar := Button.new()
 	limpiar.text = "Limpiar logs"
 	limpiar.focus_mode = Control.FOCUS_NONE
@@ -137,6 +144,17 @@ func _crear_interfaz() -> void:
 	_texto.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	_texto.custom_minimum_size = Vector2(0, 300)
 	columna.add_child(_texto)
+
+func _alternar_shaders_terreno() -> void:
+	var visual := _buscar_por_nombre("WorldTerrainVisual")
+	if visual == null or not visual.has_method("tiene_shaders_terreno_activos"):
+		_estado.text = "WorldTerrainVisual no encontrado"
+		return
+	var activos := bool(visual.call("tiene_shaders_terreno_activos"))
+	visual.call("establecer_shaders_terreno_activos", not activos)
+	_boton_shaders.text = "Shaders: ON" if not activos else "Shaders: OFF"
+	_estado.text = "Comparación de shaders: %s" % ("ON" if not activos else "OFF")
+
 
 func _al_tab(modo: String) -> void:
 	if not MODOS.has(modo):
