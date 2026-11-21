@@ -177,11 +177,8 @@ func ofrecer_amistad(jugador: Node) -> bool:
 
 
 func _notificar_resultado_amistad(exito: bool) -> void:
-	for nodo in get_tree().get_nodes_in_group("inventory"):
-		if not is_instance_valid(nodo):
-			continue
-		var hub := nodo.get_node_or_null("Window/Margin/Column/Tabs/Garumis")
-		if hub != null and hub.has_method("mostrar_resultado_amistad_garumi"):
+	for hub in get_tree().get_nodes_in_group("garumi_hub"):
+		if is_instance_valid(hub) and hub.has_method("mostrar_resultado_amistad_garumi"):
 			hub.call("mostrar_resultado_amistad_garumi", self, exito)
 
 
