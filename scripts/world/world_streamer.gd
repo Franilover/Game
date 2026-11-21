@@ -889,9 +889,25 @@ func _actualizar_entidades_activas(
 
 func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void:
 	_entity_activation_queue.clear()
+	var manager: WorldEntityManager = null
+	if _entity_spawner != null and _entity_spawner.has_method("obtener_entity_manager"):
+		manager = _entity_spawner.obtener_entity_manager()
 	for chunk_variant in claves:
-		if chunk_variant is Vector2i:
-			_entity_activation_queue.append(chunk_variant as Vector2i)
+		if not chunk_variant is Vector2i:
+			continue
+		var chunk_coord := chunk_variant as Vector2i
+		if manager != null:
+			var lod := obtener_lod_chunk(chunk_coord)
+			var necesita_props := lod == LOD_TERRAIN or lod == LOD_FULL
+			var necesita_criaturas := lod == LOD_FULL
+			var props_activos := manager.tiene_props_chunk(chunk_coord)
+			var criaturas_activas := manager.tiene_criaturas_chunk(chunk_coord)
+			# No volver a visitar chunks cuyo LOD ya coincide con sus entidades.
+			# Esto evita recorrer DATA/materializar claves en cada frontera aunque
+			# el chunk lleve varios segundos activo y no requiera ningún cambio.
+			if necesita_props == props_activos and necesita_criaturas == criaturas_activas:
+				continue
+		_entity_activation_queue.append(chunk_coord)
 	_entity_activation_queue.sort_custom(
 		func(a: Vector2i, b: Vector2i) -> bool:
 			var distancia_a := _distancia_chunk(a, centro)
