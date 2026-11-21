@@ -26,6 +26,9 @@ var _historia_reserva_activa: bool = false
 var _historia_requiere_aplicar: bool = false
 
 var _autosave_timer: float = 0.0
+var _primer_guardado_pendiente: bool = false
+var _primer_guardado_elapsed: float = 0.0
+var _ultimo_motivo_fallo_guardado: String = ""
 var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
 var _guardado_rapido_conectado: bool = false
@@ -71,14 +74,17 @@ func configurar_dependencias(
 
 	_guardado_rapido_conectado = false
 	_conectar_guardado_rapido()
+	_primer_guardado_pendiente = true
+	_primer_guardado_elapsed = 0.0
 	call_deferred("_revisar_escena_actual")
-	# Tras aplicar el snapshot y terminar la restauración vital, confirmar
-	# inmediatamente el estado de la sesión. No depender del primer intervalo
-	# de autosave para crear el primer punto de recuperación narrativo.
+	# El primer intento puede coincidir con la restauración vital asíncrona.
+	# Se mantiene pendiente y se reintenta hasta que el runtime sea guardable.
 	call_deferred("_guardar_progreso_diferido")
 
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
+	get_tree().auto_accept_quit = false
 	save_repository.configurar(SAVE_DIRECTORY)
 	save_repository.asegurar_directorio()
 	story_save_repository.configurar(STORY_SAVE_DIRECTORY)
@@ -96,6 +102,12 @@ func _process(delta: float) -> void:
 	world_state.elapsed_time += delta
 	_autosave_timer += delta
 
+	if _primer_guardado_pendiente:
+		_primer_guardado_elapsed += delta
+		if _primer_guardado_elapsed >= 0.5:
+			_primer_guardado_elapsed = 0.0
+			_guardar_progreso_diferido()
+
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
 		var guardado := false
 		if _historia_reserva_activa:
@@ -108,14 +120,33 @@ func _process(delta: float) -> void:
 
 
 func _notification(what: int) -> void:
-	if (
-		what == NOTIFICATION_WM_CLOSE_REQUEST
-		or what == NOTIFICATION_WM_GO_BACK_REQUEST
-	):
-		if _historia_reserva_activa:
-			guardar_progreso_historia()
-		else:
-			guardar_partida()
+	if what == NOTIFICATION_APPLICATION_PAUSED:
+		guardar_progreso_actual("suspensión de la aplicación")
+		return
+	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		var guardado := guardar_progreso_actual("cierre de la aplicación")
+		if not guardado and (_historia_reserva_activa or not active_save_id.is_empty()):
+			push_error("GameState: no se pudo confirmar el guardado al cerrar. Motivo: " + _ultimo_motivo_fallo_guardado)
+		# Desactivar el cierre automático permite completar la escritura síncrona.
+		get_tree().quit()
+
+
+func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
+	var resultado := true
+	if _historia_reserva_activa:
+		resultado = guardar_progreso_historia()
+	elif not active_save_id.is_empty():
+		resultado = guardar_partida()
+	if not resultado and (_historia_reserva_activa or not active_save_id.is_empty()):
+		push_error("GameState: guardado fallido (" + motivo + "). " + _ultimo_motivo_fallo_guardado)
+	return resultado
+
+
+func _rechazar_guardado(motivo: String) -> bool:
+	if _ultimo_motivo_fallo_guardado != motivo:
+		push_warning("GameState: guardado aplazado: " + motivo)
+	_ultimo_motivo_fallo_guardado = motivo
+	return false
 
 
 # ============================================================
@@ -165,19 +196,27 @@ func preparar_historia_reserva_carmesi(nueva: bool = false) -> bool:
 
 
 func guardar_progreso_historia() -> bool:
-	if not _historia_reserva_activa or _guardado_en_curso or _historia_requiere_aplicar:
-		return false
+	if not _historia_reserva_activa:
+		return _rechazar_guardado("la sesión narrativa no está activa")
+	if _guardado_en_curso:
+		return _rechazar_guardado("ya hay una escritura en curso")
+	if _historia_requiere_aplicar:
+		return _rechazar_guardado("el snapshot anterior aún no se ha restaurado")
 	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
-		return false
+		return _rechazar_guardado("el estado vital del jugador aún se está restaurando")
 	var jugador: Player = _player
-	if jugador == null or not is_instance_valid(jugador) or jugador.get("is_alive") == false:
-		return false
+	if jugador == null or not is_instance_valid(jugador):
+		return _rechazar_guardado("el jugador todavía no está conectado a GameState")
+	if jugador.get("is_alive") == false:
+		return _rechazar_guardado("el jugador está en estado de muerte")
 	var escena := get_tree().current_scene
 	if not is_instance_valid(escena):
-		return false
+		return _rechazar_guardado("no hay una escena activa")
 	var zone_manager := escena.get_node_or_null("World/ZoneManager")
-	if not is_instance_valid(zone_manager) or str(zone_manager.call("obtener_tipo_actual")) != "historia:reserva_carmesi":
-		return false
+	if not is_instance_valid(zone_manager):
+		return _rechazar_guardado("la escena activa no contiene World/ZoneManager")
+	if str(zone_manager.call("obtener_tipo_actual")) != "historia:reserva_carmesi":
+		return _rechazar_guardado("la zona activa no es historia:reserva_carmesi")
 
 	_guardado_en_curso = true
 	capturar_estado_desde_juego(jugador)
@@ -192,7 +231,11 @@ func guardar_progreso_historia() -> bool:
 	var resultado := story_save_repository.escribir_partida(STORY_SAVE_ID, datos)
 	_guardado_en_curso = false
 	if resultado:
+		_ultimo_motivo_fallo_guardado = ""
+		_primer_guardado_pendiente = false
 		print("GameState: progreso de Historia guardado → La Reserva Carmesí")
+	else:
+		_rechazar_guardado("el repositorio no pudo escribir historia/reserva_carmesi.json")
 	return resultado
 
 
@@ -468,27 +511,20 @@ func actualizar_personaje_partida(
 
 func guardar_partida() -> bool:
 	if _historia_reserva_activa:
-		return false
+		return _rechazar_guardado("la sesión activa usa el archivo narrativo, no una partida normal")
 	if _guardado_en_curso:
-		return false
+		return _rechazar_guardado("ya hay una escritura en curso")
 	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
-		return false
-
+		return _rechazar_guardado("el estado vital del jugador aún se está restaurando")
 	if active_save_id.is_empty():
-		return false
-
+		return _rechazar_guardado("no hay un identificador de partida activa")
 	var jugador: Player = _player
-
 	if jugador == null or not is_instance_valid(jugador):
-		return false
-
-	# Una muerte todavía no es un estado guardable.
-	# Esperamos a que el jugador reaparezca para persistir el estado.
+		return _rechazar_guardado("el jugador todavía no está conectado a GameState")
 	if jugador.get("is_alive") == false:
-		return false
-
+		return _rechazar_guardado("el jugador está en estado de muerte")
 	if get_tree().current_scene == null:
-		return false
+		return _rechazar_guardado("no hay una escena activa")
 
 	_guardado_en_curso = true
 
@@ -518,10 +554,14 @@ func guardar_partida() -> bool:
 	_guardado_en_curso = false
 
 	if resultado:
+		_ultimo_motivo_fallo_guardado = ""
+		_primer_guardado_pendiente = false
 		print(
 			"GameState: partida guardada → ",
 			active_save_name
 		)
+	else:
+		_rechazar_guardado("el repositorio no pudo escribir partidas/" + active_save_id + ".json")
 
 	return resultado
 
@@ -750,8 +790,8 @@ func _ejecutar_guardado_rapido() -> void:
 
 func _guardar_progreso_diferido() -> void:
 	# Nunca escribir encima de un snapshot que todavía está pendiente de
-	# aplicarse al Player real. En partidas nuevas, el guardado inicial sí puede
-	# realizarse en cuanto Main haya conectado jugador, zona e inventario.
+	# aplicarse al Player real. Los intentos se repiten mientras la escena termina
+	# de conectar al jugador y restaurar su estado vital.
 	if _historia_reserva_activa:
 		if _historia_requiere_aplicar:
 			return
@@ -760,6 +800,7 @@ func _guardar_progreso_diferido() -> void:
 		guardar_progreso_historia()
 		return
 	if active_save_id.is_empty():
+		_primer_guardado_pendiente = false
 		return
 	if not _partida_aplicada_en_escena or not _estado_vital_restaurado_en_escena:
 		return
@@ -1409,6 +1450,9 @@ func _restaurar_estado_vital_jugador(jugador: Player) -> void:
 		mana_guardado
 	)
 	_estado_vital_restaurado_en_escena = true
+	_primer_guardado_pendiente = true
+	_primer_guardado_elapsed = 0.0
+	call_deferred("_guardar_progreso_diferido")
 
 
 func _aplicar_estado_al_juego() -> void:
@@ -1536,6 +1580,8 @@ func _abrir_escena_principal() -> void:
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
 	_estado_vital_restaurado_en_escena = false
+	_primer_guardado_pendiente = _historia_reserva_activa or not active_save_id.is_empty()
+	_primer_guardado_elapsed = 0.0
 	var escena := get_tree().current_scene
 	if escena != null:
 		world_state.current_scene = str(escena.scene_file_path)
