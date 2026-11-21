@@ -421,12 +421,16 @@ func buscar_tile_para_personaje(
 	return candidatos[rng.randi_range(0, candidatos.size() - 1)]
 
 
-func elegir_prop(candidatos: Array[Dictionary], rng: RandomNumberGenerator) -> Dictionary:
-	if candidatos.is_empty():
-		return {}
-
+func elegir_prop(candidatos: Array, rng: RandomNumberGenerator) -> Dictionary:
+	# Los candidatos proceden de una caché dinámica por contexto ecológico;
+	# aceptar Array evita exigir que el llamador convierta la caché a Array[Dictionary].
 	var peso_total := 0.0
-	for prop in candidatos:
+	var ultimo_valido: Dictionary = {}
+	for prop_variant in candidatos:
+		if not prop_variant is Dictionary:
+			continue
+		var prop := prop_variant as Dictionary
+		ultimo_valido = prop
 		peso_total += maxf(float(prop.get("peso", 1.0)), 0.0)
 
 	if peso_total <= 0.0:
@@ -434,12 +438,15 @@ func elegir_prop(candidatos: Array[Dictionary], rng: RandomNumberGenerator) -> D
 
 	var objetivo := rng.randf_range(0.0, peso_total)
 	var acumulado := 0.0
-	for prop in candidatos:
+	for prop_variant in candidatos:
+		if not prop_variant is Dictionary:
+			continue
+		var prop := prop_variant as Dictionary
 		acumulado += maxf(float(prop.get("peso", 1.0)), 0.0)
 		if objetivo <= acumulado:
 			return prop
 
-	return candidatos.back()
+	return ultimo_valido
 
 
 func construir_asset_path_prop(prop: Dictionary) -> String:
