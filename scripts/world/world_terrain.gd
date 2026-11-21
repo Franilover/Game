@@ -1023,6 +1023,16 @@ func _finalizar_chunk() -> void:
 	)
 
 	_generation_task.clear()
+## La etapa DATOS puede pintar celdas cercanas cuando sus vecinos ya están listos.
+## Sólo se permite intercalar un clear antes de que empiece esa pintura parcial.
+func puede_intercalar_descarga_durante_generacion() -> bool:
+	if _generation_task.is_empty():
+		return true
+	if int(_generation_task.get("stage", 0)) != 0:
+		return false
+	return int(_generation_task.get("cursor_pintado", 0)) == 0
+
+
 func tiene_generacion_activa() -> bool:
 	return not _generation_task.is_empty()
 
