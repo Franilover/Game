@@ -1161,24 +1161,22 @@ func _usar_proceso_ium() -> void:
 
 
 func _buscar_objetivo_cercano() -> Node:
-	var criaturas: Array = []
-	if _entity_manager_ref != null:
-		for entidad in _entity_manager_ref.obtener_entidades_activas():
-			if entidad is Node and entidad.is_in_group("creatures"):
-				criaturas.append(entidad)
-	var mas_cercana: Node = null
-	var dist_min := 160.0
+	if _entity_manager_ref == null or not is_instance_valid(_entity_manager_ref):
+		return null
 
-	for criatura in criaturas:
-		if not is_instance_valid(criatura):
+	# La interacción sólo necesita conservar el mejor candidato; no hace falta
+	# crear primero un Array intermedio ni calcular raíces cuadradas por entidad.
+	var mas_cercana: Node2D = null
+	var distancia_minima_cuadrada := 160.0 * 160.0
+	for entidad_variant in _entity_manager_ref.obtener_entidades_activas():
+		if not entidad_variant is Node2D:
 			continue
-
-		var dist := global_position.distance_to(
-			criatura.global_position
-		)
-
-		if dist < dist_min:
-			dist_min = dist
+		var criatura := entidad_variant as Node2D
+		if not is_instance_valid(criatura) or not criatura.is_in_group("creatures"):
+			continue
+		var distancia_cuadrada := global_position.distance_squared_to(criatura.global_position)
+		if distancia_cuadrada < distancia_minima_cuadrada:
+			distancia_minima_cuadrada = distancia_cuadrada
 			mas_cercana = criatura
 
 	return mas_cercana
