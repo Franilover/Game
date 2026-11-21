@@ -139,6 +139,12 @@ var _tiempo_mundo_actualizacion: Dictionary = {}
 
 ## Devuelve la instantánea estable del tick actual o consulta el grupo fuera de él.
 ## Los sistemas de rutina/social comparten así la misma lista durante una actualización.
+static func resolver_destino_reintento(destino_guardado: Variant, destino_respaldo: Vector2) -> Vector2:
+	if destino_guardado is Vector2:
+		return destino_guardado
+	return destino_respaldo
+
+
 func _obtener_npcs_torres() -> Array:
 	if _actualizacion_en_curso:
 		return _npcs_actualizacion
@@ -693,14 +699,11 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				if ruta_fallida and Time.get_ticks_msec() < reintento_en:
 					return
 				var destino_guardado: Variant = npc.get_meta("rutina_destino_global", null)
-				var destino_reintento_global: Vector2
-				if destino_guardado is Vector2:
-					# Vector2.ZERO también es un destino válido; la ausencia de
-					# metadato se distingue usando null, no una coordenada centinela.
-					destino_reintento_global = destino_guardado
-				else:
-					var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
-					destino_reintento_global = _zona.to_global(destino_reintento)
+				var destino_reintento: Vector2 = edificio.get("pos", POSICIONES[ubicacion]) + Vector2(0.0, 28.0)
+				var destino_respaldo_global := _zona.to_global(destino_reintento)
+				var destino_reintento_global := resolver_destino_reintento(
+					destino_guardado, destino_respaldo_global
+				)
 				if npc.global_position.distance_to(destino_reintento_global) <= DISTANCIA_LLEGADA:
 					npc.set_meta("rutina_en_transito", false)
 					npc.set_meta("rutina_ruta_fallida", false)
