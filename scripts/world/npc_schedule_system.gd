@@ -2419,7 +2419,7 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 			continue
 		# Un habitante reservado ya está comprometido con otro encuentro,
 		# aunque todavía no haya comenzado a caminar hacia él.
-		if not str(candidato.get_meta("npc_objetivo_social_reservado_por", "")).is_empty():
+		if _tiene_reserva_social_activa(candidato):
 			continue
 		var movimiento_candidato := candidato.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento_candidato == null:
@@ -2819,6 +2819,22 @@ func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: Stri
 	npc.remove_meta("npc_objetivo_social_en_curso")
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
+
+
+func _tiene_reserva_social_activa(candidato: Creature) -> bool:
+	var propietario_id := str(candidato.get_meta("npc_objetivo_social_reservado_por", "")).strip_edges().to_lower()
+	if propietario_id.is_empty():
+		return false
+	var propietario := _buscar_npc_por_id_social(propietario_id)
+	if not is_instance_valid(propietario) or not propietario.is_alive:
+		candidato.remove_meta("npc_objetivo_social_reservado_por")
+		return false
+	var objetivo: Dictionary = propietario.get_meta("npc_objetivo_social", {})
+	var objetivo_pareja := str(objetivo.get("objetivo_personaje", "")).strip_edges().to_lower()
+	if objetivo.is_empty() or objetivo_pareja != candidato.get_personaje_game_id().strip_edges().to_lower():
+		candidato.remove_meta("npc_objetivo_social_reservado_por")
+		return false
+	return true
 
 
 func _liberar_reserva_objetivo_social(npc: Creature, pareja_id: String) -> void:
