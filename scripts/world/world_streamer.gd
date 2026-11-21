@@ -159,6 +159,13 @@ func procesar() -> void:
 	# decoración secundaria y nunca deben consumir el servicio reservado
 	# antes del commit del suelo.
 	if _terrain.tiene_generacion_activa():
+		# El clear de fase 0 mantiene exclusivo el lote visual. Pausar también
+		# una generación ya iniciada: DATOS puede entrar en pintura parcial
+		# cuando sus vecinos quedan listos, aunque su etapa siga siendo DATOS.
+		if _terrain.tiene_descarga_activa() and not _terrain.puede_iniciar_generacion_durante_descarga():
+			_procesar_descarga_si_hay_presupuesto()
+			return
+
 		var etapa_generacion := str(
 			_terrain.obtener_estado_generacion().get("etapa", "IDLE")
 		)
