@@ -758,7 +758,7 @@ func _procesar_pintado_chunk(
 				padded_x,
 				padded_y,
 				zona_base,
-				chunk_size_tiles + CHUNK_PADDING * 2
+				data_size
 			)
 		)
 
