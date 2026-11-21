@@ -70,6 +70,7 @@ var _eterium_runtime: Dictionary = {}
 var _especie_eterium_game: Array = []
 var _especie_eterium_game_cargado: bool = false
 var _especies_jugables: Array = []
+var _especies_jugables_remotas_cargadas: bool = false
 var _intentos_especies_jugables: int = 0
 var _reintento_especies_programado: bool = false
 var _personaje_social: Array = []
@@ -411,11 +412,12 @@ func cargar_especies_jugables() -> void:
 	if _auth == null:
 		return
 
-	# Reemitir el caché permite que escenas creadas más tarde reciban el catálogo.
+	# La caché local sirve inmediatamente a las escenas, pero no debe impedir
+	# consultar Supabase para recibir cambios canónicos más recientes.
 	if not _especies_jugables.is_empty():
 		especies_jugables_cargadas.emit(_especies_jugables.duplicate(true))
+	if _especies_jugables_remotas_cargadas:
 		return
-
 	if _http_especies == null:
 		return
 	if _http_especies.get_http_client_status() != HTTPClient.STATUS_DISCONNECTED:
@@ -474,10 +476,13 @@ func _al_completar_especies_jugables(
 		if _especies_jugables.is_empty():
 			especies_jugables_cargadas.emit([])
 			_reintentar_carga_especies_jugables("catálogo vacío")
+		else:
+			_reintentar_carga_especies_jugables("catálogo remoto vacío; se conserva la caché")
 		return
 
 	_intentos_especies_jugables = 0
 	_especies_jugables = especies
+	_especies_jugables_remotas_cargadas = true
 	_guardar_cache_especies_jugables(especies)
 	print("SupabaseClient: especies jugables cargadas → ", especies.size())
 	especies_jugables_cargadas.emit(especies.duplicate(true))
@@ -555,7 +560,7 @@ func _guardar_cache_especies_jugables(
 
 
 func _reintentar_carga_especies_jugables(motivo: String) -> void:
-	if _reintento_especies_programado or not _especies_jugables.is_empty():
+	if _reintento_especies_programado or _especies_jugables_remotas_cargadas:
 		return
 	var espera := RETRASO_REINTENTO * float(maxi(_intentos_especies_jugables, 1))
 	if _intentos_especies_jugables >= MAX_INTENTOS_INICIALES:
@@ -568,7 +573,7 @@ func _reintentar_carga_especies_jugables(motivo: String) -> void:
 	print("SupabaseClient: reintentando especies jugables en %.1fs (%s)." % [espera, motivo])
 	await get_tree().create_timer(espera).timeout
 	_reintento_especies_programado = false
-	if not is_inside_tree() or not _especies_jugables.is_empty():
+	if not is_inside_tree() or _especies_jugables_remotas_cargadas:
 		return
 	cargar_especies_jugables()
 
