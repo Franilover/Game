@@ -1107,7 +1107,7 @@ func _comando_player(argumentos: String) -> void:
 			"rol": rol,
 			"capacidades": capacidades
 		})
-		GameState.guardar_partida()
+		GameState.guardar_progreso_actual("cambio de personaje desde consola")
 
 		_agregar_linea(
 			"[color=#9fd18b]Jugador "
