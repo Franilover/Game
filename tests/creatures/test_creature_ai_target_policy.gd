@@ -65,8 +65,8 @@ func _run() -> void:
 	var depredador := CreatureScript.new() as Creature
 	depredador.criatura_id = "species-predator"
 	depredador.datos = {"ecosistema_id": "forest"}
-	var presa := CreatureScript.new() as Creature
-	presa.criatura_id = "species-prey"
+	var presa_prueba := CreatureScript.new() as Creature
+	presa_prueba.criatura_id = "species-prey"
 	ai.configurar_relaciones_ecologicas([
 		{
 			"criatura_origen_id": "species-predator",
@@ -87,11 +87,11 @@ func _run() -> void:
 			"tipo_relacion": "parasitismo"
 		}
 	])
-	if ai._obtener_relacion_ecologica_ids(depredador, presa) != "depredacion":
+	if ai._obtener_relacion_ecologica_ids(depredador, presa_prueba) != "depredacion":
 		_fail("El índice ecológico no priorizó la regla específica del ecosistema.")
 		return
 	depredador.datos["ecosistema_id"] = "desert"
-	if ai._obtener_relacion_ecologica_ids(depredador, presa) != "competencia":
+	if ai._obtener_relacion_ecologica_ids(depredador, presa_prueba) != "competencia":
 		_fail("El índice ecológico no conservó la regla general como fallback.")
 		return
 	print("CreatureAITargetPolicy: checkpoint ecological index")
@@ -122,7 +122,7 @@ func _run() -> void:
 		"tipo_relacion": "competencia"
 	}]
 	ai.configurar_dependencias(null, null, null, null, null, relaciones_compartidas)
-	if ai._obtener_relacion_ecologica_ids(depredador, presa) != "competencia":
+	if ai._obtener_relacion_ecologica_ids(depredador, presa_prueba) != "competencia":
 		_fail("La configuración inicial no construyó el índice ecológico.")
 		return
 	relaciones_compartidas.append({"tipo_relacion": "depredacion"})
