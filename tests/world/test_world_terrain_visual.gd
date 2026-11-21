@@ -175,7 +175,8 @@ func _run() -> void:
 	var metricas_antes: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
 	var reglas_antes := int(metricas_antes.get("rule_evaluations", 0))
 	var cache_skips_antes := int(metricas_antes.get("cached_rule_skips", 0))
-	grass_layer._display.update([Vector2i(0, 0)])
+	var repeated_cells: Array[Vector2i] = [Vector2i(0, 0)]
+	grass_layer._update_cells(repeated_cells, false)
 	var metricas_despues: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
 	if int(metricas_despues.get("rule_evaluations", 0)) != reglas_antes:
 		_fail("Una actualización idéntica volvió a evaluar reglas Dual Grid.")
