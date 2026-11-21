@@ -341,6 +341,21 @@ func _run() -> void:
 	npc.set_meta("rutina_en_transito", true)
 	dialogo._fuente = npc
 
+	# La frase de Nima sobre ordenar notas en casa debe terminar en opciones
+	# sociales y no quedarse como una intervención sin continuación.
+	npc.nombre_individual = "Nima"
+	npc.set_meta("rutina_actual", "estudiar")
+	npc.set_meta("rutina_ubicacion", "casa_narel")
+	npc.set_meta("rutina_en_transito", false)
+	npc.set_meta("rutina_en_edificio", false)
+	npc.datos["actividad_actual"] = "estudiar"
+	var dialogo_rutina_nima := dialogo._crear_dialogo_rutina_contextual()
+	var texto_rutina_nima := str(dialogo_rutina_nima.get("lineas", [{}])[0].get("texto", ""))
+	if not texto_rutina_nima.contains("Estoy ordenando algunas notas en casa"):
+		errores.append("Nima no genera el diálogo contextual de sus notas en casa.")
+	if not dialogo._debe_usar_menu_social(dialogo_rutina_nima, false, false):
+		errores.append("El diálogo de notas de Nima no ofrece opciones sociales al terminar.")
+
 	# Las respuestas de rutina también deben distinguir a los habitantes,
 	# incluso cuando no tienen un tema narrativo cargado desde los datos.
 	npc.nombre_individual = "Mara"
