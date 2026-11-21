@@ -20,6 +20,7 @@ on:
       - "scripts/gameplay/cutscene_director.gd"
       - "scripts/gameplay/cutscene_sequence.gd"
       - "scripts/world/world_*.gd"
+      - "scripts/world/render/**"
       - "scripts/world/reino_torres.gd"
       - "scripts/world/hogar_zone.gd"
       - "scripts/world/hogar_interior.gd"
@@ -361,6 +362,21 @@ jobs:
           printf '%s\\n' "$output"
           if grep -E '(^| )ERROR:|SCRIPT ERROR:|ZoneSpawnResumeContract: FAIL:' <<<"$output"; then
             echo "Zone spawn resume contract test reported errors."
+            exit 1
+          fi
+
+      - name: Run render budget backpressure regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . --script res://tests/world/test_render_budget_backpressure.gd 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|RenderBudgetBackpressure: FAIL:' <<<"$output"; then
+            echo "Render budget backpressure regression reported errors."
+            exit 1
+          fi
+          if ! grep -q 'RenderBudgetBackpressure: PASS' <<<"$output"; then
+            echo "Render budget backpressure regression did not report PASS."
             exit 1
           fi
 
