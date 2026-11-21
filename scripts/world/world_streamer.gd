@@ -1057,6 +1057,9 @@ func _descargar_lejanos(
 func _encolar_descarga_chunk(chunk_coord: Vector2i, centro: Vector2i) -> void:
 	if not _terrain.chunk_cargado(chunk_coord):
 		return
+	var unloading_variant: Variant = _terrain.obtener_chunk_en_descarga()
+	if unloading_variant is Vector2i and unloading_variant == chunk_coord:
+		return
 	if _distancia_chunk(chunk_coord, centro) <= _unload_radius:
 		return
 	if _pending_unload_lookup.has(chunk_coord):
