@@ -776,6 +776,10 @@ func _agregar_chunk_a_cola(
 func _iniciar_siguiente_chunk() -> bool:
 	if _queue.is_empty():
 		return false
+	# No iniciar más generación mientras haya descargas pendientes: evita que
+	# una cola de chunks salientes quede postergada por generaciones continuas.
+	if not _pending_unload_chunks.is_empty():
+		return false
 
 	# La fase CLEAR mantiene un lote visual bloqueado y no admite pintura
 	# concurrente. En FLUSH el lote está liberado y puede empezar DATA del
