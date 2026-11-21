@@ -102,6 +102,18 @@ func _run() -> void:
 	if not bool(manager._data_by_chunk[Vector2i.ZERO]["props"][0]["nested"]["present"]):
 		errores.append("La lectura superficial, usada con duplicación por registro, alteró los datos internos.")
 
+	# Descargar todos los chunks debe invalidar el snapshot inmediatamente,
+	# sin depender de que queue_free dispare tree_exiting al final del frame.
+	var chunk_cache := Vector2i(11, 4)
+	var entidad_cache := Node.new()
+	manager._by_chunk[chunk_cache] = [entidad_cache]
+	manager._active_entities_cache_dirty = true
+	if manager.obtener_entidades_activas().size() != 1:
+		errores.append("El snapshot inicial no incluyó la entidad del chunk.")
+	manager.despawn_entidades_de_chunks()
+	if not manager.obtener_entidades_activas().is_empty():
+		errores.append("La descarga global devolvió entidades desde un snapshot obsoleto.")
+
 	manager.limpiar_todo()
 
 	var registros: Array[Dictionary] = [
