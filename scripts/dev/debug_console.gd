@@ -263,8 +263,9 @@ func _vista_sistemas() -> String:
 
 func _vista_mundo() -> String:
 	var out := _encabezado("MUNDO / STREAMING / TERRENO")
+	out.append("NODES EN SCENETREE (no equivale a visibles en cámara):")
 	for grupo in ["world_props", "creatures"]:
-		out.append("%s activos: %d" % [grupo, get_tree().get_nodes_in_group(grupo).size()])
+		out.append("  %s instanciados: %d" % [grupo, get_tree().get_nodes_in_group(grupo).size()])
 	var zona_manager: Node = _buscar_por_nombre("ZoneManager")
 	if zona_manager != null:
 		var zona_diag: Variant = _diagnostico_nodo(zona_manager)
@@ -285,7 +286,11 @@ func _vista_mundo() -> String:
 				if nombre == "WorldStreamer" and diag.has("lod_logico"):
 					var lod: Dictionary = diag["lod_logico"]
 					var counts: Dictionary = lod.get("counts", {})
-					out.append("     LOD LOGICO: FULL=%s TERRAIN=%s DATA=%s" % [
+					out.append("     TERRENO: %s/%s chunks cargados" % [
+						str(diag.get("chunks_terrain", 0)),
+						str(diag.get("max_visible_chunks", 9))
+					])
+					out.append("     LOD LOGICO: FULL=%s TERRAIN=%s DATA=%s (DATA sin Nodes)" % [
 						str(counts.get("FULL", 0)),
 						str(counts.get("TERRAIN", 0)),
 						str(counts.get("DATA", 0))
