@@ -25,6 +25,12 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
+	var destino_origen := NPCScheduleScript.resolver_destino_reintento(Vector2.ZERO, Vector2(80.0, 40.0))
+	if destino_origen != Vector2.ZERO:
+		errores.append("La recuperación de rutas debe conservar Vector2.ZERO como destino válido.")
+	var destino_respaldo := NPCScheduleScript.resolver_destino_reintento(null, Vector2(80.0, 40.0))
+	if destino_respaldo != Vector2(80.0, 40.0):
+		errores.append("La recuperación de rutas no usa el destino alternativo cuando no hay uno guardado.")
 	var agenda := NPCScheduleScript.new() as NPCScheduleSystem
 	var npc_a := CreatureScene.instantiate() as Creature
 	var npc_b := CreatureScene.instantiate() as Creature
