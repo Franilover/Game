@@ -861,6 +861,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run playable species offline cache contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_playable_species_cache.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|PlayableSpeciesCache: FAIL:' <<<"$output"; then
+            echo "Playable species cache contract reported errors."
+            exit 1
+          fi
+          if ! grep -q 'PlayableSpeciesCache: PASS' <<<"$output"; then
+            echo "Playable species cache contract did not report PASS."
+            exit 1
+          fi
+
       - name: Run world snapshot validator contract test
         shell: bash
         run: |
