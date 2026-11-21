@@ -764,6 +764,7 @@ func obtener_estado_lod() -> Dictionary:
 		"terrain_radius": VISIBLE_RADIUS,
 		"full_radius": _creature_active_radius,
 		"data_queue": _data_entity_queue.size(),
+		"data_preparing": _data_preparation_active,
 		"data_generated": _data_entity_generated.size(),
 		"entity_data_calls": _diag_entity_data_calls,
 		"entity_data_ms_ultimo": _diag_entity_data_ms_ultimo,
