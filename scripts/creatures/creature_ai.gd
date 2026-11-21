@@ -154,6 +154,7 @@ var _velocidad_normal: float = 20.0
 var _velocidad_base_actual: float = 20.0
 var _ultimo_modificador_ambiental: float = -1.0
 var _tiempo_revision_ambiental: float = 0.0
+var _debug_performance_node: Node = null
 var _estado_ambiental_cache: Dictionary = {}
 var _estado_ambiental_cache_valido: bool = false
 var objeto_robado: Dictionary = {}
@@ -168,6 +169,10 @@ func _ready() -> void:
 		)
 		set_physics_process(false)
 		return
+
+	# GarliaDebug es un autoload estable: resolverlo una vez evita una
+	# búsqueda de ruta absoluta por cada sección medida y por cada criatura.
+	_debug_performance_node = get_node_or_null("/root/GarliaDebug")
 
 	if not criatura.configuracion_actualizada.is_connected(configurar_criatura):
 		criatura.configuracion_actualizada.connect(configurar_criatura)
@@ -300,9 +305,8 @@ func _debe_actualizar_rutina_auxiliar(delta: float) -> bool:
 
 
 func _medir_debug_seccion(nombre: String, accion: Callable) -> void:
-	var root: Node = get_tree().root
-	var debug: Node = root.get_node_or_null("GarliaDebug")
-	if debug == null or not debug.has_method("rendimiento_acumular"):
+	var debug := _debug_performance_node
+	if not is_instance_valid(debug) or not debug.has_method("rendimiento_acumular"):
 		accion.call()
 		return
 
