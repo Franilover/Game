@@ -133,7 +133,7 @@
 - [x] Ejecutar contratos de locomoción, combate, IA y ciclo de vida cubiertos por el workflow actual.
 - [x] Contrato de recuperación de `SaveFileRepository` ejecutado en CI.
 - [x] Contratos de recogida, uso, crafting, equipamiento, overflow, hotbar, drops, roundtrip de partida, restauración/finalización de misiones y entrega/rollback de recompensas ejecutados en CI; persistencia integral tras una sesión real sigue pendiente.
-- [x] Los contratos de `WorldSnapshotValidator` y `GameStateRoundtrip` cubren estructura/serialización, aplicación del snapshot al Player activo, snapshot local incluido, arranque del menú sin red y entrada a Torres sin Supabase. La ruta contractual offline está aprobada en CI; queda validación manual en dispositivo y continuidad real tras desconexión/reconexión.
+- [x] Los contratos de `WorldSnapshotValidator` y `GameStateRoundtrip` cubren estructura/serialización, aplicación del snapshot al Player activo, snapshot local incluido, arranque del menú sin red, entrada a Torres sin Supabase y restauración de sesión tras fallo de red simulado con reintento y reconexión simulada. CI Godot 4.7 run `44845478050` aprobado; quedan refresh real con Supabase y validación manual en PC/Android.
 - [ ] Añadir pruebas de integración de inicio/cierre de partida.
 - [ ] Verificar referencias rotas de escenas, recursos, autoloads y scripts.
 - [ ] Añadir pruebas de regresión para fallos encontrados, no solo pruebas felices.
