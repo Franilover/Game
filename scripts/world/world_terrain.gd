@@ -555,8 +555,9 @@ func _procesar_datos_chunk(
 	var datos_listos: PackedByteArray = _generation_task["datos_listos"]
 	var orden: PackedInt32Array = _generation_task["orden_datos"]
 
-	# DATA sólo modifica buffers PackedInt32Array. No hay celdas visuales
-	# que bloquear todavía; el lote visual comienza al entrar en PINTADO.
+	# DATOS actualiza buffers PackedInt32Array. Al final del paso puede
+	# entregar a PINTADO las celdas cercanas cuyos vecinos ya están listos;
+	# desde ese momento el streamer no debe intercalar otro clear visual.
 	var cursor_inicio_lote: int = cursor
 	var limite: int = mini(
 		cursor + cells,
