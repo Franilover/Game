@@ -67,6 +67,11 @@ func _run() -> void:
 		errores.append("El primer lote no procesó exactamente una entrada.")
 	if not manager._active_chunks.has(chunk_lote):
 		errores.append("El chunk perdió su estado activo antes de completar el despawn.")
+	# Una transición LOD selectiva concurrente no debe cancelar el trabajo
+	# completo que ya retirará ambos tipos de entidad.
+	manager.despawn_props_chunk(chunk_lote)
+	if not manager._despawn_jobs.has(chunk_lote) or int(manager._despawn_jobs[chunk_lote]["cursor"]) != 1:
+		errores.append("Un despawn LOD selectivo canceló el trabajo incremental activo.")
 	if manager.procesar_despawn_chunk(chunk_lote, 1):
 		errores.append("La descarga terminó antes de consumir el segundo lote.")
 	if not manager.procesar_despawn_chunk(chunk_lote, 1):
