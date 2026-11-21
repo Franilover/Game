@@ -29,7 +29,6 @@ var _diag_display_candidates: int = 0
 var _diag_rule_evaluations: int = 0
 var _diag_redundant_tiles: int = 0
 var _diag_set_cells: int = 0
-var _diag_atlas_tiles: Dictionary = {}
 # Tiempos acumulados: flush completo y muestreo ligero de fases internas.
 var _diag_flush_calls: int = 0
 var _diag_flush_ms: float = 0.0
@@ -166,10 +165,6 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 
-	if sid != -1:
-		var atlas_key := str(tile)
-		_diag_atlas_tiles[atlas_key] = int(_diag_atlas_tiles.get(atlas_key, 0)) + 1
-
 	var current_sid: int = get_cell_source_id(cell)
 	if current_sid == sid:
 		if sid == -1 or get_cell_atlas_coords(cell) == tile:
@@ -218,7 +213,6 @@ func obtener_diagnostico() -> Dictionary:
 		"reverse_path_calls": _diag_reverse_path_calls,
 		"reverse_path_samples": _diag_reverse_path_samples,
 		"sample_reverse_path_ms": _diag_sample_reverse_path_ms,
-		"atlas_tiles": _diag_atlas_tiles,
 	}
 
 
