@@ -30,6 +30,14 @@ var _diag_rule_evaluations: int = 0
 var _diag_redundant_tiles: int = 0
 var _diag_set_cells: int = 0
 var _diag_atlas_tiles: Dictionary = {}
+# Tiempos acumulados: flush completo y muestreo ligero de fases internas.
+var _diag_flush_calls: int = 0
+var _diag_flush_ms: float = 0.0
+var _diag_flush_ms_max: float = 0.0
+var _diag_sample_count: int = 0
+var _diag_sample_path_ms: float = 0.0
+var _diag_sample_rule_ms: float = 0.0
+var _diag_sample_write_ms: float = 0.0
 
 
 func _init(
@@ -110,6 +118,7 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 	# Restaurar la semántica original del addon: cada DisplayLayer calcula
 	# la celda dual afectada siguiendo la ruta inversa exacta. La optimización
 	# por offsets precomputados puede alterar la semántica de las esquinas.
+	var flush_start_usec: int = Time.get_ticks_usec()
 	_already_updated.clear()
 	for reverse_path: Array in _reverse_display_paths:
 		for world_cell: Vector2i in updated_world_cells:
@@ -118,20 +127,32 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 				_already_updated[display_cell] = true
 				_diag_display_candidates += 1
 				update_tile(cache, display_cell)
+	var flush_ms: float = float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
+	_diag_flush_calls += 1
+	_diag_flush_ms += flush_ms
+	_diag_flush_ms_max = maxf(_diag_flush_ms_max, flush_ms)
 
 
 ## Updates a specific world cell.
 func update_tile(cache: TileCache, cell: Vector2i) -> void:
+	var sample: bool = (_diag_update_calls % 64) == 0
+	var sample_start_usec: int = Time.get_ticks_usec() if sample else 0
 	_terrain_neighbors_scratch.clear()
 	for path: Array in _terrain.display_to_world_neighborhood:
 		_terrain_neighbors_scratch.append(
 			cache.get_terrain_at(follow_path(cell, path))
 		)
+	if sample:
+		_diag_sample_path_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
+		sample_start_usec = Time.get_ticks_usec()
 
 	_diag_update_calls += 1
 	_diag_world_cells += 1
 	_diag_rule_evaluations += 1
 	var mapping: Dictionary = _terrain.apply_rule(_terrain_neighbors_scratch, cell)
+	if sample:
+		_diag_sample_rule_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
+		sample_start_usec = Time.get_ticks_usec()
 	var sid: int = int(mapping.get("sid", -1))
 	var tile: Vector2i = mapping.get("tile", Vector2i(-1, -1))
 
@@ -147,6 +168,9 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 
 	_diag_set_cells += 1
 	set_cell(cell, sid, tile)
+	if sample:
+		_diag_sample_write_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
+		_diag_sample_count += 1
 
 
 func follow_path(cell: Vector2i, path: Array) -> Vector2i:
@@ -175,6 +199,13 @@ func obtener_diagnostico() -> Dictionary:
 		"write_ratio": (
 			float(writes) / float(maxi(_diag_rule_evaluations, 1))
 		),
+		"flush_calls": _diag_flush_calls,
+		"flush_ms_total": _diag_flush_ms,
+		"flush_ms_max": _diag_flush_ms_max,
+		"sample_count": _diag_sample_count,
+		"sample_path_ms": _diag_sample_path_ms,
+		"sample_rule_ms": _diag_sample_rule_ms,
+		"sample_write_ms": _diag_sample_write_ms,
 		"atlas_tiles": _diag_atlas_tiles,
 	}
 
