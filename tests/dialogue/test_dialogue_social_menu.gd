@@ -301,6 +301,12 @@ func _run() -> void:
 	dialogo._abierto = true
 	dialogo._usa_menu_social = true
 	dialogo._fuente = npc
+	dialogo._respuestas_container = GridContainer.new()
+	dialogo.add_child(dialogo._respuestas_container)
+	dialogo.action_button = Button.new()
+	dialogo.add_child(dialogo.action_button)
+	dialogo.cancel_button = Button.new()
+	dialogo.add_child(dialogo.cancel_button)
 	dialogo._respuestas.clear()
 	dialogo._selector_conversacion = null
 	dialogo._selector_conversacion_grid = null
