@@ -99,6 +99,8 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	if not _hay_runtime_partida_activo():
+		return
 	world_state.elapsed_time += delta
 	_autosave_timer += delta
 
@@ -132,6 +134,10 @@ func _notification(what: int) -> void:
 
 
 func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
+	# El menú principal no es una sesión jugable. La sesión ya se confirma
+	# antes de abandonar Main; no intentes capturar un Player que ya fue liberado.
+	if not _hay_runtime_partida_activo():
+		return true
 	var resultado := true
 	if _historia_reserva_activa:
 		resultado = guardar_progreso_historia()
@@ -140,6 +146,11 @@ func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
 	if not resultado and (_historia_reserva_activa or not active_save_id.is_empty()):
 		push_error("GameState: guardado fallido (" + motivo + "). " + _ultimo_motivo_fallo_guardado)
 	return resultado
+
+
+func _hay_runtime_partida_activo() -> bool:
+	var escena := get_tree().current_scene
+	return is_instance_valid(escena) and str(escena.scene_file_path) == MAIN_SCENE_PATH
 
 
 func _rechazar_guardado(motivo: String) -> bool:
@@ -789,6 +800,9 @@ func _ejecutar_guardado_rapido() -> void:
 
 
 func _guardar_progreso_diferido() -> void:
+	if not _hay_runtime_partida_activo():
+		_primer_guardado_pendiente = false
+		return
 	# Nunca escribir encima de un snapshot que todavía está pendiente de
 	# aplicarse al Player real. Los intentos se repiten mientras la escena termina
 	# de conectar al jugador y restaurar su estado vital.
@@ -1580,7 +1594,7 @@ func _abrir_escena_principal() -> void:
 func _al_cambiar_escena() -> void:
 	_partida_aplicada_en_escena = false
 	_estado_vital_restaurado_en_escena = false
-	_primer_guardado_pendiente = _historia_reserva_activa or not active_save_id.is_empty()
+	_primer_guardado_pendiente = _hay_runtime_partida_activo() and (_historia_reserva_activa or not active_save_id.is_empty())
 	_primer_guardado_elapsed = 0.0
 	var escena := get_tree().current_scene
 	if escena != null:
