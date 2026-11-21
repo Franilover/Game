@@ -150,7 +150,15 @@ func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
 
 func _hay_runtime_partida_activo() -> bool:
 	var escena := get_tree().current_scene
-	return is_instance_valid(escena) and str(escena.scene_file_path) == MAIN_SCENE_PATH
+	if not is_instance_valid(escena):
+		return false
+	if str(escena.scene_file_path) == MAIN_SCENE_PATH:
+		return true
+	# Permite verificar el mismo contrato en escenas de integración aisladas.
+	return (
+		is_instance_valid(escena.get_node_or_null("World/ZoneManager"))
+		and is_instance_valid(escena.get_node_or_null("Entities/Player"))
+	)
 
 
 func _rechazar_guardado(motivo: String) -> bool:
