@@ -295,6 +295,10 @@ func abrir_desde(fuente: Creature) -> bool:
 
 
 func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool = false) -> bool:
+	# No reemplazar una conversación activa: hacerlo dejaría al NPC anterior
+	# pausado y perdería las opciones y el progreso del diálogo abierto.
+	if _abierto:
+		return false
 	_recuerdo_pendiente_mostrar.clear()
 	_usa_menu_social = false
 	_personaje_recuerdo_pendiente = ""
