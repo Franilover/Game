@@ -27,6 +27,7 @@ var _prop_spawn_queued: Dictionary = {}
 var _prop_spawn_tasks: Dictionary = {}
 var _creature_spawn_tasks: Dictionary = {}
 var _render_manager: Node = null
+var _chunk_full_activo: Vector2i = Vector2i(999999, 999999)
 
 var _props_por_bioma: Dictionary = {}
 var _asset_path_por_prop: Dictionary = {}
@@ -132,14 +133,20 @@ func _actualizar_catalogo_props() -> void:
 		_reintentar_props_en_chunks_cargados()
 
 
+func establecer_chunk_full_activo(chunk_coord: Vector2i) -> void:
+	_chunk_full_activo = chunk_coord
+
+
 func _reintentar_props_en_chunks_cargados() -> void:
 	if _terrain == null or _entity_manager == null:
 		return
-	for chunk_variant in _terrain.chunks_cargados():
-		if not chunk_variant is Vector2i:
-			continue
-		var chunk_coord := chunk_variant as Vector2i
-		var tiene_prop_real := false
+	# El catálogo puede llegar después del primer registro del jugador.
+	# Reintentar sólo el chunk FULL; los vecinos conservan registros DATA,
+	# no deben materializar WorldProp por el mero hecho de tener terreno.
+	if not _terrain.chunk_cargado(_chunk_full_activo):
+		return
+	var chunk_coord := _chunk_full_activo
+	var tiene_prop_real := false
 		for entidad in _entity_manager.obtener_por_chunk(chunk_coord):
 			if entidad is WorldProp and is_instance_valid(entidad):
 				tiene_prop_real = true
