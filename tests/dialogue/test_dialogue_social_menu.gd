@@ -164,6 +164,18 @@ func _run() -> void:
 	# Ivo, Mara y Nima deben recorrer la misma política de opciones que
 	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
+	# Una iniciativa explícita de Elian debe conservar el menú aunque su saludo
+	# reutilice una etiqueta lineal en los datos narrativos.
+	var saludo_elian := {
+		"clave": "iniciativa_amigo_elian_test",
+		"tipo_contenido": "lineal",
+		"lineas": [{"hablante": "Elian", "texto": "Buenos días, qué bueno que hayas llegado."}],
+		"_continuar_menu_social": true
+	}
+	if not dialogo._debe_usar_menu_social(saludo_elian, true, false):
+		errores.append("El saludo iniciado por Elian no ofrece el menú social al terminar.")
+	if dialogo._debe_usar_menu_social({"_sin_menu_social": true, "_continuar_menu_social": true}, true, false):
+		errores.append("La excepción explícita sin menú social dejó de respetarse.")
 	# Una intervención terminal siempre muestra una salida explícita.
 	var dialogo_prueba_cierre = DialogueSystemScript.new()
 	add_child(dialogo_prueba_cierre)
