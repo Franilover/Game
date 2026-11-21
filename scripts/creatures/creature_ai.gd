@@ -177,8 +177,26 @@ func _ready() -> void:
 	_encontrar_movimiento()
 	_refrescar_configuracion()
 	_restaurar_necesidades_runtime()
+	_inicializar_fases_de_actualizacion()
 	_aplicar_configuracion_movimiento()
 	_cambiar_estado_forzado(estado_inicial)
+
+
+func _inicializar_fases_de_actualizacion() -> void:
+	# Los chunks materializan muchas criaturas en el mismo frame. Distribuir
+	# sus primeros ticks de percepción, decisión y rutina evita que todas
+	# recorran candidatos/estados simultáneamente sin reducir la frecuencia
+	# media ni detener necesidades, memoria o locomoción.
+	var fase := calcular_fase_inicial(get_instance_id())
+	_tiempo_pensamiento = fase * maxf(intervalo_pensamiento, 0.02)
+	_tiempo_estado_proceso = fase * maxf(intervalo_estado, 0.02)
+	_tiempo_rutina_auxiliar = fase * INTERVALO_RUTINA_AUXILIAR
+
+
+static func calcular_fase_inicial(instance_id: int) -> float:
+	# La razón áurea distribuye IDs consecutivos por todo el intervalo
+	# sin depender del RNG ni de la especie o de la posición en el mundo.
+	return fposmod(float(instance_id) * 0.61803398875, 1.0)
 
 
 func configurar_relaciones_ecologicas(nuevas_relaciones_ecologicas: Array) -> void:
