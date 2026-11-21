@@ -144,7 +144,7 @@ func procesar() -> void:
 		if terminado:
 			# El chunk base ya terminó. Sólo ahora se permite trabajo secundario.
 			_procesar_variaciones_si_hay_presupuesto()
-			_procesar_entidades_si_hay_presupuesto()
+			call_deferred("_procesar_entidades_si_hay_presupuesto")
 			var chunk_coord: Vector2i = (
 				_terrain.ultimo_chunk_generado()
 			)
@@ -176,7 +176,7 @@ func procesar() -> void:
 		# Si no hay generación activa, las decoraciones pendientes pueden usar
 		# el presupuesto que quedó libre después del terreno base.
 		_procesar_variaciones_si_hay_presupuesto()
-	_procesar_entidades_si_hay_presupuesto()
+	call_deferred("_procesar_entidades_si_hay_presupuesto")
 
 	# Sólo cuando no arrancamos generación en este frame cedemos el frame al
 	# unload. La limpieza sigue progresando, pero nunca compite con el primer
