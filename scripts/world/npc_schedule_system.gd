@@ -2303,14 +2303,38 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 	if distancia > 78.0:
 		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
 		npc.set_meta("npc_objetivo_social_en_curso", false)
-		if not bool(npc.get_meta("rutina_en_transito", false)):
-			var ruta := _crear_ruta(npc.global_position, _obtener_punto_encuentro_social(npc, pareja_actual))
-			if ruta.is_empty():
-				_cancelar_objetivo_social_npc(npc, mind, personaje_id)
-				return false
-			npc.set_meta("rutina_en_transito", true)
-			npc.set_meta("npc_objetivo_social_en_curso", true)
-			movimiento.establecer_ruta(ruta)
+		var ahora_ms := Time.get_ticks_msec()
+		if bool(npc.get_meta("rutina_en_transito", false)):
+			var posicion_guardada_variant: Variant = npc.get_meta("npc_objetivo_social_ultima_posicion", npc.global_position)
+			var posicion_guardada: Vector2 = posicion_guardada_variant if posicion_guardada_variant is Vector2 else npc.global_position
+			var ultimo_progreso_ms := int(npc.get_meta("npc_objetivo_social_ultimo_progreso_ms", ahora_ms))
+			if npc.global_position.distance_to(posicion_guardada) >= 8.0:
+				npc.set_meta("npc_objetivo_social_ultima_posicion", npc.global_position)
+				npc.set_meta("npc_objetivo_social_ultimo_progreso_ms", ahora_ms)
+			elif ruta_sin_progreso(npc.global_position, posicion_guardada, ahora_ms, ultimo_progreso_ms):
+				# La vigilancia de rutinas normales no se ejecuta mientras el
+				# objetivo social tiene prioridad. Recalcular aquí evita que un
+				# encuentro quede reservado indefinidamente ante un obstáculo.
+				var ruta_recalculada := _crear_ruta(
+					npc.global_position,
+					_obtener_punto_encuentro_social(npc, pareja_actual)
+				)
+				if ruta_recalculada.is_empty():
+					_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+					return false
+				movimiento.establecer_ruta(ruta_recalculada)
+				npc.set_meta("npc_objetivo_social_ultima_posicion", npc.global_position)
+				npc.set_meta("npc_objetivo_social_ultimo_progreso_ms", ahora_ms)
+			return true
+		var ruta := _crear_ruta(npc.global_position, _obtener_punto_encuentro_social(npc, pareja_actual))
+		if ruta.is_empty():
+			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
+			return false
+		npc.set_meta("rutina_en_transito", true)
+		npc.set_meta("npc_objetivo_social_en_curso", true)
+		npc.set_meta("npc_objetivo_social_ultima_posicion", npc.global_position)
+		npc.set_meta("npc_objetivo_social_ultimo_progreso_ms", ahora_ms)
+		movimiento.establecer_ruta(ruta)
 		return true
 
 	if movimiento.rutina_terminada():
@@ -2796,6 +2820,8 @@ func _finalizar_objetivo_social_npc(
 	npc.remove_meta("npc_objetivo_social_tiempo")
 	npc.remove_meta("npc_objetivo_social_espera")
 	npc.remove_meta("npc_objetivo_social_en_curso")
+	npc.remove_meta("npc_objetivo_social_ultima_posicion")
+	npc.remove_meta("npc_objetivo_social_ultimo_progreso_ms")
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
 	npc.set_meta("npc_social_siguiente_intento", _clave_fecha_actual())
@@ -2817,6 +2843,8 @@ func _cancelar_objetivo_social_npc(npc: Creature, mind: Node, personaje_id: Stri
 	npc.remove_meta("npc_objetivo_social")
 	npc.remove_meta("npc_objetivo_social_tiempo")
 	npc.remove_meta("npc_objetivo_social_en_curso")
+	npc.remove_meta("npc_objetivo_social_ultima_posicion")
+	npc.remove_meta("npc_objetivo_social_ultimo_progreso_ms")
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
 
