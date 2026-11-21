@@ -209,6 +209,8 @@ func _comprobar_calendario_comunitario(errores: Array[String]) -> void:
 	evento = Rules.obtener_evento_comunitario(2, 4, 540)
 	if str(evento.get("clave", "")) != "mercado_vecinal":
 		errores.append("El mercado vecinal debe comenzar a las 09:00 del quinto día.")
+	if str(evento.get("nombre", "")) != "Mercado Vecinal" or str(evento.get("ubicacion", "")) != "la Plaza":
+		errores.append("El mercado debe proporcionar el nombre y ubicación para su aviso visual.")
 	evento = Rules.obtener_evento_comunitario(2, 4, 1019)
 	if str(evento.get("clave", "")) != "mercado_vecinal":
 		errores.append("El mercado vecinal debe mantenerse hasta antes de las 17:00.")
