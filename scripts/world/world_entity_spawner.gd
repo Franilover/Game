@@ -207,6 +207,7 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 	)
 
 	var procesados_desde_yield := 0
+	var estados_materializados: Array[Dictionary] = []
 	for dato_variant in datos:
 		if not dato_variant is Dictionary:
 			continue
@@ -277,8 +278,16 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 					clampi(health, 0, creature_node.max_health),
 					bool(dato.get("is_alive", true))
 				)
+			var posicion_inicial: Vector2 = dato.get("position", criatura.global_position)
+			var velocidad_inicial: Vector2 = dato.get("velocity", creature_node.velocity)
 			if dato.has("velocity") and dato["velocity"] is Vector2:
-				creature_node.velocity = dato["velocity"]
+				creature_node.velocity = velocidad_inicial
+			estados_materializados.append({
+				"node": creature_node,
+				"position": posicion_inicial,
+				"velocity": velocidad_inicial,
+				"has_velocity": dato.has("velocity") and dato["velocity"] is Vector2
+			})
 
 		claves_existentes[instance_key] = true
 		hay_criaturas = true
@@ -289,6 +298,21 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if procesados_desde_yield >= 2:
 			procesados_desde_yield = 0
 			await get_tree().process_frame
+
+	# Las criaturas creadas antes de un yield ya pueden recibir _process/_physics_process.
+	# Reaplicar el estado DATA al final evita que su IA altere posición/velocidad
+	# durante la materialización del resto del chunk.
+	for estado_variant in estados_materializados:
+		if not estado_variant is Dictionary:
+			continue
+		var estado := estado_variant as Dictionary
+		var nodo_variant: Variant = estado.get("node", null)
+		if not nodo_variant is Creature or not is_instance_valid(nodo_variant):
+			continue
+		var nodo := nodo_variant as Creature
+		nodo.global_position = estado.get("position", nodo.global_position)
+		if bool(estado.get("has_velocity", false)):
+			nodo.velocity = estado.get("velocity", nodo.velocity)
 
 	if hay_criaturas:
 		_entity_manager.activar_criaturas_chunk(chunk_coord)
