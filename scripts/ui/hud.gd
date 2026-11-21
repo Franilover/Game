@@ -385,7 +385,7 @@ func _preparar_aviso_evento_comunitario() -> void:
 	_aviso_evento_comunitario.offset_right = 140.0
 	_aviso_evento_comunitario.offset_bottom = 56.0
 	_aviso_evento_comunitario.z_index = 20
-	var estilo_boton := PIXEL_UI_THEME.button_surface_style()
+	var estilo_boton: StyleBox = PIXEL_UI_THEME.button_surface_style()
 	if estilo_boton == null:
 		var respaldo := StyleBoxFlat.new()
 		respaldo.bg_color = Color("#302014")
