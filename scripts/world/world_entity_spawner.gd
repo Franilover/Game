@@ -704,9 +704,18 @@ func cancelar_prop_spawn_chunk(chunk_coord: Vector2i) -> void:
 	_prop_spawn_tasks.erase(chunk_coord)
 
 
-func _spawn_chunk_interno(
-	chunk_coord: Vector2i
-) -> void:
+func _spawn_chunk_interno(chunk_coord: Vector2i) -> void:
+	var inicio_usec := Time.get_ticks_usec()
+	_diag_spawn_criaturas_calls += 1
+	_spawn_chunk_interno_impl(chunk_coord)
+	var duracion_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+	_diag_spawn_criaturas_ms_ultimo = duracion_ms
+	_diag_spawn_criaturas_ms_maximo = maxf(_diag_spawn_criaturas_ms_maximo, duracion_ms)
+	if _render_manager != null and is_instance_valid(_render_manager):
+		_render_manager.call("registrar_trabajo", "creature_spawn", duracion_ms, 1)
+
+
+func _spawn_chunk_interno_impl(chunk_coord: Vector2i) -> void:
 	_diag_chunks_iniciados += 1
 	if _terrain == null or not is_instance_valid(_terrain):
 		push_error("WorldEntitySpawner: Terrain no configurado.")
@@ -716,8 +725,6 @@ func _spawn_chunk_interno(
 	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
 		return
 
-	var inicio_spawn_usec := Time.get_ticks_usec()
-	var intentos_spawn := 0
 	var rng := RandomNumberGenerator.new()
 
 	rng.seed = abs(
@@ -760,7 +767,7 @@ func _spawn_chunk_interno(
 	var especies_creadas: Dictionary = {}
 
 	for intento in range(32):
-		intentos_spawn += 1
+		_diag_spawn_criaturas_intentos += 1
 		if (
 			creadas.size()
 			>= max_creatures_per_chunk
@@ -970,13 +977,6 @@ func _spawn_chunk_interno(
 		rng
 	)
 	_entity_manager.activar_criaturas_chunk(chunk_coord)
-	var spawn_ms := float(Time.get_ticks_usec() - inicio_spawn_usec) / 1000.0
-	_diag_spawn_criaturas_calls += 1
-	_diag_spawn_criaturas_intentos += intentos_spawn
-	_diag_spawn_criaturas_ms_ultimo = spawn_ms
-	_diag_spawn_criaturas_ms_maximo = maxf(_diag_spawn_criaturas_ms_maximo, spawn_ms)
-	if _render_manager != null and is_instance_valid(_render_manager):
-		_render_manager.call("registrar_trabajo", "creature_spawn", spawn_ms, intentos_spawn)
 	return
 
 func _spawn_garumis_en_chunk(
