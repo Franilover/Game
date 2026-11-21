@@ -4,7 +4,7 @@ const WorldStreamerScript = preload("res://scripts/world/world_streamer.gd")
 const WorldTerrainScript = preload("res://scripts/world/world_terrain.gd")
 
 
-func _initialize() -> void:
+func _ready() -> void:
 	call_deferred("_run_tests")
 
 
