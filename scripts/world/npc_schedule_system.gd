@@ -145,6 +145,20 @@ static func resolver_destino_reintento(destino_guardado: Variant, destino_respal
 	return destino_respaldo
 
 
+static func ruta_sin_progreso(
+	posicion_actual: Vector2,
+	ultima_posicion: Vector2,
+	ahora_ms: int,
+	ultimo_progreso_ms: int,
+	distancia_minima: float = 8.0,
+	espera_ms: int = 3500
+) -> bool:
+	return (
+		posicion_actual.distance_to(ultima_posicion) < maxf(distancia_minima, 0.0)
+		and ahora_ms - ultimo_progreso_ms >= maxi(espera_ms, 0)
+	)
+
+
 func _obtener_npcs_torres() -> Array:
 	if _actualizacion_en_curso:
 		return _npcs_actualizacion
@@ -688,6 +702,36 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 					_marcar_npc_dentro_edificio(npc, edificio_id)
 			elif movimiento_actual.rutina_en_ejecucion():
 				npc.set_meta("rutina_en_transito", true)
+				# No contar el tiempo detenido por diálogos o cinemáticas como
+				# atasco de navegación: esas pausas son intencionales.
+				var movimiento_bloqueado := (
+					bool(npc.get_meta("conversacion_npc_bloqueada", false))
+					or bool(npc.get_meta("_conversacion_ambiental_activa", false))
+					or bool(npc.get_meta("cinematica_npc_activa", false))
+				)
+				if movimiento_bloqueado:
+					npc.set_meta("rutina_ultima_posicion_vigilada", npc.global_position)
+					npc.set_meta("rutina_ultimo_progreso_ms", Time.get_ticks_msec())
+					return
+				var ahora_ms := Time.get_ticks_msec()
+				var ultima_posicion_variant: Variant = npc.get_meta("rutina_ultima_posicion_vigilada", npc.global_position)
+				var ultima_posicion: Vector2 = ultima_posicion_variant if ultima_posicion_variant is Vector2 else npc.global_position
+				var ultimo_progreso_ms := int(npc.get_meta("rutina_ultimo_progreso_ms", ahora_ms))
+				if ruta_sin_progreso(npc.global_position, ultima_posicion, ahora_ms, ultimo_progreso_ms):
+					# El destino se conserva; el siguiente ciclo lo recalcula
+					# desde la posición actual tras una pausa breve.
+					movimiento_actual.detener_por_rutina()
+					npc.set_meta("rutina_en_transito", false)
+					npc.set_meta("rutina_ruta_fallida", true)
+					npc.set_meta("rutina_ruta_reintento_ms", ahora_ms + 1200)
+					npc.set_meta("rutina_ultimo_progreso_ms", ahora_ms)
+					npc.set_meta("rutina_ultima_posicion_vigilada", npc.global_position)
+					if str(npc.get_meta("rutina_atasco_firma", "")) != firma_nueva:
+						push_warning("NPCScheduleSystem: ruta bloqueada para " + npc.get_nombre_visual() + " hacia " + ubicacion + "; se recalculará.")
+						npc.set_meta("rutina_atasco_firma", firma_nueva)
+				elif npc.global_position.distance_to(ultima_posicion) >= 8.0:
+					npc.set_meta("rutina_ultima_posicion_vigilada", npc.global_position)
+					npc.set_meta("rutina_ultimo_progreso_ms", ahora_ms)
 				# Mantener activo el cuerpo que procesa el movimiento incluso si
 				# otra rutina o transición pausó temporalmente al NPC.
 				npc.set_process(true)
@@ -758,6 +802,8 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 		npc.set_meta("rutina_error_firma", "")
 		npc.set_meta("rutina_ruta_fallida", false)
 		npc.remove_meta("rutina_ruta_reintento_ms")
+		npc.set_meta("rutina_ultima_posicion_vigilada", npc.global_position)
+		npc.set_meta("rutina_ultimo_progreso_ms", Time.get_ticks_msec())
 		movimiento.establecer_ruta(ruta)
 		npc.set_meta("rutina_en_transito", true)
 		print("NPCScheduleSystem: ", npc.get_nombre_visual(), " -> ", ubicacion, " (", actividad, ") | puntos de ruta: ", ruta.size())
