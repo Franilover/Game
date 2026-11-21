@@ -159,6 +159,16 @@ static func ruta_sin_progreso(
 	)
 
 
+static func actividad_social_bloqueada(npc: Creature) -> bool:
+	if not is_instance_valid(npc):
+		return true
+	return (
+		bool(npc.get_meta("_conversacion_ambiental_activa", false))
+		or bool(npc.get_meta("conversacion_npc_bloqueada", false))
+		or bool(npc.get_meta("cinematica_npc_activa", false))
+	)
+
+
 func _obtener_npcs_torres() -> Array:
 	if _actualizacion_en_curso:
 		return _npcs_actualizacion
@@ -348,6 +358,9 @@ func iniciar_actividad_social(npc: Creature, destino_local: Vector2, duracion: f
 		return false
 	npc.set_meta("actividad_social_activa", true)
 	npc.set_meta("actividad_social_tiempo", maxf(duracion, 1.0))
+	npc.set_meta("actividad_social_destino_global", destino_global)
+	npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
+	npc.set_meta("actividad_social_ultimo_progreso_ms", Time.get_ticks_msec())
 	npc.set_meta("acercamiento_social_activo", true)
 	npc.set_meta("rutina_en_transito", true)
 	movimiento.establecer_ruta(ruta)
@@ -366,11 +379,43 @@ func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
 	if movimiento == null:
 		_finalizar_actividad_social(npc)
 		return false
-	if movimiento.rutina_terminada():
-		var restante := float(npc.get_meta("actividad_social_tiempo", 5.0)) - delta
-		npc.set_meta("actividad_social_tiempo", restante)
-		if restante <= 0.0:
-			_finalizar_actividad_social(npc)
+	if actividad_social_bloqueada(npc):
+		# El reloj de la actividad se pausa mientras otro sistema controla al NPC.
+		# Reiniciar la referencia evita detectar el diálogo/cinemática como atasco.
+		npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
+		npc.set_meta("actividad_social_ultimo_progreso_ms", Time.get_ticks_msec())
+		return true
+	if not movimiento.rutina_terminada():
+		var ahora_ms := Time.get_ticks_msec()
+		var ultima_posicion_variant: Variant = npc.get_meta(
+			"actividad_social_ultima_posicion", npc.global_position
+		)
+		var ultima_posicion: Vector2 = (
+			ultima_posicion_variant if ultima_posicion_variant is Vector2 else npc.global_position
+		)
+		var ultimo_progreso_ms := int(
+			npc.get_meta("actividad_social_ultimo_progreso_ms", ahora_ms)
+		)
+		if npc.global_position.distance_to(ultima_posicion) >= 8.0:
+			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
+			npc.set_meta("actividad_social_ultimo_progreso_ms", ahora_ms)
+		elif ruta_sin_progreso(npc.global_position, ultima_posicion, ahora_ms, ultimo_progreso_ms):
+			var destino_variant: Variant = npc.get_meta("actividad_social_destino_global", null)
+			if not destino_variant is Vector2:
+				_finalizar_actividad_social(npc)
+				return false
+			var ruta_recalculada := _crear_ruta(npc.global_position, destino_variant)
+			if ruta_recalculada.is_empty():
+				_finalizar_actividad_social(npc)
+				return false
+			movimiento.establecer_ruta(ruta_recalculada)
+			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
+			npc.set_meta("actividad_social_ultimo_progreso_ms", ahora_ms)
+		return true
+	var restante := float(npc.get_meta("actividad_social_tiempo", 5.0)) - maxf(delta, 0.0)
+	npc.set_meta("actividad_social_tiempo", restante)
+	if restante <= 0.0:
+		_finalizar_actividad_social(npc)
 	return true
 
 
@@ -382,6 +427,9 @@ func _finalizar_actividad_social(npc: Creature) -> void:
 		movimiento.detener_por_rutina()
 	npc.remove_meta("actividad_social_activa")
 	npc.remove_meta("actividad_social_tiempo")
+	npc.remove_meta("actividad_social_destino_global")
+	npc.remove_meta("actividad_social_ultima_posicion")
+	npc.remove_meta("actividad_social_ultimo_progreso_ms")
 	npc.remove_meta("acercamiento_social_activo")
 	npc.set_meta("rutina_en_transito", false)
 	npc.set_meta("rutina_firma", "")
