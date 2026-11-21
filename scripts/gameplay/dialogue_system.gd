@@ -1542,6 +1542,11 @@ func _actualizar_boton_accion() -> void:
 		_respuestas_container.visible = false
 
 	if _acciones.is_empty():
+		if not es_ultima_linea or not texto_terminado:
+			action_button.visible = false
+			if cancel_button != null:
+				cancel_button.visible = false
+			return
 		# Toda línea terminal sin decisiones ofrece un cierre explícito.
 		action_button.text = "Cerrar"
 		action_button.visible = true
@@ -1632,6 +1637,10 @@ func _ejecutar_accion_dialogo() -> void:
 					_acciones.clear()
 					action_button.visible = false
 					return
+
+
+	# Cualquier acción no resuelta debe dejar una salida explícita.
+	_mostrar_cierre_dialogo()
 
 
 func _crear_respuestas_rutina() -> Array[Dictionary]:
