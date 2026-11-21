@@ -188,6 +188,24 @@ func _run_tests() -> void:
 		_terminar(1)
 		return
 
+	# El clear sólo puede intercalarse con DATOS antes de que la generación
+	# haya empezado a pintar celdas cercanas.
+	_terrain._generation_task = {
+		"coord": Vector2i(2, 0),
+		"stage": 0,
+		"cursor_pintado": 0,
+	}
+	if not _terrain.puede_intercalar_descarga_durante_generacion():
+		push_error("WorldStreamerPrefetch: bloqueó el clear antes de la primera pintura.")
+		_terminar(1)
+		return
+	_terrain._generation_task["cursor_pintado"] = 1
+	if _terrain.puede_intercalar_descarga_durante_generacion():
+		push_error("WorldStreamerPrefetch: permitió mezclar clear con pintura parcial.")
+		_terminar(1)
+		return
+	_terrain._generation_task.clear()
+
 	# La generación puede cederse antes de pintar, pero no durante una
 	# pintura parcial ni durante el flush final.
 	_terrain._generation_task = {"coord": Vector2i(3, 0), "stage": 0}
