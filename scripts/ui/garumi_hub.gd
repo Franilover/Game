@@ -15,6 +15,7 @@ var _detalle: VBoxContainer
 
 func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	add_to_group("garumi_hub")
 	_crear_interfaz()
 	if GameState.has_signal("garumis_vinculados_actualizados") and not GameState.garumis_vinculados_actualizados.is_connected(actualizar):
 		GameState.garumis_vinculados_actualizados.connect(actualizar)
@@ -25,16 +26,44 @@ func _ready() -> void:
 
 
 func _crear_interfaz() -> void:
+	var fondo := ColorRect.new()
+	fondo.name = "FondoOscuro"
+	fondo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	fondo.color = Color(0.025, 0.02, 0.015, 0.78)
+	fondo.mouse_filter = Control.MOUSE_FILTER_STOP
+	add_child(fondo)
+	var centrador := CenterContainer.new()
+	centrador.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+	add_child(centrador)
+	var panel := PanelContainer.new()
+	panel.name = "PanelGarumis"
+	panel.custom_minimum_size = Vector2(600, 340)
+	panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	centrador.add_child(panel)
 	var margen := MarginContainer.new()
-	margen.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	margen.add_theme_constant_override("margin_left", 5)
-	margen.add_theme_constant_override("margin_right", 5)
-	margen.add_theme_constant_override("margin_bottom", 5)
-	add_child(margen)
+	margen.add_theme_constant_override("margin_left", 8)
+	margen.add_theme_constant_override("margin_top", 6)
+	margen.add_theme_constant_override("margin_right", 8)
+	margen.add_theme_constant_override("margin_bottom", 6)
+	panel.add_child(margen)
 	var columna := VBoxContainer.new()
-	columna.add_theme_constant_override("separation", 0)
+	columna.add_theme_constant_override("separation", 5)
 	margen.add_child(columna)
-
+	var encabezado := HBoxContainer.new()
+	columna.add_child(encabezado)
+	var titulo := Label.new()
+	titulo.text = "MESA DE GARUMIS"
+	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	titulo.add_theme_color_override("font_color", TEXTO)
+	titulo.add_theme_font_size_override("font_size", 14)
+	encabezado.add_child(titulo)
+	var cerrar := Button.new()
+	cerrar.text = "×"
+	cerrar.custom_minimum_size = Vector2(28, 26)
+	cerrar.pressed.connect(queue_free)
+	PIXEL_UI_THEME.apply(cerrar, false)
+	encabezado.add_child(cerrar)
 	var body := HBoxContainer.new()
 	body.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	body.add_theme_constant_override("separation", 5)
@@ -105,6 +134,10 @@ func actualizar() -> void:
 	for registro in amigos:
 		if registro is Dictionary:
 			_agregar_fila(_lista_amigos, registro as Dictionary, "Amigo")
+	if vinculados.is_empty() and amigos.is_empty():
+		_estado.text = "Aún no has conocido Garumis. Explora y conversa con ellos para registrar tus encuentros."
+	else:
+		_estado.text = ""
 
 
 func _agregar_fila(contenedor: GridContainer, registro: Dictionary, estado_registro: String) -> void:
