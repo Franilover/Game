@@ -549,7 +549,6 @@ func _recolectar(persona: Node) -> bool:
 
 func activar_como_proxy() -> void:
 	visible = true
-	set_process(true)
 	_actualizar_estado_interaccion()
 	_actualizar_profundidad()
 	queue_redraw()
@@ -558,7 +557,6 @@ func activar_como_proxy() -> void:
 func desactivar_como_proxy() -> void:
 	_recoleccion_token += 1
 	_recoleccion_en_curso = false
-	set_process(false)
 	remove_from_group("interactable")
 	remove_from_group("world_resource")
 	remove_from_group("world_cave")
@@ -606,6 +604,7 @@ func aplicar_estado_red(posicion: Vector2) -> void:
 	configurar_replica_red_cliente()
 	global_position = posicion
 	visible = true
+	_actualizar_profundidad()
 	if interactuable:
 		add_to_group("interactable")
 	if tipo in ["recurso", "planta", "arbol"]:
@@ -711,12 +710,6 @@ func _conectar_catalogo_items() -> void:
 		return
 	if not _world_items.catalogo_cargado.is_connected(_al_cargar_catalogo_items):
 		_world_items.catalogo_cargado.connect(_al_cargar_catalogo_items)
-
-
-func _process(_delta: float) -> void:
-	_actualizar_profundidad()
-	if _recoleccion_en_curso:
-		queue_redraw()
 
 
 func _al_cargar_catalogo_items(_items: Array) -> void:
