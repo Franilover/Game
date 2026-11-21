@@ -47,6 +47,9 @@ var _diag_spawn_criaturas_calls: int = 0
 var _diag_spawn_criaturas_intentos: int = 0
 var _diag_spawn_criaturas_ms_ultimo: float = 0.0
 var _diag_spawn_criaturas_ms_maximo: float = 0.0
+var _diag_data_materialize_step_last_ms: float = 0.0
+var _diag_data_materialize_step_max_ms: float = 0.0
+var _diag_data_materialize_step_count: int = 0
 
 
 func configurar(
@@ -158,7 +161,10 @@ func obtener_diagnostico() -> Dictionary:
 		"spawn_criaturas_calls": _diag_spawn_criaturas_calls,
 		"spawn_criaturas_intentos": _diag_spawn_criaturas_intentos,
 		"spawn_criaturas_ms_ultimo": _diag_spawn_criaturas_ms_ultimo,
-		"spawn_criaturas_ms_maximo": _diag_spawn_criaturas_ms_maximo
+		"spawn_criaturas_ms_maximo": _diag_spawn_criaturas_ms_maximo,
+		"data_materialize_step_last_ms": _diag_data_materialize_step_last_ms,
+		"data_materialize_step_max_ms": _diag_data_materialize_step_max_ms,
+		"data_materialize_step_count": _diag_data_materialize_step_count
 	}
 
 
@@ -246,6 +252,7 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			# La forma viene del catálogo; sólo se restaura el recurso propio del Garumi.
 			if dato.has("eterium_actual"):
 				criatura_data["eterium_actual"] = dato["eterium_actual"]
+		var materialize_step_start_usec := Time.get_ticks_usec()
 		var criatura_variant: Variant = _entity_factory.crear_criatura(criatura_data)
 		if not criatura_variant is Creature:
 			continue
@@ -275,6 +282,7 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 
 		claves_existentes[instance_key] = true
 		hay_criaturas = true
+		_registrar_data_materialize_step(materialize_step_start_usec)
 		procesados_desde_yield += 1
 		# DATA puede contener varias criaturas. Ceder periódicamente evita que
 		# crear/configurar todas las instancias de un chunk ocupe un solo frame.
@@ -684,6 +692,7 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 		var estado := _entity_manager.obtener_estado_prop(chunk_coord, instance_key)
 		if not estado.is_empty() and not bool(estado.get("is_present", true)):
 			continue
+		var materialize_step_start_usec := Time.get_ticks_usec()
 		var prop_variant: Variant = _entity_factory.call("crear_prop", dato)
 		if not prop_variant is Node:
 			continue
@@ -699,12 +708,20 @@ func materializar_props_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if prop.has_method("configurar_chunk"):
 			prop.call("configurar_chunk", chunk_coord, limite_chunk)
 		claves_existentes[instance_key] = true
+		_registrar_data_materialize_step(materialize_step_start_usec)
 		procesados_desde_yield += 1
 		if procesados_desde_yield >= 2:
 			procesados_desde_yield = 0
 			await get_tree().process_frame
 	_entity_manager.activar_props_chunk(chunk_coord)
 	return true
+
+
+func _registrar_data_materialize_step(inicio_usec: int) -> void:
+	var duracion_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+	_diag_data_materialize_step_last_ms = duracion_ms
+	_diag_data_materialize_step_max_ms = maxf(_diag_data_materialize_step_max_ms, duracion_ms)
+	_diag_data_materialize_step_count += 1
 
 
 func spawn_props_chunk(chunk_coord: Vector2i) -> void:
