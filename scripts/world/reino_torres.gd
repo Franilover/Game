@@ -28,6 +28,7 @@ const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/wo
 const RESEARCH_LAB_UI_SCENE: PackedScene = preload("res://scenes/ui/research_lab.tscn")
 const ROYAL_ARCHIVE_UI_SCRIPT: Script = preload("res://scripts/ui/royal_archive.gd")
 const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_service_ui.gd")
+const GARUMI_HUB_SCENE: PackedScene = preload("res://scenes/ui/garumi_hub.tscn")
 const TAMANO_PIXEL_MUNDO := 8.0
 const TORRES_TILEMAP_LAYOUT = preload("res://scripts/world/torres_tilemap_layout.gd")
 const BUILDING_INTERIOR_STYLE_SCRIPT: Script = preload("res://scripts/world/building_interior_style.gd")
@@ -1958,6 +1959,9 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			# La mesa central organiza las rutas; las mesas laterales sirven para
 			# revisar mapas y preparar el equipo antes de salir.
 			_agregar_sprite_mueble(cuarto, "MesaPlanificacionGremio", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -28), Vector2(1.8, 1.25), 1)
+			_agregar_sprite_mueble(cuarto, "MesaRegistroGarumis", MUEBLE_MESA_DOCUMENTOS, Vector2(0, -145), Vector2(1.25, 1.0), 1)
+			_agregar_sprite_mueble(cuarto, "AsientoRegistroGarumis", MUEBLE_SILLA_FRENTE, Vector2(0, -102), Vector2.ONE, 1)
+			_agregar_estacion_edificio(cuarto, "garumis", "Consultar Garumis", Vector2(0, -108))
 			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesOeste", MUEBLE_ARMARIO, Vector2(-270, -112), Vector2(0.95, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "ArmarioEquipoExpedicionesEste", MUEBLE_ARMARIO, Vector2(270, -112), Vector2(0.95, 0.95), 1)
 			_agregar_sprite_mueble(cuarto, "MesaMapasOeste", MUEBLE_MESA_DOCUMENTOS, Vector2(-225, 8), Vector2(0.9, 0.85), 1)
@@ -2550,6 +2554,8 @@ func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String)
 		return false
 	if tipo == "pasaje_exterior":
 		return _entrada_interior_id == "registro"
+	if tipo == "garumis":
+		return _entrada_interior_id == "centro_expediciones"
 	if tipo.begins_with("cuartel_"):
 		return _entrada_interior_id == "cuartel"
 	if tipo.begins_with("herbolario_"):
@@ -2563,7 +2569,23 @@ func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> vo
 	if tipo == "pasaje_exterior":
 		_mostrar_confirmacion_pasaje_exterior()
 		return
+	if tipo == "garumis":
+		_abrir_hub_garumis()
+		return
 	_abrir_menu_servicio_edificio(tipo)
+
+
+func _abrir_hub_garumis() -> void:
+	var existente := get_tree().get_first_node_in_group("garumi_hub")
+	if is_instance_valid(existente):
+		if existente.has_method("abrir_en_garumis"):
+			existente.call("abrir_en_garumis")
+		return
+	var interfaz := GARUMI_HUB_SCENE.instantiate() as Control
+	if not is_instance_valid(interfaz):
+		push_warning("ReinoTorres: no se pudo abrir la mesa de Garumis.")
+		return
+	get_tree().root.add_child(interfaz)
 
 
 func _mostrar_confirmacion_pasaje_exterior() -> void:
