@@ -1571,7 +1571,10 @@ func _es_alimento_configurado(item: WorldItem) -> bool:
 	var ids := _obtener_ids_alimento()
 	if ids.is_empty():
 		return false
-	var datos_item := item.obtener_datos()
+	# obtener_datos() crea una copia profunda para proteger a consumidores
+	# externos. La IA sólo consulta y WorldItem expone su Dictionary de estado;
+	# leerlo directamente evita una asignación por candidato inspeccionado.
+	var datos_item: Dictionary = item.datos_objeto
 	var item_id := str(datos_item.get("item_id", datos_item.get("id", ""))).strip_edges()
 	return not item_id.is_empty() and item_id in ids and int(datos_item.get("cantidad", 1)) > 0
 
