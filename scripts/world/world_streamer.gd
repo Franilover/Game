@@ -1149,7 +1149,8 @@ func obtener_diagnostico() -> Dictionary:
 		"unload_entity_profile": {
 			"count": _diag_unload_entity_count,
 			"last_ms": _diag_unload_entity_last_ms,
-			"max_ms": _diag_unload_entity_max_ms
+			"max_ms": _diag_unload_entity_max_ms,
+			"by_type": _entity_spawner.obtener_diagnostico_despawn() if _entity_spawner != null and _entity_spawner.has_method("obtener_diagnostico_despawn") else {}
 		},
 		"entity_activation_profile": {
 			"count": _diag_entity_activation_count,
