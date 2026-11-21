@@ -898,6 +898,21 @@ jobs:
             exit 1
           fi
 
+      - name: Run offline-safe auth restoration and reconnect regression
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="$(timeout 30s godot --headless --path . res://tests/world/test_auth_offline_restore.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
+          printf '%s\\n' "$output"
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|AuthOfflineRestore: FAIL:' <<<"$output"; then
+            echo "Offline-safe auth restoration regression reported errors."
+            exit 1
+          fi
+          if ! grep -q 'AuthOfflineRestore: PASS' <<<"$output"; then
+            echo "Offline-safe auth restoration regression did not report PASS."
+            exit 1
+          fi
+
       - name: Run authenticated catalog reload regression
         shell: bash
         run: |
