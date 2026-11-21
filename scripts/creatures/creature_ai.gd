@@ -881,9 +881,9 @@ func _refrescar_objetivo(candidatos: Array[Node2D] = [], usar_candidatos_provist
 	# las decisiones de refugio. Si ya vienen de percepción, se reutilizan.
 	var entidades: Array[Node2D] = []
 	if usar_candidatos_provistos:
-		for candidato_variant in candidatos:
-			if candidato_variant is Node2D:
-				entidades.append(candidato_variant as Node2D)
+		# El parámetro ya es Array[Node2D]; compartirlo evita duplicar y volver
+		# a recorrer todos los candidatos en cada ciclo de percepción.
+		entidades = candidatos
 	var candidatos_listos := usar_candidatos_provistos
 
 	# Las respuestas especiales del bosque se asignan al jugador conectado
