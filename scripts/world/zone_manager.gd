@@ -618,11 +618,13 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 		return
 
 	_transicionando = true
+	var inicio_carga_zona_ms := Time.get_ticks_msec()
 	# Validar y cargar la escena de destino antes de retirar la zona actual.
 	# Si el recurso falta, el jugador no queda atrapado en una escena vacía.
 	# Validar y cargar la escena de destino antes de retirar la zona actual.
 	# Si el recurso falta, el jugador no queda atrapado en una escena vacía.
 	var packed := load(path) as PackedScene
+	print("ZoneManager: carga de recurso de zona → ", path, " | ", Time.get_ticks_msec() - inicio_carga_zona_ms, " ms")
 	if packed == null:
 		push_error("ZoneManager: no se pudo cargar la zona '%s'." % path)
 		_transicionando = false
@@ -630,7 +632,9 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 
 	# Instanciar el destino antes de retirar la zona actual. Una escena que
 	# falla al construir no debe dejar al jugador dentro de un contenedor vacío.
+	var inicio_instancia_zona_ms := Time.get_ticks_msec()
 	var zona_preparada := packed.instantiate()
+	print("ZoneManager: instancia de zona → ", path, " | ", Time.get_ticks_msec() - inicio_instancia_zona_ms, " ms")
 	if zona_preparada == null:
 		push_error("ZoneManager: no se pudo instanciar la zona '%s'." % path)
 		_transicionando = false
