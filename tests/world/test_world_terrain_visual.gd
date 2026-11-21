@@ -183,7 +183,12 @@ func _run() -> void:
 	if display_layer == null:
 		_fail("Pradera no tiene DisplayLayer para comprobar el cache.")
 		return
-	display_layer.update_tile(grass_layer._display.cached_cells, Vector2i.ZERO)
+	var cached_display_cells: Array = display_layer._terrain_signature_by_cell.keys()
+	if cached_display_cells.is_empty():
+		_fail("El renderer no registró vecindades para las celdas compuestas.")
+		return
+	var cached_display_cell: Vector2i = cached_display_cells[0]
+	display_layer.update_tile(grass_layer._display.cached_cells, cached_display_cell)
 	var metricas_despues: Dictionary = grass_layer.obtener_diagnostico().get("renderer_metrics", {})
 	if int(metricas_despues.get("rule_evaluations", 0)) != reglas_antes:
 		_fail("Una actualización idéntica volvió a evaluar reglas Dual Grid.")
