@@ -182,10 +182,9 @@ func procesar() -> void:
 
 		return
 
-	# Si arrancamos un chunk nuevo este mismo frame, no mezclamos generación
-	# y clear de TileMap. En el Celeron esto puede sumar dos trabajos caros
-	# en el mismo frame y producir el tirón que todavía se observa aunque
-	# el unload ya no bloquee la cola.
+	# No mezclar el borrado de celdas (fase 0 del unload) con generación.
+	# La fase 1 sólo recompone dirty cells y puede avanzar durante DATOS; la
+	# pintura del nuevo chunk seguirá teniendo su propio turno visual.
 	var inicio_generacion := _iniciar_siguiente_chunk()
 	if not inicio_generacion:
 		# Si no hay generación activa, las decoraciones pendientes pueden usar
