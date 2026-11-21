@@ -14,6 +14,7 @@ const MAX_VISIBLE_CHUNKS: int = 25
 const VISIBLE_RADIUS: int = 2
 const FULL_RADIUS: int = 1
 const DATA_RADIUS: int = 3
+const EDGE_PRIORITY_MARGIN_TILES: int = 6
 const MAX_DATA_CHUNKS: int = 49
 
 var _load_radius: int = VISIBLE_RADIUS
@@ -481,10 +482,14 @@ func _actualizar_cache_borde_jugador(centro: Vector2i) -> void:
 	var tamano_chunk_pixeles: float = float(
 		_terrain.chunk_size_tiles * _terrain.tile_size
 	)
+	# El margen de prefetch puede abarcar casi todo el chunk para dar
+	# tiempo al terreno. No reutilizarlo para los bordes perpendiculares:
+	# con 28/32 tiles ambos lados quedaban marcados simultáneamente y la
+	# cola perdía la prioridad del corredor de movimiento.
 	var margen_borde: int = clampi(
-		_prefetch_margin_tiles,
+		EDGE_PRIORITY_MARGIN_TILES,
 		1,
-		_terrain.chunk_size_tiles - 1
+		maxi(_terrain.chunk_size_tiles / 2, 1)
 	)
 	_local_x_cache = floori(
 		fposmod(_player.global_position.x, tamano_chunk_pixeles)
