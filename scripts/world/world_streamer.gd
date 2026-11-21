@@ -54,6 +54,8 @@ var _data_entity_generated: Dictionary = {}
 var _diag_entity_data_calls: int = 0
 var _diag_entity_data_ms_ultimo: float = 0.0
 var _diag_entity_data_ms_maximo: float = 0.0
+var _diag_creature_data_ms_maximo: float = 0.0
+var _diag_prop_data_ms_maximo: float = 0.0
 
 # Estado logico de representacion por chunk.
 const LOD_DATA: String = "DATA"
@@ -244,17 +246,26 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	if not _data_entity_queue.is_empty():
 		var data_coord: Vector2i = _data_entity_queue.pop_front()
 		_data_entity_queued.erase(data_coord)
-		var inicio_usec := Time.get_ticks_usec()
+		var duracion_total_ms := 0.0
 		if _entity_spawner.has_method("preparar_datos_criaturas_chunk"):
+			var inicio_criaturas_usec := Time.get_ticks_usec()
 			_entity_spawner.preparar_datos_criaturas_chunk(data_coord)
+			var criaturas_ms := float(Time.get_ticks_usec() - inicio_criaturas_usec) / 1000.0
+			duracion_total_ms += criaturas_ms
+			_diag_creature_data_ms_maximo = maxf(_diag_creature_data_ms_maximo, criaturas_ms)
+			if _render_manager != null and is_instance_valid(_render_manager):
+				_render_manager.call("registrar_trabajo", "entity_data_creatures", criaturas_ms, 1)
 		if limite >= 2 and _entity_spawner.has_method("preparar_datos_props_chunk"):
+			var inicio_props_usec := Time.get_ticks_usec()
 			_entity_spawner.preparar_datos_props_chunk(data_coord)
-		var duracion_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+			var props_ms := float(Time.get_ticks_usec() - inicio_props_usec) / 1000.0
+			duracion_total_ms += props_ms
+			_diag_prop_data_ms_maximo = maxf(_diag_prop_data_ms_maximo, props_ms)
+			if _render_manager != null and is_instance_valid(_render_manager):
+				_render_manager.call("registrar_trabajo", "entity_data_props", props_ms, 1)
 		_diag_entity_data_calls += 1
-		_diag_entity_data_ms_ultimo = duracion_ms
-		_diag_entity_data_ms_maximo = maxf(_diag_entity_data_ms_maximo, duracion_ms)
-		if _render_manager != null and is_instance_valid(_render_manager):
-			_render_manager.call("registrar_trabajo", "entity_data", duracion_ms, 1)
+		_diag_entity_data_ms_ultimo = duracion_total_ms
+		_diag_entity_data_ms_maximo = maxf(_diag_entity_data_ms_maximo, duracion_total_ms)
 		_data_entity_generated[data_coord] = true
 		return
 
@@ -755,7 +766,9 @@ func obtener_estado_lod() -> Dictionary:
 		"data_generated": _data_entity_generated.size(),
 		"entity_data_calls": _diag_entity_data_calls,
 		"entity_data_ms_ultimo": _diag_entity_data_ms_ultimo,
-		"entity_data_ms_maximo": _diag_entity_data_ms_maximo
+		"entity_data_ms_maximo": _diag_entity_data_ms_maximo,
+		"creature_data_ms_maximo": _diag_creature_data_ms_maximo,
+		"prop_data_ms_maximo": _diag_prop_data_ms_maximo
 	}
 
 
