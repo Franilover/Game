@@ -518,7 +518,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
 			)
-			var contexto: Dictionary = _terrain.obtener_contexto_data_at(tile)
+			var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
 			if not bool(contexto.get("walkable", false)):
 				continue
 			var bioma_variant: Variant = contexto.get("bioma", {})
