@@ -59,14 +59,20 @@ func reemplazar_datos_chunk(chunk_coord: Vector2i, tipo: String, datos: Array) -
 	_data_by_chunk[chunk_coord] = bucket
 
 
-func obtener_datos_chunk(chunk_coord: Vector2i, tipo: String) -> Array:
+func obtener_datos_chunk(
+	chunk_coord: Vector2i,
+	tipo: String,
+	duplicar_profundo: bool = true
+) -> Array:
 	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
 	if not bucket_variant is Dictionary:
 		return []
 	var datos_variant: Variant = (bucket_variant as Dictionary).get(tipo, [])
-	if datos_variant is Array:
-		return (datos_variant as Array).duplicate(true)
-	return []
+	if not datos_variant is Array:
+		return []
+	# Los consumidores que sólo leen el array y duplican cada Dictionary
+	# antes de modificarlo pueden evitar una segunda copia profunda completa.
+	return (datos_variant as Array).duplicate(duplicar_profundo)
 
 
 func limpiar_datos_chunk(chunk_coord: Vector2i) -> void:
