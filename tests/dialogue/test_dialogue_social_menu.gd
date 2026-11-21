@@ -175,7 +175,8 @@ func _run() -> void:
 	dialogo_prueba_cierre.cancel_button = Button.new()
 	dialogo_prueba_cierre.add_child(dialogo_prueba_cierre.cancel_button)
 	dialogo_prueba_cierre._respuestas_container = respuestas_prueba
-	dialogo_prueba_cierre._lineas = [{"hablante": "Mara", "texto": "Hasta luego."}]
+	var lineas_terminal: Array[Dictionary] = [{"hablante": "Mara", "texto": "Hasta luego."}]
+	dialogo_prueba_cierre._lineas = lineas_terminal
 	dialogo_prueba_cierre._indice_linea = 0
 	dialogo_prueba_cierre._texto_completo = "Hasta luego."
 	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
@@ -185,17 +186,20 @@ func _run() -> void:
 	if not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
 		errores.append("Una despedida sin opciones no ofrece un botón explícito para cerrar.")
 	# Una acción desconocida o fallida no puede dejar el diálogo bloqueado.
-	dialogo_prueba_cierre._acciones = [{"tipo": "accion_no_registrada"}]
+	var accion_desconocida: Array[Dictionary] = [{"tipo": "accion_no_registrada"}]
+	dialogo_prueba_cierre._acciones = accion_desconocida
 	dialogo_prueba_cierre._ejecutar_accion_dialogo()
 	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
 		errores.append("Una acción de diálogo no resuelta no ofrece una salida segura.")
 	# Si las opciones no tienen un contenedor visible, el avance debe cerrar.
 	dialogo_prueba_cierre._abierto = true
-	dialogo_prueba_cierre._lineas = [{"hablante": "Mara", "texto": "Nos vemos."}]
+	var lineas_sin_respuestas_visibles: Array[Dictionary] = [{"hablante": "Mara", "texto": "Nos vemos."}]
+	dialogo_prueba_cierre._lineas = lineas_sin_respuestas_visibles
 	dialogo_prueba_cierre._indice_linea = 0
 	dialogo_prueba_cierre._texto_completo = "Nos vemos."
 	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
-	dialogo_prueba_cierre._respuestas = [{"texto": "Opción invisible"}]
+	var respuestas_invisibles: Array[Dictionary] = [{"texto": "Opción invisible"}]
+	dialogo_prueba_cierre._respuestas = respuestas_invisibles
 	dialogo_prueba_cierre._respuestas_container = null
 	dialogo_prueba_cierre._avanzar()
 	if dialogo_prueba_cierre.esta_abierto():
