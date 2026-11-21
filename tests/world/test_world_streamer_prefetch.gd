@@ -46,6 +46,22 @@ func _run_tests() -> void:
 	_streamer._terrain = _terrain
 	_streamer._player = _player
 	_streamer._player_chunk = Vector2i.ZERO
+
+	# La activación de entidades se prepara como cola y pone primero el chunk
+	# actual; no debe materializar todo el anillo en el frame de transición.
+	_streamer._ordenar_cola_activacion_entidades(
+		[Vector2i.RIGHT, Vector2i.ZERO, Vector2i.DOWN],
+		Vector2i.ZERO
+	)
+	if _streamer._entity_activation_queue.size() != 3:
+		push_error("WorldStreamerPrefetch: perdió chunks en la cola de activación.")
+		_terminar(1)
+		return
+	if _streamer._entity_activation_queue[0] != Vector2i.ZERO:
+		push_error("WorldStreamerPrefetch: no priorizó el chunk actual para activar entidades.")
+		_terminar(1)
+		return
+
 	_streamer._queue = [
 		Vector2i.UP,
 		Vector2i.DOWN,
