@@ -285,6 +285,7 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	for slot in range(max_creatures_per_chunk):
 		var creado := false
 		for intento in range(32):
+			await get_tree().process_frame
 			var tile := Vector2i(
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -363,7 +364,8 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	# DATA LOD prepara también Garumis; de lo contrario, al entrar a FULL,
 	# el materializador devolvería los datos de criaturas normales y nunca
 	# ejecutaría el spawner de fallback.
-	for garumi_dato in _preparar_datos_garumis_en_chunk(chunk_coord, rng):
+	var datos_garumis: Array[Dictionary] = await _preparar_datos_garumis_en_chunk(chunk_coord, rng)
+	for garumi_dato in datos_garumis:
 		datos.append(garumi_dato)
 
 	_entity_manager.reemplazar_datos_chunk(chunk_coord, "criaturas", datos)
@@ -381,10 +383,11 @@ func _preparar_datos_garumis_en_chunk(
 
 	var catalogo := _world_data.obtener_garumis_game()
 	if catalogo.is_empty():
-		return _preparar_datos_garumi_debug(chunk_coord, rng)
+		return await _preparar_datos_garumi_debug(chunk_coord, rng)
 
 	var candidatos_probables: Array[Dictionary] = []
 	for garumi in catalogo:
+		await get_tree().process_frame
 		var garumi_id := str(garumi.get("id", "")).strip_edges()
 		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
 		if garumi_id.is_empty() or garumi_nombre.is_empty():
@@ -409,6 +412,7 @@ func _preparar_datos_garumis_en_chunk(
 	var elegidos: Dictionary = {}
 	for slot in range(max_garumis_per_chunk):
 		for intento in range(32):
+			await get_tree().process_frame
 			var tile := Vector2i(
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -475,6 +479,7 @@ func _preparar_datos_garumi_debug(
 	if rng.randf() > clampf(probabilidad_prototipo_garumi_debug, 0.0, 1.0):
 		return resultado
 	for _intento in range(32):
+		await get_tree().process_frame
 		var tile := Vector2i(
 			chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 			chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -518,6 +523,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	for slot in range(6):
 		var encontrado := false
 		for intento in range(48):
+			await get_tree().process_frame
 			var tile := Vector2i(
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
