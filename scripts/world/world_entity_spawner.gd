@@ -42,6 +42,10 @@ var _diag_prop_sin_contexto: int = 0
 var _diag_prop_sin_candidato: int = 0
 var _diag_prop_factory: int = 0
 var _diag_prop_registro: int = 0
+var _diag_spawn_criaturas_calls: int = 0
+var _diag_spawn_criaturas_intentos: int = 0
+var _diag_spawn_criaturas_ms_ultimo: float = 0.0
+var _diag_spawn_criaturas_ms_maximo: float = 0.0
 
 
 func configurar(
@@ -148,7 +152,11 @@ func obtener_diagnostico() -> Dictionary:
 		"prop_sin_contexto": _diag_prop_sin_contexto,
 		"prop_sin_candidato": _diag_prop_sin_candidato,
 		"prop_factory_fallo": _diag_prop_factory,
-		"prop_registro_fallo": _diag_prop_registro
+		"prop_registro_fallo": _diag_prop_registro,
+		"spawn_criaturas_calls": _diag_spawn_criaturas_calls,
+		"spawn_criaturas_intentos": _diag_spawn_criaturas_intentos,
+		"spawn_criaturas_ms_ultimo": _diag_spawn_criaturas_ms_ultimo,
+		"spawn_criaturas_ms_maximo": _diag_spawn_criaturas_ms_maximo
 	}
 
 
@@ -708,6 +716,8 @@ func _spawn_chunk_interno(
 	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
 		return
 
+	var inicio_spawn_usec := Time.get_ticks_usec()
+	var intentos_spawn := 0
 	var rng := RandomNumberGenerator.new()
 
 	rng.seed = abs(
@@ -750,6 +760,7 @@ func _spawn_chunk_interno(
 	var especies_creadas: Dictionary = {}
 
 	for intento in range(32):
+		intentos_spawn += 1
 		if (
 			creadas.size()
 			>= max_creatures_per_chunk
@@ -959,6 +970,13 @@ func _spawn_chunk_interno(
 		rng
 	)
 	_entity_manager.activar_criaturas_chunk(chunk_coord)
+	var spawn_ms := float(Time.get_ticks_usec() - inicio_spawn_usec) / 1000.0
+	_diag_spawn_criaturas_calls += 1
+	_diag_spawn_criaturas_intentos += intentos_spawn
+	_diag_spawn_criaturas_ms_ultimo = spawn_ms
+	_diag_spawn_criaturas_ms_maximo = maxf(_diag_spawn_criaturas_ms_maximo, spawn_ms)
+	if _render_manager != null and is_instance_valid(_render_manager):
+		_render_manager.call("registrar_trabajo", "creature_spawn", spawn_ms, intentos_spawn)
 	return
 
 func _spawn_garumis_en_chunk(
