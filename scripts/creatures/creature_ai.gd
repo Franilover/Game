@@ -2418,12 +2418,18 @@ func _es_cazador_por_configuracion(candidato: Creature) -> bool:
 	if candidato == null:
 		return false
 
-	var config := candidato.obtener_config_ia()
+	# Esta consulta se ejecuta dentro del barrido de pares presa/depredador.
+	# Leer las dos claves directamente evita duplicar profundamente ia_config
+	# para cada par evaluado.
+	var config_variant: Variant = candidato.datos.get("ia_config", {})
+	if not config_variant is Dictionary:
+		return false
+	var config := config_variant as Dictionary
 	if config.is_empty():
 		return false
 
 	var perfil_texto := str(config.get("perfil", "")).strip_edges().to_lower()
-	if perfil_texto in ["cazador", "flaxis"]:
+	if perfil_texto == "cazador" or perfil_texto == "flaxis":
 		return true
 
 	var objetivos := str(config.get("objetivos", "")).strip_edges().to_lower()
