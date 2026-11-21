@@ -135,10 +135,11 @@ func presupuesto_unidades_adaptativo(
 	# Esto es especialmente importante para la generación inicial del mundo:
 	# un presupuesto agotado no puede significar "cero terreno para siempre".
 	if disponible <= 0.0:
-		# El terreno no puede caer a 1 celda por frame. Eso convierte una
-		# cola de composición de ~1.300 celdas en cientos de frames cuando
-		# otro sistema consume el presupuesto visual antes del flush.
-		return mini(limite, maxi(minimo, 128))
+		# Esta función atiende trabajo secundario/diferible. Si el presupuesto
+		# se agotó, debe ceder el frame en lugar de forzar un lote mínimo.
+		# El terreno base tiene su propia garantía en
+		# presupuesto_unidades_terreno().
+		return 1
 
 	var objetivo: float = maxf(objetivo_ms, 0.1)
 	var coste_por_unidad: float = float(
