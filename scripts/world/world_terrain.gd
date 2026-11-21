@@ -621,13 +621,9 @@ func _procesar_datos_chunk(
 			ecosistema_index
 		)
 
-		biomas[local_y * size + local_x] = (
-			bioma_index
-		)
-
-		ecosistemas[local_y * size + local_x] = (
-			ecosistema_index
-		)
+		# Reutilizar el índice lineal ya calculado para las tres matrices.
+		biomas[indice_dato] = bioma_index
+		ecosistemas[indice_dato] = ecosistema_index
 
 		zonas_base[indice_dato] = zona
 		datos_listos[indice_dato] = 1
@@ -638,7 +634,7 @@ func _procesar_datos_chunk(
 	_generation_task["cursor"] = cursor
 
 	# Durante DATOS, el diagnóstico debe mostrar el cursor de datos.
-	_generation_task["datos_listos"] = datos_listos
+	# El PackedByteArray ya vive en _generation_task; no hace falta reasignarlo.
 
 	var data_ms_this_step := float(Time.get_ticks_usec() - profiler_start_usec) / 1000.0
 	_profiler_data_ms += data_ms_this_step
