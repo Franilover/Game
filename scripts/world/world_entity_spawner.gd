@@ -1755,11 +1755,25 @@ func summon_criatura(
 	}
 
 
+func iniciar_despawn_chunk(chunk_coord: Vector2i) -> bool:
+	cancelar_spawn_chunk(chunk_coord)
+	cancelar_prop_spawn_chunk(chunk_coord)
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
+		return true
+	return _entity_manager.iniciar_despawn_chunk(chunk_coord)
+
+
+func procesar_despawn_chunk(chunk_coord: Vector2i, max_entities: int = 6) -> bool:
+	if _entity_manager == null or not is_instance_valid(_entity_manager):
+		return true
+	return _entity_manager.procesar_despawn_chunk(chunk_coord, max_entities)
+
+
 func despawn_chunk(chunk_coord: Vector2i) -> void:
+	# Compatibilidad con llamadas administrativas que requieren limpieza inmediata.
 	cancelar_spawn_chunk(chunk_coord)
 	cancelar_prop_spawn_chunk(chunk_coord)
 	if _entity_manager != null:
-		# El manager debe retirar ambos tipos en una sola pasada por el bucket.
 		_entity_manager.despawn_chunk(chunk_coord)
 
 
