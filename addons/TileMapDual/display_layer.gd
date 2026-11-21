@@ -164,7 +164,7 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	if cached_variant is Dictionary:
 		var cached := cached_variant as Dictionary
 		var vecinos_variant: Variant = cached.get("neighbors", [])
-		if vecinos_variant is Array and vecinos_variant == _terrain_neighbors_scratch:
+		if vecinos_variant is Array and _coincide_vecindad(vecinos_variant as Array):
 			var cached_sid := int(cached.get("sid", -1))
 			var cached_tile: Vector2i = cached.get("tile", Vector2i(-1, -1))
 			var current_sid := get_cell_source_id(cell)
@@ -198,6 +198,15 @@ func update_tile(cache: TileCache, cell: Vector2i) -> void:
 	set_cell(cell, sid, tile)
 	if sample:
 		_diag_sample_write_ms += float(Time.get_ticks_usec() - sample_start_usec) / 1000.0
+
+
+func _coincide_vecindad(cached_neighbors: Array) -> bool:
+	if cached_neighbors.size() != _terrain_neighbors_scratch.size():
+		return false
+	for index in range(cached_neighbors.size()):
+		if int(cached_neighbors[index]) != int(_terrain_neighbors_scratch[index]):
+			return false
+	return true
 
 
 func follow_path(cell: Vector2i, path: Array) -> Vector2i:
