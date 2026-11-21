@@ -1073,8 +1073,8 @@ func obtener_diagnostico() -> Dictionary:
 		"entity_activation_queue": _entity_activation_queue.size(),
 		"entity_activation_profile": {
 			"count": _diag_entity_activation_count,
-			"last_ms": _diag_entity_activation_last_ms,
-			"max_ms": _diag_entity_activation_max_ms
+			"elapsed_last_ms": _diag_entity_activation_last_ms,
+			"elapsed_max_ms": _diag_entity_activation_max_ms
 		},
 		"transition_profile": {
 			"count": _diag_transition_count,
