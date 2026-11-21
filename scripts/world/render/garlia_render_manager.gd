@@ -136,10 +136,10 @@ func presupuesto_unidades_adaptativo(
 	# un presupuesto agotado no puede significar "cero terreno para siempre".
 	if disponible <= 0.0:
 		# Esta función atiende trabajo secundario/diferible. Si el presupuesto
-		# se agotó, debe ceder el frame en lugar de forzar un lote mínimo.
+		# se agotó, debe ceder el frame sin forzar siquiera una unidad.
 		# El terreno base tiene su propia garantía en
 		# presupuesto_unidades_terreno().
-		return 1
+		return 0
 
 	var objetivo: float = maxf(objetivo_ms, 0.1)
 	var coste_por_unidad: float = float(
