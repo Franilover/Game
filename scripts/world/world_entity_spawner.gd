@@ -406,7 +406,7 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 			var criatura_elegida: Variant = candidato_elegido.get("criatura", {})
 			if not criatura_elegida is Dictionary:
 				continue
-			var elegido := (criatura_elegida as Dictionary).duplicate(true)
+			var elegido := (criatura_elegida as Dictionary).duplicate()
 			var habitat_clave := str(candidato_elegido.get("habitat_clave", "general")).to_lower()
 			elegido["habitat_clave"] = habitat_clave
 			var bioma_variant: Variant = contexto.get("bioma", {})
@@ -675,7 +675,7 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 			var elegido_base := _spawn_rules.elegir_prop(candidatos, rng)
 			if elegido_base.is_empty():
 				continue
-			var elegido := elegido_base.duplicate(true)
+			var elegido := elegido_base.duplicate()
 			var prop_id := str(elegido.get("id", elegido.get("clave", elegido.get("nombre", "")))).strip_edges()
 			var asset_path := str(_asset_path_por_prop.get(prop_id, ""))
 			if asset_path.is_empty():
@@ -1419,7 +1419,7 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 	if elegido_base.is_empty() or not _entity_factory.has_method("crear_prop"):
 		_diag_prop_factory += 1
 		return false
-	var elegido := elegido_base.duplicate(true)
+	var elegido := elegido_base.duplicate()
 	var prop_id := str(elegido.get("id", elegido.get("clave", elegido.get("nombre", "")))).strip_edges()
 	var asset_path := str(_asset_path_por_prop.get(prop_id, ""))
 	if asset_path.is_empty():
