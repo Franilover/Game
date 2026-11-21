@@ -412,13 +412,15 @@ func _obtener_textura_mapa_npc(npc: Node) -> Texture2D:
 	var sprites: Array[Node] = npc.find_children("*", "Sprite2D", true, false)
 	for nodo_sprite in sprites:
 		var sprite := nodo_sprite as Sprite2D
-		if sprite != null and sprite.texture != null and sprite.is_visible_in_tree():
+		# El mapa representa también NPC en LOD reducido o temporalmente ocultos.
+		# Su Sprite2D conserva la textura aunque el nodo no se dibuje en el mundo.
+		if sprite != null and sprite.texture != null:
 			return sprite.texture
 
 	var animados: Array[Node] = npc.find_children("*", "AnimatedSprite2D", true, false)
 	for nodo_animado in animados:
 		var sprite_animado := nodo_animado as AnimatedSprite2D
-		if sprite_animado == null or not sprite_animado.is_visible_in_tree():
+		if sprite_animado == null:
 			continue
 		if sprite_animado.sprite_frames == null:
 			continue
