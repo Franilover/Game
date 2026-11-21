@@ -563,6 +563,7 @@ func _run() -> void:
 	var jugador_grupo := Node2D.new()
 	get_tree().root.add_child(jugador_grupo)
 	jugador_grupo.add_to_group("player")
+	await get_tree().physics_frame
 	var candidatos_percibidos := PerceptionScript.obtener_candidatos(actor, player, refugio_manager)
 	if jugador_grupo not in candidatos_percibidos:
 		_fail("La percepción no descubrió a un jugador conectado por grupo.")
