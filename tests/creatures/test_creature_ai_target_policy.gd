@@ -546,7 +546,7 @@ func _run() -> void:
 
 	# La percepción descubre entidades vivas, pero no decide cuáles son
 	# objetivos hostiles. Garumis pueden estar presentes en la percepción.
-	var snapshot_entidades_antes := refugio_manager.obtener_entidades_activas()
+	var cantidad_entidades_antes := refugio_manager.obtener_entidades_activas().size()
 	var criatura_percibida := CreatureScript.new() as Creature
 	criatura_percibida.criatura_id = "target-policy-perceived"
 	criatura_percibida.criatura_nombre = "Criatura percibida"
@@ -557,8 +557,8 @@ func _run() -> void:
 	if criatura_percibida not in snapshot_entidades_despues:
 		_fail("La caché de percepción no se invalidó al registrar una entidad.")
 		return
-	if snapshot_entidades_antes == snapshot_entidades_despues:
-		_fail("La consulta de entidades activas no reconstruyó el snapshot tras un alta.")
+	if snapshot_entidades_despues.size() != cantidad_entidades_antes + 1:
+		_fail("La caché de percepción duplicó o perdió entidades tras un alta.")
 		return
 	var candidatos_percibidos := PerceptionScript.obtener_candidatos(actor, player, refugio_manager)
 	if player not in candidatos_percibidos or criatura_percibida not in candidatos_percibidos:
