@@ -691,6 +691,20 @@ func obtener_estado_prop(chunk_coord: Vector2i, instance_key: String) -> Diction
 		return (estado as Dictionary).duplicate(true)
 	return {}
 
+# Snapshot mínimo para materializar props: evita duplicar recursivamente el
+# registro completo (que puede incluir datos del objeto) cuando sólo se leen
+# presencia y posición. El estado persistente original permanece encapsulado.
+func obtener_estado_prop_materializacion(chunk_coord: Vector2i, instance_key: String) -> Dictionary:
+	var key := _runtime_key(chunk_coord, instance_key)
+	var estado_variant: Variant = _runtime_prop_state_by_key.get(key, {})
+	if not estado_variant is Dictionary:
+		return {}
+	var estado := estado_variant as Dictionary
+	return {
+		"is_present": bool(estado.get("is_present", true)),
+		"position": estado.get("position", Vector2.ZERO)
+	}
+
 
 func despawn_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	_despawn_chunk_entities(chunk_coord, true, false)
