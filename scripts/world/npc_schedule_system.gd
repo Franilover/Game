@@ -169,6 +169,29 @@ static func actividad_social_bloqueada(npc: Creature) -> bool:
 	)
 
 
+static func puesto_interior_ocupado(
+	npc: Creature,
+	otros_npcs: Array,
+	destino_global: Vector2,
+	distancia_minima: float = 38.0
+) -> bool:
+	if not is_instance_valid(npc):
+		return true
+	var limite := maxf(distancia_minima, 0.0)
+	for otro_variant in otros_npcs:
+		if not otro_variant is Creature or otro_variant == npc:
+			continue
+		var otro := otro_variant as Creature
+		if not is_instance_valid(otro) or otro.get_parent() != npc.get_parent():
+			continue
+		if otro.global_position.distance_to(destino_global) < limite:
+			return true
+		var reserva_variant: Variant = otro.get_meta("rutina_puesto_interior_reservado", null)
+		if reserva_variant is Vector2 and (reserva_variant as Vector2).distance_to(destino_global) < limite:
+			return true
+	return false
+
+
 func _obtener_npcs_torres() -> Array:
 	if _actualizacion_en_curso:
 		return _npcs_actualizacion
@@ -1428,6 +1451,7 @@ func _detener_paseo_interior(npc: Creature, limpiar_siguiente: bool = false) -> 
 		movimiento.detener_por_rutina()
 	npc.remove_meta("rutina_paseo_interior_activo")
 	npc.remove_meta("rutina_paseo_interior_actividad")
+	npc.remove_meta("rutina_puesto_interior_reservado")
 	if limpiar_siguiente:
 		npc.remove_meta("rutina_paseo_interior_siguiente")
 	npc.set_meta("rutina_en_transito", false)
@@ -1445,6 +1469,9 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		return
 	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
 		_detener_animacion_actividad_interior(npc)
+		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+			# La conversación tiene prioridad: libera el puesto y pausa el paseo.
+			_detener_paseo_interior(npc)
 		return
 	if edificio_id == "castillo":
 		return
@@ -1472,6 +1499,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		elif movimiento.rutina_terminada():
 			npc.remove_meta("rutina_paseo_interior_activo")
 			npc.remove_meta("rutina_paseo_interior_actividad")
+			npc.remove_meta("rutina_puesto_interior_reservado")
 			npc.set_meta("rutina_en_transito", false)
 			var pausa := 3 + posmod(hash(npc.get_nombre_visual() + "|" + edificio_id + "|" + str(minutos / 5)), 8)
 			npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + pausa, 1440))
@@ -1529,19 +1557,11 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var otros_npcs := _obtener_npcs_torres()
 	for desplazamiento_punto in range(puntos.size()):
 		var candidato: Vector2 = puntos[posmod(indice + desplazamiento_punto, puntos.size())]
-		var ocupado := false
-		for otro_variant in otros_npcs:
-			if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
-				continue
-			var otro := otro_variant as Creature
-			if otro.get_parent() != npc.get_parent():
-				continue
-			if otro.position.distance_to(candidato) < 38.0:
-				ocupado = true
-				break
-		if ocupado:
-			continue
 		var candidato_global := contenedor.to_global(candidato)
+		# Se comprueba tanto la posición actual como el puesto reservado por
+		# otro NPC que todavía está caminando hacia él.
+		if puesto_interior_ocupado(npc, otros_npcs, candidato_global):
+			continue
 		if npc.global_position.distance_to(candidato_global) <= DISTANCIA_LLEGADA:
 			destino_local = candidato
 			destino_disponible = true
@@ -1572,6 +1592,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		npc.set_meta("rutina_paseo_interior_siguiente", posmod(minutos + 3, 1440))
 		return
 	movimiento.establecer_ruta(ruta_seleccionada)
+	npc.set_meta("rutina_puesto_interior_reservado", destino_global)
 	npc.set_meta("rutina_paseo_interior_activo", true)
 	npc.set_meta("rutina_paseo_interior_actividad", actividad.strip_edges().to_lower())
 	npc.set_meta("rutina_en_transito", true)
