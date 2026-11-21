@@ -53,6 +53,7 @@ func _run() -> void:
 	await get_tree().process_frame
 
 	_comprobar_contexto_compartido(agenda, npc_a, npc_b, errores)
+	_comprobar_pausa_actividad_social(npc_a, errores)
 	_comprobar_reservas_sociales(agenda, npc_a, npc_b, errores)
 	_comprobar_memoria_diaria(agenda, npc_a, errores)
 	_comprobar_seleccion_rutina_y_copia(agenda, npc_a, errores)
@@ -101,6 +102,20 @@ func _comprobar_contexto_compartido(
 	if not agenda._obtener_tiempo_actual().is_empty():
 		errores.append("Sin WorldAtmosphere, el contexto temporal externo debe devolver un diccionario vacío.")
 
+
+func _comprobar_pausa_actividad_social(npc: Creature, errores: Array[String]) -> void:
+	if NPCScheduleScript.actividad_social_bloqueada(npc):
+		errores.append("Una actividad social normal no debe iniciar bloqueada.")
+
+	for meta_clave in [
+		"_conversacion_ambiental_activa",
+		"conversacion_npc_bloqueada",
+		"cinematica_npc_activa"
+	]:
+		npc.set_meta(meta_clave, true)
+		if not NPCScheduleScript.actividad_social_bloqueada(npc):
+			errores.append("La actividad social debe pausarse durante %s." % meta_clave)
+		npc.remove_meta(meta_clave)
 
 func _comprobar_reservas_sociales(
 	agenda: NPCScheduleSystem,
