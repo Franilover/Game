@@ -264,6 +264,8 @@ func spawn_chunk(chunk_coord: Vector2i) -> void:
 		return
 	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
 		return
+	if _creature_spawn_tasks.has(chunk_coord):
+		return
 	if _spawn_queued.has(chunk_coord):
 		return
 	_spawn_queue.append(chunk_coord)
