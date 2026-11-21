@@ -142,7 +142,8 @@ func _process(_delta: float) -> void:
 
 	# Una vez que el jugador está registrado, WorldStreamer es el único
 	# orquestador del pipeline de terreno. Esto permite que pueda evaluar
-	# prioridades y pausar una tarea FLUSH antes de consumir más celdas.
+	# prioridades y ceder DATOS o PINTADO antes de que haya cambios visuales
+	# parciales que no puedan interrumpirse de forma segura.
 	# Antes WorldGenerator procesaba el terreno directamente y el streamer
 	# sólo recibía turno cuando la tarea terminaba, haciendo imposible la
 	# preempción.
