@@ -1573,17 +1573,18 @@ func _buscar_alimento() -> WorldItem:
 	if alimentacion_variant is Dictionary:
 		radio = maxf(float((alimentacion_variant as Dictionary).get("radio_busqueda", radio)), 1.0)
 	var mejor: WorldItem = null
-	var mejor_distancia := INF
+	var radio_cuadrado := radio * radio
+	var mejor_distancia_cuadrada := INF
 	for entidad_variant in entity_manager.obtener_entidades_activas():
 		if not entidad_variant is WorldItem:
 			continue
 		var candidata := entidad_variant as WorldItem
 		if not _es_alimento_configurado(candidata):
 			continue
-		var distancia := criatura.global_position.distance_to(candidata.global_position)
-		if distancia <= radio and distancia < mejor_distancia:
+		var distancia_cuadrada := criatura.global_position.distance_squared_to(candidata.global_position)
+		if distancia_cuadrada <= radio_cuadrado and distancia_cuadrada < mejor_distancia_cuadrada:
 			mejor = candidata
-			mejor_distancia = distancia
+			mejor_distancia_cuadrada = distancia_cuadrada
 	return mejor
 
 
@@ -1669,8 +1670,9 @@ func _buscar_refugio() -> Node2D:
 		return null
 
 	var radio := maxf(float(horario.get("radio_refugio", 180.0)), 1.0)
+	var radio_cuadrado := radio * radio
 	var mejor: Node2D = null
-	var mejor_distancia := INF
+	var mejor_distancia_cuadrada := INF
 	for entidad_variant in entity_manager.obtener_entidades_activas():
 		if not entidad_variant is Node2D:
 			continue
@@ -1703,10 +1705,10 @@ func _buscar_refugio() -> Node2D:
 				break
 		if not coincide:
 			continue
-		var distancia := criatura.global_position.distance_to(candidata.global_position)
-		if distancia <= radio and distancia < mejor_distancia:
+		var distancia_cuadrada := criatura.global_position.distance_squared_to(candidata.global_position)
+		if distancia_cuadrada <= radio_cuadrado and distancia_cuadrada < mejor_distancia_cuadrada:
 			mejor = candidata
-			mejor_distancia = distancia
+			mejor_distancia_cuadrada = distancia_cuadrada
 	return mejor
 
 func _obtener_distancia_deteccion() -> float:
@@ -2322,6 +2324,7 @@ func _buscar_amenaza_para_refugio() -> Creature:
 	if horario_variant is Dictionary:
 		radio = maxf(float((horario_variant as Dictionary).get("radio_proteccion", 180.0)), 1.0)
 
+	var radio_cuadrado := radio * radio
 	var criaturas_activas: Array[Creature] = []
 	for entidad_variant in entity_manager.obtener_entidades_activas():
 		if entidad_variant is Creature:
@@ -2330,9 +2333,9 @@ func _buscar_amenaza_para_refugio() -> Creature:
 				criaturas_activas.append(candidata)
 
 	var mejor: Creature = null
-	var mejor_distancia := INF
+	var mejor_distancia_cuadrada := INF
 	for presa in criaturas_activas:
-		if criatura.global_position.distance_to(presa.global_position) > radio:
+		if criatura.global_position.distance_squared_to(presa.global_position) > radio_cuadrado:
 			continue
 		for depredador in criaturas_activas:
 			if depredador == presa:
@@ -2340,22 +2343,22 @@ func _buscar_amenaza_para_refugio() -> Creature:
 			var actividad_depredador := str(
 				depredador.get_meta("actividad_horaria", "explorar")
 			).to_lower()
-			if actividad_depredador in ["dormir", "reposar"]:
+			if actividad_depredador == "dormir" or actividad_depredador == "reposar":
+				continue
+			var distancia_cuadrada := depredador.global_position.distance_squared_to(presa.global_position)
+			if distancia_cuadrada > radio_cuadrado:
 				continue
 			if _es_cazador_por_configuracion(depredador):
-				var distancia_cazador := depredador.global_position.distance_to(presa.global_position)
-				if distancia_cazador <= radio and distancia_cazador < mejor_distancia:
+				if distancia_cuadrada < mejor_distancia_cuadrada:
 					mejor = depredador
-					mejor_distancia = distancia_cazador
+					mejor_distancia_cuadrada = distancia_cuadrada
 				continue
-			if depredador.global_position.distance_to(presa.global_position) > radio:
+			var relacion := _obtener_relacion_ecologica_ids(depredador, presa)
+			if relacion != "depredacion" and relacion != "parasitismo":
 				continue
-			if _obtener_relacion_ecologica_ids(depredador, presa) not in ["depredacion", "parasitismo"]:
-				continue
-			var distancia := depredador.global_position.distance_to(presa.global_position)
-			if distancia < mejor_distancia:
+			if distancia_cuadrada < mejor_distancia_cuadrada:
 				mejor = depredador
-				mejor_distancia = distancia
+				mejor_distancia_cuadrada = distancia_cuadrada
 	return mejor
 
 
