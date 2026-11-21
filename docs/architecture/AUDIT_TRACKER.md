@@ -722,3 +722,12 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Regresión completa Godot 4.7 aprobada: [44817299898](https://github.com/Franilover/Game/actions/runs/44817299898). Calidad GDScript: [44817299858](https://github.com/Franilover/Game/actions/runs/44817299858).
 - `test_natural_entity_process_restart.tscn` cierra también el cruce de procesos: escritor y lector Godot independientes; generación natural por catálogo/ecosistema/semilla; captura JSON con GameState; reconstrucción del mismo mundo en el lector; restauración del manager antes de materializar mediante el spawner; verificación de runtime key, posición, velocidad y una sola instancia. Sin fixture de criatura. La prueba pasó en [CI 44818267289](https://github.com/Franilover/Game/actions/runs/44818267289) y [CI 44818244594](https://github.com/Franilover/Game/actions/runs/44818244594); calidad GDScript [44818267446](https://github.com/Franilover/Game/actions/runs/44818267446).
 - Pendiente: ejecutar la misma ruta desde un cambio causado por gameplay real, disponer de catálogo activo de props naturales y validar arranque/reconexión offline de extremo a extremo.
+
+
+## Snapshot offline y entrada local a Torres — 2026-11-20
+
+- `tests/world/test_offline_world_snapshot.tscn` carga el snapshot incluido en el build con WorldDataService, valida el contenido con WorldSnapshotValidator y comprueba que no haya cliente Supabase configurado. También verifica biomas, ecosistemas y criaturas y lee una caché temporal con el formato local esperado. La prueba elimina únicamente su archivo temporal.
+- `tests/world/test_offline_torres_entry.tscn` instancia ZoneManager sin cliente remoto, ejecuta entrar_reino("torres") y espera la escena local; comprueba el tipo de zona y el nodo LayoutEdificios. No simula una conexión ni altera servicios remotos.
+- Ambas pruebas corrieron en CI Godot 4.7 y pasaron: [regresión completa 44819414220](https://github.com/Franilover/Game/actions/runs/44819414220). Calidad GDScript aprobada: [44819414273](https://github.com/Franilover/Game/actions/runs/44819414273).
+- Alcance cerrado: lectura/validación del snapshot local y entrada a Torres con ZoneManager sin SupabaseClient.
+- Aún pendiente: recorrido completo desde el menú y creación/reanudación de partida sin red, además de reconexión remota durante o después de la sesión. También sigue pendiente persistir cambios de criaturas originados por acciones reales de gameplay y probar props naturales con catálogo activo.
