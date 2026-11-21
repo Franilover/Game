@@ -74,6 +74,9 @@ var _last_stream_center: Vector2i = Vector2i(999999, 999999)
 # La activación de Nodes se distribuye: un chunk por turno, empezando por el más cercano.
 var _entity_activation_queue: Array[Vector2i] = []
 var _entity_activation_active: bool = false
+# WorldTerrain sólo mantiene un unload visual activo; el streamer conserva el resto.
+var _pending_unload_chunks: Array[Vector2i] = []
+var _pending_unload_lookup: Dictionary = {}
 var _diag_entity_activation_count: int = 0
 var _diag_entity_activation_last_ms: float = 0.0
 var _diag_entity_activation_max_ms: float = 0.0
@@ -133,7 +136,7 @@ func procesar() -> void:
 	# La limpieza sigue teniendo presupuesto propio, pero se ejecuta después
 	# de la generación. Así un chunk visible nunca espera a que termine de
 	# borrarse otro que ya quedó atrás.
-	var descarga_pendiente := _terrain.tiene_descarga_activa()
+	var descarga_pendiente := _terrain.tiene_descarga_activa() or not _pending_unload_chunks.is_empty()
 
 	var nuevo_chunk: Vector2i = (
 		_world_to_chunk(
@@ -306,7 +309,25 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 		_entity_spawner.procesar_prop_spawn_queue(1)
 
 func _procesar_descarga_si_hay_presupuesto() -> void:
-	if _terrain == null or not _terrain.tiene_descarga_activa():
+	if _terrain == null:
+		return
+
+	# WorldTerrain admite un único clear visual. Empezar como máximo uno por
+	# frame evita que los chunks que salen del radio se descarguen en bloque.
+	if not _terrain.tiene_descarga_activa():
+		while not _pending_unload_chunks.is_empty():
+			var chunk_coord: Vector2i = _pending_unload_chunks.pop_front()
+			_pending_unload_lookup.erase(chunk_coord)
+			if not _terrain.chunk_cargado(chunk_coord):
+				continue
+			if _distancia_chunk(chunk_coord, _player_chunk) <= _unload_radius:
+				continue
+			if _entity_spawner != null:
+				_entity_spawner.despawn_chunk(chunk_coord)
+			_terrain.descargar_chunk(chunk_coord)
+			break
+
+	if not _terrain.tiene_descarga_activa():
 		return
 	var presupuesto_descarga := _presupuesto_descarga()
 	if presupuesto_descarga <= 0:
@@ -896,6 +917,8 @@ func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void
 		if not chunk_variant is Vector2i:
 			continue
 		var chunk_coord := chunk_variant as Vector2i
+		if _pending_unload_lookup.has(chunk_coord) or _distancia_chunk(chunk_coord, centro) > _unload_radius:
+			continue
 		if manager != null:
 			var lod := obtener_lod_chunk(chunk_coord)
 			var necesita_props := lod == LOD_TERRAIN or lod == LOD_FULL
@@ -987,48 +1010,26 @@ func _distancia_chunk(
 func _descargar_lejanos(
 	centro: Vector2i
 ) -> void:
-	var para_descargar: Array = []
+	# Conservar sólo descargas que siguen fuera del radio. El jugador puede
+	# invertir el dash mientras un chunk espera turno para su clear visual.
+	var pendientes_validos: Array[Vector2i] = []
+	for chunk_coord in _pending_unload_chunks:
+		if _terrain.chunk_cargado(chunk_coord) and _distancia_chunk(chunk_coord, centro) > _unload_radius:
+			pendientes_validos.append(chunk_coord)
+		else:
+			_pending_unload_lookup.erase(chunk_coord)
+	_pending_unload_chunks = pendientes_validos
 
-	var claves: Array = (
-		_terrain.chunks_cargados()
-	)
-
-	for i in range(claves.size()):
-		var chunk_variant: Variant = (
-			claves[i]
-		)
-
+	for chunk_variant in _terrain.chunks_cargados():
 		if not chunk_variant is Vector2i:
 			continue
-
-		var chunk_coord: Vector2i = (
-			chunk_variant
-		)
-
-		var distancia: int = maxi(
-			abs(chunk_coord.x - centro.x),
-			abs(chunk_coord.y - centro.y)
-		)
-
-		if distancia > _unload_radius:
-			para_descargar.append(
-				chunk_coord
-			)
-
-	for i in range(para_descargar.size()):
-		var chunk_coord: Vector2i = (
-			para_descargar[i]
-		)
-
-		_entity_spawner.despawn_chunk(
-			chunk_coord
-		)
-
-		# El streamer decide qué chunks ya no pertenecen al radio visible,
-		# pero WorldTerrain ejecuta la descarga visual diferida.
-		# Sin esta llamada, _loaded_chunks conserva los chunks viejos y el
-		# límite de 9 bloquea permanentemente la entrada de nuevos chunks.
-		_terrain.descargar_chunk(chunk_coord)
+		var chunk_coord := chunk_variant as Vector2i
+		if _distancia_chunk(chunk_coord, centro) <= _unload_radius:
+			continue
+		if _pending_unload_lookup.has(chunk_coord):
+			continue
+		_pending_unload_chunks.append(chunk_coord)
+		_pending_unload_lookup[chunk_coord] = true
 
 func _world_to_chunk(
 	position: Vector2
@@ -1097,6 +1098,8 @@ func obtener_diagnostico() -> Dictionary:
 		"prefetch_margin_tiles": _prefetch_margin_tiles,
 		"priority_queue_sorts": _diag_priority_queue_sorts,
 		"entity_activation_queue": _entity_activation_queue.size(),
+		"pending_unload_chunks": _pending_unload_chunks.size(),
+		"pending_unload_queue": _pending_unload_chunks.duplicate(),
 		"entity_activation_profile": {
 			"count": _diag_entity_activation_count,
 			"elapsed_last_ms": _diag_entity_activation_last_ms,
