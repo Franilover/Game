@@ -71,6 +71,11 @@ var _lod_counts: Dictionary = {LOD_DATA: 0, LOD_TERRAIN: 0, LOD_FULL: 0}
 var _last_lod_center: Vector2i = Vector2i(999999, 999999)
 var _last_entity_lod_center: Vector2i = Vector2i(999999, 999999)
 var _last_stream_center: Vector2i = Vector2i(999999, 999999)
+# La activación de Nodes se distribuye: un chunk por turno, empezando por el más cercano.
+var _entity_activation_queue: Array[Vector2i] = []
+var _diag_entity_activation_count: int = 0
+var _diag_entity_activation_last_ms: float = 0.0
+var _diag_entity_activation_max_ms: float = 0.0
 
 # Perfil de trabajo síncrono al cruzar una frontera de chunk. Permite separar
 # la cola/LOD de la materialización de Nodes, que puede concentrarse en un frame.
@@ -255,6 +260,10 @@ func _procesar_entidades_si_hay_presupuesto() -> void:
 	var limite := _presupuesto_entidades()
 	if limite <= 0:
 		return
+
+	# Materializar o retirar entidades puede crear/destruir varios Nodes. Se
+	# limita a un chunk por frame y se prioriza el más cercano al jugador.
+	_procesar_siguiente_chunk_entidades()
 
 	# Primero construimos DATA para un chunk remoto. Esto no crea Nodes y deja
 	# preparado el mundo para una futura transición instantánea a TERRAIN/FULL.
@@ -872,34 +881,60 @@ func obtener_estado_lod() -> Dictionary:
 func _actualizar_entidades_activas(
 	centro: Vector2i
 ) -> void:
-	var claves: Array = _terrain.chunks_cargados()
+	# Sólo preparar la cola aquí. No crear/destruir Nodes durante el cambio
+	# de frontera, que ocurre dentro del mismo frame del movimiento.
+	_ordenar_cola_activacion_entidades(_terrain.chunks_cargados(), centro)
 
+
+func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void:
+	_entity_activation_queue.clear()
 	for chunk_variant in claves:
-		if not chunk_variant is Vector2i:
-			continue
+		if chunk_variant is Vector2i:
+			_entity_activation_queue.append(chunk_variant as Vector2i)
+	_entity_activation_queue.sort_custom(
+		func(a: Vector2i, b: Vector2i) -> bool:
+			var distancia_a := _distancia_chunk(a, centro)
+			var distancia_b := _distancia_chunk(b, centro)
+			if distancia_a != distancia_b:
+				return distancia_a < distancia_b
+			var alineacion_a := Vector2(a - centro).dot(_player_direction)
+			var alineacion_b := Vector2(b - centro).dot(_player_direction)
+			return alineacion_a > alineacion_b
+	)
 
-		var chunk_coord: Vector2i = chunk_variant
-		var lod := obtener_lod_chunk(chunk_coord)
 
-		# TERRAIN y FULL pueden tener props visuales. DATA nunca crea Nodes.
-		if lod == LOD_TERRAIN or lod == LOD_FULL:
-			if _entity_spawner.has_method("materializar_props_datos_chunk") and _entity_spawner.materializar_props_datos_chunk(chunk_coord):
-				pass
-			else:
-				_entity_spawner.spawn_props_chunk(chunk_coord)
-		else:
-			_entity_spawner.cancelar_prop_spawn_chunk(chunk_coord)
-			_entity_spawner.despawn_props_chunk(chunk_coord)
+func _procesar_siguiente_chunk_entidades() -> void:
+	if _entity_activation_queue.is_empty() or _entity_spawner == null or _terrain == null:
+		return
+	var chunk_coord := _entity_activation_queue.pop_front()
+	# El jugador puede cambiar de chunk mientras la cola avanza. Ignorar
+	# entradas que ya fueron descargadas o dejaron de pertenecer al terreno.
+	if not _terrain.chunks_cargados().has(chunk_coord):
+		return
 
-		# Criaturas/IA sólo existen como Nodes en FULL.
-		if lod == LOD_FULL:
-			if _entity_spawner.has_method("materializar_criaturas_datos_chunk") and _entity_spawner.materializar_criaturas_datos_chunk(chunk_coord):
-				pass
-			else:
-				_entity_spawner.spawn_chunk(chunk_coord)
-		else:
-			_entity_spawner.cancelar_spawn_chunk(chunk_coord)
-			_entity_spawner.despawn_criaturas_chunk(chunk_coord)
+	var inicio_usec := Time.get_ticks_usec()
+	var lod := obtener_lod_chunk(chunk_coord)
+
+	# TERRAIN y FULL pueden tener props visuales. DATA nunca crea Nodes.
+	if lod == LOD_TERRAIN or lod == LOD_FULL:
+		if not (_entity_spawner.has_method("materializar_props_datos_chunk") and _entity_spawner.materializar_props_datos_chunk(chunk_coord)):
+			_entity_spawner.spawn_props_chunk(chunk_coord)
+	else:
+		_entity_spawner.cancelar_prop_spawn_chunk(chunk_coord)
+		_entity_spawner.despawn_props_chunk(chunk_coord)
+
+	# Criaturas/IA sólo existen como Nodes en FULL.
+	if lod == LOD_FULL:
+		if not (_entity_spawner.has_method("materializar_criaturas_datos_chunk") and _entity_spawner.materializar_criaturas_datos_chunk(chunk_coord)):
+			_entity_spawner.spawn_chunk(chunk_coord)
+	else:
+		_entity_spawner.cancelar_spawn_chunk(chunk_coord)
+		_entity_spawner.despawn_criaturas_chunk(chunk_coord)
+
+	var duracion_ms := float(Time.get_ticks_usec() - inicio_usec) / 1000.0
+	_diag_entity_activation_last_ms = duracion_ms
+	_diag_entity_activation_max_ms = maxf(_diag_entity_activation_max_ms, duracion_ms)
+	_diag_entity_activation_count += 1
 
 
 func _distancia_chunk(
@@ -1024,6 +1059,12 @@ func obtener_diagnostico() -> Dictionary:
 		"player_direction": _player_direction,
 		"prefetch_margin_tiles": _prefetch_margin_tiles,
 		"priority_queue_sorts": _diag_priority_queue_sorts,
+		"entity_activation_queue": _entity_activation_queue.size(),
+		"entity_activation_profile": {
+			"count": _diag_entity_activation_count,
+			"last_ms": _diag_entity_activation_last_ms,
+			"max_ms": _diag_entity_activation_max_ms
+		},
 		"transition_profile": {
 			"count": _diag_transition_count,
 			"last_ms": _diag_transition_last_ms,
