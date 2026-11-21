@@ -3,6 +3,8 @@ extends Node
 const WorldStreamerScript = preload("res://scripts/world/world_streamer.gd")
 const WorldTerrainScript = preload("res://scripts/world/world_terrain.gd")
 const WorldTerrainVisualScript = preload("res://scripts/world/world_terrain_visual.gd")
+const WorldEntityManagerScript = preload("res://scripts/world/world_entity_manager.gd")
+const WorldEntitySpawnerScript = preload("res://scripts/world/world_entity_spawner.gd")
 
 var _terrain: WorldTerrain
 var _visual: WorldTerrainVisual
@@ -71,6 +73,36 @@ func _run_tests() -> void:
 		_terminar(1)
 		return
 	_streamer._entity_activation_active = false
+
+	# Con el manager conectado, sólo se encolan chunks cuyo estado activo no
+	# coincide con su LOD; los chunks ya estabilizados no consumen turnos.
+	var manager := WorldEntityManagerScript.new()
+	var spawner := WorldEntitySpawnerScript.new()
+	add_child(manager)
+	add_child(spawner)
+	spawner._entity_manager = manager
+	_streamer._entity_spawner = spawner
+	_streamer._chunk_lod = {
+		Vector2i.ZERO: WorldStreamerScript.LOD_FULL,
+		Vector2i.RIGHT: WorldStreamerScript.LOD_FULL,
+		Vector2i.DOWN: WorldStreamerScript.LOD_TERRAIN,
+	}
+	manager.activar_props_chunk(Vector2i.ZERO)
+	manager.activar_criaturas_chunk(Vector2i.ZERO)
+	manager.activar_props_chunk(Vector2i.RIGHT)
+	_streamer._ordenar_cola_activacion_entidades(
+		[Vector2i.ZERO, Vector2i.RIGHT, Vector2i.DOWN],
+		Vector2i.ZERO
+	)
+	if _streamer._entity_activation_queue.size() != 2:
+		push_error("WorldStreamerPrefetch: no filtró chunks cuyo LOD ya estaba satisfecho.")
+		_terminar(1)
+		return
+	if Vector2i.ZERO in _streamer._entity_activation_queue:
+		push_error("WorldStreamerPrefetch: volvió a encolar un chunk ya activo.")
+		_terminar(1)
+		return
+	_streamer._entity_spawner = null
 
 	_streamer._queue = [
 		Vector2i.UP,
