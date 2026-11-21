@@ -908,7 +908,11 @@ func _materializar_npcs_reino_torres() -> void:
 		if not dialogo.is_empty():
 			criatura_data["dialogo"] = dialogo
 
-		var npc := _obtener_escena_criatura().instantiate() as Creature
+		var escena_criatura := _obtener_escena_criatura()
+		if escena_criatura == null:
+			push_warning("Main: no se pudo cargar la escena del NPC " + nombre)
+			continue
+		var npc := escena_criatura.instantiate() as Creature
 		if npc == null:
 			push_warning("Main: no se pudo instanciar el NPC " + nombre)
 			continue
@@ -1067,7 +1071,10 @@ func _materializar_habitantes_sin_oficio(zona: Node2D) -> void:
 				}]
 			}]
 		}
-		var npc := _obtener_escena_criatura().instantiate() as Creature
+		var escena_criatura := _obtener_escena_criatura()
+		if escena_criatura == null:
+			continue
+		var npc := escena_criatura.instantiate() as Creature
 		if npc == null:
 			continue
 		npc.move_speed = 30.0 if clave == "ivo" else (43.0 if clave == "mara" else 48.0)
@@ -2337,7 +2344,11 @@ func _configurar_menu_radial_eterium() -> void:
 	if contenedor_ui == null or _player == null:
 		push_error("Main: no se pudo inicializar el menú radial de Eterium.")
 		return
-	_eterium_radial_menu = _obtener_escena_menu_radial().instantiate() as Control
+	var escena_radial := _obtener_escena_menu_radial()
+	if escena_radial == null:
+		push_error("Main: no se pudo cargar eterium_radial_menu.tscn.")
+		return
+	_eterium_radial_menu = escena_radial.instantiate() as Control
 	if _eterium_radial_menu == null:
 		push_error("Main: no se pudo instanciar eterium_radial_menu.tscn.")
 		return
