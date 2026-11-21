@@ -164,6 +164,24 @@ func _run() -> void:
 	# Ivo, Mara y Nima deben recorrer la misma política de opciones que
 	# cualquier otro habitante, incluso cuando el NPC inicia la conversación.
 	dialogo._fuente = npc
+	# Toda ubicación que puede recibir una rutina debe tener un nombre natural
+	# en los diálogos de tránsito; no dejar destinos válidos como "su próximo destino".
+	var destinos_rutina: Array[String] = [
+		"plaza", "panaderia", "posada", "forja", "herbolario", "vivero",
+		"cuartel", "registro", "casa_comercio", "archivo_real", "sala_consejo",
+		"casa_estudio", "casa_elian", "casa_bruna", "casa_darven",
+		"casa_saira", "casa_narel", "castillo", "vivienda_oeste_01",
+		"vivienda_oeste_02", "vivienda_oeste_03", "vivienda_oeste_04",
+		"vivienda_oeste_05", "vivienda_oeste_06", "vivienda_oeste_07",
+		"vivienda_oeste_08", "vivienda_oeste_10", "vivienda_oeste_11",
+		"casa_granjeros", "biblioteca", "centro_expediciones", "taberna",
+		"escuela", "clinica", "reparaciones", "carpinteria", "granero",
+		"molino", "corrales"
+	]
+	for destino_rutina in destinos_rutina:
+		var nombre_destino := dialogo._nombre_ubicacion_rutina(destino_rutina)
+		if nombre_destino == "un lugar de Torres" or nombre_destino == "su próximo destino":
+			errores.append("El diálogo no reconoce el destino de rutina: %s." % destino_rutina)
 	dialogo._dialogo_en_transito = false
 	for nombre_iniciativa in ["Elian", "Bruna", "Darven", "Saira", "Narel", "Mara", "Ivo", "Nima", "Abel", "Liam"]:
 		npc.nombre_individual = nombre_iniciativa
