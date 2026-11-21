@@ -736,3 +736,14 @@ Esta continuación no cambia Supabase ni el formato/versionado de los saves. Las
 - Los contratos de snapshot, entrada a Torres y menú offline pasan en la regresión completa Godot 4.7: [44842636211](https://github.com/Franilover/Game/actions/runs/44842636211). Calidad GDScript: [44842618403](https://github.com/Franilover/Game/actions/runs/44842618403).
 - Cerrado: disponibilidad del menú y selector de partidas con el snapshot local, además de la entrada a Torres sin SupabaseClient inyectado.
 - Pendiente: crear una partida nueva desde el menú y completar la entrada a Main sin red; probar la reconexión remota posterior.
+
+
+## Rendimiento del mundo procedural — 2026-11-20
+
+- [x] Se redujo trabajo repetido por frame en `TileMapDual/DisplayLayer`: caminos inversos precomputados y buffers de actualización/vecinos reutilizados.
+- [x] Se añadió caché de paletas de iluminación para evitar normalizar colores repetidamente y se eliminó una copia profunda de configuración de solo lectura.
+- [x] CreatureMovement dejó de duplicar la configuración IA completa en cada tick; CreatureAI reutiliza el contexto climático durante 0.75 s y evita consultas/diccionarios redundantes por frame.
+- [x] La regresión completa Godot 4.7 del commit `b6d9bea1fa10df0ac1e1d54ada08ebbbfb8deb85` terminó **success**: [run 44847837494](https://github.com/Franilover/Game/actions/runs/44847837494). GDScript Quality: [run 44847837495](https://github.com/Franilover/Game/actions/runs/44847837495).
+- [~] El spawner sigue teniendo una sección indivisible: `_spawn_chunk_interno()` puede ejecutar hasta 32 intentos de criaturas, crear instancias, luego recorrer Garumis y personajes en la misma llamada. El procesamiento DATA también realiza hasta 32 intentos por slot de criatura/Garumi en una sola llamada; la cola limita chunks por frame, pero no el coste interno de cada chunk.
+- [~] Siguiente trabajo: dividir la preparación/materialización de entidades en tareas reanudables con presupuesto por frame, conservando RNG/semillas, runtime keys, restauración de estado y cancelación al descargar chunks. Añadir contratos de determinismo, no duplicación y cancelación antes de cambiar el flujo.
+- [ ] No hay todavía benchmark FPS/frametime antes-después ni medición en hardware objetivo. Los cambios anteriores reducen asignaciones y consultas repetidas; no se declara una mejora porcentual de FPS.
