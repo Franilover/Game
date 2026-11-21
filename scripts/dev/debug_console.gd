@@ -327,6 +327,9 @@ func _vista_entidades() -> String:
 		out.append("%s: %d" % [grupo, nodos.size()])
 		for nodo in nodos.slice(0, mini(nodos.size(), 12)):
 			out.append("  - %s | %s" % [nodo.get_path(), _script(nodo)])
+	var factory := _buscar_por_nombre("WorldEntityFactory")
+	if factory != null and factory.has_method("obtener_diagnostico_pool"):
+		out.append("POOL / ENTIDADES RECICLADAS: " + JSON.stringify(factory.call("obtener_diagnostico_pool")))
 	var spawner := _buscar_por_nombre("WorldEntitySpawner")
 	if spawner != null and spawner.has_method("obtener_diagnostico"):
 		out.append("")
