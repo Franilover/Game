@@ -19,6 +19,8 @@ var _runtime_state_by_key: Dictionary = {}
 var _runtime_prop_state_by_key: Dictionary = {}
 var _replicas_red_by_key: Dictionary = {}
 var _replicas_red_props_by_key: Dictionary = {}
+var _replica_keys_by_entity: Dictionary = {}
+var _replica_prop_keys_by_entity: Dictionary = {}
 var _data_by_chunk: Dictionary = {}
 
 
@@ -226,7 +228,7 @@ func registrar_replica_red(datos: Dictionary, chunk_coord: Vector2i, instance_ke
 		criatura.queue_free()
 		return null
 	criatura.configurar_chunk(chunk_coord, limites_chunk)
-	_replicas_red_by_key[instance_key] = criatura
+	_registrar_clave_replica(_replicas_red_by_key, _replica_keys_by_entity, criatura, instance_key)
 	return criatura
 
 
@@ -251,7 +253,7 @@ func registrar_replica_prop_red(datos: Dictionary, chunk_coord: Vector2i, instan
 	if limite_variant is Rect2:
 		limite = limite_variant
 	prop.configurar_chunk(chunk_coord, limite)
-	_replicas_red_props_by_key[instance_key] = prop
+	_registrar_clave_replica(_replicas_red_props_by_key, _replica_prop_keys_by_entity, prop, instance_key)
 	return prop
 
 
@@ -357,8 +359,8 @@ func _al_salir_entidad(entity: Node) -> void:
 			else:
 				_by_chunk[chunk_coord] = bucket
 	_chunk_by_entity.erase(entity)
-	_limpiar_referencias_replica(_replicas_red_by_key, entity)
-	_limpiar_referencias_replica(_replicas_red_props_by_key, entity)
+	_limpiar_referencias_replica(_replicas_red_by_key, _replica_keys_by_entity, entity)
+	_limpiar_referencias_replica(_replicas_red_props_by_key, _replica_prop_keys_by_entity, entity)
 	_remover_persistencia(entity)
 
 
@@ -409,13 +411,46 @@ func _guardar_tombstone_prop_recolectado(prop: WorldProp, chunk_coord: Vector2i)
 		break
 
 
-func _limpiar_referencias_replica(registro: Dictionary, entity: Node) -> void:
-	# Las réplicas de red pueden desaparecer por cambio de zona o snapshot.
-	# No conservar referencias inválidas hace que el registro no crezca
-	# indefinidamente durante sesiones largas.
-	for clave_variant in registro.keys():
-		if registro.get(clave_variant) == entity:
-			registro.erase(clave_variant)
+func _registrar_clave_replica(
+	registro: Dictionary,
+	indice_por_entidad: Dictionary,
+	entity: Node,
+	instance_key: String
+) -> void:
+	# Mantener un índice inverso evita recorrer todas las réplicas cuando una
+	# entidad sale del árbol. También limpia una asociación anterior si una
+	# clave de red se reasigna a otra instancia.
+	var anterior_variant: Variant = registro.get(instance_key, null)
+	if anterior_variant is Node and anterior_variant != entity:
+		var claves_anteriores_variant: Variant = indice_por_entidad.get(anterior_variant, [])
+		if claves_anteriores_variant is Array:
+			(claves_anteriores_variant as Array).erase(instance_key)
+			if (claves_anteriores_variant as Array).is_empty():
+				indice_por_entidad.erase(anterior_variant)
+
+	registro[instance_key] = entity
+	var claves_variant: Variant = indice_por_entidad.get(entity, [])
+	var claves: Array = claves_variant if claves_variant is Array else []
+	if instance_key not in claves:
+		claves.append(instance_key)
+	indice_por_entidad[entity] = claves
+
+
+func _limpiar_referencias_replica(
+	registro: Dictionary,
+	indice_por_entidad: Dictionary,
+	entity: Node
+) -> void:
+	# El coste queda limitado a las claves asociadas a esta entidad (normalmente
+	# una), en lugar de recorrer todas las réplicas materializadas en la sesión.
+	var claves_variant: Variant = indice_por_entidad.get(entity, [])
+	if not claves_variant is Array:
+		return
+	for clave_variant in claves_variant as Array:
+		var clave := str(clave_variant)
+		if registro.get(clave, null) == entity:
+			registro.erase(clave)
+	indice_por_entidad.erase(entity)
 
 
 func obtener_entidades_activas() -> Array:
@@ -757,6 +792,8 @@ func limpiar_todo() -> void:
 	_active_prop_chunks.clear()
 	_replicas_red_by_key.clear()
 	_replicas_red_props_by_key.clear()
+	_replica_keys_by_entity.clear()
+	_replica_prop_keys_by_entity.clear()
 	_runtime_state_by_key.clear()
 	_runtime_prop_state_by_key.clear()
 	_data_by_chunk.clear()
