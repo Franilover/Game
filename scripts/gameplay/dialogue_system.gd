@@ -454,8 +454,11 @@ func _debe_usar_menu_social(
 	var tipo_contenido := str(datos_dialogo.get("tipo_contenido", "")).strip_edges().to_lower()
 	if tipo_contenido in ["historia", "story", "cinematica", "lineal"]:
 		return false
+	# Los diálogos iniciados por NPC también necesitan una salida interactiva.
+	# Si no traen respuestas propias, se les ofrece el menú social general.
+	# Las escenas lineales y los casos sin menú ya quedaron filtrados arriba.
 	if iniciativa_directa or bool(datos_dialogo.get("_iniciativa_npc", false)):
-		return false
+		return true
 	return true
 
 
