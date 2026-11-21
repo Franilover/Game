@@ -11,7 +11,7 @@ func preparar(path: String) -> void:
 		return
 	var estado := ResourceLoader.load_threaded_get_status(path)
 	if estado == ResourceLoader.THREAD_LOAD_INVALID_RESOURCE:
-		var error := ResourceLoader.load_threaded_request(path, "PackedScene", true)
+		var error := ResourceLoader.load_threaded_request(path, "PackedScene", false)
 		if error != OK and error != ERR_BUSY:
 			push_warning("SceneManager: no se pudo anticipar la carga de '%s' (error %d)." % [path, error])
 
