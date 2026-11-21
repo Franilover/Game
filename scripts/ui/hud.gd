@@ -77,6 +77,8 @@ var _r_hold_elapsed := 0.0
 var _r_selector_abierto := false
 const R_HOLD_DELAY := 0.24
 var _dialogo_ruptura_vinculo: ConfirmationDialog = null
+var _aviso_evento_comunitario: Button = null
+var _aviso_evento_comunitario_timer: float = 0.0
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
@@ -165,6 +167,7 @@ func _ready() -> void:
 	_preparar_panel_misiones()
 	_preparar_reloj_calendario()
 	_preparar_boton_monedas()
+	_preparar_aviso_evento_comunitario()
 	if not get_viewport().size_changed.is_connected(_actualizar_layout_hud_movil):
 		get_viewport().size_changed.connect(_actualizar_layout_hud_movil)
 	_actualizar_layout_hud_movil()
@@ -180,6 +183,10 @@ func _ready() -> void:
 
 
 	_conectar_senal_game_state()
+	if Events.has_signal("community_event_started"):
+		var callback_evento := Callable(self, "_al_iniciar_evento_comunitario")
+		if not Events.is_connected("community_event_started", callback_evento):
+			Events.connect("community_event_started", callback_evento)
 
 	print("HUD: iniciado.")
 
@@ -214,6 +221,11 @@ func _process(delta: float) -> void:
 			_actualizar_contexto()
 	else:
 		_tiempo_contexto = 0.0
+
+	if is_instance_valid(_aviso_evento_comunitario) and _aviso_evento_comunitario.visible:
+		_aviso_evento_comunitario_timer -= delta
+		if _aviso_evento_comunitario_timer <= 0.0:
+			_aviso_evento_comunitario.hide()
 
 	_hud_status_elapsed += delta
 	if _hud_status_elapsed >= 0.2:
@@ -353,6 +365,53 @@ func _actualizar_indicador_recarga_dash(delta: float) -> void:
 	var transformacion_hud: Transform2D = get_global_transform_with_canvas()
 	var punto_local_hud: Vector2 = transformacion_hud.affine_inverse() * borde_superior
 	_dash_recharge_indicator.position = punto_local_hud + Vector2(-80.0, -4.0)
+
+
+func _preparar_aviso_evento_comunitario() -> void:
+	_aviso_evento_comunitario = Button.new()
+	_aviso_evento_comunitario.name = "CommunityEventBanner"
+	_aviso_evento_comunitario.text = ""
+	_aviso_evento_comunitario.visible = false
+	_aviso_evento_comunitario.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aviso_evento_comunitario.focus_mode = Control.FOCUS_NONE
+	_aviso_evento_comunitario.custom_minimum_size = Vector2(280.0, 38.0)
+	_aviso_evento_comunitario.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_aviso_evento_comunitario.anchor_left = 0.5
+	_aviso_evento_comunitario.anchor_right = 0.5
+	_aviso_evento_comunitario.anchor_top = 0.0
+	_aviso_evento_comunitario.anchor_bottom = 0.0
+	_aviso_evento_comunitario.offset_left = -140.0
+	_aviso_evento_comunitario.offset_top = 18.0
+	_aviso_evento_comunitario.offset_right = 140.0
+	_aviso_evento_comunitario.offset_bottom = 56.0
+	_aviso_evento_comunitario.z_index = 20
+	var estilo_boton := PIXEL_UI_THEME.button_surface_style()
+	if estilo_boton == null:
+		var respaldo := StyleBoxFlat.new()
+		respaldo.bg_color = Color("#302014")
+		respaldo.border_color = Color("#9B7950")
+		respaldo.set_border_width_all(2)
+		estilo_boton = respaldo
+	for estado in ["normal", "hover", "pressed", "disabled"]:
+		_aviso_evento_comunitario.add_theme_stylebox_override(estado, estilo_boton)
+	_aviso_evento_comunitario.add_theme_color_override("font_color", Color("#FFF3D6"))
+	_aviso_evento_comunitario.add_theme_color_override("font_hover_color", Color("#FFFFFF"))
+	_aviso_evento_comunitario.add_theme_color_override("font_disabled_color", Color("#FFF3D6"))
+	_aviso_evento_comunitario.add_theme_color_override("font_outline_color", Color("#302014"))
+	_aviso_evento_comunitario.add_theme_constant_override("outline_size", 2)
+	_aviso_evento_comunitario.add_theme_font_size_override("font_size", 12)
+	add_child(_aviso_evento_comunitario)
+
+
+func _al_iniciar_evento_comunitario(mensaje: String) -> void:
+	if not is_instance_valid(_aviso_evento_comunitario):
+		return
+	var texto := mensaje.strip_edges()
+	if texto.is_empty():
+		return
+	_aviso_evento_comunitario.text = texto
+	_aviso_evento_comunitario.show()
+	_aviso_evento_comunitario_timer = 6.0
 
 
 func _preparar_aviso_descubrimiento() -> void:
