@@ -385,7 +385,25 @@ func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
 		npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
 		npc.set_meta("actividad_social_ultimo_progreso_ms", Time.get_ticks_msec())
 		return true
-	if not movimiento.rutina_terminada():
+	var destino_variant: Variant = npc.get_meta("actividad_social_destino_global", null)
+	if not destino_variant is Vector2:
+		_finalizar_actividad_social(npc)
+		return false
+	if movimiento.rutina_terminada():
+		# Una reconstrucción de navegación o una interrupción puede detener la
+		# ruta antes de llegar. No consumir el tiempo de actividad hasta alcanzar
+		# realmente el punto reservado.
+		if npc.global_position.distance_to(destino_variant) > DISTANCIA_LLEGADA:
+			var ruta_reanudada := _crear_ruta(npc.global_position, destino_variant)
+			if ruta_reanudada.is_empty():
+				_finalizar_actividad_social(npc)
+				return false
+			movimiento.establecer_ruta(ruta_reanudada)
+			npc.set_meta("rutina_en_transito", true)
+			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
+			npc.set_meta("actividad_social_ultimo_progreso_ms", Time.get_ticks_msec())
+			return true
+	else:
 		var ahora_ms := Time.get_ticks_msec()
 		var ultima_posicion_variant: Variant = npc.get_meta(
 			"actividad_social_ultima_posicion", npc.global_position
@@ -400,10 +418,6 @@ func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
 			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
 			npc.set_meta("actividad_social_ultimo_progreso_ms", ahora_ms)
 		elif ruta_sin_progreso(npc.global_position, ultima_posicion, ahora_ms, ultimo_progreso_ms):
-			var destino_variant: Variant = npc.get_meta("actividad_social_destino_global", null)
-			if not destino_variant is Vector2:
-				_finalizar_actividad_social(npc)
-				return false
 			var ruta_recalculada := _crear_ruta(npc.global_position, destino_variant)
 			if ruta_recalculada.is_empty():
 				_finalizar_actividad_social(npc)
@@ -412,6 +426,7 @@ func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
 			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
 			npc.set_meta("actividad_social_ultimo_progreso_ms", ahora_ms)
 		return true
+	npc.set_meta("rutina_en_transito", false)
 	var restante := float(npc.get_meta("actividad_social_tiempo", 5.0)) - maxf(delta, 0.0)
 	npc.set_meta("actividad_social_tiempo", restante)
 	if restante <= 0.0:
@@ -478,7 +493,17 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 		var npc := npc_variant as Creature
 		if not npc.is_alive:
 			continue
-		if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
+		if bool(npc.get_meta("actividad_social_activa", false)):
+			# La malla nueva invalida los puntos de la ruta anterior, pero no la
+			# actividad: se conserva el destino y se reanuda en el siguiente tick.
+			var movimiento_social := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+			if is_instance_valid(movimiento_social):
+				movimiento_social.detener_por_rutina()
+			npc.set_meta("rutina_en_transito", false)
+			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
+			npc.set_meta("actividad_social_ultimo_progreso_ms", Time.get_ticks_msec())
+			continue
+		if bool(npc.get_meta("acercamiento_social_activo", false)):
 			continue
 		var ruta_fallida := bool(npc.get_meta("rutina_ruta_fallida", false))
 		var en_transito := bool(npc.get_meta("rutina_en_transito", false))
