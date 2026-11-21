@@ -59,6 +59,17 @@ func _run() -> void:
 		return
 	alimento_prueba.free()
 
+	ai._tiempo_busqueda_alimento = 0.0
+	if not ai._debe_buscar_alimento(0.016):
+		_fail("La búsqueda inicial de alimento no fue inmediata.")
+		return
+	if ai._debe_buscar_alimento(0.016):
+		_fail("La búsqueda sin alimento repitió el barrido antes del intervalo.")
+		return
+	if not ai._debe_buscar_alimento(0.234):
+		_fail("La búsqueda de alimento no se reanudó al vencer el intervalo.")
+		return
+
 	# El índice ecológico debe priorizar la regla del ecosistema y conservar
 	# la regla general como fallback, sin cambiar el orden de desempate.
 	var depredador := CreatureScript.new() as Creature
