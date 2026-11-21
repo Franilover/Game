@@ -72,6 +72,16 @@ var _last_lod_center: Vector2i = Vector2i(999999, 999999)
 var _last_entity_lod_center: Vector2i = Vector2i(999999, 999999)
 var _last_stream_center: Vector2i = Vector2i(999999, 999999)
 
+# Perfil de trabajo síncrono al cruzar una frontera de chunk. Permite separar
+# la cola/LOD de la materialización de Nodes, que puede concentrarse en un frame.
+var _diag_transition_count: int = 0
+var _diag_transition_last_ms: float = 0.0
+var _diag_transition_max_ms: float = 0.0
+var _diag_transition_unload_ms: float = 0.0
+var _diag_transition_lod_ms: float = 0.0
+var _diag_transition_entities_ms: float = 0.0
+var _diag_transition_data_queue_ms: float = 0.0
+
 
 func configurar(
 	terrain: WorldTerrain,
@@ -395,6 +405,7 @@ func _actualizar_streaming() -> void:
 	if not cambio_stream:
 		return
 
+	var transition_start_usec := Time.get_ticks_usec()
 	_actualizar_cache_borde_jugador(centro)
 
 	_last_stream_center = centro
@@ -442,16 +453,31 @@ func _actualizar_streaming() -> void:
 	_priorizar_prefetch(centro)
 	_ceder_generacion_si_hay_prioridad(centro)
 
+	var unload_start_usec := Time.get_ticks_usec()
 	_descargar_lejanos(centro)
+	_diag_transition_unload_ms = float(Time.get_ticks_usec() - unload_start_usec) / 1000.0
+
 	var cambio_chunk := centro != _last_lod_center
 	if cambio_chunk:
+		var lod_start_usec := Time.get_ticks_usec()
 		_actualizar_data_lod(centro)
 		_actualizar_lod_logico(centro)
+		_diag_transition_lod_ms = float(Time.get_ticks_usec() - lod_start_usec) / 1000.0
 		_last_lod_center = centro
+
 	if cambio_chunk or centro != _last_entity_lod_center:
+		var entities_start_usec := Time.get_ticks_usec()
 		_actualizar_entidades_activas(centro)
+		_diag_transition_entities_ms = float(Time.get_ticks_usec() - entities_start_usec) / 1000.0
 		_last_entity_lod_center = centro
+
+		var data_queue_start_usec := Time.get_ticks_usec()
 		_actualizar_data_entidades(centro)
+		_diag_transition_data_queue_ms = float(Time.get_ticks_usec() - data_queue_start_usec) / 1000.0
+
+	_diag_transition_last_ms = float(Time.get_ticks_usec() - transition_start_usec) / 1000.0
+	_diag_transition_max_ms = maxf(_diag_transition_max_ms, _diag_transition_last_ms)
+	_diag_transition_count += 1
 
 
 func _actualizar_prioridad_cola() -> void:
@@ -998,6 +1024,15 @@ func obtener_diagnostico() -> Dictionary:
 		"player_direction": _player_direction,
 		"prefetch_margin_tiles": _prefetch_margin_tiles,
 		"priority_queue_sorts": _diag_priority_queue_sorts,
+		"transition_profile": {
+			"count": _diag_transition_count,
+			"last_ms": _diag_transition_last_ms,
+			"max_ms": _diag_transition_max_ms,
+			"unload_schedule_ms": _diag_transition_unload_ms,
+			"lod_update_ms": _diag_transition_lod_ms,
+			"entity_materialize_ms": _diag_transition_entities_ms,
+			"data_queue_ms": _diag_transition_data_queue_ms
+		},
 		"prefetch_activo": _prefetch_activo,
 		"prefetch_chunk": _prefetch_chunk if _prefetch_activo else null,
 		"borde_cache": {
