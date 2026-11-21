@@ -317,7 +317,7 @@ func _vista_mundo() -> String:
 	out.append("    Cache: lotes=%d celdas=%d max_lote=%.3fms" % [int(dual.get("cache_update_calls", 0)), int(dual.get("cache_cells_processed", 0)), float(dual.get("cache_elapsed_ms_max", 0.0))])
 	out.append("    DisplayLayer: flushes=%d total=%.3fms max=%.3fms" % [int(dual.get("flush_calls", 0)), float(dual.get("flush_ms_total", 0.0)), float(dual.get("flush_ms_max", 0.0))])
 	out.append("    Muestras cada 64 celdas: n=%d vecindad=%.3fms reglas=%.3fms escritura=%.3fms" % [int(dual.get("sample_count", 0)), float(dual.get("sample_path_ms", 0.0)), float(dual.get("sample_rule_ms", 0.0)), float(dual.get("sample_write_ms", 0.0))])
-	out.append("    Reverse paths: llamadas=%d muestras=%d tiempo_muestreado=%.3fms" % [int(dual.get("reverse_path_calls", 0)), int(dual.get("reverse_world_samples", 0)), float(dual.get("sample_reverse_path_ms", 0.0))])
+	out.append("    Reverse paths: llamadas=%d muestras=%d tiempo_muestreado=%.3fms" % [int(dual.get("reverse_path_calls", 0)), int(dual.get("reverse_path_samples", 0)), float(dual.get("sample_reverse_path_ms", 0.0))])
 	return "\n".join(out)
 
 func _vista_entidades() -> String:
@@ -558,7 +558,7 @@ func _diagnostico_dual_grid() -> Dictionary:
 		"flush_ms_max": 0.0,
 		"sample_count": 0,
 		"reverse_path_calls": 0,
-		"reverse_world_samples": 0,
+		"reverse_path_samples": 0,
 		"sample_reverse_path_ms": 0.0,
 		"sample_path_ms": 0.0,
 		"sample_rule_ms": 0.0,
@@ -585,7 +585,7 @@ func _diagnostico_dual_grid() -> Dictionary:
 			continue
 		var metricas: Dictionary = diag.get("renderer_metrics", {})
 		out["layers"] = int(out["layers"]) + int(metricas.get("layers", 0))
-		for clave in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells", "flush_calls", "sample_count", "reverse_path_calls", "reverse_world_samples"]:
+		for clave in ["update_calls", "world_cells", "display_candidates", "rule_evaluations", "redundant_tiles", "set_cells", "flush_calls", "sample_count", "reverse_path_calls", "reverse_path_samples"]:
 			out[clave] = int(out[clave]) + int(metricas.get(clave, 0))
 		for clave in ["flush_ms_total", "sample_path_ms", "sample_rule_ms", "sample_write_ms", "sample_reverse_path_ms", "update_ms_total", "cache_ms_total", "renderer_ms_total"]:
 			out[clave] = float(out[clave]) + float(metricas.get(clave, 0.0))
