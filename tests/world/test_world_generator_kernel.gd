@@ -23,5 +23,23 @@ func _run_tests() -> void:
 	assert(chunk_a.origin_tile == Vector2i.ZERO, "El origen del chunk 0,0 debe ser cero.")
 	assert(chunk_b.origin_tile == Vector2i(-16, 32), "El origen debe derivarse de las coordenadas globales.")
 	assert(chunk_a.index_at(-1, 0) == -1, "Un índice fuera del chunk debe rechazarse.")
+	var spawn_rules = SpawnRulesScript.new()
+	var candidatos := [
+		{"criatura": {"id": "especie_a"}, "peso_spawn": 1.0},
+		{"criatura": {"id": "especie_b"}, "peso_spawn": 3.0},
+		{"criatura": {"id": "especie_c"}, "peso_spawn": 2.0}
+	]
+	var excluidas := {"especie_a": true}
+	for seed in range(1, 25):
+		var rng_esperado := RandomNumberGenerator.new()
+		var rng_nuevo := RandomNumberGenerator.new()
+		rng_esperado.seed = seed
+		rng_nuevo.seed = seed
+		var candidatos_esperados: Array = [candidatos[1], candidatos[2]]
+		var esperado: Dictionary = spawn_rules.elegir_criatura(candidatos_esperados, rng_esperado)
+		var obtenido: Dictionary = spawn_rules.elegir_criatura_excluyendo(candidatos, excluidas, rng_nuevo)
+		assert(obtenido.get("criatura", {}).get("id", "") == esperado.get("criatura", {}).get("id", ""), "La selección sin arrays debe conservar el sorteo ponderado.")
+	var todos_excluidos := {"especie_a": true, "especie_b": true, "especie_c": true}
+	assert(spawn_rules.elegir_criatura_excluyendo(candidatos, todos_excluidos, RandomNumberGenerator.new()).is_empty(), "No debe elegir especies excluidas.")
 	print("WorldGeneratorKernel: pruebas smoke completadas.")
 	quit(0)
