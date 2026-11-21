@@ -10,6 +10,8 @@ func _ready() -> void:
 func _run() -> void:
 	var errores: Array[String] = []
 	var cliente := SupabaseClientScript.new()
+	var ruta_cache := "user://contracts/species_catalog_retry_cache.json"
+	cliente.set("_ruta_cache_especies_jugables", ruta_cache)
 	add_child(cliente)
 
 	var emisiones: Array = []
@@ -36,6 +38,7 @@ func _run() -> void:
 
 	# Simula un catálogo temporalmente vacío tras agotar los intentos rápidos.
 	cliente._especies_jugables.clear()
+	cliente._especies_jugables_remotas_cargadas = false
 	cliente._intentos_especies_jugables = cliente.MAX_INTENTOS_INICIALES
 	cliente._al_completar_especies_jugables(
 		HTTPRequest.RESULT_SUCCESS,
@@ -49,6 +52,8 @@ func _run() -> void:
 		errores.append("La escena no recibió el estado vacío mientras espera la recuperación.")
 
 	cliente.queue_free()
+	if FileAccess.file_exists(ruta_cache):
+		DirAccess.remove_absolute(ProjectSettings.globalize_path(ruta_cache))
 	if not errores.is_empty():
 		for error in errores:
 			push_error("SpeciesCatalogRetry: FAIL: " + error)
