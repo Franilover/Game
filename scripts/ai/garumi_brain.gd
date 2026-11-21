@@ -241,7 +241,7 @@ func _buscar_jugador_cercano(radio: float) -> Node2D:
 	var mejor: Node2D = null
 	var mejor_distancia_cuadrada := radio * radio
 	for candidato in CreaturePerceptionScript.obtener_jugadores_del_grupo(get_tree()):
-		if not is_instance_valid(candidato) or not candidato.is_inside_tree() or candidato.is_queued_for_deletion():
+		if not is_instance_valid(candidato) or not candidato.is_inside_tree():
 			continue
 		var distancia_cuadrada := garumi.global_position.distance_squared_to(candidato.global_position)
 		if distancia_cuadrada <= mejor_distancia_cuadrada:
