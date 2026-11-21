@@ -60,6 +60,26 @@ func leer_partida(id: String) -> Dictionary:
 	return respaldo
 
 
+## Lectura de sólo lectura para el índice del selector. Evita duplicar
+## recursivamente el contenido completo de cada mundo guardado.
+func leer_metadata_partida(id: String) -> Dictionary:
+	var ruta := ruta_partida(id)
+	if ruta.is_empty():
+		return {}
+	var datos := _leer_json_dictionary_sin_copia(ruta)
+	if not datos.is_empty():
+		return datos
+	var ruta_respaldo := _ruta_respaldo(ruta)
+	var respaldo := _leer_json_dictionary_sin_copia(ruta_respaldo)
+	if respaldo.is_empty():
+		return {}
+	if FileAccess.file_exists(ruta):
+		_eliminar_archivo(ruta)
+	if _renombrar_archivo(ruta_respaldo, ruta):
+		push_warning("SaveFileRepository: partida recuperada desde respaldo durante lectura de metadatos → " + id)
+	return respaldo
+
+
 func escribir_partida(id: String, datos: Dictionary) -> bool:
 	var ruta := ruta_partida(id)
 	if ruta.is_empty() or datos.is_empty():
@@ -224,6 +244,23 @@ func _ruta_temporal(ruta: String) -> String:
 
 func _ruta_respaldo(ruta: String) -> String:
 	return ruta + ".bak"
+
+
+func _leer_json_dictionary_sin_copia(ruta: String) -> Dictionary:
+	if ruta.is_empty() or not FileAccess.file_exists(ruta):
+		return {}
+	var archivo := FileAccess.open(ruta, FileAccess.READ)
+	if archivo == null:
+		return {}
+	var texto := archivo.get_as_text()
+	archivo.close()
+	var parser := JSON.new()
+	if parser.parse(texto) != OK:
+		return {}
+	var datos: Variant = parser.data
+	if not datos is Dictionary or (datos as Dictionary).is_empty():
+		return {}
+	return datos as Dictionary
 
 
 func _leer_json_dictionary(ruta: String) -> Dictionary:
