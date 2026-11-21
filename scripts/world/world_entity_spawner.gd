@@ -114,7 +114,7 @@ func _actualizar_catalogo_props() -> void:
 	for prop_variant in props_catalogo:
 		if not prop_variant is Dictionary:
 			continue
-		var prop := (prop_variant as Dictionary).duplicate(true)
+		var prop := prop_variant as Dictionary
 		if not bool(prop.get("activo", true)):
 			continue
 		var bioma_id := str(prop.get("bioma_id", "")).strip_edges()
