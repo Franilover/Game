@@ -257,6 +257,12 @@ func tiene_clear_chunk_activo() -> bool:
 	return not _clear_task.is_empty()
 
 
+func puede_intercalar_generacion_con_clear() -> bool:
+	# La fase 0 mantiene señales y actualizaciones bloqueadas mientras borra
+	# celdas. La fase 1 ya liberó el lote y sólo espera recomposición dirty.
+	return _clear_task.is_empty() or int(_clear_task.get("stage", 0)) >= 1
+
+
 func procesar_clear_chunk(cells: int) -> bool:
 	if _clear_task.is_empty():
 		return true
