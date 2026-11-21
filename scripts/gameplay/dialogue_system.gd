@@ -1524,8 +1524,7 @@ func _cumple_requisito_social_contextual(requisito: Dictionary, relacion: Dictio
 
 
 func _actualizar_boton_accion() -> void:
-	if action_button == null:
-		return
+	var boton_accion_valido := action_button != null and is_instance_valid(action_button)
 
 	var texto_terminado := _indice_caracter >= _texto_completo.length()
 	var es_ultima_linea := _indice_linea >= _lineas.size() - 1
@@ -1537,8 +1536,9 @@ func _actualizar_boton_accion() -> void:
 			if _respuestas_container.get_child_count() == 0:
 				_crear_botones_respuesta()
 			if _respuestas_container.get_child_count() > 0:
-				action_button.visible = false
-				if cancel_button != null:
+				if boton_accion_valido:
+					action_button.visible = false
+				if cancel_button != null and is_instance_valid(cancel_button):
 					cancel_button.visible = false
 				return
 		# Un conjunto vacío o sin contenedor no puede bloquear el avance.
@@ -1546,16 +1546,21 @@ func _actualizar_boton_accion() -> void:
 	if _respuestas_container != null:
 		_respuestas_container.visible = false
 
+	if not boton_accion_valido:
+		if cancel_button != null and is_instance_valid(cancel_button):
+			cancel_button.visible = false
+		return
+
 	if _acciones.is_empty():
 		if not es_ultima_linea or not texto_terminado:
 			action_button.visible = false
-			if cancel_button != null:
+			if cancel_button != null and is_instance_valid(cancel_button):
 				cancel_button.visible = false
 			return
 		# Toda línea terminal sin decisiones ofrece un cierre explícito.
 		action_button.text = "Cerrar"
 		action_button.visible = true
-		if cancel_button != null:
+		if cancel_button != null and is_instance_valid(cancel_button):
 			cancel_button.visible = false
 		return
 
@@ -1584,10 +1589,10 @@ func _mostrar_cierre_dialogo() -> void:
 	_acciones.clear()
 	_respuestas.clear()
 	_limpiar_botones_respuesta()
-	if action_button != null:
+	if action_button != null and is_instance_valid(action_button):
 		action_button.text = "Cerrar"
 		action_button.visible = true
-	if cancel_button != null:
+	if cancel_button != null and is_instance_valid(cancel_button):
 		cancel_button.visible = false
 
 
@@ -1971,7 +1976,7 @@ func _abrir_submenu_social(categoria: String) -> void:
 
 func _cerrar_selector_conversacion() -> void:
 	_menu_social_actual = ""
-	if _selector_conversacion != null:
+	if _selector_conversacion != null and is_instance_valid(_selector_conversacion):
 		_selector_conversacion.visible = false
 	if _dialogue_content_row != null:
 		_dialogue_content_row.visible = true
@@ -3036,7 +3041,8 @@ func _crear_botones_respuesta() -> void:
 
 
 func _limpiar_botones_respuesta() -> void:
-	if _respuestas_container == null:
+	if _respuestas_container == null or not is_instance_valid(_respuestas_container):
+		_respuestas_container = null
 		return
 	for hijo in _respuestas_container.get_children():
 		_respuestas_container.remove_child(hijo)
