@@ -1430,7 +1430,7 @@ func _intentar_crear_prop(chunk_coord: Vector2i, limite_chunk: Rect2, rng: Rando
 		return false
 	elegido["asset_path"] = asset_path
 	var prop_instance_key := "prop:" + str(slot) + ":" + prop_id
-	var estado := _entity_manager.obtener_estado_prop(chunk_coord, prop_instance_key)
+	var estado := _entity_manager.obtener_estado_prop_materializacion(chunk_coord, prop_instance_key)
 	if not estado.is_empty() and not bool(estado.get("is_present", true)):
 		return false
 	var prop_variant: Variant = _entity_factory.call("crear_prop", elegido)
