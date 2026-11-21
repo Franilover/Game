@@ -285,7 +285,8 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	for slot in range(max_creatures_per_chunk):
 		var creado := false
 		for intento in range(32):
-			await get_tree().process_frame
+			if intento % 4 == 0:
+				await get_tree().process_frame
 			var tile := Vector2i(
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -412,7 +413,8 @@ func _preparar_datos_garumis_en_chunk(
 	var elegidos: Dictionary = {}
 	for slot in range(max_garumis_per_chunk):
 		for intento in range(32):
-			await get_tree().process_frame
+			if intento % 4 == 0:
+				await get_tree().process_frame
 			var tile := Vector2i(
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -479,7 +481,8 @@ func _preparar_datos_garumi_debug(
 	if rng.randf() > clampf(probabilidad_prototipo_garumi_debug, 0.0, 1.0):
 		return resultado
 	for _intento in range(32):
-		await get_tree().process_frame
+		if _intento % 4 == 0:
+			await get_tree().process_frame
 		var tile := Vector2i(
 			chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 			chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -523,7 +526,8 @@ func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	for slot in range(6):
 		var encontrado := false
 		for intento in range(48):
-			await get_tree().process_frame
+			if intento % 4 == 0:
+				await get_tree().process_frame
 			var tile := Vector2i(
 				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
 				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
@@ -786,7 +790,8 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i, token: RefCounted) -> void
 	var especies_creadas: Dictionary = {}
 
 	for intento in range(32):
-		await get_tree().process_frame
+		if intento % 4 == 0:
+			await get_tree().process_frame
 		if _creature_spawn_tasks.get(chunk_coord) != token:
 			return
 		_diag_spawn_criaturas_intentos += 1
@@ -1074,7 +1079,8 @@ func _spawn_garumis_en_chunk(
 			break
 		var materializado := false
 		for intento in range(32):
-			await get_tree().process_frame
+			if intento % 4 == 0:
+				await get_tree().process_frame
 			if _creature_spawn_tasks.get(chunk_coord) != token:
 				return
 			var tile := Vector2i(
