@@ -1475,7 +1475,13 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 			break
 		# No usar una ruta directa de un solo segmento: el mueble, las paredes
 		# y otros obstáculos del interior también deben respetar la malla AStar.
-		var ruta_candidata := _crear_ruta(npc.global_position, candidato_global)
+		var ruta_candidata := PackedVector2Array()
+		if _navegacion_lista():
+			ruta_candidata = _crear_ruta(npc.global_position, candidato_global)
+		else:
+			# La agenda puede probarse aisladamente sin mundo ni malla. En runtime
+			# actualizar() exige navegación lista antes de ejecutar estas rutinas.
+			ruta_candidata.append(candidato_global)
 		if ruta_candidata.is_empty():
 			continue
 		destino_local = candidato
