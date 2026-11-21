@@ -256,7 +256,7 @@ func _restaurar_defaults() -> void:
 		GameState.establecer_configuracion_personaje_admin(admin_data)
 		_cargar_datos()
 		_estado.text = "Valores por defecto restaurados."
-		GameState.guardar_partida()
+		GameState.guardar_progreso_actual("restauración de personaje desde editor")
 
 
 func _guardar() -> void:
