@@ -58,7 +58,6 @@ func _run() -> void:
 		_fail("La lectura directa aceptó un objeto sin cantidad disponible.")
 		return
 	alimento_prueba.free()
-	print("CreatureAITargetPolicy: checkpoint food cache")
 
 	# El índice ecológico debe priorizar la regla del ecosistema y conservar
 	# la regla general como fallback, sin cambiar el orden de desempate.
@@ -94,7 +93,6 @@ func _run() -> void:
 	if ai._obtener_relacion_ecologica_ids(depredador, presa_prueba) != "competencia":
 		_fail("El índice ecológico no conservó la regla general como fallback.")
 		return
-	print("CreatureAITargetPolicy: checkpoint ecological index")
 
 	depredador.datos["ia_config"] = {"perfil": "flaxis"}
 	if not ai._es_cazador_por_configuracion(depredador):
@@ -108,7 +106,6 @@ func _run() -> void:
 	if ai._es_cazador_por_configuracion(depredador):
 		_fail("Una configuración no cazadora fue clasificada como depredador.")
 		return
-	print("CreatureAITargetPolicy: checkpoint predator config")
 	ai.configuracion_ia = {}
 	ai.actividad_horaria = "explorar"
 	ai.perfil = AIScript.Perfil.GENERICO
@@ -1047,6 +1044,8 @@ func _run() -> void:
 	player.free()
 	actor.free()
 	ai.free()
+	depredador.free()
+	presa_prueba.free()
 	get_tree().quit(0)
 
 
