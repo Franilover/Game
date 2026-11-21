@@ -108,7 +108,7 @@ func _crear_mundo() -> Dictionary:
 func _generar_criatura_natural(parts: Dictionary, snapshot: Dictionary = {}) -> Dictionary:
 	var manager: Node = parts.manager
 	var spawner: Node = parts.spawner
-	spawner.preparar_datos_criaturas_chunk(CHUNK)
+	await spawner.preparar_datos_criaturas_chunk(CHUNK)
 	var generated: Array = manager.obtener_datos_chunk(CHUNK, "criaturas")
 	var selected: Dictionary = {}
 	for item in generated:
