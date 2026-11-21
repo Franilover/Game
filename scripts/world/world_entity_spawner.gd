@@ -176,11 +176,22 @@ func _ready() -> void:
 func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 	if _entity_manager == null or _entity_factory == null or _world_data == null:
 		return false
-	if _entity_manager.tiene_criaturas_chunk(chunk_coord):
-		return true
 	var datos := _entity_manager.obtener_datos_chunk(chunk_coord, "criaturas")
 	if datos.is_empty():
 		return false
+
+	# El streaming puede haber materializado ya parte del chunk mediante FULL
+	# mientras DATA terminaba de prepararse. No se debe abortar el chunk entero:
+	# reconciliamos por runtime_instance_key y sólo creamos las apariciones que faltan.
+	var claves_existentes: Dictionary = {}
+	for entidad_variant in _entity_manager.obtener_por_chunk(chunk_coord):
+		if not entidad_variant is Creature or not is_instance_valid(entidad_variant):
+			continue
+		var entidad_existente := entidad_variant as Creature
+		var clave_existente := str(entidad_existente.get_meta("runtime_instance_key", "")).strip_edges()
+		if not clave_existente.is_empty():
+			claves_existentes[clave_existente] = true
+	var hay_criaturas := not claves_existentes.is_empty()
 
 	var limite_chunk := Rect2(
 		float(chunk_coord.x * _terrain.chunk_size_tiles * _terrain.tile_size),
@@ -197,6 +208,8 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 		if criatura_id.is_empty():
 			continue
 		var instance_key := str(dato.get("runtime_instance_key", criatura_id)).strip_edges()
+		if not instance_key.is_empty() and claves_existentes.has(instance_key):
+			continue
 		if _entity_manager.has_method("obtener_estado_criatura"):
 			var estado_runtime := _entity_manager.obtener_estado_criatura(chunk_coord, criatura_id, instance_key)
 			if not estado_runtime.is_empty():
@@ -255,8 +268,12 @@ func materializar_criaturas_datos_chunk(chunk_coord: Vector2i) -> bool:
 			if dato.has("velocity") and dato["velocity"] is Vector2:
 				creature_node.velocity = dato["velocity"]
 
-	_entity_manager.activar_criaturas_chunk(chunk_coord)
-	return true
+		claves_existentes[instance_key] = true
+		hay_criaturas = true
+
+	if hay_criaturas:
+		_entity_manager.activar_criaturas_chunk(chunk_coord)
+	return hay_criaturas
 
 
 func spawn_chunk(chunk_coord: Vector2i) -> void:
