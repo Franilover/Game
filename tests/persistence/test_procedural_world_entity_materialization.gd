@@ -87,7 +87,8 @@ func _run() -> void:
 	if runtime_key.is_empty():
 		_fail(["El spawn natural no recibió una clave de instancia estable."])
 		return
-	if not spawner.materializar_criaturas_datos_chunk(CHUNK):
+	var criaturas_materializadas := await spawner.materializar_criaturas_datos_chunk(CHUNK)
+	if not criaturas_materializadas:
 		_fail(["El spawner real no materializó los datos naturales del chunk."])
 		return
 
@@ -111,7 +112,10 @@ func _run() -> void:
 			prop_runtime_key = str(dato_prop.get("runtime_instance_key", "")).strip_edges()
 			if not prop_runtime_key.is_empty():
 				break
-		if not prop_runtime_key.is_empty() and spawner.materializar_props_datos_chunk(CHUNK):
+		var props_materializados := false
+		if not prop_runtime_key.is_empty():
+			props_materializados = await spawner.materializar_props_datos_chunk(CHUNK)
+		if props_materializados:
 			for entidad_variant in manager.obtener_por_chunk(CHUNK):
 				if entidad_variant is WorldProp and is_instance_valid(entidad_variant):
 					var prop_candidato := entidad_variant as WorldProp
@@ -150,7 +154,8 @@ func _run() -> void:
 	if is_instance_valid(prop_materializado):
 		manager.despawn_props_chunk(CHUNK)
 	manager.restaurar_estado_persistente_mundo(snapshot)
-	if not spawner.materializar_criaturas_datos_chunk(CHUNK):
+	var criaturas_restauradas := await spawner.materializar_criaturas_datos_chunk(CHUNK)
+	if not criaturas_restauradas:
 		_fail(["No se pudo rematerializar el spawn natural después de restaurar el snapshot."])
 		return
 
@@ -163,7 +168,8 @@ func _run() -> void:
 	if restaurada.velocity != velocidad_modificada:
 		errors.append("La velocidad runtime no sobrevivió a descarga y rematerialización.")
 	if is_instance_valid(prop_materializado):
-		if not spawner.materializar_props_datos_chunk(CHUNK):
+		var props_restaurados := await spawner.materializar_props_datos_chunk(CHUNK)
+		if not props_restaurados:
 			errors.append("No se pudo rematerializar el prop natural después de restaurar el snapshot.")
 		else:
 			var prop_restaurado: WorldProp = null
