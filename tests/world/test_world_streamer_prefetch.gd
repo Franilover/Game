@@ -104,6 +104,31 @@ func _run_tests() -> void:
 		return
 	_streamer._entity_spawner = null
 
+	# WorldTerrain sólo admite un clear visual activo. El streamer debe
+	# conservar los demás chunks lejanos sin duplicarlos y cancelar los que
+	# vuelven al radio antes de que empiece su descarga.
+	_terrain._loaded_chunks = {
+		Vector2i(-3, 0): {},
+		Vector2i(3, 0): {},
+		Vector2i.ZERO: {},
+	}
+	_streamer._unload_radius = 2
+	_streamer._descargar_lejanos(Vector2i.ZERO)
+	if _streamer._pending_unload_chunks.size() != 2:
+		push_error("WorldStreamerPrefetch: no encoló todos los chunks lejanos.")
+		_terminar(1)
+		return
+	_streamer._descargar_lejanos(Vector2i.ZERO)
+	if _streamer._pending_unload_chunks.size() != 2:
+		push_error("WorldStreamerPrefetch: duplicó chunks en la cola de descarga.")
+		_terminar(1)
+		return
+	_streamer._descargar_lejanos(Vector2i(3, 0))
+	if _streamer._pending_unload_chunks.size() != 1 or _streamer._pending_unload_chunks[0] != Vector2i(-3, 0):
+		push_error("WorldStreamerPrefetch: no canceló una descarga que volvió al radio.")
+		_terminar(1)
+		return
+
 	_streamer._queue = [
 		Vector2i.UP,
 		Vector2i.DOWN,
