@@ -1180,6 +1180,12 @@ func procesar_descargas(cells: int) -> bool:
 
 func tiene_descarga_activa() -> bool:
 	return not _unload_task.is_empty()
+
+
+func puede_iniciar_generacion_durante_descarga() -> bool:
+	if _unload_task.is_empty() or visual == null:
+		return true
+	return visual.puede_intercalar_generacion_con_clear()
 func _crear_orden_generacion(
 	size: int,
 	chunk_coord: Vector2i,
