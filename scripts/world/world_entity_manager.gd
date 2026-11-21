@@ -23,6 +23,13 @@ var _replica_keys_by_entity: Dictionary = {}
 var _replica_prop_keys_by_entity: Dictionary = {}
 var _data_by_chunk: Dictionary = {}
 
+var _diag_despawn_creature_count: int = 0
+var _diag_despawn_prop_count: int = 0
+var _diag_despawn_creature_last_ms: float = 0.0
+var _diag_despawn_creature_max_ms: float = 0.0
+var _diag_despawn_prop_last_ms: float = 0.0
+var _diag_despawn_prop_max_ms: float = 0.0
+
 
 func registrar_dato_chunk(chunk_coord: Vector2i, tipo: String, datos: Dictionary) -> void:
 	var bucket_variant: Variant = _data_by_chunk.get(chunk_coord, {})
@@ -704,6 +711,10 @@ func _despawn_chunk_entities(
 	# _al_salir_entidad(), que también actualiza los índices del manager.
 	var entidades: Array = (bucket_variant as Array).duplicate()
 	var restantes: Array = []
+	var creature_elapsed_usec: int = 0
+	var prop_elapsed_usec: int = 0
+	var creature_count: int = 0
+	var prop_count: int = 0
 	for entity_variant in entidades:
 		if not entity_variant is Node:
 			continue
@@ -722,8 +733,13 @@ func _despawn_chunk_entities(
 			_guardar_tombstone_prop_recolectado(entity as WorldProp, chunk_coord)
 			continue
 
+		var entity_despawn_start_usec := Time.get_ticks_usec()
 		guardar_estado_entidad(entity, chunk_coord)
 		_remover_persistencia(entity)
+		if es_criatura:
+			creature_count += 1
+		elif es_prop:
+			prop_count += 1
 		if es_criatura and _entity_factory != null and is_instance_valid(_entity_factory):
 			_entity_factory.reciclar_criatura(entity as Creature)
 		elif es_prop and _entity_factory != null and is_instance_valid(_entity_factory):
@@ -734,6 +750,22 @@ func _despawn_chunk_entities(
 			if es_prop:
 				entity.set_meta("world_manager_unloading", true)
 			entity.queue_free()
+		var entity_elapsed_usec := Time.get_ticks_usec() - entity_despawn_start_usec
+		if es_criatura:
+			creature_elapsed_usec += entity_elapsed_usec
+		elif es_prop:
+			prop_elapsed_usec += entity_elapsed_usec
+
+	if creature_count > 0:
+		var creature_ms := float(creature_elapsed_usec) / 1000.0
+		_diag_despawn_creature_count += creature_count
+		_diag_despawn_creature_last_ms = creature_ms
+		_diag_despawn_creature_max_ms = maxf(_diag_despawn_creature_max_ms, creature_ms)
+	if prop_count > 0:
+		var prop_ms := float(prop_elapsed_usec) / 1000.0
+		_diag_despawn_prop_count += prop_count
+		_diag_despawn_prop_last_ms = prop_ms
+		_diag_despawn_prop_max_ms = maxf(_diag_despawn_prop_max_ms, prop_ms)
 
 	if restantes.is_empty():
 		_by_chunk.erase(chunk_coord)
@@ -830,3 +862,19 @@ func _remover_persistencia(entity: Node) -> void:
 		if _persistent_by_key.get(clave, null) == entity:
 			_persistent_by_key.erase(clave)
 	_persistent_keys_by_entity.erase(entity)
+
+
+
+func obtener_diagnostico_despawn() -> Dictionary:
+	return {
+		"creatures": {
+			"entities": _diag_despawn_creature_count,
+			"last_ms": _diag_despawn_creature_last_ms,
+			"max_ms": _diag_despawn_creature_max_ms
+		},
+		"props": {
+			"entities": _diag_despawn_prop_count,
+			"last_ms": _diag_despawn_prop_last_ms,
+			"max_ms": _diag_despawn_prop_max_ms
+		}
+	}
