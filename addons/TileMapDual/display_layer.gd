@@ -38,7 +38,7 @@ var _diag_sample_count: int = 0
 var _diag_sample_path_ms: float = 0.0
 var _diag_sample_rule_ms: float = 0.0
 var _diag_sample_write_ms: float = 0.0
-var _diag_reverse_world_samples: int = 0
+var _diag_reverse_path_samples: int = 0
 var _diag_reverse_path_calls: int = 0
 var _diag_sample_reverse_path_ms: float = 0.0
 
@@ -125,12 +125,17 @@ func update_tiles(cache: TileCache, updated_world_cells: Array) -> void:
 	_already_updated.clear()
 	for reverse_path: Array in _reverse_display_paths:
 		for world_cell: Vector2i in updated_world_cells:
+			var sample_reverse_path: bool = (_diag_reverse_path_calls % 64) == 0
+			var reverse_path_started_usec: int = Time.get_ticks_usec() if sample_reverse_path else 0
 			var display_cell: Vector2i = follow_path(world_cell, reverse_path)
+			if sample_reverse_path:
+				_diag_sample_reverse_path_ms += float(Time.get_ticks_usec() - reverse_path_started_usec) / 1000.0
+				_diag_reverse_path_samples += 1
+			_diag_reverse_path_calls += 1
 			if not _already_updated.has(display_cell):
 				_already_updated[display_cell] = true
 				_diag_display_candidates += 1
 				update_tile(cache, display_cell)
-		_diag_reverse_world_samples += 1
 	var flush_ms: float = float(Time.get_ticks_usec() - flush_start_usec) / 1000.0
 	_diag_flush_calls += 1
 	_diag_flush_ms += flush_ms
@@ -211,7 +216,7 @@ func obtener_diagnostico() -> Dictionary:
 		"sample_rule_ms": _diag_sample_rule_ms,
 		"sample_write_ms": _diag_sample_write_ms,
 		"reverse_path_calls": _diag_reverse_path_calls,
-		"reverse_world_samples": _diag_reverse_world_samples,
+		"reverse_path_samples": _diag_reverse_path_samples,
 		"sample_reverse_path_ms": _diag_sample_reverse_path_ms,
 		"atlas_tiles": _diag_atlas_tiles,
 	}
