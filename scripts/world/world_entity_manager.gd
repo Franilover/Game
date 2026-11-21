@@ -466,6 +466,11 @@ func _limpiar_referencias_replica(
 	indice_por_entidad.erase(entity)
 
 
+
+func _invalidar_cache_entidades_activas() -> void:
+	_active_entities_cache_dirty = true
+
+
 func obtener_entidades_activas() -> Array:
 	# La percepción de cada criatura consulta este conjunto varias veces por
 	# segundo. Reconstruirlo por IA recorría todos los chunks y asignaba un
@@ -808,6 +813,7 @@ func procesar_despawn_chunk(chunk_coord: Vector2i, max_entities: int = 8) -> boo
 		_by_chunk.erase(chunk_coord)
 	else:
 		_by_chunk[chunk_coord] = restantes
+	_invalidar_cache_entidades_activas()
 	_active_creature_chunks.erase(chunk_coord)
 	_active_prop_chunks.erase(chunk_coord)
 	_active_chunks.erase(chunk_coord)
@@ -867,6 +873,7 @@ func _despawn_chunk_entities(
 		_by_chunk.erase(chunk_coord)
 	else:
 		_by_chunk[chunk_coord] = restantes
+	_invalidar_cache_entidades_activas()
 	if retirar_criaturas:
 		_active_creature_chunks.erase(chunk_coord)
 	if retirar_props:
@@ -914,6 +921,7 @@ func despawn_entidades_de_chunks() -> void:
 				_remover_persistencia(entity)
 				entity.queue_free()
 		_by_chunk.erase(chunk_coord)
+	_invalidar_cache_entidades_activas()
 	_chunk_by_entity.clear()
 	_active_chunks.clear()
 	_active_creature_chunks.clear()
@@ -921,7 +929,9 @@ func despawn_entidades_de_chunks() -> void:
 	_despawn_jobs.clear()
 
 
+
 func limpiar_todo() -> void:
+	_invalidar_cache_entidades_activas()
 	var chunks := _by_chunk.keys()
 	for chunk_variant in chunks:
 		if chunk_variant is Vector2i:
