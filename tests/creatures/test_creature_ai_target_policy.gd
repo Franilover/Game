@@ -31,6 +31,22 @@ func _run() -> void:
 	var ai := AIScript.new() as CreatureAI
 	ai.criatura = actor
 	ai.jugador = player
+
+	# Los IDs de alimento se normalizan una vez y se invalidan al refrescar
+	# la configuración de especie, no en cada búsqueda de WorldItem.
+	actor.datos["ia_config"] = {
+		"alimentacion": {"item_ids": ["berry", "berry", " wood "]}
+	}
+	ai._refrescar_configuracion()
+	var ids_alimento := ai._obtener_ids_alimento()
+	if ids_alimento != ["berry", "wood"]:
+		_fail("Los IDs de alimento no se normalizaron y deduplicaron correctamente.")
+		return
+	actor.datos["ia_config"] = {"alimentacion": {"item_ids": "meat"}}
+	ai._refrescar_configuracion()
+	if ai._obtener_ids_alimento() != ["meat"]:
+		_fail("La caché de alimentos no se invalidó al cambiar la configuración.")
+		return
 	ai.configuracion_ia = {}
 	ai.actividad_horaria = "explorar"
 	ai.perfil = AIScript.Perfil.GENERICO
