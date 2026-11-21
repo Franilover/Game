@@ -1016,7 +1016,7 @@ func _spawn_garumis_en_chunk(
 
 	var catalogo := _world_data.obtener_garumis_game()
 	if catalogo.is_empty():
-		var datos_debug := _preparar_datos_garumi_debug(chunk_coord, rng)
+		var datos_debug: Array[Dictionary] = await _preparar_datos_garumi_debug(chunk_coord, rng)
 		if datos_debug.is_empty():
 			return
 		var garumi_debug: Dictionary = datos_debug[0]
