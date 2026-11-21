@@ -46,6 +46,7 @@ on:
       - "tests/inventory/**"
       - "tests/missions/**"
       - "scripts/infrastructure/save_file_repository.gd"
+      - "scripts/infrastructure/garlia_auth.gd"
       - "scripts/state/world_snapshot_validator.gd"
       - "scripts/infrastructure/garlia_world_network.gd"
       - "scripts/infrastructure/garlia_multiplayer.gd"
