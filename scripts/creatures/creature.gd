@@ -629,6 +629,24 @@ func obtener_config_ia() -> Dictionary:
 	return {}
 
 
+func tiene_movimiento_autonomo_permitido() -> bool:
+	# CreatureMovement consulta esta condición en cada physics frame.
+	# Leer sólo las tres claves necesarias evita duplicar recursivamente
+	# toda la configuración de IA por cada criatura y cada frame.
+	var configuracion_variant: Variant = datos.get("ia_config", {})
+	if not configuracion_variant is Dictionary:
+		return true
+	var configuracion := configuracion_variant as Dictionary
+	var movimiento_variant: Variant = configuracion.get("movimiento", {})
+	var movimiento: Dictionary = movimiento_variant if movimiento_variant is Dictionary else {}
+	var tipo := str(movimiento.get("tipo", "")).strip_edges().to_lower()
+	return (
+		tipo != "inmovil"
+		and movimiento.get("desplazamiento_propio", true) != false
+		and configuracion.get("movimiento_permitido", true) != false
+	)
+
+
 func crear_senuelo_ilusorio_azulado(duracion: float = 0.75) -> bool:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
