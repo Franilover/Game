@@ -683,7 +683,9 @@ func _cambiar_zona(path: String, tipo: String) -> void:
 				estado_hogar_variant = GameState.world_state.flags.get("estado_zona_actual", {})
 		if estado_hogar_variant is Dictionary:
 			zona_actual.call("cargar_estado_guardado", (estado_hogar_variant as Dictionary).duplicate(true))
+	var inicio_ready_zona_ms := Time.get_ticks_msec()
 	add_child(zona_actual)
+	print("ZoneManager: _ready de zona completado → ", path, " | ", Time.get_ticks_msec() - inicio_ready_zona_ms, " ms")
 
 	# Hogar conserva su propia última posición porque su snapshot también se
 	# utiliza al volver desde otras zonas. Consumirla aquí evita reabrir la
