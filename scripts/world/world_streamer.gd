@@ -77,6 +77,9 @@ var _entity_activation_active: bool = false
 # WorldTerrain sólo mantiene un unload visual activo; el streamer conserva el resto.
 var _pending_unload_chunks: Array[Vector2i] = []
 var _pending_unload_lookup: Dictionary = {}
+var _entity_unload_active: bool = false
+var _entity_unload_chunk: Vector2i = Vector2i.ZERO
+var _diag_unload_entity_batches: int = 0
 var _diag_unload_entity_last_ms: float = 0.0
 var _diag_unload_entity_max_ms: float = 0.0
 var _diag_unload_entity_count: int = 0
@@ -332,24 +335,45 @@ func _procesar_descarga_si_hay_presupuesto() -> void:
 	if _terrain == null:
 		return
 
-	# WorldTerrain admite un único clear visual. Empezar como máximo uno por
-	# frame evita que los chunks que salen del radio se descarguen en bloque.
+	# Antes de borrar el terreno, retirar las entidades en lotes pequeños.
+	# El chunk permanece cargado mientras el manager guarda estado y recicla
+	# nodos; así ningún clear visual puede invalidar entidades aún activas.
 	if not _terrain.tiene_descarga_activa():
-		while not _pending_unload_chunks.is_empty():
-			var chunk_coord: Vector2i = _pending_unload_chunks.pop_front()
-			_pending_unload_lookup.erase(chunk_coord)
-			if not _terrain.chunk_cargado(chunk_coord):
-				continue
-			if _distancia_chunk(chunk_coord, _player_chunk) <= _unload_radius:
-				continue
-			if _entity_spawner != null:
-				var entity_unload_start_usec := Time.get_ticks_usec()
-				_entity_spawner.despawn_chunk(chunk_coord)
-				_diag_unload_entity_last_ms = float(Time.get_ticks_usec() - entity_unload_start_usec) / 1000.0
-				_diag_unload_entity_max_ms = maxf(_diag_unload_entity_max_ms, _diag_unload_entity_last_ms)
-				_diag_unload_entity_count += 1
-			_terrain.descargar_chunk(chunk_coord)
-			break
+		if not _entity_unload_active:
+			while not _pending_unload_chunks.is_empty():
+				var siguiente: Vector2i = _pending_unload_chunks.pop_front()
+				_pending_unload_lookup.erase(siguiente)
+				if not _terrain.chunk_cargado(siguiente):
+					continue
+				if _distancia_chunk(siguiente, _player_chunk) <= _unload_radius:
+					continue
+				_entity_unload_chunk = siguiente
+				_entity_unload_active = true
+				if _entity_spawner != null and _entity_spawner.has_method("iniciar_despawn_chunk"):
+					_entity_spawner.iniciar_despawn_chunk(siguiente)
+				break
+
+		if _entity_unload_active:
+			var entity_unload_start_usec := Time.get_ticks_usec()
+			var entidades_terminadas := true
+			if _entity_spawner != null and _entity_spawner.has_method("procesar_despawn_chunk"):
+				entidades_terminadas = _entity_spawner.procesar_despawn_chunk(_entity_unload_chunk, 6)
+			_diag_unload_entity_last_ms = float(Time.get_ticks_usec() - entity_unload_start_usec) / 1000.0
+			_diag_unload_entity_max_ms = maxf(_diag_unload_entity_max_ms, _diag_unload_entity_last_ms)
+			_diag_unload_entity_count += 1
+			_diag_unload_entity_batches += 1
+			if not entidades_terminadas:
+				return
+
+			var chunk_listo := _entity_unload_chunk
+			_entity_unload_active = false
+			if not _terrain.chunk_cargado(chunk_listo):
+				return
+			# Si el jugador invirtió el dash durante el despawn, conservar el
+			# terreno. La activación LOD volverá a materializar sus entidades.
+			if _distancia_chunk(chunk_listo, _player_chunk) <= _unload_radius:
+				return
+			_terrain.descargar_chunk(chunk_listo)
 
 	if not _terrain.tiene_descarga_activa():
 		return
@@ -1145,6 +1169,9 @@ func obtener_diagnostico() -> Dictionary:
 		"priority_queue_sorts": _diag_priority_queue_sorts,
 		"entity_activation_queue": _entity_activation_queue.size(),
 		"pending_unload_chunks": _pending_unload_chunks.size(),
+		"entity_unload_active": _entity_unload_active,
+		"entity_unload_chunk": _entity_unload_chunk if _entity_unload_active else null,
+		"entity_unload_batches": _diag_unload_entity_batches,
 		"pending_unload_queue": _pending_unload_chunks.duplicate(),
 		"unload_entity_profile": {
 			"count": _diag_unload_entity_count,
