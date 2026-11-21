@@ -94,7 +94,7 @@ func _reaparecer() -> void:
 	get_tree().paused = false
 
 	# Persistimos inmediatamente la pérdida de objetos y el nuevo spawn.
-	GameState.guardar_partida()
+	GameState.guardar_progreso_actual("reaparecer después de morir")
 
 
 func _volver_al_menu() -> void:
