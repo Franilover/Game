@@ -3150,8 +3150,13 @@ func _notificar_evento_comunitario(evento: Dictionary) -> void:
 	if firma == _ultimo_aviso_evento_comunitario:
 		return
 	_ultimo_aviso_evento_comunitario = firma
-	var aviso := str(evento.get("aviso", evento.get("nombre", "Hay una actividad comunitaria en la plaza.")))
-	Events.notification_pushed.emit(aviso)
+	var nombre := str(evento.get("nombre", "Actividad comunitaria")).strip_edges()
+	var ubicacion := str(evento.get("ubicacion", "la Plaza")).strip_edges()
+	if nombre.is_empty():
+		nombre = "Actividad comunitaria"
+	if ubicacion.is_empty():
+		ubicacion = "la Plaza"
+	Events.community_event_started.emit("%s en %s" % [nombre, ubicacion])
 
 
 
