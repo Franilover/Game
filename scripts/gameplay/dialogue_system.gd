@@ -1525,6 +1525,8 @@ func _cumple_requisito_social_contextual(requisito: Dictionary, relacion: Dictio
 
 func _actualizar_boton_accion() -> void:
 	var boton_accion_valido := action_button != null and is_instance_valid(action_button)
+	if _respuestas_container != null and not is_instance_valid(_respuestas_container):
+		_respuestas_container = null
 
 	var texto_terminado := _indice_caracter >= _texto_completo.length()
 	var es_ultima_linea := _indice_linea >= _lineas.size() - 1
@@ -1978,7 +1980,7 @@ func _cerrar_selector_conversacion() -> void:
 	_menu_social_actual = ""
 	if _selector_conversacion != null and is_instance_valid(_selector_conversacion):
 		_selector_conversacion.visible = false
-	if _dialogue_content_row != null:
+	if _dialogue_content_row != null and is_instance_valid(_dialogue_content_row):
 		_dialogue_content_row.visible = true
 	if _abierto and is_instance_valid(_fuente) and _usa_menu_social:
 		_respuestas = _crear_menu_principal_social()
