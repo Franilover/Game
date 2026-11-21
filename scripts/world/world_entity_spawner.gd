@@ -908,6 +908,7 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i, token: RefCounted) -> void
 	)
 
 	var especies_creadas: Dictionary = {}
+	var candidatos_validos_por_contexto: Dictionary = {}
 
 	for intento in range(32):
 		if intento % 4 == 0:
@@ -949,72 +950,43 @@ func _spawn_chunk_interno_impl(chunk_coord: Vector2i, token: RefCounted) -> void
 		if bioma.is_empty() or ecosistema.is_empty():
 			continue
 
-		var candidatos: Array = (
-			_spawn_rules.obtener_candidatos(ecosistema)
-		)
-
+		var candidatos: Array = _spawn_rules.obtener_candidatos(ecosistema)
 		if candidatos.is_empty():
 			continue
 
+		var zona := int(contexto.get("zona", -1))
+		var clave_contexto := str(bioma.get("id", "")) + "\u001f" + str(ecosistema.get("id", "")) + "\u001f" + str(zona)
+		var candidatos_contexto: Array
+		if candidatos_validos_por_contexto.has(clave_contexto):
+			candidatos_contexto = candidatos_validos_por_contexto[clave_contexto]
+		else:
+			candidatos_contexto = []
+			for candidato_variant in candidatos:
+				if not candidato_variant is Dictionary:
+					continue
+				var candidato := candidato_variant as Dictionary
+				var criatura_variant: Variant = candidato.get("criatura", {})
+				if not criatura_variant is Dictionary:
+					continue
+				var criatura_data := criatura_variant as Dictionary
+				var criatura_id := str(criatura_data.get("id", "")).strip_edges()
+				if criatura_id.is_empty():
+					continue
+				var habitat_clave := str(candidato.get("habitat_clave", "general"))
+				if not _spawn_rules.ubicacion_valida(bioma, habitat_clave, zona):
+					continue
+				candidatos_contexto.append(candidato)
+			candidatos_validos_por_contexto[clave_contexto] = candidatos_contexto
+
 		var validos: Array = []
-
-		for i in range(candidatos.size()):
-			var candidato_variant: Variant = (
-				candidatos[i]
-			)
-
-			if not candidato_variant is Dictionary:
-				continue
-
-			var candidato: Dictionary = (
-				candidato_variant
-			)
-
-			var criatura_variant: Variant = (
-				candidato.get(
-					"criatura",
-					{}
-				)
-			)
-
+		for candidato in candidatos_contexto:
+			var criatura_variant: Variant = (candidato as Dictionary).get("criatura", {})
 			if not criatura_variant is Dictionary:
 				continue
-
-			var criatura_data: Dictionary = (
-				criatura_variant
-			)
-
-			var criatura_id: String = str(
-				criatura_data.get(
-					"id",
-					""
-				)
-			)
-
-			if criatura_id.is_empty():
-				continue
-
-			if especies_creadas.has(
-				criatura_id
-			):
-				continue
-
-			var habitat_clave: String = str(
-				candidato.get(
-					"habitat_clave",
-					"general"
-				)
-			)
-
-			var zona := int(contexto.get("zona", -1))
-
-			if not _spawn_rules.ubicacion_valida(bioma, habitat_clave, zona):
-				continue
-
-			validos.append(
-				candidato
-			)
-
+			var criatura_data := criatura_variant as Dictionary
+			var criatura_id := str(criatura_data.get("id", "")).strip_edges()
+			if not criatura_id.is_empty() and not especies_creadas.has(criatura_id):
+				validos.append(candidato)
 		if validos.is_empty():
 			continue
 
@@ -1166,7 +1138,10 @@ func _spawn_garumis_en_chunk(
 	# La selección depende de los datos ecológicos del snapshot, no del nombre
 	# ni de una lista de especies codificada dentro del motor.
 	var candidatos_probables: Array[Dictionary] = []
-	for garumi in catalogo:
+	for indice_garumi in range(catalogo.size()):
+		if indice_garumi > 0 and indice_garumi % 8 == 0:
+			await get_tree().process_frame
+		var garumi: Dictionary = catalogo[indice_garumi]
 		var garumi_id := str(garumi.get("id", "")).strip_edges()
 		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
 		if garumi_id.is_empty() or garumi_nombre.is_empty():
