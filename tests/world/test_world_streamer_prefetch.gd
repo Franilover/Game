@@ -117,6 +117,22 @@ func _run_tests() -> void:
 		push_error("WorldStreamerPrefetch: volvió a encolar FULL activo o materializó LOD TERRAIN.")
 		_terminar(1)
 		return
+
+	# Si el catálogo de props llega tarde, el reintento sólo puede activar el
+	# chunk FULL; no debe materializar los ocho chunks vecinos de TERRAIN.
+	_terrain._loaded_chunks = {
+		Vector2i.ZERO: {},
+		Vector2i.RIGHT: {},
+		Vector2i.DOWN: {},
+	}
+	spawner._terrain = _terrain
+	spawner._entity_manager = manager
+	spawner.establecer_chunk_full_activo(Vector2i.ZERO)
+	spawner._reintentar_props_en_chunks_cargados()
+	if spawner._prop_spawn_queue.size() != 1 or spawner._prop_spawn_queue[0] != Vector2i.ZERO:
+		push_error("WorldStreamerPrefetch: el catálogo tardío materializó props fuera del chunk FULL.")
+		_terminar(1)
+		return
 	_streamer._entity_spawner = null
 
 	# WorldTerrain sólo admite un clear visual activo. El streamer debe
