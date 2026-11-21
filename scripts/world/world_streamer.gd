@@ -906,7 +906,7 @@ func _ordenar_cola_activacion_entidades(claves: Array, centro: Vector2i) -> void
 func _procesar_siguiente_chunk_entidades() -> void:
 	if _entity_activation_queue.is_empty() or _entity_spawner == null or _terrain == null:
 		return
-	var chunk_coord := _entity_activation_queue.pop_front()
+	var chunk_coord: Vector2i = _entity_activation_queue.pop_front()
 	# El jugador puede cambiar de chunk mientras la cola avanza. Ignorar
 	# entradas que ya fueron descargadas o dejaron de pertenecer al terreno.
 	if not _terrain.chunks_cargados().has(chunk_coord):
