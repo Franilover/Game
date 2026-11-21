@@ -21,6 +21,7 @@ func go_to(path: String) -> void:
 		push_warning("SceneManager: se ignoró una transición duplicada a '%s'." % path)
 		return
 	_carga_en_curso = true
+	var inicio_transicion_ms := Time.get_ticks_msec()
 
 	# Cargar primero. Si el recurso falla, el menú/escena actual permanece intacto.
 	preparar(path)
@@ -35,6 +36,7 @@ func go_to(path: String) -> void:
 		return
 
 	var packed := ResourceLoader.load_threaded_get(path) as PackedScene
+	print("SceneManager: recurso preparado → ", path, " | ", Time.get_ticks_msec() - inicio_transicion_ms, " ms")
 	if packed == null:
 		push_error("SceneManager: el recurso preparado no es una PackedScene: '%s'." % path)
 		_carga_en_curso = false
@@ -49,7 +51,9 @@ func go_to(path: String) -> void:
 		escena_anterior.queue_free()
 		await escena_anterior.tree_exited
 
+	var inicio_instancia_ms := Time.get_ticks_msec()
 	_current = packed.instantiate()
+	print("SceneManager: instancia creada → ", path, " | ", Time.get_ticks_msec() - inicio_instancia_ms, " ms")
 	if _current == null:
 		push_error("SceneManager: no se pudo instanciar '%s'." % path)
 		_carga_en_curso = false
