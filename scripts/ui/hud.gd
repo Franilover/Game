@@ -79,6 +79,8 @@ const R_HOLD_DELAY := 0.24
 var _dialogo_ruptura_vinculo: ConfirmationDialog = null
 var _aviso_evento_comunitario: Button = null
 var _aviso_evento_comunitario_timer: float = 0.0
+var _aviso_licencia: Label = null
+var _aviso_licencia_timer: float = 0.0
 
 @onready var _health_bar_node: ProgressBar = $HealthBar
 @onready var _health_value_node: Label = $BottomLeft/HealthValue
@@ -168,6 +170,7 @@ func _ready() -> void:
 	_preparar_reloj_calendario()
 	_preparar_boton_monedas()
 	_preparar_aviso_evento_comunitario()
+	_preparar_aviso_licencia()
 	if not get_viewport().size_changed.is_connected(_actualizar_layout_hud_movil):
 		get_viewport().size_changed.connect(_actualizar_layout_hud_movil)
 	_actualizar_layout_hud_movil()
@@ -187,6 +190,10 @@ func _ready() -> void:
 		var callback_evento := Callable(self, "_al_iniciar_evento_comunitario")
 		if not Events.is_connected("community_event_started", callback_evento):
 			Events.connect("community_event_started", callback_evento)
+	if Events.has_signal("notification_pushed"):
+		var callback_aviso := Callable(self, "_al_recibir_aviso_temporal")
+		if not Events.is_connected("notification_pushed", callback_aviso):
+			Events.connect("notification_pushed", callback_aviso)
 
 	print("HUD: iniciado.")
 
@@ -226,6 +233,11 @@ func _process(delta: float) -> void:
 		_aviso_evento_comunitario_timer -= delta
 		if _aviso_evento_comunitario_timer <= 0.0:
 			_aviso_evento_comunitario.hide()
+
+	if is_instance_valid(_aviso_licencia) and _aviso_licencia.visible:
+		_aviso_licencia_timer -= delta
+		if _aviso_licencia_timer <= 0.0:
+			_aviso_licencia.hide()
 
 	_hud_status_elapsed += delta
 	if _hud_status_elapsed >= 0.2:
@@ -412,6 +424,42 @@ func _al_iniciar_evento_comunitario(mensaje: String) -> void:
 	_aviso_evento_comunitario.text = texto
 	_aviso_evento_comunitario.show()
 	_aviso_evento_comunitario_timer = 6.0
+
+
+func _preparar_aviso_licencia() -> void:
+	_aviso_licencia = Label.new()
+	_aviso_licencia.name = "LicenseWarning"
+	_aviso_licencia.visible = false
+	_aviso_licencia.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_aviso_licencia.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_aviso_licencia.autowrap_mode = TextServer.AUTOWRAP_OFF
+	_aviso_licencia.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_aviso_licencia.set_anchors_preset(Control.PRESET_TOP_WIDE)
+	_aviso_licencia.anchor_left = 0.5
+	_aviso_licencia.anchor_right = 0.5
+	_aviso_licencia.anchor_top = 0.0
+	_aviso_licencia.anchor_bottom = 0.0
+	_aviso_licencia.offset_left = -220.0
+	_aviso_licencia.offset_top = 18.0
+	_aviso_licencia.offset_right = 220.0
+	_aviso_licencia.offset_bottom = 48.0
+	_aviso_licencia.z_index = 30
+	_aviso_licencia.add_theme_color_override("font_color", Color("#FFF3D6"))
+	_aviso_licencia.add_theme_color_override("font_outline_color", Color("#302014"))
+	_aviso_licencia.add_theme_constant_override("outline_size", 3)
+	_aviso_licencia.add_theme_font_size_override("font_size", 14)
+	add_child(_aviso_licencia)
+
+
+func _al_recibir_aviso_temporal(mensaje: String) -> void:
+	if not is_instance_valid(_aviso_licencia):
+		return
+	var texto := mensaje.strip_edges()
+	if texto.is_empty():
+		return
+	_aviso_licencia.text = texto
+	_aviso_licencia.show()
+	_aviso_licencia_timer = 2.8
 
 
 func _preparar_aviso_descubrimiento() -> void:
