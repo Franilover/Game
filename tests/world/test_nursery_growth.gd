@@ -10,6 +10,20 @@ class MockWorldClock extends Node:
 		return fecha.duplicate(true)
 
 
+class MockInventory extends Node:
+	var regadera: Dictionary = {
+		"nombre": "Regadera",
+		"item_id": "test-regadera",
+		"propiedades_game": {"regadera": {"agua": 4, "capacidad": 4}}
+	}
+
+	func obtener_objeto_mano_activa(mano: String) -> Dictionary:
+		return regadera.duplicate(true) if mano == "izquierda" else {}
+
+	func obtener_indice_mano_activa(_mano: String) -> int:
+		return 0
+
+
 func _ready() -> void:
 	call_deferred("_run")
 
@@ -80,7 +94,19 @@ func _run() -> void:
 	estados_test.erase("__test_bancal_vacio")
 	GameState.world_state.flags["vivero_bancales"] = estados_test
 
+	# El bancal vacío debe aceptar la interacción si hay una regadera con agua.
+	var inventario := MockInventory.new()
+	inventario.add_to_group("inventory")
+	add_child(inventario)
+	var jugador := Node2D.new()
+	add_child(jugador)
+	if not bool(parcela.call("can_interact", jugador)):
+		_fail("An empty dry plot must allow watering when a filled watering can is equipped.")
+		return
+
 	parcela.queue_free()
+	inventario.queue_free()
+	jugador.queue_free()
 	main_fake.queue_free()
 	await get_tree().process_frame
 	print("NurseryGrowthTest: PASS")
