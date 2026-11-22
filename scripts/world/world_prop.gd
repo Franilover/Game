@@ -154,7 +154,7 @@ func get_interaction_text() -> String:
 
 
 func can_interact(persona: Node) -> bool:
-	if not interactuable:
+	if not interactuable or _recoleccion_en_curso:
 		return false
 
 	if not persona is Node2D:
@@ -291,8 +291,10 @@ func interactuar_con_herramienta(persona: Node, mano: String) -> bool:
 
 func _ejecutar_recoleccion_con_herramienta(persona: Node, mano: String, token: int) -> void:
 	var herramienta: Dictionary = _inventory.obtener_objeto_mano_activa(mano).duplicate(true)
-	if persona.has_method("reproducir_animacion_herramienta"):
-		persona.call("reproducir_animacion_herramienta", herramienta, global_position)
+	var perfil := PlayerEquipmentAnimationController.obtener_perfil(herramienta)
+	var intervalo_golpe := maxf(float(perfil.get("duracion", 0.5)) + 0.07, 0.2)
+	var siguiente_golpe := 0.0
+	var tiempo_transcurrido := 0.0
 
 	var sprite := get_node_or_null("Sprite") as Sprite2D
 	if is_instance_valid(sprite):
@@ -302,28 +304,40 @@ func _ejecutar_recoleccion_con_herramienta(persona: Node, mano: String, token: i
 		sacudida.tween_property(sprite, "position", posicion_inicial + Vector2(-2.0, 0.0), 0.07)
 		sacudida.tween_property(sprite, "position", posicion_inicial, 0.07)
 
-	var tiempo_transcurrido := 0.0
 	while tiempo_transcurrido < TIEMPO_RECOLECCION_HERRAMIENTA:
 		if not is_instance_valid(self) or token != _recoleccion_token:
 			return
+		if not is_instance_valid(persona) or not persona is Node2D:
+			break
+		if global_position.distance_to((persona as Node2D).global_position) > get_interaction_distance():
+			break
+		if not _puede_recolectar(persona, mano):
+			break
+
+		if tiempo_transcurrido >= siguiente_golpe:
+			if persona.has_method("reproducir_animacion_herramienta"):
+				persona.call("reproducir_animacion_herramienta", herramienta, global_position)
+			siguiente_golpe += intervalo_golpe
+
 		var paso := minf(0.05, TIEMPO_RECOLECCION_HERRAMIENTA - tiempo_transcurrido)
 		await get_tree().create_timer(paso).timeout
 		tiempo_transcurrido += paso
 		_progreso_recoleccion = clampf(tiempo_transcurrido / TIEMPO_RECOLECCION_HERRAMIENTA, 0.0, 1.0)
 		queue_redraw()
+
 	if not is_instance_valid(self) or token != _recoleccion_token:
 		return
+	var accion_completada := tiempo_transcurrido >= TIEMPO_RECOLECCION_HERRAMIENTA
 	_recoleccion_en_curso = false
 	_progreso_recoleccion = 0.0
 	queue_redraw()
 
-	if not is_instance_valid(persona) or not can_interact(persona):
+	if not accion_completada or not is_instance_valid(persona) or not can_interact(persona):
 		return
 	if not _puede_recolectar(persona, mano):
 		return
 
-	# El recurso sólo se entrega al completar la animación y si el inventario
-	# todavía puede recibirlo. _recolectar conserva el vínculo canónico prop → item.
+	# El prop desaparece sólo después de que el drop visual se haya creado.
 	_recolectar(persona)
 
 
@@ -463,77 +477,31 @@ func _obtener_cantidad_recoleccion() -> int:
 	return cantidad
 
 
-func _recolectar(persona: Node) -> bool:
-	var inventario: Node = _inventory
-	if inventario == null or not is_instance_valid(inventario):
-		print("WorldProp: no se puede recolectar → inventario inválido.")
-		return false
-	if not inventario.has_method("agregar_objeto"):
-		print("WorldProp: no se puede recolectar → inventario sin agregar_objeto.")
-		return false
-
+func _recolectar(_persona: Node) -> bool:
 	if _world_items == null or not is_instance_valid(_world_items):
-		print("WorldProp: no se puede recolectar → GarliaWorldItems inválido.")
+		print("WorldProp: no se puede generar el drop → GarliaWorldItems inválido.")
+		return false
+	if not _world_items.has_method("generar_drop_recoleccion"):
+		push_warning("WorldProp: GarliaWorldItems no implementa drops de recolección.")
 		return false
 
 	var item_id := _obtener_item_id_recoleccion()
 	if item_id.is_empty():
-		print(
-			"WorldProp: no se puede recolectar → item de salida no disponible. ",
-			"datos=",
-			datos
-		)
 		_emitir_notificacion("El catálogo de recursos aún no está disponible. Inténtalo de nuevo en un momento.")
 		return false
-
-	var item: Dictionary = _world_items.buscar_item_por_id(
-		item_id
-	)
+	var item: Dictionary = _world_items.buscar_item_por_id(item_id)
 	if item.is_empty():
-		print(
-			"WorldProp: el item canónico no está cargado → ",
-			item_id
-		)
-		_emitir_notificacion("No se pudo cargar el recurso Madera. El árbol sigue intacto; inténtalo de nuevo.")
+		_emitir_notificacion("No se pudo cargar el material. El recurso sigue intacto; inténtalo de nuevo.")
 		return false
 
 	item["cantidad"] = _obtener_cantidad_recoleccion()
-
-	var agregado: bool = bool(
-		inventario.call(
-			"agregar_objeto",
-			item
-		)
-	)
-	if not agregado:
-		print(
-			"WorldProp: recolección rechazada por inventario → ",
-			str(item.get("nombre", "Objeto")),
-			" | item_id=",
-			item_id,
-			" | slots=",
-			str(inventario.get("items").size() if inventario.get("items") is Array else -1)
-		)
-		_emitir_notificacion("No tienes espacio en el inventario.")
+	if not bool(_world_items.call("generar_drop_recoleccion", item, global_position)):
+		_emitir_notificacion("No se pudo crear el drop. El recurso sigue intacto.")
 		return false
 
-	_emitir_notificacion(
-		"Recolectaste " + str(
-			item.get(
-				"nombre",
-				"Objeto"
-			)
-		) + " x" + str(
-			item.get(
-				"cantidad",
-				1
-			)
-		)
-	)
-
 	print(
-		"WorldProp: recurso recolectado → ",
-		str(item.get("nombre", "Objeto")),
+		"WorldProp: drop generado → ",
+		str(item.get("nombre", "Material")),
 		" x",
 		str(item.get("cantidad", 1)),
 		" | item_id=",
@@ -541,7 +509,6 @@ func _recolectar(persona: Node) -> bool:
 		" | bioma=",
 		bioma
 	)
-
 	queue_free()
 	return true
 
