@@ -83,7 +83,12 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 		return
 
 	var tipo := obtener_tipo_animacion(objeto)
-	var textura := ItemIconResolver.obtener_icono(objeto)
+	# La animación nunca debe buscar archivos ni cargar recursos en el momento
+	# del golpe: esa búsqueda síncrona provocaba el tirón al primer uso.
+	# Si el inventario ya entrega una Texture2D, se reutiliza directamente;
+	# en el resto de casos se usa el recurso precargado por tipo de herramienta.
+	var textura_variant: Variant = objeto.get("icono", null)
+	var textura := textura_variant as Texture2D if textura_variant is Texture2D else null
 	if textura == null:
 		textura = obtener_textura_respaldo(tipo)
 	if textura == null:
