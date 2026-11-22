@@ -29,6 +29,7 @@ func _run() -> void:
 	parcela.set_script(WATERING_SCRIPT)
 	add_child(parcela)
 	parcela.set("_planta", {
+		"sprite": "res://assets/art/props/Flor Azul.png",
 		"dia_plantado": 1001,
 		"ultimo_riego_dia": 1001,
 		"riegos": 1,
@@ -46,6 +47,7 @@ func _run() -> void:
 		return
 
 	parcela.set("_planta", {
+		"sprite": "res://assets/art/props/Flor Azul.png",
 		"dia_plantado": 1001,
 		"ultimo_riego_dia": 1001,
 		"riegos": 2
@@ -63,12 +65,20 @@ func _run() -> void:
 	parcela.set("_clave", "__test_bancal_vacio")
 	parcela.set("_planta", {})
 	parcela.set("_humedo", true)
-	parcela.set("_ultimo_riego_dia_bancal", 1002)
+	parcela.set("_ultimo_riego_dia_bancal", 1003)
+	parcela.call("_guardar_estado_parcela")
+	var estados_test: Dictionary = GameState.world_state.flags.get("vivero_bancales", {})
+	var estado_vacio: Variant = estados_test.get("__test_bancal_vacio", {})
+	if not estado_vacio is Dictionary or not bool((estado_vacio as Dictionary).get("humedo", false)):
+		_fail("An empty watered plot must persist its moisture state.")
+		return
+	reloj.fecha["dia"] = 4
 	parcela.call("_actualizar_progreso_planta")
 	if bool(parcela.get("_humedo")):
 		_fail("An empty nursery plot must be allowed to dry after the world date advances.")
 		return
-	GameState.world_state.flags.erase("__test_bancal_vacio")
+	estados_test.erase("__test_bancal_vacio")
+	GameState.world_state.flags["vivero_bancales"] = estados_test
 
 	parcela.queue_free()
 	main_fake.queue_free()
