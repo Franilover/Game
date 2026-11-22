@@ -1226,18 +1226,14 @@ func _mostrar_detalle_clinica(tipo: String, detalle: VBoxContainer) -> void:
 	eterium.show_percentage = false
 	detalle.add_child(eterium)
 	PIXEL_UI_THEME.apply(eterium, false)
-	var descripcion := Label.new()
-	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	var costo := PRECIO_CLINICA_BASICA
 	var necesita_salud := vida < vida_maxima
 	var necesita_eterium := mana < mana_maximo
 	if tipo == "completo":
 		costo = PRECIO_CLINICA_COMPLETA
-		descripcion.text = "Una recuperación integral que restaura toda tu salud y tu reserva de Eterium."
-		_agregar_boton_detalle(detalle, "Recuperación completa · %d monedas" % costo, _aplicar_tratamiento_clinica.bind(true), not (necesita_salud or necesita_eterium) or GameState.obtener_dinero() < costo)
+		_agregar_boton_detalle(detalle, "Completa · %d" % costo, _aplicar_tratamiento_clinica.bind(true), not (necesita_salud or necesita_eterium) or GameState.obtener_dinero() < costo)
 	else:
-		descripcion.text = "Atención básica para cerrar parte de tus heridas. No consume Eterium."
-		_agregar_boton_detalle(detalle, "Recibir tratamiento · %d monedas" % costo, _aplicar_tratamiento_clinica.bind(false), not necesita_salud or GameState.obtener_dinero() < costo)
+		_agregar_boton_detalle(detalle, "Salud · %d" % costo, _aplicar_tratamiento_clinica.bind(false), not necesita_salud or GameState.obtener_dinero() < costo)
 	detalle.add_child(descripcion)
 
 
@@ -1279,7 +1275,7 @@ func _primera_expedicion_finalizada() -> bool:
 func _construir_menu_cuartel() -> void:
 	_agregar_opcion_menu_cuartel(
 		"Licencias",
-		"Aquí puedes consultar y solicitar licencias para ejercer distintas técnicas.",
+		"",
 		"cuartel_licencia"
 	)
 	_agregar_opcion_menu_cuartel(
@@ -1289,7 +1285,7 @@ func _construir_menu_cuartel() -> void:
 	)
 	_agregar_opcion_menu_cuartel(
 		"Entrenamiento",
-		"Combate.",
+		"",
 		"cuartel_entrenamiento"
 	)
 
@@ -1309,11 +1305,12 @@ func _agregar_opcion_menu_cuartel(titulo: String, descripcion: String, destino: 
 	encabezado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	encabezado.add_theme_font_size_override("font_size", 14)
 	columna.add_child(encabezado)
-	var detalle := Label.new()
-	detalle.text = descripcion
-	detalle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detalle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	columna.add_child(detalle)
+	if not descripcion.is_empty():
+		var detalle := Label.new()
+		detalle.text = descripcion
+		detalle.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detalle.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		columna.add_child(detalle)
 	var boton := Button.new()
 	boton.text = "Abrir"
 	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1337,7 +1334,6 @@ func _construir_cuartel_licencia() -> void:
 	if licencia:
 		_agregar_texto("Licencia concedida.")
 		return
-	_agregar_texto("Solicita aquí la licencia necesaria para portar y comprar espadas.")
 	var solicitar := Button.new()
 	solicitar.text = "Solicitar licencia · %d monedas" % PRECIO_LICENCIA_ESPADA
 	solicitar.disabled = GameState.obtener_dinero() < PRECIO_LICENCIA_ESPADA
@@ -1348,7 +1344,7 @@ func _construir_cuartel_licencia() -> void:
 
 func _construir_cuartel_armas() -> void:
 	if not bool(GameState.world_state.flags.get("licencia_espadas", false)):
-		_agregar_texto("Necesitas obtener primero tu licencia en la mesa de solicitudes.")
+		_agregar_texto("Requiere licencia de espadas.")
 		return
 
 	_agregar_boton_arma("Espada de Madera", ITEM_ESPADA_MADERA, PRECIO_ESPADA_MADERA)
@@ -1357,7 +1353,7 @@ func _construir_cuartel_armas() -> void:
 
 func _construir_cuartel_entrenamiento() -> void:
 	if not is_instance_valid(_jugador):
-		_agregar_texto("No se encontró al jugador.")
+		_agregar_texto("Jugador no disponible.")
 		return
 	var candidatos: Array[Creature] = []
 	for nodo in get_tree().get_nodes_in_group("creatures"):
