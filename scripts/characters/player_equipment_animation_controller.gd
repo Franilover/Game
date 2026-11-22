@@ -35,6 +35,17 @@ static func obtener_tipo_animacion(objeto: Dictionary) -> String:
 	var herramienta: Dictionary = herramienta_variant as Dictionary if herramienta_variant is Dictionary else {}
 	var tipo_herramienta := _normalizar(str(herramienta.get("tipo", "")))
 	var identidad := nombre + " " + tipo + " " + tipo_herramienta
+	for clave_categoria in ["categoria", "categoria_canonica", "clase", "subtipo"]:
+		var categoria_variant: Variant = objeto.get(clave_categoria, "")
+		if categoria_variant is Dictionary:
+			for campo in ["clave", "nombre", "nombre_humano"]:
+				identidad += " " + _normalizar(str((categoria_variant as Dictionary).get(campo, "")))
+		else:
+			identidad += " " + _normalizar(str(categoria_variant))
+	var tipo_objeto_variant: Variant = objeto.get("tipo_objeto", {})
+	if tipo_objeto_variant is Dictionary:
+		for campo in ["clave", "nombre", "nombre_humano", "categoria_canonica"]:
+			identidad += " " + _normalizar(str((tipo_objeto_variant as Dictionary).get(campo, "")))
 
 	if "espada" in identidad or "sword" in identidad:
 		return "espada"
