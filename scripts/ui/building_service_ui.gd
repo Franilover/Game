@@ -136,10 +136,11 @@ func _actualizar() -> void:
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
 
-	var saldo := Label.new()
-	saldo.text = "%d" % GameState.obtener_dinero()
-	saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
-	_contenido.add_child(saldo)
+	if _tipo != "vivero":
+		var saldo := Label.new()
+		saldo.text = "%d" % GameState.obtener_dinero()
+		saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
+		_contenido.add_child(saldo)
 
 	match _tipo:
 		"cuartel": _construir_menu_cuartel()
@@ -515,9 +516,7 @@ func _encargar_mueble(mueble_id: String) -> void:
 
 
 func _construir_vivero() -> void:
-	_panel.custom_minimum_size = Vector2(590, 0)
-	_agregar_texto("CUIDADO DE CULTIVOS")
-	_agregar_texto("Selecciona un bancal para revisar su cultivo, humedad y cuidados.")
+	_panel.custom_minimum_size = Vector2(430, 0)
 	var nombres := ["BancalOeste", "BancalCentro", "BancalEste", "BancalSurOeste", "BancalSurCentro"]
 	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 184.0, 268.0, 9)
 	var lista := layout["list_content"] as GridContainer
@@ -529,15 +528,10 @@ func _construir_vivero() -> void:
 
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
-	var regadera := _obtener_regadera_en_manos()
-	var agua := int(regadera.get("agua", -1))
-	var cantidad_ocupados := 0
 	var grupo_bancales := ButtonGroup.new()
 	for nombre in nombres:
 		var registro: Variant = estados.get(nombre, {})
 		var cultivo: Dictionary = registro if registro is Dictionary else {}
-		if not cultivo.is_empty() and str(cultivo.get("nombre", "")).strip_edges() != "":
-			cantidad_ocupados += 1
 		var boton := Button.new()
 		boton.custom_minimum_size = Vector2(52, 52)
 		boton.toggle_mode = true
@@ -553,21 +547,7 @@ func _construir_vivero() -> void:
 		_bancal_seleccionado = nombres[0]
 	_mostrar_detalle_bancal_vivero(_bancal_seleccionado, detalle)
 
-	var pie := Label.new()
-	pie.text = "%d / %d bancales ocupados  ·  Regadera: %s" % [
-		cantidad_ocupados, nombres.size(),
-		("Agua %d/4" % agua) if agua >= 0 else "no equipada"
-	]
-	pie.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	pie.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	_contenido.add_child(pie)
 
-	var actualizar := Button.new()
-	actualizar.text = "Actualizar estado"
-	actualizar.custom_minimum_size = Vector2(0, 34)
-	actualizar.pressed.connect(_actualizar)
-	_contenido.add_child(actualizar)
-	PIXEL_UI_THEME.apply(actualizar, false)
 
 
 func _seleccionar_bancal_vivero(nombre: String, detalle: VBoxContainer) -> void:
@@ -585,12 +565,12 @@ func _mostrar_detalle_bancal_vivero(nombre: String, detalle: VBoxContainer) -> v
 	var ocupado := not cultivo.is_empty() and str(cultivo.get("nombre", "")).strip_edges() != ""
 	var humedo := bool(cultivo.get("humedo", false)) if not cultivo.is_empty() else bool(registro)
 
-	var icono := TextureRect.new()
-	icono.custom_minimum_size = Vector2(0, 104)
-	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if ocupado:
+		var icono := TextureRect.new()
+		icono.custom_minimum_size = Vector2(0, 104)
+		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		icono.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		var ruta_sprite := str(cultivo.get("sprite", ""))
 		if not ruta_sprite.is_empty() and ResourceLoader.exists(ruta_sprite):
 			icono.texture = load(ruta_sprite) as Texture2D
@@ -600,10 +580,10 @@ func _mostrar_detalle_bancal_vivero(nombre: String, detalle: VBoxContainer) -> v
 			if objeto.is_empty():
 				objeto = {"nombre": str(cultivo.get("nombre", ""))}
 			icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
-	detalle.add_child(icono)
+		detalle.add_child(icono)
 
 	var titulo := Label.new()
-	titulo.text = nombre.replace("Bancal", "BANCAL ")
+	titulo.text = str(cultivo.get("nombre", "")) if ocupado else ""
 	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	titulo.add_theme_font_size_override("font_size", 17)
 	detalle.add_child(titulo)
@@ -612,31 +592,26 @@ func _mostrar_detalle_bancal_vivero(nombre: String, detalle: VBoxContainer) -> v
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if ocupado:
-		var nombre_cultivo := str(cultivo.get("nombre", "Cultivo"))
-		estado.text = "%s\n%s\nRiegos: %d / 2" % [
-			nombre_cultivo,
-			("Suelo húmedo" if humedo else "Necesita agua"),
-			int(cultivo.get("riegos", 0))
-		]
+		var riegos := int(cultivo.get("riegos", 0))
+		estado.text = "Lista" if _cultivo_esta_maduro(cultivo) else ("Húmeda · %d/2" % riegos if humedo else "Necesita agua · %d/2" % riegos)
 	else:
-		estado.text = "Bancal vacío\nPrepara una semilla desde el inventario y úsala junto a este bancal."
+		estado.text = "Húmeda" if humedo else "Vacía"
 	detalle.add_child(estado)
 
-	var separador := HSeparator.new()
-	detalle.add_child(separador)
-	var cuidados := Label.new()
-	cuidados.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	cuidados.text = "CUIDADOS\n• Planta una semilla desde el inventario.\n• Equipa la regadera y riega una vez por día.\n• Cuando madure, recoge la flor directamente."
-	if ocupado and humedo:
-		cuidados.text += "\n\nEl suelo conserva humedad."
-	detalle.add_child(cuidados)
 
-	var regadera := _obtener_regadera_en_manos()
-	var agua := int(regadera.get("agua", -1))
-	var herramienta := Label.new()
-	herramienta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	herramienta.text = ("Regadera equipada · Agua %d/4" % agua) if agua >= 0 else "Equipa una regadera para cuidar tus cultivos."
-	detalle.add_child(herramienta)
+func _cultivo_esta_maduro(cultivo: Dictionary) -> bool:
+	var reloj := get_tree().root.get_node_or_null("Main/Systems/WorldAtmosphere")
+	if not is_instance_valid(reloj) or not reloj.has_method("obtener_tiempo"):
+		return false
+	var tiempo: Variant = reloj.call("obtener_tiempo")
+	if not tiempo is Dictionary:
+		return false
+	var datos := tiempo as Dictionary
+	if not bool(datos.get("calendario_cargado", true)):
+		return false
+	var dia_actual := int(datos.get("anio", 0)) * 1000 + int(datos.get("dia", 1))
+	var dias := dia_actual - int(cultivo.get("dia_plantado", dia_actual))
+	return dias >= 2 and int(cultivo.get("riegos", 0)) >= 2
 
 
 func _obtener_regadera_en_manos() -> Dictionary:
