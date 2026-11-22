@@ -8,6 +8,9 @@ var visual: Node2D = null
 var sprite_base: Sprite2D = null
 var _tween: Tween = null
 var _sprite_equipo: Sprite2D = null
+var _pivot_equipo: Node2D = null
+
+const ITEM_ICON_RESOLVER: Script = preload("res://scripts/ui/item_icon_resolver.gd")
 
 # Perfiles compartidos por tipo de herramienta. Las duraciones incluyen
 # preparación, golpe y recuperación para que cada acción pueda leerse.
@@ -87,8 +90,14 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 	# del golpe: esa búsqueda síncrona provocaba el tirón al primer uso.
 	# Si el inventario ya entrega una Texture2D, se reutiliza directamente;
 	# en el resto de casos se usa el recurso precargado por tipo de herramienta.
-	var textura_variant: Variant = objeto.get("icono", null)
-	var textura := textura_variant as Texture2D if textura_variant is Texture2D else null
+	# Resolver por identidad del objeto equipado, no por el icono genérico
+	# que algunas ranuras conservan como fallback (p. ej. espada de madera).
+	var datos_sprite := objeto.duplicate(true)
+	datos_sprite.erase("icono")
+	var textura := ITEM_ICON_RESOLVER.obtener_icono(datos_sprite)
+	if textura == null:
+		var textura_variant: Variant = objeto.get("icono", null)
+		textura = textura_variant as Texture2D if textura_variant is Texture2D else null
 	if textura == null:
 		textura = obtener_textura_respaldo(tipo)
 	if textura == null:
@@ -96,9 +105,10 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 
 	if is_instance_valid(_tween) and _tween.is_running():
 		_tween.kill()
-	if is_instance_valid(_sprite_equipo):
-		_sprite_equipo.queue_free()
-		_sprite_equipo = null
+	if is_instance_valid(_pivot_equipo):
+		_pivot_equipo.queue_free()
+		_pivot_equipo = null
+	_sprite_equipo = null
 
 	var perfil := obtener_perfil(objeto)
 	var direccion := facing.normalized()
@@ -112,30 +122,38 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 	var escala := float(perfil.get("escala", 0.98))
 	var angulo_base := direccion.angle() + PI * 0.5
 
+	# El pivote queda en la empuñadura, cerca de la mano. El sprite se
+	# desplaza hacia delante desde ese punto y rota alrededor del mango,
+	# como una espada sostenida de verdad, en vez de girar sobre su centro.
+	_pivot_equipo = Node2D.new()
+	_pivot_equipo.name = "EquipmentActionPivot"
+	_pivot_equipo.position = origen - direccion * 3.0 - perpendicular * 5.0
+	_pivot_equipo.rotation = angulo_base - barrido * 0.62
+	_pivot_equipo.z_index = 20
+	visual.add_child(_pivot_equipo)
+
 	_sprite_equipo = Sprite2D.new()
 	_sprite_equipo.name = "EquipmentActionSprite"
 	_sprite_equipo.texture = textura
 	_sprite_equipo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_sprite_equipo.centered = true
 	_sprite_equipo.scale = Vector2.ONE * escala
-	_sprite_equipo.z_index = 20
-	_sprite_equipo.position = origen - direccion * 9.0 - perpendicular * 11.0
-	_sprite_equipo.rotation = angulo_base - barrido * 0.62
-	visual.add_child(_sprite_equipo)
+	_sprite_equipo.position = Vector2(0.0, -float(textura.get_height()) * 0.34)
+	_pivot_equipo.add_child(_sprite_equipo)
 
 	_tween = visual.create_tween()
 	_tween.set_trans(Tween.TRANS_QUAD)
 	_tween.set_ease(Tween.EASE_OUT)
-	# Preparación breve: el objeto se retrasa antes de avanzar hacia el golpe.
+	# La mano acompaña el golpe, pero la hoja gira desde la empuñadura.
 	_tween.tween_interval(0.07)
 	_tween.tween_property(
-		_sprite_equipo,
+		_pivot_equipo,
 		"position",
-		origen + direccion * alcance + perpendicular * 7.0,
+		origen + direccion * alcance * 0.32 + perpendicular * 2.0,
 		duracion * 0.62
 	)
 	_tween.parallel().tween_property(
-		_sprite_equipo,
+		_pivot_equipo,
 		"rotation",
 		angulo_base + barrido * 0.38,
 		duracion * 0.62
@@ -143,13 +161,13 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 	_tween.set_trans(Tween.TRANS_CUBIC)
 	_tween.set_ease(Tween.EASE_IN)
 	_tween.tween_property(
-		_sprite_equipo,
+		_pivot_equipo,
 		"position",
-		origen + direccion * 3.0 + perpendicular * 10.0,
+		origen + direccion * 2.0 + perpendicular * 5.0,
 		duracion * 0.38
 	)
 	_tween.parallel().tween_property(
-		_sprite_equipo,
+		_pivot_equipo,
 		"modulate:a",
 		0.0,
 		duracion * 0.38
@@ -158,8 +176,9 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 
 
 func _limpiar() -> void:
-	if is_instance_valid(_sprite_equipo):
-		_sprite_equipo.queue_free()
+	if is_instance_valid(_pivot_equipo):
+		_pivot_equipo.queue_free()
+	_pivot_equipo = null
 	_sprite_equipo = null
 	_tween = null
 
