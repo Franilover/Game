@@ -442,11 +442,25 @@ func plantar_semilla(datos_semilla: Dictionary, inventario: Node, indice: int, j
 
 
 func _dia_mundo_actual() -> int:
+	# Torres es una escena fija: WorldContext se configura sin reloj porque
+	# no crea WorldGenerator. El calendario global sigue viviendo en Main.
+	# Leerlo directamente evita caer en elapsed_time, que no representa días
+	# del calendario y dejaba los bancales húmedos indefinidamente.
+	var reloj := get_tree().root.get_node_or_null("Main/Systems/WorldAtmosphere")
+	if is_instance_valid(reloj) and reloj.has_method("obtener_tiempo"):
+		var tiempo_reloj: Variant = reloj.call("obtener_tiempo")
+		if tiempo_reloj is Dictionary:
+			var datos_reloj := tiempo_reloj as Dictionary
+			if bool(datos_reloj.get("calendario_cargado", true)):
+				return int(datos_reloj.get("anio", 0)) * 1000 + int(datos_reloj.get("dia", 1))
+
+	# Compatibilidad con contextos que exponen el reloj compartido.
 	var contexto := get_tree().root.get_node_or_null("Main/Systems/WorldContext")
 	if is_instance_valid(contexto) and contexto.has_method("obtener_tiempo"):
-		var tiempo: Variant = contexto.call("obtener_tiempo")
-		if tiempo is Dictionary:
-			return int((tiempo as Dictionary).get("anio", 0)) * 1000 + int((tiempo as Dictionary).get("dia", 1))
+		var tiempo_contexto: Variant = contexto.call("obtener_tiempo")
+		if tiempo_contexto is Dictionary and not (tiempo_contexto as Dictionary).is_empty():
+			var datos_contexto := tiempo_contexto as Dictionary
+			return int(datos_contexto.get("anio", 0)) * 1000 + int(datos_contexto.get("dia", 1))
 	return int(GameState.world_state.elapsed_time / 720.0)
 
 
