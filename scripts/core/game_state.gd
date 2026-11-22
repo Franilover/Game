@@ -42,6 +42,7 @@ var _primer_guardado_elapsed: float = 0.0
 var _ultimo_motivo_fallo_guardado: String = ""
 var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
+var _save_thread: Thread = null
 var _runtime_no_detectado_reportado: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
@@ -150,14 +151,14 @@ func _process(delta: float) -> void:
 
 	if _autosave_timer >= AUTOSAVE_INTERVAL:
 		print("GameState: autosave solicitado.")
-		var guardado := false
 		if _historia_reserva_activa:
-			guardado = guardar_progreso_historia()
+			var guardado_historia := guardar_progreso_historia()
+			_autosave_timer = 0.0 if guardado_historia else maxf(AUTOSAVE_INTERVAL - 1.0, 0.0)
 		elif not active_save_id.is_empty():
-			guardado = guardar_partida()
-		# Si el runtime aún no está listo, reintentar en un segundo en vez de
-		# esperar otros diez segundos tras una tentativa que no pudo guardarse.
-		_autosave_timer = 0.0 if guardado else maxf(AUTOSAVE_INTERVAL - 1.0, 0.0)
+			# La captura ocurre en el hilo principal; JSON y disco se procesan
+			# fuera del hilo de renderizado.
+			guardar_partida_en_segundo_plano()
+			_autosave_timer = 0.0
 
 
 func _notification(what: int) -> void:
@@ -171,6 +172,12 @@ func _notification(what: int) -> void:
 		guardar_progreso_actual("suspensión de la aplicación")
 		return
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
+		# El cierre sí puede esperar: no abandonar un worker con una transacción
+		# de archivo activa. Después se realiza el guardado final síncrono.
+		if _save_thread != null and _save_thread.is_started():
+			_save_thread.wait_to_finish()
+			_save_thread = null
+			_guardado_en_curso = false
 		var guardado := guardar_progreso_actual("cierre de la aplicación")
 		if not guardado and (_historia_reserva_activa or not active_save_id.is_empty()):
 			push_error("GameState: no se pudo confirmar el guardado al cerrar. Motivo: " + _ultimo_motivo_fallo_guardado)
@@ -818,6 +825,83 @@ func guardar_partida() -> bool:
 	return resultado
 
 
+## Captura el estado vivo en el hilo principal y delega JSON + disco a un worker.
+## Sólo se usa en autosaves; los guardados explícitos de cierre siguen siendo síncronos.
+func guardar_partida_en_segundo_plano() -> bool:
+	if _historia_reserva_activa:
+		return _rechazar_guardado("la sesión activa usa el archivo narrativo, no una partida normal")
+	if _guardado_en_curso:
+		return _rechazar_guardado("ya hay una escritura en curso")
+	if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
+		return _rechazar_guardado("el estado vital del jugador aún se está restaurando")
+	if active_save_id.is_empty():
+		return _rechazar_guardado("no hay un identificador de partida activa")
+	var jugador: Player = _player
+	if jugador == null or not is_instance_valid(jugador):
+		return _rechazar_guardado("el jugador todavía no está conectado a GameState")
+	if jugador.get("is_alive") == false:
+		return _rechazar_guardado("el jugador está en estado de muerte")
+	if get_tree().current_scene == null:
+		return _rechazar_guardado("no hay una escena activa")
+
+	_guardado_en_curso = true
+	var diagnostico_inicio_usec := Time.get_ticks_usec()
+	capturar_estado_desde_juego(jugador)
+	var captura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
+	_sincronizar_garumis_vinculados_desde_escena()
+
+	if _active_save_header.is_empty():
+		_guardado_en_curso = false
+		return _rechazar_guardado("no hay cabecera validada para la partida activa: " + active_save_id)
+	var datos := _active_save_header.duplicate(false)
+	datos["version"] = SAVE_VERSION
+	datos["id"] = active_save_id
+	datos["nombre"] = active_save_name
+	datos["actualizado_en"] = _ahora()
+	datos["mundo"] = {
+		"semilla": world_state.world_seed,
+		"generador_version": 1
+	}
+	var lectura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0 - captura_ms
+	var serializacion_inicio_usec := Time.get_ticks_usec()
+	datos["estado"] = _serializar_estado()
+	var serializacion_ms := float(Time.get_ticks_usec() - serializacion_inicio_usec) / 1000.0
+
+	_save_thread = Thread.new()
+	var inicio_worker := _save_thread.start(
+		Callable(save_repository, "escribir_partida").bind(active_save_id, datos)
+	)
+	if inicio_worker != OK:
+		_save_thread = null
+		_guardado_en_curso = false
+		return _rechazar_guardado("no se pudo iniciar el hilo de escritura: " + str(inicio_worker))
+
+	var escritura_inicio_usec := Time.get_ticks_usec()
+	while _save_thread.is_alive():
+		await get_tree().process_frame
+	var resultado_variant: Variant = _save_thread.wait_to_finish()
+	_save_thread = null
+	var resultado := bool(resultado_variant)
+	var escritura_ms := float(Time.get_ticks_usec() - escritura_inicio_usec) / 1000.0
+	var total_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
+	_guardado_en_curso = false
+
+	if total_ms >= 80.0:
+		push_warning(
+			"PERF_SAVE_ASYNC: total=%.1f ms | captura=%.1f ms | lectura=%.1f ms | snapshot=%.1f ms | worker=%.1f ms | resultado=%s"
+			% [total_ms, captura_ms, lectura_ms, serializacion_ms, escritura_ms, str(resultado)]
+		)
+	if resultado:
+		_active_save_header = datos.duplicate(false)
+		_active_save_header.erase("estado")
+		_ultimo_motivo_fallo_guardado = ""
+		_primer_guardado_pendiente = false
+		print("GameState: partida guardada en segundo plano → ", active_save_name)
+	else:
+		_rechazar_guardado("el worker no pudo escribir partidas/" + active_save_id + ".json")
+	return resultado
+
+
 ## Local worlds keep their runtime entity deltas in the private save.
 func capturar_estado_entidades_mundo_local(zona_tipo: String, entity_manager: Node) -> bool:
 	var tipo := zona_tipo.strip_edges()
@@ -1033,14 +1117,15 @@ func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
 
 
 func _ejecutar_guardado_rapido() -> void:
-	# Agrupa varios cambios consecutivos (inventario, misiones, vínculos, etc.)
-	# en una sola escritura. Antes cada señal disparaba un guardado síncrono.
+	# Agrupa cambios consecutivos y evita solapar dos escrituras del mismo save.
 	await get_tree().create_timer(GUARDADO_RAPIDO_ESPERA_S).timeout
+	while _guardado_en_curso:
+		await get_tree().process_frame
 	_guardado_rapido_pendiente = false
 	if _historia_reserva_activa:
 		guardar_progreso_historia()
 	elif not active_save_id.is_empty():
-		guardar_partida()
+		await guardar_partida_en_segundo_plano()
 
 
 func _guardar_progreso_diferido() -> void:
