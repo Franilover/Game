@@ -100,10 +100,6 @@ var _reinos_game_servidor_listos := false
 var _inicio_servidor_pendiente := false
 var _carga_historia_activa := false
 var _cutscene_director: Variant = null
-var _bienvenida_torres_pendiente := false
-var _bienvenida_torres_en_curso := false
-var _bienvenida_torres_omitida := false
-var _bienvenida_omitir_layer: CanvasLayer = null
 var _cinematicas_pendientes: Array[Dictionary] = []
 var _cinematica_proximidad_elapsed: float = 0.0
 var _procesando_cinematica_pendiente: bool = false
@@ -111,10 +107,6 @@ var _procesando_cinematica_pendiente: bool = false
 
 func _ready() -> void:
 	_carga_historia_activa = bool(GameState.world_state.flags.get("historia_iniciar_reserva_carmesi", false))
-	_bienvenida_torres_pendiente = (
-		not bool(GameState.world_state.flags.get("bienvenida_torres_vista", false))
-		and not GameState.player_state.position_valida
-	)
 	if is_instance_valid(_story_loading_overlay):
 		_story_loading_overlay.visible = _carga_historia_activa
 	_registrar_diagnostico_ventana("_ready: inicio")
@@ -713,6 +705,9 @@ func _inicializar_runtime_de_zona() -> void:
 				GameState.player_state.position,
 				spawn_reino
 			)
+			# Las partidas nuevas comienzan directamente en la plaza de Torres.
+			if tipo_zona_actual == "reino_torres" and not GameState.player_state.position_valida:
+				_player.global_position = Vector2(0.0, 120.0)
 		# Una expedición conserva el punto exacto desde el que el jugador salió
 		# de Torres. Se aplica después del spawn predeterminado del reino.
 		if _zone_manager.has_method("consumir_retorno_expedicion"):
@@ -977,8 +972,6 @@ func _materializar_npcs_reino_torres() -> void:
 	_materializar_habitantes_sin_oficio(zona)
 	if creados > 0:
 		print("Main: NPC de Reino Torres materializados desde Supabase → ", creados)
-	if _bienvenida_torres_pendiente:
-		call_deferred("_iniciar_bienvenida_torres")
 
 
 ## Habitantes civiles de Torres. No tienen empleos ni registros canónicos
@@ -1130,327 +1123,6 @@ func _obtener_presentacion_habitante_local(clave: String) -> String:
 		"nima":
 			return "¡Hola! Soy Nima. Estoy investigando algunos fenómenos Oris por mi cuenta, aunque intento no pasarme el día encerrada entre apuntes. ¿Qué tal va todo?"
 	return "Hola. Vivo por aquí."
-
-
-## Primera llegada al reino: el guardia recibe al jugador y Elian lo acompaña
-## en un recorrido por los barrios. Se ejecuta una sola vez en una partida nueva.
-func _iniciar_bienvenida_torres() -> void:
-	if _bienvenida_torres_en_curso or not is_instance_valid(_cutscene_director):
-		return
-	if not is_instance_valid(_player) or not is_instance_valid(_camera):
-		return
-
-	var guardia := _buscar_npc_bienvenida("darven")
-	var elian := _buscar_npc_bienvenida("elian")
-	if not is_instance_valid(guardia) or not is_instance_valid(elian):
-		push_warning("Main: la bienvenida espera a que Darven y Elian estén disponibles.")
-		return
-
-	_bienvenida_torres_en_curso = true
-	_bienvenida_torres_omitida = false
-	_crear_boton_omitir_bienvenida()
-	var posicion_inicial := _player.global_position
-	var zoom_revelacion := clampf(_camera.zoom.x * 0.82, 1.15, 1.65)
-	var pasos: Array[Dictionary] = [
-		{"tipo":"camara","x":posicion_inicial.x,"y":posicion_inicial.y - 55.0,"zoom":zoom_revelacion,"duracion":1.1},
-		{"tipo":"dialogo","datos":{"clave":"bienvenida_pensamientos_llegada","lineas":[
-			{"hablante":"Pensamientos","texto":"Por fin llegué. Este debe ser el reino del que tanto había oído hablar."},
-			{"hablante":"Pensamientos","texto":"Será mejor que averigüe dónde estoy antes de ponerme a recorrerlo."}
-		]}},
-		{"tipo":"preparar_npc","npc":"Darven","x":posicion_inicial.x + 42.0,"y":posicion_inicial.y + 8.0},
-		{"tipo":"camara","x":posicion_inicial.x + 18.0,"y":posicion_inicial.y - 22.0,"zoom":zoom_revelacion * 1.08,"duracion":0.8},
-		{"tipo":"mirar_npc","npc":"Darven","izquierda":true},
-		{"tipo":"gesto_npc","npc":"Darven","gesto":"saludar","duracion":0.65},
-		{"tipo":"dialogo","npc":"Darven","datos":_crear_dialogo_guardia_bienvenida()},
-		{"tipo":"preparar_npc","npc":"Elian","x":posicion_inicial.x - 48.0,"y":posicion_inicial.y + 18.0},
-		{"tipo":"camara","x":posicion_inicial.x - 12.0,"y":posicion_inicial.y - 25.0,"zoom":zoom_revelacion,"duracion":0.75},
-		{"tipo":"mirar_npc","npc":"Elian","izquierda":false},
-		{"tipo":"gesto_npc","npc":"Elian","gesto":"saludar","duracion":0.65},
-		{"tipo":"dialogo","npc":"Elian","datos":_crear_dialogo_presentacion_elian()}
-	]
-
-	# Cada parada representa un barrio completo. Las casas sin habitantes
-	# conocidos no se presentan ni se convierten en puntos del recorrido.
-	_agregar_parada_tour_elian(pasos, "plaza", _obtener_posicion_tour(["Sprite_pozo"], Vector2(0.0, 95.0)),
-		"Estamos en la plaza, uno de los puntos donde más gente se cruza. Desde aquí se llega al castillo, la panadería, la posada y la forja. La casa de Bruna queda cerca de la zona de trabajo.",
-		[
-			{"texto":"¿Qué hacen en el castillo?","jugador":"¿Qué hacen en el castillo?","respuesta":"Allí se atienden los asuntos principales del reino. Si necesitas resolver algo importante, probablemente tendrás que pasar por allí."},
-			{"texto":"¿La posada recibe viajeros?","jugador":"¿La posada recibe viajeros?","respuesta":"Sí, es el lugar más práctico para descansar si todavía no tienes dónde quedarte."},
-			{"texto":"¿Dónde queda la casa de Bruna?","jugador":"¿Dónde vive Bruna?","respuesta":"Su casa está junto a la zona de la forja. Es fácil encontrarla si sigues el camino hacia los talleres."}
-		])
-	_agregar_conversacion_tour_elian(pasos, "Bruna", _obtener_posicion_tour(["Grupo_edificio_forja/Entrada"]), [
-		{"hablante":"Elian","texto":"¡Bruna! Justo te estábamos mencionando. ¿Cómo va el trabajo?"},
-		{"hablante":"Bruna","texto":"Hola, Elian. Bien, estoy terminando unas piezas. ¿Y tú? ¿Ya estás haciendo de guía?"},
-		{"hablante":"Elian","texto":"¡Alguien tenía que enseñarle el lugar! Además, así aprovecho de saludarte."}
-	], [
-		{"texto":"¿Se conocen desde hace mucho?","jugador":"¿Ustedes se conocen desde hace mucho?","respuesta":"Desde hace bastante. Nos cruzamos seguido por el trabajo y la plaza.","clave":"bruna_conocerse"},
-		{"texto":"¿Qué estás fabricando?","jugador":"Bruna, ¿qué estás preparando ahora?","respuesta":"Estoy terminando unas piezas para reparar herramientas. Si quedan bien, mañana podré entregarlas.","clave":"bruna_trabajo"},
-		{"texto":"Se nota que se llevan bien","jugador":"Se nota que se conocen y se llevan bien.","respuesta":"¡Claro! Vivir en el mismo reino hace que uno termine conociendo a los demás.","clave":"bruna_amistad"}
-	])
-	_agregar_parada_tour_elian(pasos, "casa_bruna", _obtener_posicion_tour(["Grupo_casa_bruna/Entrada"]),
-		"Por aquí vive Bruna. Su casa queda cerca de la forja, donde suele pasar buena parte del día trabajando. Si la encuentras en casa, seguramente estará descansando o preparando sus próximos encargos.",
-		[
-			{"texto":"¿Bruna trabaja en la forja?","jugador":"¿Bruna trabaja en la forja que vimos antes?","respuesta":"Sí, suele estar allí ocupándose de sus trabajos. Es bastante dedicada y conoce muy bien sus herramientas."},
-			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Si está en casa y no tiene algo urgente entre manos, claro. Siempre puedes acercarte y preguntar."},
-			{"texto":"¿Hace mucho que vive aquí?","jugador":"¿Bruna lleva mucho tiempo viviendo en el reino?","respuesta":"Ya lleva un buen tiempo aquí. Se ha ganado un lugar entre los vecinos gracias a su trabajo."}
-		])
-	_agregar_conversacion_tour_elian(pasos, "Darven", _obtener_posicion_tour(["Grupo_edificio_cuartel/Entrada"]), [
-		{"hablante":"Elian","texto":"¡Darven! ¿Todo tranquilo por la entrada?"},
-		{"hablante":"Darven","texto":"Por ahora sí. Ya recibí a quien acaba de llegar y le indiqué que podía recorrer el reino."},
-		{"hablante":"Elian","texto":"Perfecto, yo me encargo de que no se pierda. ¡Nos vemos luego!"}
-	], [
-		{"texto":"¿Siempre estás en la entrada?","jugador":"¿Siempre te toca vigilar la entrada?","respuesta":"Los turnos cambian, pero siempre hay alguien encargado de revisar el acceso y mantener el orden.","clave":"darven_turnos"},
-		{"texto":"¿Es difícil ser guardia?","jugador":"¿Es difícil trabajar como guardia?","respuesta":"Hay que estar atento y saber cuándo intervenir. La mayoría de los días son tranquilos, y eso es bueno.","clave":"darven_guardia"},
-		{"texto":"Gracias por recibirme","jugador":"Gracias por recibirme cuando llegué.","respuesta":"Es parte de mi trabajo. Me alegra que hayas podido empezar a conocer el reino.","clave":"darven_agradecer"}
-	])
-	_agregar_parada_tour_elian(pasos, "viviendas_oriente", _obtener_posicion_tour(["Grupo_casa_elian/Entrada", "Grupo_casa_darven/Entrada", "Grupo_casa_saira/Entrada"]),
-		"Por este lado están las casas de varios vecinos. La mía es la de allí; Darven vive un poco más al norte y Saira al otro lado del camino. Si los buscas, ya sabes dónde encontrarlos.",
-		[
-			{"texto":"¿Cuál es tu casa?","jugador":"¿Cuál de estas casas es la tuya?","respuesta":"La que está más cerca de la panadería y de este camino. Suelo estar entrando y saliendo por el trabajo."},
-			{"texto":"¿Darven vive cerca?","jugador":"¿Darven vive cerca de aquí?","respuesta":"Sí, su casa queda hacia el norte. Aunque muchas veces lo encontrarás en sus rondas o atendiendo el puesto de guardia."},
-			{"texto":"¿Y Saira?","jugador":"¿Dónde puedo encontrar a Saira?","respuesta":"Su casa está hacia el sur de este barrio. También puedes encontrarla en la casa de comercio cuando está trabajando."}
-		])
-	_agregar_conversacion_tour_elian(pasos, "Saira", _obtener_posicion_tour(["Grupo_edificio_casa_comercio/Entrada"]), [
-		{"hablante":"Elian","texto":"¡Saira! ¿Cómo va todo por el comercio?"},
-		{"hablante":"Saira","texto":"Bastante bien. Llegaron algunas mercancías nuevas y todavía estoy organizando los encargos."},
-		{"hablante":"Elian","texto":"¡Eso suena a que no te faltará trabajo! Luego pasaré a mirar qué llegó."}
-	], [
-		{"texto":"¿Qué mercancías llegaron?","jugador":"¿Qué tipo de mercancías llegaron?","respuesta":"Un poco de todo. Todavía estoy revisando las cajas, así que prefiero no prometer nada hasta terminar el inventario.","clave":"saira_mercancias"},
-		{"texto":"¿Necesitas ayuda?","jugador":"¿Te vendría bien una mano con los encargos?","respuesta":"Gracias por ofrecerte. Si surge algo que pueda hacerse sin interrumpir el inventario, te lo haré saber.","clave":"saira_ayuda"},
-		{"texto":"¿Sueles hablar con Elian?","jugador":"¿Sueles encontrarte con Elian por aquí?","respuesta":"Sí, a menudo. Siempre aparece buscando algo para la panadería o preguntando qué novedades hay.","clave":"saira_elian"}
-	])
-	_agregar_parada_tour_elian(pasos, "casa_saira", _obtener_posicion_tour(["Grupo_casa_saira/Entrada"]),
-		"Y esta es la casa de Saira. Está cerca del camino que conecta las viviendas con la zona comercial. Cuando no está atendiendo el comercio, suele venir por aquí a descansar.",
-		[
-			{"texto":"¿Saira trabaja en el comercio?","jugador":"¿Saira es quien atiende la casa de comercio?","respuesta":"Sí, suele encargarse de buena parte de la actividad comercial. También está pendiente de los encargos y de la mercancía."},
-			{"texto":"¿Es fácil encontrarla?","jugador":"¿Dónde puedo encontrar a Saira durante el día?","respuesta":"Lo más sencillo es buscarla en la casa de comercio cuando está trabajando. Si no está allí, probablemente haya salido a resolver algún asunto."},
-			{"texto":"¿Puedo visitarla?","jugador":"¿Puedo pasar a saludarla cuando esté en casa?","respuesta":"Claro, siempre que no esté ocupada. Saira suele recibir bien a quienes se acercan con respeto."}
-		])
-	_agregar_parada_tour_elian(pasos, "barrio_norte", _obtener_posicion_tour(["Grupo_edificio_archivo_real/Entrada", "Grupo_edificio_sala_consejo/Entrada", "Grupo_edificio_casa_estudio/Entrada"]),
-		"Este es el barrio de los asuntos públicos y el estudio. Aquí están el archivo real, la sala del consejo y la casa de estudio de Oris. Se viene a consultar documentos, tratar asuntos del reino o estudiar.",
-		[
-			{"texto":"¿Puedo consultar el archivo?","jugador":"¿Cualquiera puede consultar el archivo real?","respuesta":"Depende de los documentos. Algunos son de consulta general y otros requieren permiso. Lo mejor es preguntar antes de entrar."},
-			{"texto":"¿Qué se hace en la sala del consejo?","jugador":"¿Para qué se usa la sala del consejo?","respuesta":"Allí se reúnen quienes tienen que discutir decisiones y asuntos que afectan al reino."},
-			{"texto":"¿Qué se estudia en la casa de Oris?","jugador":"¿Qué se estudia en la casa de Oris?","respuesta":"Es un lugar dedicado al estudio de Oris. Si te interesa aprender, seguramente encontrarás a alguien dispuesto a orientarte."}
-		])
-	_agregar_parada_tour_elian(pasos, "barrio_comercial", _obtener_posicion_tour(["Grupo_edificio_casa_comercio/Entrada", "Grupo_edificio_cuartel/Entrada", "Grupo_edificio_registro/Entrada", "Grupo_edificio_reparaciones/Entrada", "Grupo_edificio_carpinteria/Entrada"]),
-		"Este sector reúne varios servicios: la casa de comercio, el cuartel de la guardia y el registro de la puerta. Más adelante están el taller de reparaciones y la carpintería.",
-		[
-			{"texto":"¿Dónde se hacen los trámites de entrada?","jugador":"¿El registro sirve para los trámites de entrada?","respuesta":"Exactamente. Allí se lleva el registro relacionado con quienes entran y salen por la puerta."},
-			{"texto":"¿Puedo hablar con la guardia?","jugador":"¿Puedo acudir al cuartel si necesito ayuda?","respuesta":"Claro. Si tienes un problema o necesitas informar de algo, el cuartel es un buen lugar para empezar."},
-			{"texto":"¿Qué puedo reparar aquí?","jugador":"¿Qué puedo llevar al taller de reparaciones?","respuesta":"Depende del trabajo que necesites. En el taller pueden revisar objetos y encargarse de distintas reparaciones; la carpintería se ocupa de los trabajos de madera."}
-		])
-	_agregar_conversacion_tour_elian(pasos, "Narel", _obtener_posicion_tour(["Grupo_casa_narel/Entrada"]), [
-		{"hablante":"Elian","texto":"¡Narel! ¿Sigues con tus apuntes? Estamos recorriendo el reino y pensé que quizá te encontraríamos por aquí."},
-		{"hablante":"Narel","texto":"Hola, Elian. Sí, estoy ordenando unas observaciones. Aunque supongo que puedo hacer una pausa."},
-		{"hablante":"Elian","texto":"Te presento a nuestro nuevo vecino. Si tiene curiosidad por tus estudios, seguro que le interesará escucharte."}
-	], [
-		{"texto":"¿Qué estás investigando?","jugador":"¿Qué estás investigando en estos apuntes?","respuesta":"Estoy comparando algunas observaciones. Todavía no tengo una conclusión, pero ya encontré patrones que vale la pena revisar.","clave":"narel_investigacion"},
-		{"texto":"¿Dónde consigues información?","jugador":"¿Dónde consultas la información para tus estudios?","respuesta":"En el archivo real y en mis propias notas. También suelo hablar con quienes conocen bien cada zona.","clave":"narel_fuentes"},
-		{"texto":"No quiero interrumpir","jugador":"No quiero interrumpir tu trabajo. Gracias por hablar conmigo.","respuesta":"No te preocupes. Una pausa breve también ayuda a ordenar las ideas.","clave":"narel_pausa"}
-	])
-	_agregar_parada_tour_elian(pasos, "barrio_oeste", _obtener_posicion_tour(["Grupo_casa_narel/Entrada", "Grupo_casa_bruna/Entrada", "Grupo_casa_vacia_01/Entrada"]),
-		"Por el oeste hay viviendas y caminos más tranquilos. La casa de Narel está por aquí; suele estar ocupado con sus apuntes, pero si tienes curiosidad por sus investigaciones, puedes pasar a saludarlo.",
-		[
-			{"texto":"¿Narel vive aquí?","jugador":"¿Esta es la casa de Narel?","respuesta":"Sí, es la suya. A veces está dentro trabajando y otras veces sale a consultar documentos o tomar notas."},
-			{"texto":"¿Es una zona muy habitada?","jugador":"¿Vive mucha gente por este barrio?","respuesta":"Hay varias viviendas, aunque no todos los vecinos llevan el mismo horario. Con el tiempo irás reconociendo quién suele estar por aquí."},
-			{"texto":"¿Qué hay más al oeste?","jugador":"¿Qué hay siguiendo el camino hacia el oeste?","respuesta":"Más viviendas y caminos que conectan con la zona de trabajo agrícola. Podemos seguir hacia allí."}
-		])
-	_agregar_parada_tour_elian(pasos, "barrio_agricola", _obtener_posicion_tour(["Grupo_edificio_granero/Entrada", "Grupo_edificio_molino/Entrada", "Grupo_edificio_corrales/Entrada"]),
-		"Y este es el sector agrícola. El granero sirve para guardar las cosechas, el molino ayuda a procesar el grano y los corrales reúnen a los animales. Los caminos de esta zona conectan con las tierras de cultivo.",
-		[
-			{"texto":"¿De dónde llega el grano?","jugador":"¿El grano llega desde los campos cercanos?","respuesta":"Sí, buena parte del trabajo empieza en las tierras de cultivo. Después se almacena o se procesa según lo que haga falta."},
-			{"texto":"¿Para qué se usa el molino?","jugador":"¿Qué se hace exactamente en el molino?","respuesta":"Se procesa el grano para obtener harina y otros productos que luego se usan en el reino."},
-			{"texto":"¿Quién cuida los corrales?","jugador":"¿Quién se encarga de los animales?","respuesta":"Los agricultores y quienes trabajan con ellos se ocupan de alimentarlos y mantener los corrales en buenas condiciones."}
-		])
-
-	pasos.append({"tipo":"dialogo","npc":"Elian","datos":{
-		"clave":"bienvenida_elian_cierre",
-		"lineas":[{"hablante":"Elian","texto":"¡Y eso es buena parte del reino! Seguro que todavía descubrirás rincones por tu cuenta. Si te pierdes o te surge alguna duda, puedes preguntarme cuando nos encontremos."}]
-	}})
-	pasos.append({"tipo":"dialogo","datos":{"clave":"bienvenida_pensamientos_cierre","lineas":[
-		{"hablante":"Pensamientos","texto":"Ahora ya tengo una idea de cómo está organizado el reino. Será más fácil empezar a conocer a la gente y encontrar mi sitio por aquí."}
-	]}})
-
-	var completada: bool = await _cutscene_director.ejecutar("bienvenida_inicial_torres", pasos)
-	_bienvenida_torres_en_curso = false
-	if is_instance_valid(_bienvenida_omitir_layer):
-		_bienvenida_omitir_layer.queue_free()
-		_bienvenida_omitir_layer = null
-	if not completada and not _bienvenida_torres_omitida:
-		return
-	_bienvenida_torres_pendiente = false
-	GameState.world_state.flags["bienvenida_torres_vista"] = true
-	if GameState.has_method("guardar_partida"):
-		GameState.call_deferred("guardar_partida")
-
-
-## Mantiene el control fuera del árbol UI que CutsceneDirector oculta durante la secuencia.
-func _crear_boton_omitir_bienvenida() -> void:
-	if is_instance_valid(_bienvenida_omitir_layer):
-		_bienvenida_omitir_layer.queue_free()
-	_bienvenida_omitir_layer = CanvasLayer.new()
-	_bienvenida_omitir_layer.name = "BienvenidaOmitirLayer"
-	_bienvenida_omitir_layer.layer = 120
-	_bienvenida_omitir_layer.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(_bienvenida_omitir_layer)
-
-	var boton := Button.new()
-	boton.name = "OmitirBienvenida"
-	boton.text = "Omitir"
-	boton.focus_mode = Control.FOCUS_NONE
-	boton.process_mode = Node.PROCESS_MODE_ALWAYS
-	boton.custom_minimum_size = Vector2(112.0, 42.0)
-	boton.anchor_left = 1.0
-	boton.anchor_right = 1.0
-	boton.offset_left = -132.0
-	boton.offset_top = 18.0
-	boton.offset_right = -16.0
-	boton.offset_bottom = 60.0
-	boton.pressed.connect(_omitir_bienvenida_torres)
-	_bienvenida_omitir_layer.add_child(boton)
-
-
-func _omitir_bienvenida_torres() -> void:
-	if not _bienvenida_torres_en_curso or not is_instance_valid(_cutscene_director):
-		return
-	_bienvenida_torres_omitida = true
-	await _cutscene_director.cancelar()
-
-
-func _buscar_npc_bienvenida(nombre_buscado: String) -> Creature:
-	var clave := nombre_buscado.strip_edges().to_lower()
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not nodo is Creature or not is_instance_valid(nodo):
-			continue
-		var npc := nodo as Creature
-		if npc.get_nombre_visual().strip_edges().to_lower() == clave:
-			return npc
-	return null
-
-
-func _crear_dialogo_guardia_bienvenida() -> Dictionary:
-	return {
-		"clave":"bienvenida_guardia_llegada",
-		"lineas":[{"hablante":"Darven","texto":"¡Alto un momento! No te había visto antes. ¿Qué te trae por el reino?"}],
-		"respuestas":[
-			{"clave":"buscar_alojamiento","texto":"Busco un lugar donde quedarme","jugador":"Estoy buscando un lugar donde pueda quedarme.","respuesta":"Entiendo. La posada de la plaza recibe viajeros; allí puedes preguntar por una habitación.","despedida":true},
-			{"clave":"conocer_reino","texto":"Vengo a conocer el reino","jugador":"Vine a conocer el reino. Es la primera vez que estoy aquí.","respuesta":"Entonces bienvenido. Procura familiarizarte con los caminos y, si necesitas orientación, puedes preguntar a los vecinos.","despedida":true},
-			{"clave":"de_paso","texto":"Solo estoy de paso","jugador":"Solo estoy de paso. Quería descansar un momento antes de seguir.","respuesta":"De acuerdo. Puedes descansar en la posada y continuar cuando estés listo. No hay problema.","despedida":true},
-			{"clave":"sin_plan","texto":"Todavía no lo tengo claro","jugador":"La verdad, todavía no lo tengo muy claro. Acabo de llegar.","respuesta":"No pasa nada. Tómate tu tiempo para conocer el lugar. Mientras no causes problemas, puedes recorrer el reino con tranquilidad.","despedida":true}
-		]
-	}
-
-
-func _crear_dialogo_presentacion_elian() -> Dictionary:
-	return {
-		"clave":"bienvenida_elian_presentacion",
-		"lineas":[{"hablante":"Elian","texto":"¡Hola! Soy Elian. Vi que acababas de llegar y pensé que quizá te vendría bien una mano. Conozco bastante bien el reino. ¿Te gustaría que te lo enseñara?"}],
-		"respuestas":[
-			{"clave":"aceptar_tour","texto":"Claro, me gustaría conocer el reino","jugador":"¡Claro! Me gustaría conocer el reino.","respuesta":"¡Genial! Vamos, te mostraré los lugares importantes y te presentaré cómo se organiza cada barrio.","despedida":true},
-			{"clave":"orientarse","texto":"Me vendría bien orientarme","jugador":"Me vendría bien orientarme. Todavía no conozco los caminos.","respuesta":"Entonces llegaste en buen momento. Te enseñaré por dónde moverte y qué puedes encontrar en cada zona.","despedida":true},
-			{"clave":"conocer_habitantes","texto":"Quiero conocer a sus habitantes","jugador":"También me gustaría saber quién vive y trabaja por aquí.","respuesta":"¡Eso se puede hacer! Te iré contando dónde viven algunos vecinos y qué suele hacer cada uno.","despedida":true},
-			{"clave":"preguntar_elian","texto":"Antes, cuéntame un poco de ti","jugador":"Antes de salir, ¿me cuentas un poco de ti?","respuesta":"¡Por supuesto! Trabajo en la panadería. Me gusta conocer gente y siempre termino enterándome de alguna novedad. Ya tendremos tiempo de hablar más; por ahora, ¡vamos a dar una vuelta!","despedida":true}
-		]
-	}
-
-
-## Obtiene el punto de visita desde los marcadores reales del mapa.
-## Así el recorrido de bienvenida sigue los edificios aunque cambien de posición.
-func _obtener_posicion_tour(rutas: Array[String], desplazamiento: Vector2 = Vector2.ZERO) -> Vector2:
-	var zona: Node = _zone_manager.obtener_zona_actual() if is_instance_valid(_zone_manager) else null
-	if not is_instance_valid(zona):
-		return _player.global_position if is_instance_valid(_player) else Vector2.ZERO
-
-	var centro := Vector2.ZERO
-	var encontrados := 0
-	for ruta in rutas:
-		var marcador := zona.get_node_or_null(ruta) as Node2D
-		if not is_instance_valid(marcador):
-			continue
-		centro += marcador.global_position
-		encontrados += 1
-
-	if encontrados == 0:
-		push_warning("Main: no se encontraron marcadores para el recorrido inicial: " + str(rutas))
-		return _player.global_position if is_instance_valid(_player) else Vector2.ZERO
-
-	return centro / float(encontrados) + desplazamiento
-
-
-func _agregar_parada_tour_elian(
-	pasos: Array[Dictionary],
-	clave: String,
-	posicion: Vector2,
-	explicacion: String,
-	preguntas: Array[Dictionary]
-) -> void:
-	# Primero se revela el lugar; dejamos un instante para que el jugador
-	# pueda reconocer los edificios antes de que Elian empiece a explicarlos.
-	pasos.append({"tipo":"camara","x":posicion.x,"y":posicion.y - 75.0,"zoom":1.25,"duracion":1.1})
-	pasos.append({"tipo":"esperar","segundos":0.65})
-	pasos.append({"tipo":"mover_jugador","x":posicion.x,"y":posicion.y,"duracion":1.5})
-	pasos.append({"tipo":"ruta_npc","npc":"Elian","puntos":[posicion + Vector2(42.0, 12.0)],"duracion_por_tramo":1.5})
-	pasos.append({"tipo":"mirar_npc","npc":"Elian","izquierda":true})
-	var respuestas: Array[Dictionary] = []
-	for pregunta_variant in preguntas:
-		if not pregunta_variant is Dictionary:
-			continue
-		var pregunta := (pregunta_variant as Dictionary).duplicate(true)
-		pregunta["despedida"] = true
-		pregunta["evento"] = "interesarse"
-		respuestas.append(pregunta)
-	respuestas.append({
-		"clave":"continuar_%s" % clave,
-		"texto":"Seguir con el recorrido",
-		"jugador":"Gracias por explicármelo. Sigamos.",
-		"respuesta":"¡Claro! Todavía nos quedan algunas cosas por ver.",
-		"despedida":true
-	})
-	pasos.append({"tipo":"dialogo","npc":"Elian","datos":{
-		"clave":"bienvenida_tour_%s" % clave,
-		"lineas":[{"hablante":"Elian","texto":explicacion}],
-		"respuestas":respuestas
-	}})
-
-
-func _agregar_conversacion_tour_elian(
-	pasos: Array[Dictionary],
-	nombre_npc: String,
-	posicion: Vector2,
-	lineas: Array[Dictionary],
-	preguntas: Array[Dictionary]
-) -> void:
-	# Las conversaciones espontáneas también deben ocurrir en el sitio
-	# que se está mostrando, nunca antes del desplazamiento de cámara.
-	pasos.append({"tipo":"camara","x":posicion.x,"y":posicion.y - 75.0,"zoom":1.25,"duracion":1.0})
-	pasos.append({"tipo":"esperar","segundos":0.55})
-	pasos.append({"tipo":"mover_jugador","x":posicion.x,"y":posicion.y,"duracion":1.25})
-	pasos.append({"tipo":"ruta_npc","npc":"Elian","puntos":[posicion + Vector2(42.0, 12.0)],"duracion_por_tramo":1.25})
-	pasos.append({"tipo":"preparar_npc","npc":nombre_npc,"x":posicion.x - 42.0,"y":posicion.y + 12.0})
-	pasos.append({"tipo":"mirar_npc","npc":nombre_npc,"hacia_npc":"Elian"})
-	pasos.append({"tipo":"mirar_npc","npc":"Elian","hacia_npc":nombre_npc})
-	pasos.append({"tipo":"gesto_npc","npc":nombre_npc,"gesto":"saludar","duracion":0.55})
-	var respuestas: Array[Dictionary] = []
-	for pregunta_variant in preguntas:
-		if not pregunta_variant is Dictionary:
-			continue
-		var pregunta := (pregunta_variant as Dictionary).duplicate(true)
-		pregunta["despedida"] = true
-		pregunta["evento"] = "interesarse"
-		respuestas.append(pregunta)
-	respuestas.append({
-		"clave":"dejar_conversar_%s" % nombre_npc.to_lower(),
-		"texto":"Dejarlos seguir conversando",
-		"jugador":"Los dejo conversar. Nos vemos luego.",
-		"respuesta":"¡Hasta luego! Nos vemos por el reino.",
-		"despedida":true
-	})
-	pasos.append({"tipo":"dialogo","npc":nombre_npc,"datos":{
-		"clave":"bienvenida_conversacion_elian_%s" % nombre_npc.to_lower(),
-		"lineas":lineas,
-		"respuestas":respuestas
-	}})
 
 
 func _actualizar_rutinas_npcs_torres() -> void:
@@ -1679,8 +1351,6 @@ func _configurar_dialogo() -> void:
 		var callback_reunion := Callable(self, "_al_cinematica_reunion_nocturna_solicitada")
 		if not _npc_conversation_system.is_connected("cinematica_reunion_nocturna_solicitada", callback_reunion):
 			_npc_conversation_system.connect("cinematica_reunion_nocturna_solicitada", callback_reunion)
-	if _bienvenida_torres_pendiente and str(_zone_manager.obtener_tipo_actual()) == "reino_torres":
-		call_deferred("_iniciar_bienvenida_torres")
 
 
 ## Sincroniza el caché de cámara del mundo después de cada escena.
