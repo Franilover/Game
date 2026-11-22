@@ -4,8 +4,8 @@ class_name SaveFileRepository
 ## Persistencia local de archivos de partida.
 ## No interpreta reglas de gameplay ni modifica el estado activo.
 ##
-## Las escrituras se preparan en un temporal, se validan como JSON y se
-## reemplaza el archivo final conservando un respaldo recuperable.
+## Las escrituras se preparan en un temporal y se reemplaza el archivo final
+## conservando un respaldo recuperable. JSON.stringify genera el documento JSON.
 
 var directorio: String = "user://partidas"
 
@@ -126,13 +126,9 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		)
 		return false
 
-	# Nunca se promueve un temporal que no pueda volver a leerse como JSON.
-	if _leer_json_dictionary_sin_copia(ruta_temporal).is_empty():
-		_eliminar_archivo(ruta_temporal)
-		push_error(
-			"SaveFileRepository: el temporal no superó la validación JSON."
-		)
-		return false
+	# No volver a leer y parsear el archivo completo: JSON.stringify ya produjo
+	# el JSON y la comprobación de bytes confirma que el temporal se escribió
+	# íntegramente. Reparsearlo aquí duplicaba cientos de ms en mundos grandes.
 
 	if habia_partida_previa and not _renombrar_archivo(ruta, ruta_respaldo):
 		_eliminar_archivo(ruta_temporal)
@@ -150,9 +146,7 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		)
 		return false
 
-	# El temporal ya fue parseado y validado antes de renombrarlo. El rename
-	# conserva exactamente esos bytes, así que volver a parsear el archivo final
-	# sólo duplica el coste de E/S sin aportar una comprobación distinta.
+	# El rename conserva exactamente los bytes del temporal ya escrito.
 
 	_eliminar_archivo(ruta_respaldo)
 	return true
