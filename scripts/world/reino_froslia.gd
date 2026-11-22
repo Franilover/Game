@@ -45,6 +45,9 @@ func _ready() -> void:
 func _crear_terreno() -> void:
 	_tilemap = TILE_MAP_DUAL_SCRIPT.new() as TileMapDual
 	_tilemap.name = "TerrenoNevado"
+	_tilemap.z_index = -4094
+	_tilemap.z_as_relative = false
+	_tilemap.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_tilemap.material = GHOST_MATERIAL
 	_tilemap.tile_set = _crear_tileset_dual()
 	_tilemap.godot_4_3_compatibility = false
