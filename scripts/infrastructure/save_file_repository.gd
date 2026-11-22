@@ -141,10 +141,10 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 			return false
 		if not _renombrar_archivo(ruta, ruta_respaldo):
 			_eliminar_archivo(ruta_temporal)
-		push_error(
-			"SaveFileRepository: no se pudo proteger la partida anterior."
-		)
-		return false
+			push_error(
+				"SaveFileRepository: no se pudo proteger la partida anterior."
+			)
+			return false
 
 	if not _renombrar_archivo(ruta_temporal, ruta):
 		if habia_partida_previa and FileAccess.file_exists(ruta_respaldo):
