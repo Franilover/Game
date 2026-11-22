@@ -90,11 +90,14 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 
 	var ruta_temporal := _ruta_temporal(ruta)
 	var ruta_respaldo := _ruta_respaldo(ruta)
+	# No intentar sustituir un directorio con un archivo ni destruir el único
+	# respaldo recuperable si el destino está bloqueado.
+	if DirAccess.dir_exists_absolute(ProjectSettings.globalize_path(ruta)):
+		push_error("SaveFileRepository: la ruta de destino está ocupada por un directorio.")
+		return false
 	# La partida activa ya fue leída, parseada y validada al abrirla.
-	# No releer el archivo final ni el respaldo en cada guardado: además de caro,
-	# el snapshot nuevo proviene del estado vivo validado en memoria.
+	# No releer el archivo final ni el respaldo en cada guardado.
 	var habia_partida_previa := FileAccess.file_exists(ruta)
-	_eliminar_archivo(ruta_respaldo)
 	_eliminar_archivo(ruta_temporal)
 
 	var archivo := FileAccess.open(ruta_temporal, FileAccess.WRITE)
@@ -130,8 +133,14 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 	# el JSON y la comprobación de bytes confirma que el temporal se escribió
 	# íntegramente. Reparsearlo aquí duplicaba cientos de ms en mundos grandes.
 
-	if habia_partida_previa and not _renombrar_archivo(ruta, ruta_respaldo):
-		_eliminar_archivo(ruta_temporal)
+	if habia_partida_previa:
+		# El archivo final confirmado es más reciente que cualquier respaldo
+		# anterior; sólo ahora es seguro sustituir ese respaldo.
+		if not _eliminar_archivo(ruta_respaldo):
+			_eliminar_archivo(ruta_temporal)
+			return false
+		if not _renombrar_archivo(ruta, ruta_respaldo):
+			_eliminar_archivo(ruta_temporal)
 		push_error(
 			"SaveFileRepository: no se pudo proteger la partida anterior."
 		)
@@ -147,7 +156,7 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		return false
 
 	# El rename conserva exactamente los bytes del temporal ya escrito.
-
+	# Si sólo había un .bak recuperable, se conserva hasta confirmar el nuevo final.
 	_eliminar_archivo(ruta_respaldo)
 	return true
 
