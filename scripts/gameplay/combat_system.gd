@@ -130,10 +130,6 @@ func _al_ataque_solicitado(
 ) -> void:
 	if not CombatTargeting.es_atacante_valido(player) or _tiempo_desde_ataque > 0.0:
 		return
-	if _arma_bloqueada_por_licencia(objeto):
-		_mostrar_aviso_licencia(objeto)
-		return
-
 	var direccion_ataque := _normalizar_direccion_ataque(direccion)
 
 	if modo == "desarmado":
@@ -178,6 +174,9 @@ func _es_objeto_ataque(objeto: Dictionary) -> bool:
 
 func _atacar_con_objeto(objeto: Dictionary, direccion: Vector2) -> void:
 	if objeto.is_empty():
+		return
+	if _arma_bloqueada_por_licencia(objeto):
+		_mostrar_aviso_licencia(objeto)
 		return
 
 	if _es_herramienta(objeto):
@@ -467,6 +466,9 @@ func solicitar_ataque_con_arma(
 	objetivo: Entity,
 	arma: Dictionary
 ) -> CombatAttackResult:
+	if atacante == player and _arma_bloqueada_por_licencia(arma):
+		_mostrar_aviso_licencia(arma)
+		return COMBAT_ATTACK_RESULT.rechazado(&"licencia_requerida")
 	var motivo_rechazo: StringName = COMBAT_WEAPON_ATTACK_VALIDATOR.validar(
 		atacante,
 		objetivo,
