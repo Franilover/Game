@@ -141,6 +141,7 @@ func open(action: String) -> void:
 	_normalizar_geometria_raiz()
 	_action = action
 	if is_instance_valid(_kingdom_label):
+		_kingdom_selector.select(0)
 		_kingdom_label.visible = action == "aventura"
 		_kingdom_selector.visible = action == "aventura"
 	partida_name_input.text = ""
