@@ -24,32 +24,26 @@ const SLOT_LABELS := {
 
 # Catálogo explícito: los recursos quedan incluidos en la exportación y no
 # dependemos de que DirAccess pueda enumerar archivos dentro de res://.
+# Catálogo limitado a archivos que existen realmente en el repositorio.
+# Se cargan en runtime porque los nombres "1 Front.png", etc. contienen espacios
+# y preload() provoca errores de parseo en estas rutas.
 const CATALOG_ASSETS := {
 	"hair": [
-		{"name": "1 Front", "path": "res://assets/art/characters/customization/hair/1 Front.png", "texture": preload("res://assets/art/characters/customization/hair/1 Front.png")},
-		{"name": "2 Front", "path": "res://assets/art/characters/customization/hair/2 Front.png", "texture": preload("res://assets/art/characters/customization/hair/2 Front.png")},
-		{"name": "3 Front", "path": "res://assets/art/characters/customization/hair/3 Front.png", "texture": preload("res://assets/art/characters/customization/hair/3 Front.png")},
-		{"name": "curly", "path": "res://assets/art/characters/customization/hair/curly.png", "texture": preload("res://assets/art/characters/customization/hair/curly.png")},
-		{"name": "long", "path": "res://assets/art/characters/customization/hair/long.png", "texture": preload("res://assets/art/characters/customization/hair/long.png")},
-		{"name": "short", "path": "res://assets/art/characters/customization/hair/short.png", "texture": preload("res://assets/art/characters/customization/hair/short.png")}
+		{"name": "1 Front", "path": "res://assets/art/characters/customization/hair/1 Front.png"},
+		{"name": "2 Front", "path": "res://assets/art/characters/customization/hair/2 Front.png"},
+		{"name": "3 Front", "path": "res://assets/art/characters/customization/hair/3 Front.png"}
 	],
 	"eyes": [
-		{"name": "expressive", "path": "res://assets/art/characters/customization/eyes/expressive.png", "texture": preload("res://assets/art/characters/customization/eyes/expressive.png")},
-		{"name": "simple", "path": "res://assets/art/characters/customization/eyes/simple.png", "texture": preload("res://assets/art/characters/customization/eyes/simple.png")}
+		{"name": "expressive", "path": "res://assets/art/characters/customization/eyes/expressive.png"}
 	],
 	"shirt": [
-		{"name": "hoodie", "path": "res://assets/art/characters/customization/shirts/hoodie.png", "texture": preload("res://assets/art/characters/customization/shirts/hoodie.png")},
-		{"name": "shirt", "path": "res://assets/art/characters/customization/shirts/shirt.png", "texture": preload("res://assets/art/characters/customization/shirts/shirt.png")},
-		{"name": "tunic", "path": "res://assets/art/characters/customization/shirts/tunic.png", "texture": preload("res://assets/art/characters/customization/shirts/tunic.png")}
+		{"name": "tunic", "path": "res://assets/art/characters/customization/shirts/tunic.png"}
 	],
 	"pants": [
-		{"name": "shorts", "path": "res://assets/art/characters/customization/pants/shorts.png", "texture": preload("res://assets/art/characters/customization/pants/shorts.png")},
-		{"name": "skirt", "path": "res://assets/art/characters/customization/pants/skirt.png", "texture": preload("res://assets/art/characters/customization/pants/skirt.png")},
-		{"name": "trousers", "path": "res://assets/art/characters/customization/pants/trousers.png", "texture": preload("res://assets/art/characters/customization/pants/trousers.png")}
+		{"name": "skirt", "path": "res://assets/art/characters/customization/pants/skirt.png"}
 	],
 	"shoes": [
-		{"name": "boots", "path": "res://assets/art/characters/customization/shoes/boots.png", "texture": preload("res://assets/art/characters/customization/shoes/boots.png")},
-		{"name": "sneakers", "path": "res://assets/art/characters/customization/shoes/sneakers.png", "texture": preload("res://assets/art/characters/customization/shoes/sneakers.png")}
+		{"name": "sneakers", "path": "res://assets/art/characters/customization/shoes/sneakers.png"}
 	]
 }
 
@@ -61,11 +55,17 @@ static func catalogo(slot: String) -> Array[Dictionary]:
 		if not pieza_variant is Dictionary:
 			continue
 		var pieza: Dictionary = pieza_variant
+		var ruta := str(pieza.get("path", ""))
+		if ruta.is_empty() or not ResourceLoader.exists(ruta):
+			continue
+		var textura := load(ruta) as Texture2D
+		if textura == null:
+			continue
 		resultado.append({
 			"id": str(pieza.get("name", "")),
 			"nombre": str(pieza.get("name", "")),
-			"ruta": str(pieza.get("path", "")),
-			"textura": pieza.get("texture") as Texture2D
+			"ruta": ruta,
+			"textura": textura
 		})
 	return resultado
 
