@@ -4,6 +4,7 @@ extends Node2D
 
 const AGUA_MAXIMA := 4
 const ITEM_CUBO_VACIO_ID := "aeff9ca4-77f4-48d4-8c71-1afb6f603f4a"
+const ITEM_CUBO_AGUA_ID := "a0d4a376-cc1a-4fd7-a139-a78915ec93b4"
 const RANGO_PLANTAR_CLIC := 64.0
 const ICONOS_REGADERA := {
 	4: "res://assets/art/items/regadera llena.png",
@@ -217,7 +218,7 @@ func _buscar_semilla() -> Dictionary:
 
 func _es_regadera(objeto: Dictionary) -> bool:
 	var identidad := _normalizar(str(objeto.get("nombre", "")) + " " + str(objeto.get("item_id", objeto.get("id", ""))))
-	if identidad.contains("regadera") or _es_cubo_con_agua(objeto):
+	if identidad.contains("regadera") or _es_cubo_con_agua(objeto) or _es_cubo_vacio(objeto):
 		return true
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	if propiedades_variant is Dictionary:
@@ -233,7 +234,14 @@ func _es_cubo_con_agua(objeto: Dictionary) -> bool:
 	return (identidad.contains("cubo") or identidad.contains("balde")) and identidad.contains("agua")
 
 
+func _es_cubo_vacio(objeto: Dictionary) -> bool:
+	var identidad := _normalizar(str(objeto.get("nombre", "")) + " " + str(objeto.get("item_id", objeto.get("id", ""))))
+	return identidad.contains("cubo") and not identidad.contains("agua")
+
+
 func _obtener_agua(objeto: Dictionary) -> int:
+	if _es_cubo_vacio(objeto):
+		return 0
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	if propiedades_variant is Dictionary:
 		var propiedades := propiedades_variant as Dictionary
@@ -263,6 +271,20 @@ func _guardar_regadera(regadera: Dictionary, nueva_cantidad: int) -> bool:
 	if not es_cubo:
 		objeto["icono_ruta"] = str(ICONOS_REGADERA[agua])
 	return bool(inventario.call("establecer_objeto", int(regadera.get("indice", -1)), objeto))
+
+
+func _convertir_objeto_por_id(regadera: Dictionary, item_id: String) -> bool:
+	var inventario: Node = regadera.get("inventario")
+	if not is_instance_valid(inventario):
+		return false
+	var world_items := get_tree().root.get_node_or_null("Main/Systems/WorldItems")
+	if not is_instance_valid(world_items) or not world_items.has_method("buscar_item_por_id"):
+		return false
+	var nuevo_objeto: Dictionary = world_items.call("buscar_item_por_id", item_id)
+	if nuevo_objeto.is_empty():
+		return false
+	nuevo_objeto["cantidad"] = 1
+	return bool(inventario.call("establecer_objeto", int(regadera.get("indice", -1)), nuevo_objeto))
 
 
 func _convertir_cubo_en_vacio(regadera: Dictionary) -> bool:
@@ -299,9 +321,11 @@ func _reproducir_animacion_regadera(regadera: Dictionary) -> void:
 
 
 func _rellenar_regadera(regadera: Dictionary) -> void:
-	if _guardar_regadera(regadera, AGUA_MAXIMA):
+	var es_cubo := _es_cubo_vacio(regadera.get("objeto", {})) or _es_cubo_con_agua(regadera.get("objeto", {}))
+	var actualizado := _convertir_objeto_por_id(regadera, ITEM_CUBO_AGUA_ID) if es_cubo else _guardar_regadera(regadera, AGUA_MAXIMA)
+	if actualizado:
 		_reproducir_animacion_regadera(regadera)
-		_notificar("Cubo rellenado." if _es_cubo_con_agua(regadera.get("objeto", {})) else "Regadera rellenada.")
+		_notificar("Cubo rellenado." if es_cubo else "Regadera rellenada.")
 	else:
 		_notificar("No se pudo actualizar el recipiente de agua.")
 
