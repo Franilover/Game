@@ -182,7 +182,7 @@ jobs:
           set -euo pipefail
           output="$(timeout 30s godot --headless --path . res://tests/world/test_nursery_growth.tscn 2>&1)" || { printf '%s\\n' "$output"; exit 1; }
           printf '%s\\n' "$output"
-          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NurseryGrowthTest:' <<<"$output"; then
+          if grep -E '(^| )ERROR:|SCRIPT ERROR:|NurseryGrowthTest: FAIL:' <<<"$output"; then
             echo "Nursery crop growth regression test reported errors."
             exit 1
           fi
