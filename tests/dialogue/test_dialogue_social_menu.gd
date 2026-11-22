@@ -228,15 +228,16 @@ func _run() -> void:
 	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
 	dialogo_prueba_cierre._respuestas.clear()
 	dialogo_prueba_cierre._acciones.clear()
+	dialogo_prueba_cierre._abierto = true
 	dialogo_prueba_cierre._actualizar_boton_accion()
-	if not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
-		errores.append("Una despedida sin opciones no ofrece un botón explícito para cerrar.")
+	if dialogo_prueba_cierre.esta_abierto() or boton_cierre_prueba.visible:
+		errores.append("Una conversación sin despedida ni opciones no se cerró automáticamente.")
 	# Una acción desconocida o fallida no puede dejar el diálogo bloqueado.
 	var accion_desconocida: Array[Dictionary] = [{"tipo": "accion_no_registrada"}]
 	dialogo_prueba_cierre._acciones = accion_desconocida
 	dialogo_prueba_cierre._ejecutar_accion_dialogo()
-	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
-		errores.append("Una acción de diálogo no resuelta no ofrece una salida segura.")
+	if not dialogo_prueba_cierre._acciones.is_empty() or dialogo_prueba_cierre.esta_abierto() or boton_cierre_prueba.visible:
+		errores.append("Una acción no resuelta no cerró automáticamente el diálogo.")
 	# La tecla de avanzar debe ejecutar la acción terminal en vez de saltarla.
 	dialogo_prueba_cierre._abierto = true
 	dialogo_prueba_cierre._lineas = [{"hablante": "Mara", "texto": "Hasta luego."}]
@@ -245,8 +246,8 @@ func _run() -> void:
 	dialogo_prueba_cierre._indice_caracter = dialogo_prueba_cierre._texto_completo.length()
 	dialogo_prueba_cierre._acciones = accion_desconocida.duplicate(true)
 	dialogo_prueba_cierre._avanzar()
-	if not dialogo_prueba_cierre._acciones.is_empty() or not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
-		errores.append("Avanzar con teclado omitió la acción final o dejó el diálogo bloqueado.")
+	if not dialogo_prueba_cierre._acciones.is_empty() or dialogo_prueba_cierre.esta_abierto() or boton_cierre_prueba.visible:
+		errores.append("Avanzar con teclado no cerró el diálogo tras resolver la acción final.")
 	# Si el NPC desaparece mientras el menú está abierto, una opción no puede
 	# fallar silenciosamente y dejar el diálogo sin salida.
 	dialogo_prueba_cierre._fuente = null
@@ -254,13 +255,13 @@ func _run() -> void:
 	dialogo_prueba_cierre._seleccionar_tema_conversacion({
 		"texto": "Trabajo", "jugador": "¿Cómo va el trabajo?", "respuesta": "Todo bien."
 	})
-	if not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
-		errores.append("Un tema seleccionado después de desaparecer el NPC dejó el diálogo sin cierre.")
+	if dialogo_prueba_cierre.esta_abierto() or boton_cierre_prueba.visible:
+		errores.append("Un tema seleccionado después de desaparecer el NPC no cerró el diálogo.")
 	dialogo_prueba_cierre._respuestas = [{"texto": "Preguntar", "jugador": "¿Qué tal?", "respuesta": "Bien."}]
 	dialogo_prueba_cierre._abierto = true
 	dialogo_prueba_cierre._seleccionar_respuesta(0)
-	if not boton_cierre_prueba.visible or boton_cierre_prueba.text != "Cerrar":
-		errores.append("Una respuesta seleccionada después de desaparecer el NPC dejó el diálogo sin cierre.")
+	if dialogo_prueba_cierre.esta_abierto() or boton_cierre_prueba.visible:
+		errores.append("Una respuesta seleccionada después de desaparecer el NPC no cerró el diálogo.")
 	# Si las opciones no tienen un contenedor visible, el avance debe cerrar.
 	dialogo_prueba_cierre._abierto = true
 	var lineas_sin_respuestas_visibles: Array[Dictionary] = [{"hablante": "Mara", "texto": "Nos vemos."}]
@@ -464,6 +465,8 @@ func _run() -> void:
 
 	if not dialogo._dialogo_requiere_lectura_lenta():
 		errores.append("Un NPC que camina no activa el ritmo de lectura pausado.")
+	if DialogueSystemScript.INTERVALO_CARACTER_CAMINANDO >= 0.01 or DialogueSystemScript.INTERVALO_CARACTER_NORMAL >= 0.005:
+		errores.append("La escritura de los diálogos no se aceleró lo suficiente.")
 	dialogo._contexto_rutina_conversacion["actividad"] = "trabajar"
 	if dialogo._dialogo_requiere_lectura_lenta():
 		errores.append("Un NPC que trabaja recibió el ajuste de lectura reservado al desplazamiento.")
