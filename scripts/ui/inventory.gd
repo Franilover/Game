@@ -952,8 +952,9 @@ func _mostrar_informacion() -> void:
 		item_category.visible = false
 
 	_actualizar_datos_visuales_objeto(objeto_seleccionado)
-	item_description.text = "\n".join(lineas) if not lineas.is_empty() else "Sin descripción registrada."
-	item_description.visible = true
+	item_description.text = "\n".join(lineas)
+	item_description.visible = not lineas.is_empty()
+	description_panel.visible = not lineas.is_empty()
 
 	var propiedades_variant: Variant = objeto_seleccionado.get("propiedades_game", {})
 	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
