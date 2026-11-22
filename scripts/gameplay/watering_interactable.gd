@@ -24,6 +24,7 @@ var _tierra: Polygon2D = null
 var _capa_humedad: TileMapLayer = null
 var _celda_humedad := Vector2i.ZERO
 var _humedo := false
+var _ultimo_riego_dia_bancal := -1
 var _planta_sprite: Sprite2D = null
 var _planta: Dictionary = {}
 
@@ -137,7 +138,7 @@ func can_interact(jugador: Node) -> bool:
 	if _tipo == "pozo":
 		var capacidad := 1 if _es_cubo_con_agua(regadera.get("objeto", {})) or _es_cubo_vacio(regadera.get("objeto", {})) else AGUA_MAXIMA
 		return int(regadera.get("agua", AGUA_MAXIMA)) < capacidad
-	return not _planta.is_empty() and not _humedo and int(regadera.get("agua", AGUA_MAXIMA)) > 0
+	return not _humedo and int(regadera.get("agua", AGUA_MAXIMA)) > 0
 
 
 func interact(jugador: Node) -> void:
@@ -332,9 +333,6 @@ func _rellenar_regadera(regadera: Dictionary) -> void:
 
 
 func _regar_bancal(regadera: Dictionary) -> void:
-	if _planta.is_empty():
-		_notificar("Primero planta una semilla en este bancal.")
-		return
 	_actualizar_progreso_planta()
 	if _humedo:
 		_notificar("La tierra todavía está húmeda.")
@@ -353,14 +351,18 @@ func _regar_bancal(regadera: Dictionary) -> void:
 		return
 	_reproducir_animacion_regadera(regadera)
 	_humedo = true
-	_planta["riegos"] = int(_planta.get("riegos", 0)) + 1
-	_planta["ultimo_riego_dia"] = _dia_mundo_actual()
+	_ultimo_riego_dia_bancal = _dia_mundo_actual()
+	if not _planta.is_empty():
+		_planta["riegos"] = int(_planta.get("riegos", 0)) + 1
+		_planta["ultimo_riego_dia"] = _ultimo_riego_dia_bancal
 	_actualizar_visual()
 	_guardar_estado_parcela()
-	if es_cubo:
-		_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). El cubo quedó vacío.")
+	if _planta.is_empty():
+		_notificar("Tierra regada.")
+	elif es_cubo:
+		_notificar("Planta regada. El cubo quedó vacío.")
 	else:
-		_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). Regadera: " + str(agua - 1) + "/" + str(AGUA_MAXIMA) + ".")
+		_notificar("Planta regada.")
 
 
 func _cargar_estado_parcela() -> void:
@@ -378,11 +380,18 @@ func _cargar_estado_parcela() -> void:
 			if not GameState.active_save_id.is_empty():
 				GameState.call_deferred("guardar_partida")
 		if estado is Dictionary:
-			_planta = (estado as Dictionary).duplicate(true)
-			_humedo = bool(_planta.get("humedo", false))
+			var datos_estado := (estado as Dictionary).duplicate(true)
+			_humedo = bool(datos_estado.get("humedo", false))
+			_ultimo_riego_dia_bancal = int(datos_estado.get("ultimo_riego_dia", -1))
+			# Los bancales vacíos también guardan humedad, sin confundirse con un cultivo.
+			if datos_estado.has("semilla_item_id") or datos_estado.has("item_cosecha_id") or datos_estado.has("nombre"):
+				_planta = datos_estado
+				_ultimo_riego_dia_bancal = int(_planta.get("ultimo_riego_dia", _ultimo_riego_dia_bancal))
 		else:
 			# Compatibilidad con partidas anteriores que guardaban solo humedad.
 			_humedo = bool(estado)
+			if _humedo:
+				_ultimo_riego_dia_bancal = _dia_mundo_actual()
 	_actualizar_visual()
 	_actualizar_visual_planta()
 
@@ -392,7 +401,13 @@ func _guardar_estado_parcela() -> void:
 	var estados: Dictionary = (estados_variant as Dictionary).duplicate(true) if estados_variant is Dictionary else {}
 	if not _planta.is_empty():
 		_planta["humedo"] = _humedo
+		_planta["ultimo_riego_dia"] = _ultimo_riego_dia_bancal
 		estados[_clave] = _planta.duplicate(true)
+	elif _humedo:
+		estados[_clave] = {
+			"humedo": true,
+			"ultimo_riego_dia": _ultimo_riego_dia_bancal
+		}
 	else:
 		estados.erase(_clave)
 	GameState.world_state.flags["vivero_bancales"] = estados
@@ -465,16 +480,18 @@ func _dia_mundo_actual() -> int:
 
 
 func _actualizar_progreso_planta() -> void:
-	if _planta.is_empty():
-		return
 	var dia := _dia_mundo_actual()
-	var ultimo_riego := int(_planta.get("ultimo_riego_dia", -1))
+	var ultimo_riego := _ultimo_riego_dia_bancal
+	if not _planta.is_empty():
+		ultimo_riego = int(_planta.get("ultimo_riego_dia", ultimo_riego))
 	if _humedo and dia > ultimo_riego:
 		_humedo = false
-		_planta["humedo"] = false
+		if not _planta.is_empty():
+			_planta["humedo"] = false
 		_guardar_estado_parcela()
 		_actualizar_visual()
-	_actualizar_visual_planta()
+	if not _planta.is_empty():
+		_actualizar_visual_planta()
 
 
 func _planta_esta_madura() -> bool:
@@ -530,6 +547,7 @@ func _cosechar_planta() -> void:
 	var nombre := str(_planta.get("nombre", "flor"))
 	_planta.clear()
 	_humedo = false
+	_ultimo_riego_dia_bancal = -1
 	_actualizar_visual_planta()
 	_actualizar_visual()
 	_guardar_estado_parcela()
