@@ -81,6 +81,9 @@ func _renderizar_recetas() -> void:
 	_estado.text = ""
 	var grupos: Dictionary = {}
 	for receta in _recetas:
+		# Los procesos botánicos pertenecen exclusivamente a las mesas del Herbolario.
+		if _es_receta_exclusiva_herbolario(receta):
+			continue
 		var resultado_variant: Variant = receta.get("resultado", {})
 		var resultado: Dictionary = resultado_variant as Dictionary if resultado_variant is Dictionary else {}
 		var item_resultado := _buscar_item_catalogo(str(resultado.get("item_id", "")))
@@ -447,3 +450,11 @@ func _craftear(receta: Dictionary) -> void:
 	)
 	_estado.text = "Creado: " + str(objeto_resultado.get("nombre", "Objeto")) + "."
 	_renderizar_recetas()
+
+
+func _es_receta_exclusiva_herbolario(receta: Dictionary) -> bool:
+	var propiedades_variant: Variant = receta.get("propiedades", {})
+	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
+	var estacion := str(propiedades.get("estacion", "")).strip_edges().to_lower()
+	var categoria := str(receta.get("categoria", "")).strip_edges().to_lower()
+	return estacion.begins_with("herbolario") or categoria.contains("herbolario") or categoria.contains("botan")
