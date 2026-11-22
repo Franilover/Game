@@ -175,6 +175,7 @@ func _atacar_con_herramienta(
 
 	if tipo_herramienta == "pala":
 		if _usar_pala():
+			_reproducir_animacion_equipo(herramienta, direccion)
 			_consumir_durabilidad_herramienta()
 		return
 
@@ -332,6 +333,7 @@ func _atacar_con_arma(
 		_disparar_proyectil(arma, direccion)
 		return
 
+	_reproducir_animacion_equipo(arma, direccion)
 	var alcance := _obtener_alcance_arma(arma)
 	var ancho := _obtener_ancho_arma(arma)
 	_crear_ataque_melee(
@@ -340,6 +342,13 @@ func _atacar_con_arma(
 		ancho,
 		arma
 	)
+
+func _reproducir_animacion_equipo(objeto: Dictionary, direccion: Vector2) -> void:
+	if not is_instance_valid(player) or not player.has_method("reproducir_animacion_herramienta"):
+		return
+	var destino := player.global_position + direccion.normalized() * 28.0
+	player.call("reproducir_animacion_herramienta", objeto, destino)
+
 
 func _disparar_proyectil(
 	arma: Dictionary,
