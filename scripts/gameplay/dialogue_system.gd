@@ -232,8 +232,8 @@ func _input(event: InputEvent) -> void:
 				_cerrar_selector_items()
 			elif _selector_conversacion != null and _selector_conversacion.visible:
 				_cerrar_selector_conversacion()
-			else:
-				cerrar()
+			# Escape no termina la conversación: el cierre voluntario se realiza
+			# desde la opción explícita de despedida.
 			get_viewport().set_input_as_handled()
 
 
