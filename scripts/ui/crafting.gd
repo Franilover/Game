@@ -77,7 +77,7 @@ func _renderizar_recetas() -> void:
 	_tarjeta_receta_seleccionada = null
 	_actualizar_panel_detalle()
 	if _recetas.is_empty():
-		_estado.text = "No hay recetas disponibles."
+		_estado.text = "Sin recetas"
 		return
 
 	_estado.text = ""
