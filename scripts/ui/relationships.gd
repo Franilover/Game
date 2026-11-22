@@ -160,7 +160,7 @@ func _actualizar() -> void:
 	# aquí y se ocultaban todos los habitantes durante una carga social lenta.
 	var personajes: Array[Dictionary] = WorldData.obtener_personajes_game()
 	if personajes.is_empty():
-		estado.text = "Todavía no hay habitantes disponibles."
+		estado.text = "Sin habitantes"
 		return
 
 	for personaje in personajes:
