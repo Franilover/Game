@@ -782,7 +782,7 @@ func guardar_partida() -> bool:
 
 	# La cabecera se carga y valida al iniciar_partida(). Releer el JSON
 	# completo aquí hacía una lectura + parseo + copia profunda en cada autosave.
-	if _active_save_header.is_empty():
+	if not _asegurar_cabecera_guardado():
 		_guardado_en_curso = false
 		return _rechazar_guardado("no hay cabecera validada para la partida activa: " + active_save_id)
 	var datos := _active_save_header.duplicate(false)
@@ -829,6 +829,22 @@ func guardar_partida() -> bool:
 	return resultado
 
 
+## Recupera la cabecera sólo si no corresponde a la partida activa.
+## El camino normal tras iniciar_partida() sigue usando la caché y no relee el JSON.
+func _asegurar_cabecera_guardado() -> bool:
+	if not _active_save_header.is_empty() and str(_active_save_header.get("id", "")) == active_save_id:
+		return true
+	if active_save_id.is_empty():
+		return false
+	var datos := save_repository.leer_partida(active_save_id)
+	if not _datos_partida_cargables(active_save_id, datos):
+		_active_save_header.clear()
+		return false
+	_active_save_header = datos.duplicate(false)
+	_active_save_header.erase("estado")
+	return true
+
+
 ## Captura el estado vivo en el hilo principal y delega JSON + disco a un worker.
 ## Sólo se usa en autosaves; los guardados explícitos de cierre siguen siendo síncronos.
 func guardar_partida_en_segundo_plano() -> bool:
@@ -854,7 +870,7 @@ func guardar_partida_en_segundo_plano() -> bool:
 	_save_thread_captura_ms = float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
 	_sincronizar_garumis_vinculados_desde_escena()
 
-	if _active_save_header.is_empty():
+	if not _asegurar_cabecera_guardado():
 		_guardado_en_curso = false
 		return _rechazar_guardado("no hay cabecera validada para la partida activa: " + active_save_id)
 	_save_thread_datos = _active_save_header.duplicate(false)
