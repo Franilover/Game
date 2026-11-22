@@ -140,10 +140,13 @@ func open(action: String) -> void:
 	# Revalidar al abrir evita depender de cómo se añadió esta instancia.
 	_normalizar_geometria_raiz()
 	_action = action
-	if is_instance_valid(_kingdom_label):
+	if is_instance_valid(_kingdom_label) and is_instance_valid(_kingdom_selector):
 		_kingdom_selector.select(0)
-		_kingdom_label.visible = action == "aventura"
-		_kingdom_selector.visible = action == "aventura"
+		# La aventura directa y el botón «Nueva partida» del selector de
+		# guardados son ambos flujos de creación de un mundo nuevo.
+		var mostrar_selector_reino := action in ["aventura", "nueva_partida"]
+		_kingdom_label.visible = mostrar_selector_reino
+		_kingdom_selector.visible = mostrar_selector_reino
 	partida_name_input.text = ""
 	seed_input.text = ""
 	name_input.text = ""
@@ -178,6 +181,8 @@ func _crear_selector_reino_inicial() -> void:
 	_kingdom_label.text = "Reino inicial"
 	_kingdom_selector = OptionButton.new()
 	_kingdom_selector.name = "KingdomSelector"
+	_kingdom_selector.custom_minimum_size = Vector2(0, 36)
+	_kingdom_selector.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_kingdom_selector.add_item("Torres")
 	_kingdom_selector.set_item_metadata(0, "torres")
 	_kingdom_selector.add_item("Froslia")
