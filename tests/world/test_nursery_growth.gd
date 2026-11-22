@@ -59,6 +59,17 @@ func _run() -> void:
 		_fail("A crop with two watering events must become harvestable after two world days.")
 		return
 
+	# Un bancal vacío también conserva la humedad y se seca al cambiar el día.
+	parcela.set("_clave", "__test_bancal_vacio")
+	parcela.set("_planta", {})
+	parcela.set("_humedo", true)
+	parcela.set("_ultimo_riego_dia_bancal", 1002)
+	parcela.call("_actualizar_progreso_planta")
+	if bool(parcela.get("_humedo")):
+		_fail("An empty nursery plot must be allowed to dry after the world date advances.")
+		return
+	GameState.world_state.flags.erase("__test_bancal_vacio")
+
 	parcela.queue_free()
 	main_fake.queue_free()
 	await get_tree().process_frame
