@@ -131,12 +131,10 @@ func _actualizar_lista() -> void:
 		return
 	var nombre_tienda := str(_tienda_config.get("nombre", "Mercado")).strip_edges()
 	_titulo.text = "%s · %s" % [nombre_tienda, _npc.get_nombre_visual()]
-	_saldo.text = "Tus monedas: %d" % _obtener_saldo()
+	_saldo.text = "¤ %d" % _obtener_saldo()
 	_boton_comprar.disabled = _modo == "comprar"
 	_boton_vender.disabled = _modo == "vender"
-	var intermediaria := str(_tienda_config.get("intermediaria_nombre", "")).strip_edges()
-	var recaudacion := _obtener_ingresos_vendedor()
-	_estado.text = (intermediaria + " atiende por " + _npc.get_nombre_visual() + ". Recaudado para el dueño: %d ¤." % recaudacion) if not intermediaria.is_empty() else ""
+	_estado.text = ""
 	if _modo == "comprar":
 		var disponibles := 0
 		for producto in _productos:
@@ -199,7 +197,7 @@ func _crear_fila_producto(producto: Dictionary, stock: int) -> void:
 	nombre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	datos.add_child(nombre)
 	var existencia := Label.new()
-	existencia.text = "Disponibles: %d" % stock
+	existencia.text = "×%d" % stock
 	existencia.add_theme_color_override("font_color", Color("#BBA98A"))
 	existencia.add_theme_font_size_override("font_size", 9)
 	datos.add_child(existencia)
@@ -252,7 +250,7 @@ func _crear_fila_venta(objeto: Dictionary, indice: int) -> void:
 	nombre.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	datos.add_child(nombre)
 	var existencia := Label.new()
-	existencia.text = "En inventario: %d" % cantidad
+	existencia.text = "×%d" % cantidad
 	existencia.add_theme_color_override("font_color", Color("#BBA98A"))
 	existencia.add_theme_font_size_override("font_size", 9)
 	datos.add_child(existencia)
