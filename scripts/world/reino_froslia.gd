@@ -28,6 +28,7 @@ var _terrain_layers: Array[TileMapDual] = []
 func _ready() -> void:
 	_crear_terreno()
 	_crear_edificios()
+	_crear_limites()
 
 
 func _crear_terreno() -> void:
@@ -125,6 +126,35 @@ func _crear_tileset_dual(ruta_textura: String) -> TileSet:
 			bits >>= 1
 	tile_set.add_source(atlas, 0)
 	return tile_set
+
+func _crear_limites() -> void:
+	# El terreno ocupa 52 x 36 celdas, desde (-26, -18) hasta (26, 18).
+	# Los cuatro cuerpos cierran el perímetro sin añadir capas visuales.
+	var izquierda := -26.0 * TILE_SIZE
+	var derecha := 26.0 * TILE_SIZE
+	var arriba := -18.0 * TILE_SIZE
+	var abajo := 18.0 * TILE_SIZE
+	var ancho := derecha - izquierda
+	var alto := abajo - arriba
+	_crear_muro_limite("LimiteOeste", Vector2(izquierda, (arriba + abajo) * 0.5), Vector2(64.0, alto))
+	_crear_muro_limite("LimiteEste", Vector2(derecha, (arriba + abajo) * 0.5), Vector2(64.0, alto))
+	_crear_muro_limite("LimiteNorte", Vector2((izquierda + derecha) * 0.5, arriba), Vector2(ancho, 64.0))
+	_crear_muro_limite("LimiteSur", Vector2((izquierda + derecha) * 0.5, abajo), Vector2(ancho, 64.0))
+
+
+func _crear_muro_limite(nombre: String, posicion: Vector2, tamano: Vector2) -> void:
+	var cuerpo := StaticBody2D.new()
+	cuerpo.name = nombre
+	cuerpo.position = posicion
+	cuerpo.collision_layer = 1
+	cuerpo.collision_mask = 0
+	var colision := CollisionShape2D.new()
+	var rectangulo := RectangleShape2D.new()
+	rectangulo.size = tamano
+	colision.shape = rectangulo
+	cuerpo.add_child(colision)
+	add_child(cuerpo)
+
 
 func _crear_edificios() -> void:
 	for edificio in BUILDINGS:
