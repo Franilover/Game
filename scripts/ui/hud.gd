@@ -440,9 +440,9 @@ func _preparar_aviso_licencia() -> void:
 	_aviso_licencia.anchor_top = 0.0
 	_aviso_licencia.anchor_bottom = 0.0
 	_aviso_licencia.offset_left = -220.0
-	_aviso_licencia.offset_top = 18.0
+	_aviso_licencia.offset_top = 62.0
 	_aviso_licencia.offset_right = 220.0
-	_aviso_licencia.offset_bottom = 48.0
+	_aviso_licencia.offset_bottom = 92.0
 	_aviso_licencia.z_index = 30
 	_aviso_licencia.add_theme_color_override("font_color", Color("#FFF3D6"))
 	_aviso_licencia.add_theme_color_override("font_outline_color", Color("#302014"))
