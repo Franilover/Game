@@ -198,8 +198,14 @@ func _probar_perfiles_animacion_equipo(errores: Array[String]) -> void:
 		errores.append("La regadera no seleccionó su perfil de uso.")
 	var perfil_espada := EquipmentAnimationScript.obtener_perfil(espada)
 	var perfil_hacha := EquipmentAnimationScript.obtener_perfil(hacha)
+	var perfil_pala := EquipmentAnimationScript.obtener_perfil({"nombre": "Pala de Madera"})
 	if float(perfil_espada.get("duracion", 0.0)) >= float(perfil_hacha.get("duracion", 0.0)):
 		errores.append("La espada y el hacha no conservan ritmos de animación distintos.")
+	if float(perfil_pala.get("duracion", 0.0)) < 0.60:
+		errores.append("La pala sigue teniendo una animación demasiado breve.")
+	for tipo in ["espada", "hacha", "pico", "pala", "azada", "regadera"]:
+		if EquipmentAnimationScript.obtener_textura_respaldo(tipo) == null:
+			errores.append("Falta el sprite de respaldo para la animación de " + tipo + ".")
 	if EquipmentAnimationScript.obtener_tipo_animacion({"nombre": "Objeto"}) != "generica":
 		errores.append("Un objeto sin clasificación no recibió el perfil genérico.")
 
