@@ -130,7 +130,8 @@ func _crear_fila_partida(partida: Dictionary) -> void:
 
 	var delete := Button.new()
 	delete.text = "Eliminar"
-	delete.tooltip_text = "Eliminar partida"\n\tdelete.custom_minimum_size = Vector2(70 if get_viewport_rect().size.x < 560.0 else 90, 42)
+	delete.tooltip_text = "Eliminar partida"
+	delete.custom_minimum_size = Vector2(70 if get_viewport_rect().size.x < 560.0 else 90, 42)
 	delete.pressed.connect(_eliminar_partida.bind(partida_id))
 	row.add_child(delete)
 
