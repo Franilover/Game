@@ -674,7 +674,8 @@ func _construir_elaboracion_herbolario() -> void:
 		return
 	var recetas_elaboracion: Array[Dictionary] = []
 	for receta in _world_items.obtener_recetas():
-		if _receta_es_de_estacion(receta, "herbolario_elaboracion"):
+		# "herbolario" es la etiqueta histórica del extracto vegetal ya existente.
+		if _receta_es_de_estacion(receta, "herbolario_elaboracion") or _receta_es_de_estacion(receta, "herbolario"):
 			recetas_elaboracion.append(receta)
 	if recetas_elaboracion.is_empty():
 		_agregar_texto("Todavía no hay fórmulas de elaboración registradas. Esta mesa queda reservada para infusiones, ungüentos, extractos y remedios.")
@@ -776,7 +777,7 @@ func _mostrar_procesos_item_herbolario(item_id: String, item: Dictionary, detall
 	detalle.add_child(descripcion)
 	var procesos := 0
 	for receta in _world_items.obtener_recetas():
-		var estacion_proceso := _receta_es_de_estacion(receta, "herbolario_secado") or _receta_es_de_estacion(receta, "herbolario")
+		var estacion_proceso := _receta_es_de_estacion(receta, "herbolario_secado")
 		if not _receta_es_botanica(receta) or not estacion_proceso or not _receta_usa_item(receta, item_id):
 			continue
 		procesos += 1
@@ -878,9 +879,10 @@ func _procesar_receta_herbolario(receta: Dictionary) -> void:
 	if not is_instance_valid(_inventario) or not is_instance_valid(_world_items):
 		_mostrar_estado("No se pudo acceder al inventario o al catálogo.")
 		return
-	var estacion_proceso := _receta_es_de_estacion(receta, "herbolario_secado") or _receta_es_de_estacion(receta, "herbolario")
-	if not _receta_es_botanica(receta) or not estacion_proceso:
-		_mostrar_estado("Esta receta no pertenece a la estación de secado y procesamiento.")
+	var estacion_proceso := _receta_es_de_estacion(receta, "herbolario_secado")
+	var estacion_elaboracion := _receta_es_de_estacion(receta, "herbolario_elaboracion") or _receta_es_de_estacion(receta, "herbolario")
+	if not _receta_es_botanica(receta) or (_tipo == "herbolario_procesamiento" and not estacion_proceso) or (_tipo == "herbolario_elaboracion" and not estacion_elaboracion):
+		_mostrar_estado("Esta receta no pertenece a esta mesa del Herbolario.")
 		_actualizar()
 		return
 	var ingredientes_variant: Variant = receta.get("ingredientes", [])
