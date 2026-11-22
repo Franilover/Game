@@ -1815,17 +1815,16 @@ func esta_explorado(tile: Vector2i) -> bool:
 
 
 func _sincronizar_descubrimientos() -> void:
-	var datos := discovery_state.to_dictionary()
+	# No duplicar aquí los diccionarios completos: _serializar_estado() crea
+	# inmediatamente después el snapshot profundo e inmutable para el worker.
+	# Mantener referencias vivas evita copiar dos veces el mapa explorado.
 	world_state.flags["descubrimientos_mundo"] = {
-		"biomas": datos.get("biomas", {}),
-		"ecosistemas": datos.get("ecosistemas", {}),
-		"habitats": datos.get("habitats", {}),
-		"criaturas": datos.get("criaturas", {})
+		"biomas": discovery_state.biomes,
+		"ecosistemas": discovery_state.ecosystems,
+		"habitats": discovery_state.habitats,
+		"criaturas": discovery_state.creatures
 	}
-	world_state.flags["mapa_terreno_explorado"] = datos.get(
-		"mapa_terreno_explorado",
-		{}
-	)
+	world_state.flags["mapa_terreno_explorado"] = discovery_state.explored_tiles
 
 
 # ============================================================
