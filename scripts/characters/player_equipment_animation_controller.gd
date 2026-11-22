@@ -94,7 +94,7 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 	# que algunas ranuras conservan como fallback (p. ej. espada de madera).
 	var datos_sprite := objeto.duplicate(true)
 	datos_sprite.erase("icono")
-	var textura := ITEM_ICON_RESOLVER.obtener_icono(datos_sprite)
+	var textura: Texture2D = ITEM_ICON_RESOLVER.obtener_icono(datos_sprite)
 	if textura == null:
 		var textura_variant: Variant = objeto.get("icono", null)
 		textura = textura_variant as Texture2D if textura_variant is Texture2D else null
