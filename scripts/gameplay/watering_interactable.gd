@@ -274,9 +274,9 @@ func _reproducir_animacion_regadera(regadera: Dictionary) -> void:
 func _rellenar_regadera(regadera: Dictionary) -> void:
 	if _guardar_regadera(regadera, AGUA_MAXIMA):
 		_reproducir_animacion_regadera(regadera)
-		_notificar("Regadera rellenada.")
+		_notificar("Cubo rellenado." if _es_cubo_con_agua(regadera.get("objeto", {})) else "Regadera rellenada.")
 	else:
-		_notificar("No se pudo actualizar la regadera.")
+		_notificar("No se pudo actualizar el recipiente de agua.")
 
 
 func _regar_bancal(regadera: Dictionary) -> void:
@@ -289,7 +289,7 @@ func _regar_bancal(regadera: Dictionary) -> void:
 		return
 	var agua := int(regadera.get("agua", 0))
 	if agua <= 0:
-		_notificar("La regadera está vacía. Busca un pozo.")
+		_notificar("El cubo está vacío. Busca un pozo." if _es_cubo_con_agua(regadera.get("objeto", {})) else "La regadera está vacía. Busca un pozo.")
 		return
 	if not _guardar_regadera(regadera, agua - 1):
 		_notificar("No se pudo usar la regadera.")
@@ -300,7 +300,9 @@ func _regar_bancal(regadera: Dictionary) -> void:
 	_planta["ultimo_riego_dia"] = _dia_mundo_actual()
 	_actualizar_visual()
 	_guardar_estado_parcela()
-	_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). Agua restante: " + str(agua - 1) + "/4.")
+	var capacidad := 1 if _es_cubo_con_agua(regadera.get("objeto", {})) else AGUA_MAXIMA
+	var nombre_recipiente := "Cubo" if capacidad == 1 else "Regadera"
+	_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). " + nombre_recipiente + ": " + str(agua - 1) + "/" + str(capacidad) + ".")
 
 
 func _cargar_estado_parcela() -> void:
