@@ -694,6 +694,11 @@ func _construir_elaboracion_herbolario() -> void:
 
 
 func _construir_procesamiento_herbolario() -> void:
+	# Punto de entrada estable utilizado por la estación física de secado.
+	_construir_procesamiento_herbolario_impl()
+
+
+func _construir_procesamiento_herbolario_impl() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
 	_agregar_texto("SECADO Y TRITURACIÓN")
 	_agregar_texto("Selecciona flores u otros materiales para secarlos, triturarlos y realizar procesos botánicos.")
