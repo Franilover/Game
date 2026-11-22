@@ -304,7 +304,7 @@ func _construir_forja() -> void:
 	var material_id := _material_reparacion(herramienta)
 	var boton_yunque := Button.new()
 	boton_yunque.text = "Yunque"
-	boton_yunque.tooltip_text = "Reparar con material: %s" % ("madera" if material_id == ITEM_MADERA else "piedra")
+	boton_yunque.tooltip_text = "Reparar con %s" % ("madera" if material_id == ITEM_MADERA else "piedra") if not material_id.is_empty() else "Material no disponible"
 	boton_yunque.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton_yunque.disabled = material_id.is_empty() or _contar_item(material_id) < 1
 	boton_yunque.pressed.connect(_reparar_con_material.bind(_herramienta_seleccionada, material_id))
@@ -1277,7 +1277,7 @@ func _construir_menu_cuartel() -> void:
 	)
 	_agregar_opcion_menu_cuartel(
 		"Arsenal",
-		"Armas disponibles.",
+		"",
 		"cuartel_armas"
 	)
 	_agregar_opcion_menu_cuartel(
