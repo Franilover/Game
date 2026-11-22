@@ -20,7 +20,7 @@ var sprite_walk_left: Texture2D = null
 var sprite_walk_back: Texture2D = null
 var _tween_comida: Tween = null
 var _sprite_comida: Sprite2D = null
-var _equipment_animator: RefCounted = null
+var _equipment_animator = null
 
 
 func configurar(
