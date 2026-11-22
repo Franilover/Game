@@ -804,6 +804,8 @@ func guardar_partida() -> bool:
 	_guardado_en_curso = false
 
 	if resultado:
+		_active_save_header = datos.duplicate(false)
+		_active_save_header.erase("estado")
 		_ultimo_motivo_fallo_guardado = ""
 		_primer_guardado_pendiente = false
 		print(
