@@ -362,7 +362,7 @@ mouse_filter = 2
 handle_input_locally = false
 size = Vector2i(104, 180)
 transparent_bg = true
-render_target_update_mode = 3
+render_target_update_mode = 2
 
 [node name="PreviewRoot" type="Node2D" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel/SkinPreview/Viewport"]
 
