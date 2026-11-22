@@ -47,7 +47,7 @@ size_flags_horizontal = 3
 [node name="Title" type="Label" parent="Panel/VBox/TitleRow"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Simulador de IUMs"
+text = "IUMs"
 theme_override_colors/font_color = Color(0.95, 0.88, 0.7, 1)
 theme_override_font_sizes/font_size = 16
 
@@ -96,7 +96,7 @@ theme_override_constants/separation = 6
 
 [node name="LabelCanvas" type="Label" parent="Panel/VBox/ContentRow/CenterCol"]
 layout_mode = 2
-text = "Canvas - arrastra y conecta IUMs"
+text = "Conexiones"
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 11
 
@@ -200,7 +200,7 @@ theme_override_constants/separation = 8
 unique_name_in_owner = true
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Agrega IUMs desde la lista y conectalos para simular un proceso."
+text = "Añade IUMs y conecta sus enlaces."
 theme_override_colors/font_color = Color(0.82, 0.75, 0.61, 1)
 theme_override_font_sizes/font_size = 11
 autowrap_mode = 3
