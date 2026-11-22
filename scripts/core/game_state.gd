@@ -43,6 +43,11 @@ var _ultimo_motivo_fallo_guardado: String = ""
 var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
 var _save_thread: Thread = null
+var _save_thread_datos: Dictionary = {}
+var _save_thread_started_usec: int = 0
+var _save_thread_captura_ms: float = 0.0
+var _save_thread_lectura_ms: float = 0.0
+var _save_thread_snapshot_ms: float = 0.0
 var _runtime_no_detectado_reportado: bool = false
 var _guardado_rapido_conectado: bool = false
 var _guardado_rapido_pendiente: bool = false
@@ -114,6 +119,7 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	_actualizar_guardado_en_segundo_plano()
 	# Diagnóstico temporal de congelaciones: sólo registra frames anormalmente largos.
 	# No realiza escaneos, asignaciones ni consultas adicionales en cada frame.
 	if delta >= 0.20:
@@ -174,10 +180,7 @@ func _notification(what: int) -> void:
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		# El cierre sí puede esperar: no abandonar un worker con una transacción
 		# de archivo activa. Después se realiza el guardado final síncrono.
-		if _save_thread != null and _save_thread.is_started():
-			_save_thread.wait_to_finish()
-			_save_thread = null
-			_guardado_en_curso = false
+		_actualizar_guardado_en_segundo_plano(true)
 		var guardado := guardar_progreso_actual("cierre de la aplicación")
 		if not guardado and (_historia_reserva_activa or not active_save_id.is_empty()):
 			push_error("GameState: no se pudo confirmar el guardado al cerrar. Motivo: " + _ultimo_motivo_fallo_guardado)
@@ -847,59 +850,72 @@ func guardar_partida_en_segundo_plano() -> bool:
 	_guardado_en_curso = true
 	var diagnostico_inicio_usec := Time.get_ticks_usec()
 	capturar_estado_desde_juego(jugador)
-	var captura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
+	_save_thread_captura_ms = float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
 	_sincronizar_garumis_vinculados_desde_escena()
 
 	if _active_save_header.is_empty():
 		_guardado_en_curso = false
 		return _rechazar_guardado("no hay cabecera validada para la partida activa: " + active_save_id)
-	var datos := _active_save_header.duplicate(false)
-	datos["version"] = SAVE_VERSION
-	datos["id"] = active_save_id
-	datos["nombre"] = active_save_name
-	datos["actualizado_en"] = _ahora()
-	datos["mundo"] = {
+	_save_thread_datos = _active_save_header.duplicate(false)
+	_save_thread_datos["version"] = SAVE_VERSION
+	_save_thread_datos["id"] = active_save_id
+	_save_thread_datos["nombre"] = active_save_name
+	_save_thread_datos["actualizado_en"] = _ahora()
+	_save_thread_datos["mundo"] = {
 		"semilla": world_state.world_seed,
 		"generador_version": 1
 	}
-	var lectura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0 - captura_ms
-	var serializacion_inicio_usec := Time.get_ticks_usec()
-	datos["estado"] = _serializar_estado()
-	var serializacion_ms := float(Time.get_ticks_usec() - serializacion_inicio_usec) / 1000.0
+	_save_thread_lectura_ms = float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0 - _save_thread_captura_ms
+	var snapshot_inicio_usec := Time.get_ticks_usec()
+	_save_thread_datos["estado"] = _serializar_estado()
+	_save_thread_snapshot_ms = float(Time.get_ticks_usec() - snapshot_inicio_usec) / 1000.0
 
 	_save_thread = Thread.new()
 	var inicio_worker := _save_thread.start(
-		Callable(save_repository, "escribir_partida").bind(active_save_id, datos)
+		Callable(save_repository, "escribir_partida").bind(active_save_id, _save_thread_datos)
 	)
 	if inicio_worker != OK:
 		_save_thread = null
+		_save_thread_datos.clear()
 		_guardado_en_curso = false
 		return _rechazar_guardado("no se pudo iniciar el hilo de escritura: " + str(inicio_worker))
 
-	var escritura_inicio_usec := Time.get_ticks_usec()
-	while _save_thread.is_alive():
-		await get_tree().process_frame
+	_save_thread_started_usec = diagnostico_inicio_usec
+	return true
+
+
+func _actualizar_guardado_en_segundo_plano(esperar: bool = false) -> void:
+	if _save_thread == null:
+		return
+	if _save_thread.is_alive():
+		if not esperar:
+			return
+		# Sólo se usa al cerrar/suspender: terminar la transacción antes de salir.
 	var resultado_variant: Variant = _save_thread.wait_to_finish()
 	_save_thread = null
 	var resultado := bool(resultado_variant)
-	var escritura_ms := float(Time.get_ticks_usec() - escritura_inicio_usec) / 1000.0
-	var total_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
+	var worker_ms := float(Time.get_ticks_usec() - _save_thread_started_usec) / 1000.0
+	var total_ms := worker_ms
 	_guardado_en_curso = false
 
 	if total_ms >= 80.0:
 		push_warning(
 			"PERF_SAVE_ASYNC: total=%.1f ms | captura=%.1f ms | lectura=%.1f ms | snapshot=%.1f ms | worker=%.1f ms | resultado=%s"
-			% [total_ms, captura_ms, lectura_ms, serializacion_ms, escritura_ms, str(resultado)]
+			% [total_ms, _save_thread_captura_ms, _save_thread_lectura_ms, _save_thread_snapshot_ms, worker_ms, str(resultado)]
 		)
 	if resultado:
-		_active_save_header = datos.duplicate(false)
+		_active_save_header = _save_thread_datos.duplicate(false)
 		_active_save_header.erase("estado")
 		_ultimo_motivo_fallo_guardado = ""
 		_primer_guardado_pendiente = false
 		print("GameState: partida guardada en segundo plano → ", active_save_name)
 	else:
 		_rechazar_guardado("el worker no pudo escribir partidas/" + active_save_id + ".json")
-	return resultado
+	_save_thread_datos.clear()
+	_save_thread_started_usec = 0
+	_save_thread_captura_ms = 0.0
+	_save_thread_lectura_ms = 0.0
+	_save_thread_snapshot_ms = 0.0
 
 
 ## Local worlds keep their runtime entity deltas in the private save.
@@ -1125,7 +1141,7 @@ func _ejecutar_guardado_rapido() -> void:
 	if _historia_reserva_activa:
 		guardar_progreso_historia()
 	elif not active_save_id.is_empty():
-		await guardar_partida_en_segundo_plano()
+		guardar_partida_en_segundo_plano()
 
 
 func _guardar_progreso_diferido() -> void:
