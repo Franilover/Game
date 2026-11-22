@@ -135,7 +135,8 @@ func can_interact(jugador: Node) -> bool:
 	if regadera.is_empty():
 		return false
 	if _tipo == "pozo":
-		return int(regadera.get("agua", AGUA_MAXIMA)) < AGUA_MAXIMA
+		var capacidad := 1 if _es_cubo_con_agua(regadera.get("objeto", {})) or _es_cubo_vacio(regadera.get("objeto", {})) else AGUA_MAXIMA
+		return int(regadera.get("agua", AGUA_MAXIMA)) < capacidad
 	return not _planta.is_empty() and not _humedo and int(regadera.get("agua", AGUA_MAXIMA)) > 0
 
 
