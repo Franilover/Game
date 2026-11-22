@@ -88,21 +88,23 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 	if not asegurar_directorio():
 		return false
 
-	# Si una escritura anterior fue interrumpida, intenta restaurar primero
-	# el respaldo antes de iniciar una nueva transacción.
-	leer_partida(id)
-
 	var ruta_temporal := _ruta_temporal(ruta)
 	var ruta_respaldo := _ruta_respaldo(ruta)
-	var respaldo_valido := not _leer_json_dictionary(ruta_respaldo).is_empty()
-	var final_valido := not _leer_json_dictionary(ruta).is_empty()
+	# Para comprobar integridad basta con parsear: no duplicar recursivamente
+	# el mundo completo ni releer el archivo final varias veces por guardado.
+	var respaldo_valido := not _leer_json_dictionary_sin_copia(ruta_respaldo).is_empty()
+	var final_valido := not _leer_json_dictionary_sin_copia(ruta).is_empty()
 	if respaldo_valido and not final_valido:
-		# No se elimina el único save válido si el filesystem impide recuperarlo.
-		push_error(
-			"SaveFileRepository: existe un respaldo válido que no pudo restaurarse; "
-			+ "se cancela la escritura para conservarlo."
-		)
-		return false
+		# Recupera primero el último snapshot confirmado antes de reemplazarlo.
+		if FileAccess.file_exists(ruta):
+			_eliminar_archivo(ruta)
+		if not _renombrar_archivo(ruta_respaldo, ruta):
+			push_error(
+				"SaveFileRepository: existe un respaldo válido que no pudo restaurarse; "
+				+ "se cancela la escritura para conservarlo."
+			)
+			return false
+		final_valido = true
 	_eliminar_archivo(ruta_temporal)
 
 	var archivo := FileAccess.open(ruta_temporal, FileAccess.WRITE)
@@ -135,7 +137,7 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		return false
 
 	# Nunca se promueve un temporal que no pueda volver a leerse como JSON.
-	if _leer_json_dictionary(ruta_temporal).is_empty():
+	if _leer_json_dictionary_sin_copia(ruta_temporal).is_empty():
 		_eliminar_archivo(ruta_temporal)
 		push_error(
 			"SaveFileRepository: el temporal no superó la validación JSON."
@@ -160,14 +162,9 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		)
 		return false
 
-	if _leer_json_dictionary(ruta).is_empty():
-		_eliminar_archivo(ruta)
-		if habia_partida_previa and FileAccess.file_exists(ruta_respaldo):
-			_renombrar_archivo(ruta_respaldo, ruta)
-		push_error(
-			"SaveFileRepository: la partida final no superó la validación JSON."
-		)
-		return false
+	# El temporal ya fue parseado y validado antes de renombrarlo. El rename
+	# conserva exactamente esos bytes, así que volver a parsear el archivo final
+	# sólo duplica el coste de E/S sin aportar una comprobación distinta.
 
 	_eliminar_archivo(ruta_respaldo)
 	return true
