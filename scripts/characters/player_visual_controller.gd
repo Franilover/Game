@@ -1,6 +1,8 @@
 extends RefCounted
 class_name PlayerVisualController
 
+const EQUIPMENT_ANIMATOR_SCRIPT = preload("res://scripts/characters/player_equipment_animation_controller.gd")
+
 ## Presentación visual del jugador.
 ## No modifica estado de gameplay ni consulta Supabase.
 
@@ -18,8 +20,7 @@ var sprite_walk_left: Texture2D = null
 var sprite_walk_back: Texture2D = null
 var _tween_comida: Tween = null
 var _sprite_comida: Sprite2D = null
-var _tween_herramienta: Tween = null
-var _sprite_herramienta: Sprite2D = null
+var _equipment_animator: RefCounted = null
 
 
 func configurar(
@@ -31,6 +32,8 @@ func configurar(
 	facing_marker = nuevo_marker
 	animation_player = nueva_animacion
 	sprite = visual.get_node_or_null("Sprite2D") as Sprite2D if is_instance_valid(visual) else null
+	_equipment_animator = EQUIPMENT_ANIMATOR_SCRIPT.new()
+	_equipment_animator.configurar(visual, sprite)
 	# ResourceLoader usa las texturas importadas por Godot y conserva su
 	# compatibilidad con exportaciones; Image.load(ruta) lee el PNG crudo.
 	sprite_idle = _cargar_textura_importada(SPRITE_IDLE_PATH)
@@ -131,50 +134,14 @@ func reproducir_animacion_comer(objeto: Dictionary) -> void:
 
 
 func reproducir_animacion_herramienta(objeto: Dictionary, facing: Vector2) -> void:
-	if not is_instance_valid(visual):
+	if not is_instance_valid(_equipment_animator):
 		return
-	if is_instance_valid(_tween_herramienta) and _tween_herramienta.is_running():
-		_tween_herramienta.kill()
-	if is_instance_valid(_sprite_herramienta):
-		_sprite_herramienta.queue_free()
-		_sprite_herramienta = null
-
-	var textura := ItemIconResolver.obtener_icono(objeto)
-	if textura == null:
-		return
-
-	var direccion := facing.normalized()
-	if direccion == Vector2.ZERO:
-		direccion = Vector2.DOWN
-	_sprite_herramienta = Sprite2D.new()
-	_sprite_herramienta.name = "HerramientaAnimada"
-	_sprite_herramienta.texture = textura
-	_sprite_herramienta.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_sprite_herramienta.scale = Vector2(0.78, 0.78)
-	_sprite_herramienta.z_index = 9
-
-	var origen := sprite.position + Vector2(direccion.x * 10.0, -8.0 + direccion.y * 5.0) if is_instance_valid(sprite) else Vector2(0.0, -20.0)
-	var lado := -1.0 if direccion.x < -0.1 else 1.0
-	_sprite_herramienta.position = origen + Vector2(0.0, 7.0)
-	_sprite_herramienta.rotation = -0.9 * lado
-	visual.add_child(_sprite_herramienta)
-
-	_tween_herramienta = visual.create_tween()
-	_tween_herramienta.set_trans(Tween.TRANS_QUAD)
-	_tween_herramienta.set_ease(Tween.EASE_OUT)
-	_tween_herramienta.tween_property(_sprite_herramienta, "position", origen + Vector2(direccion.x * 7.0, direccion.y * 5.0 - 5.0), 0.14)
-	_tween_herramienta.parallel().tween_property(_sprite_herramienta, "rotation", 0.95 * lado, 0.14)
-	_tween_herramienta.set_ease(Tween.EASE_IN)
-	_tween_herramienta.tween_property(_sprite_herramienta, "position", origen + Vector2(0.0, 4.0), 0.12)
-	_tween_herramienta.parallel().tween_property(_sprite_herramienta, "modulate:a", 0.0, 0.12)
-	_tween_herramienta.tween_callback(_limpiar_sprite_herramienta)
+	_equipment_animator.reproducir(objeto, facing)
 
 
-func _limpiar_sprite_herramienta() -> void:
-	if is_instance_valid(_sprite_herramienta):
-		_sprite_herramienta.queue_free()
-	_sprite_herramienta = null
-	_tween_herramienta = null
+func reproducir_animacion_ataque(objeto: Dictionary, facing: Vector2) -> void:
+	# Los ataques cuerpo a cuerpo reutilizan el perfil visual del objeto equipado.
+	reproducir_animacion_herramienta(objeto, facing)
 
 
 func _reproducir_saltito_comiendo() -> void:
