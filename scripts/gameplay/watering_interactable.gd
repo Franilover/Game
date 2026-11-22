@@ -450,9 +450,10 @@ func plantar_semilla(datos_semilla: Dictionary, inventario: Node, indice: int, j
 		"humedo": false
 	}
 	_humedo = false
+	_ultimo_riego_dia_bancal = -1
 	_actualizar_visual_planta()
 	_guardar_estado_parcela()
-	_notificar("Plantaste " + str(cultivo["nombre"]) + ". Riégala durante dos días para que crezca.")
+	_notificar("Plantaste  + str(cultivo["nombre"]) + ". Riégala durante dos días para que crezca.")
 	return true
 
 
