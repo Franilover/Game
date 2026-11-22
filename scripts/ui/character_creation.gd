@@ -3,6 +3,7 @@ extends ColorRect
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const APPEARANCE_PREVIEW_SCENE = preload("res://scenes/ui/character_appearance_preview.tscn")
 const APPEARANCE_OPTION_ROW_SCENE = preload("res://scenes/ui/character_appearance_option_row.tscn")
+const BASE_CHARACTER_TEXTURE = preload("res://assets/art/characters/Sprite-0004.png")
 
 signal confirmed(config: Dictionary, action: String)
 signal cancelled
@@ -55,9 +56,8 @@ func _ready() -> void:
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
 	_crear_vista_previa()
-	# La personalización visual queda desactivada temporalmente.
-	# Conservamos la estructura y los datos para reactivarla más adelante.
-	appearance_container.visible = false
+	# El selector de apariencia forma parte de la creación de cada partida.
+	appearance_container.visible = true
 	_construir_controles_personalizacion()
 	PIXEL_UI_THEME.apply(self)
 	_actualizar_vista_previa()
@@ -154,6 +154,11 @@ func open(action: String) -> void:
 		if selector_color != null:
 			selector_color.color = color_inicial
 		_personalizacion[slot] = {"ruta": "", "color": CharacterAppearance.color_a_html(color_inicial)}
+	# Selecciona de inicio el primer peinado disponible (los nuevos 1/2/3 Front
+	# quedan al principio del catálogo) para que la vista previa nunca aparezca calva.
+	var lista_pelo: ItemList = _personalizacion_items.get("hair") as ItemList
+	if lista_pelo != null and lista_pelo.item_count > 1:
+		_al_seleccionar_pieza(1, "hair")
 	_actualizar_vista_previa()
 	visible = true
 	name_input.grab_focus()
@@ -230,6 +235,10 @@ func _crear_vista_previa() -> void:
 		var capa := _preview_container.get_node_or_null(slot.capitalize()) as TextureRect
 		if capa != null:
 			_preview_layers[slot] = capa
+	var cuerpo := _preview_layers.get("body") as TextureRect
+	if cuerpo != null:
+		cuerpo.texture = BASE_CHARACTER_TEXTURE
+		cuerpo.visible = true
 	appearance_container.add_child(_preview_container)
 
 
@@ -267,6 +276,13 @@ func _construir_controles_personalizacion() -> void:
 		var fila := APPEARANCE_OPTION_ROW_SCENE.instantiate() as HBoxContainer
 		fila.name = "Fila_" + slot
 		_personalizacion_rows.add_child(fila)
+
+		var etiqueta := Label.new()
+		etiqueta.text = str(CharacterAppearance.SLOT_LABELS.get(slot, slot.capitalize()))
+		etiqueta.custom_minimum_size.x = 104.0
+		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		fila.add_child(etiqueta)
+		fila.move_child(etiqueta, 0)
 
 		var lista := fila.get_node("CatalogoInterno") as ItemList
 		lista.add_item("")
