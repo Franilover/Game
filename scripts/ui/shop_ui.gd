@@ -271,13 +271,13 @@ func _crear_fila_producto(producto: Dictionary) -> void:
 				(otro as Button).button_pressed = false
 		producto_boton.button_pressed = true
 		var descripcion_texto := str(producto.get("descripcion", "")).strip_edges()
-		_mostrar_estado(descripcion_texto if not descripcion_texto.is_empty() else "Sin descripción registrada.")
+		_mostrar_estado(descripcion_texto)
 	)
 	fila.add_child(producto_boton)
 	PIXEL_UI_THEME.apply(producto_boton, false)
 
 	var precio := Label.new()
-	precio.text = "%d monedas" % int(producto.get("precio_tienda", 1))
+	precio.text = "¤ %d" % int(producto.get("precio_tienda", 1))
 	precio.custom_minimum_size = Vector2(84.0, 0.0)
 	precio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	precio.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
@@ -338,7 +338,7 @@ func _al_cambiar_dinero(_cantidad: int) -> void:
 
 func _actualizar_balance() -> void:
 	if is_instance_valid(_balance):
-		_balance.text = "Tu dinero: %d monedas" % GameState.obtener_dinero()
+		_balance.text = "¤ %d" % GameState.obtener_dinero()
 
 
 func _mostrar_estado(mensaje: String) -> void:
