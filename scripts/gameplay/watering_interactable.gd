@@ -3,6 +3,7 @@ extends Node2D
 ## El nivel de agua viaja dentro de los datos del objeto y se guarda con el inventario.
 
 const AGUA_MAXIMA := 4
+const ITEM_CUBO_VACIO_ID := "aeff9ca4-77f4-48d4-8c71-1afb6f603f4a"
 const RANGO_PLANTAR_CLIC := 64.0
 const ICONOS_REGADERA := {
 	4: "res://assets/art/items/regadera llena.png",
@@ -264,6 +265,32 @@ func _guardar_regadera(regadera: Dictionary, nueva_cantidad: int) -> bool:
 	return bool(inventario.call("establecer_objeto", int(regadera.get("indice", -1)), objeto))
 
 
+func _convertir_cubo_en_vacio(regadera: Dictionary) -> bool:
+	var inventario: Node = regadera.get("inventario")
+	if not is_instance_valid(inventario):
+		return false
+	var world_items := get_tree().root.get_node_or_null("Main/Systems/WorldItems")
+	if not is_instance_valid(world_items) or not world_items.has_method("buscar_item_por_id"):
+		return false
+	var cubo_vacio: Dictionary = world_items.call("buscar_item_por_id", ITEM_CUBO_VACIO_ID)
+	if cubo_vacio.is_empty():
+		return false
+	cubo_vacio["cantidad"] = 1
+	var objeto_actual: Dictionary = (regadera.get("objeto", {}) as Dictionary).duplicate(true)
+	var cantidad_actual := maxi(1, int(objeto_actual.get("cantidad", 1)))
+	var indice := int(regadera.get("indice", -1))
+	if indice < 0:
+		return false
+	if cantidad_actual == 1:
+		return bool(inventario.call("establecer_objeto", indice, cubo_vacio))
+	# Si había varios cubos apilados, transforma sólo el utilizado.
+	var controlador: Variant = inventario.get("inventory_controller")
+	if not is_instance_valid(controlador) or not controlador.has_method("quitar_cantidad_desde_ui"):
+		return false
+	if not bool(controlador.call("quitar_cantidad_desde_ui", indice, 1)):
+		return false
+	return bool(inventario.call("agregar_objeto_desde_ui", cubo_vacio))
+
 func _reproducir_animacion_regadera(regadera: Dictionary) -> void:
 	var jugador := get_tree().get_first_node_in_group("player")
 	if not is_instance_valid(jugador) or not jugador.has_method("reproducir_animacion_herramienta"):
@@ -291,7 +318,12 @@ func _regar_bancal(regadera: Dictionary) -> void:
 	if agua <= 0:
 		_notificar("El cubo está vacío. Busca un pozo." if _es_cubo_con_agua(regadera.get("objeto", {})) else "La regadera está vacía. Busca un pozo.")
 		return
-	if not _guardar_regadera(regadera, agua - 1):
+	var es_cubo := _es_cubo_con_agua(regadera.get("objeto", {}))
+	if es_cubo:
+		if not _convertir_cubo_en_vacio(regadera):
+			_notificar("No se pudo convertir el cubo. No se regó la tierra.")
+			return
+	elif not _guardar_regadera(regadera, agua - 1):
 		_notificar("No se pudo usar la regadera.")
 		return
 	_reproducir_animacion_regadera(regadera)
@@ -300,9 +332,10 @@ func _regar_bancal(regadera: Dictionary) -> void:
 	_planta["ultimo_riego_dia"] = _dia_mundo_actual()
 	_actualizar_visual()
 	_guardar_estado_parcela()
-	var capacidad := 1 if _es_cubo_con_agua(regadera.get("objeto", {})) else AGUA_MAXIMA
-	var nombre_recipiente := "Cubo" if capacidad == 1 else "Regadera"
-	_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). " + nombre_recipiente + ": " + str(agua - 1) + "/" + str(capacidad) + ".")
+	if es_cubo:
+		_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). El cubo quedó vacío.")
+	else:
+		_notificar("Planta regada (" + str(_planta["riegos"]) + "/2). Regadera: " + str(agua - 1) + "/" + str(AGUA_MAXIMA) + ".")
 
 
 func _cargar_estado_parcela() -> void:
