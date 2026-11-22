@@ -680,8 +680,15 @@ func _construir_elaboracion_herbolario() -> void:
 	if recetas_elaboracion.is_empty():
 		_agregar_texto("Todavía no hay fórmulas de elaboración registradas. Esta mesa queda reservada para infusiones, ungüentos, extractos y remedios.")
 		return
-	var layout := _crear_selector_edificio(180.0, 280.0)
-	var detalle := layout["detail_content"] as VBoxContainer
+	var scroll_recetas := ScrollContainer.new()
+	scroll_recetas.custom_minimum_size = Vector2(0, 280)
+	scroll_recetas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scroll_recetas.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_contenido.add_child(scroll_recetas)
+	var detalle := VBoxContainer.new()
+	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	detalle.add_theme_constant_override("separation", 7)
+	scroll_recetas.add_child(detalle)
 	for receta in recetas_elaboracion:
 		_agregar_tarjeta_receta_herbolario(receta, detalle)
 
