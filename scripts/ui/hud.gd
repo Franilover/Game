@@ -1042,7 +1042,7 @@ func _actualizar_panel_misiones() -> void:
 	var misiones: Array[Dictionary] = manager.obtener_misiones_activas()
 	if misiones.is_empty():
 		var vacio := Label.new()
-		vacio.text = "No tienes misiones activas."
+		vacio.text = "Sin misiones"
 		vacio.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		vacio.add_theme_color_override("font_color", Color(0.72, 0.64, 0.52, 1.0))
 		mission_list.add_child(vacio)
