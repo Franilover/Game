@@ -23,6 +23,8 @@ var discovery_state := DiscoveryState.new()
 
 var active_save_id: String = ""
 var active_save_name: String = ""
+# Cabecera pequeña de la partida activa; evita releer y duplicar el JSON completo en cada autosave.
+var _active_save_header: Dictionary = {}
 
 var save_repository := SaveFileRepository.new()
 var story_save_repository := SaveFileRepository.new()
@@ -314,6 +316,8 @@ func guardar_progreso_historia() -> bool:
 	var resultado := story_save_repository.escribir_partida(STORY_SAVE_ID, datos)
 	_guardado_en_curso = false
 	if resultado:
+		_active_save_header = datos.duplicate(false)
+		_active_save_header.erase("estado")
 		_ultimo_motivo_fallo_guardado = ""
 		_primer_guardado_pendiente = false
 		print("GameState: progreso de Historia guardado → La Reserva Carmesí")
@@ -557,6 +561,10 @@ func iniciar_partida(id: String) -> bool:
 			push_warning("GameState: no se pudo persistir la migración; la partida se abrirá con los datos normalizados.")
 
 	active_save_id = id
+	# Conserva campos superiores desconocidos por compatibilidad, sin retener
+	# ni duplicar el bloque grande "estado" en cada guardado.
+	_active_save_header = datos.duplicate(false)
+	_active_save_header.erase("estado")
 	active_save_name = str(
 		metadata.get(
 			"nombre",
@@ -761,20 +769,21 @@ func guardar_partida() -> bool:
 	var captura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
 	_sincronizar_garumis_vinculados_desde_escena()
 
-	var datos := _leer_archivo_partida(active_save_id)
-	var lectura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0 - captura_ms
-
-	if datos.is_empty():
+	# La cabecera se carga y valida al iniciar_partida(). Releer el JSON
+	# completo aquí hacía una lectura + parseo + copia profunda en cada autosave.
+	if _active_save_header.is_empty():
 		_guardado_en_curso = false
-		return _rechazar_guardado("no se pudo leer el archivo de la partida activa: " + active_save_id)
-
+		return _rechazar_guardado("no hay cabecera validada para la partida activa: " + active_save_id)
+	var datos := _active_save_header.duplicate(false)
 	datos["version"] = SAVE_VERSION
+	datos["id"] = active_save_id
 	datos["nombre"] = active_save_name
 	datos["actualizado_en"] = _ahora()
 	datos["mundo"] = {
 		"semilla": world_state.world_seed,
 		"generador_version": 1
 	}
+	var lectura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0 - captura_ms
 	var serializacion_inicio_usec := Time.get_ticks_usec()
 	datos["estado"] = _serializar_estado()
 	var serializacion_ms := float(Time.get_ticks_usec() - serializacion_inicio_usec) / 1000.0
