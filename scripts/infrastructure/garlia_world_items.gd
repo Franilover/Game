@@ -782,9 +782,19 @@ func soltar_objeto_al_mundo(
 	return _generar_world_item(datos.duplicate(true), posicion)
 
 
+## Crea el drop de un recurso recién extraído. Estos drops se recogen al pisarlos.
+func generar_drop_recoleccion(datos: Dictionary, posicion: Vector2) -> bool:
+	if datos.is_empty():
+		return false
+	var drop := datos.duplicate(true)
+	drop["recogida_automatica"] = true
+	return _generar_world_item(drop, posicion, false)
+
+
 func _generar_world_item(
 	datos: Dictionary,
-	posicion: Vector2
+	posicion: Vector2,
+	dispersar: bool = true
 ) -> bool:
 	if not ItemIconResolver.tiene_icono(datos):
 		print("GarliaWorldItems: objeto no implementado todavía; falta su sprite → ", str(datos.get("nombre", "Objeto")))
@@ -810,10 +820,12 @@ func _generar_world_item(
 		return false
 	_world_items.append(objeto)
 
-	objeto.global_position = posicion + Vector2(
-		randf_range(-10.0, 10.0),
-		randf_range(-10.0, 10.0)
-	)
+	objeto.global_position = posicion
+	if dispersar:
+		objeto.global_position += Vector2(
+			randf_range(-10.0, 10.0),
+			randf_range(-10.0, 10.0)
+		)
 
 	objeto.configurar(datos.duplicate(true))
 
