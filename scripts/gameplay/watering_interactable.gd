@@ -254,8 +254,16 @@ func _guardar_regadera(regadera: Dictionary, nueva_cantidad: int) -> bool:
 	return bool(inventario.call("establecer_objeto", int(regadera.get("indice", -1)), objeto))
 
 
+func _reproducir_animacion_regadera(regadera: Dictionary) -> void:
+	var jugador := get_tree().get_first_node_in_group("player")
+	if not is_instance_valid(jugador) or not jugador.has_method("reproducir_animacion_herramienta"):
+		return
+	jugador.call("reproducir_animacion_herramienta", regadera.get("objeto", {}), global_position)
+
+
 func _rellenar_regadera(regadera: Dictionary) -> void:
 	if _guardar_regadera(regadera, AGUA_MAXIMA):
+		_reproducir_animacion_regadera(regadera)
 		_notificar("Regadera rellenada.")
 	else:
 		_notificar("No se pudo actualizar la regadera.")
@@ -276,6 +284,7 @@ func _regar_bancal(regadera: Dictionary) -> void:
 	if not _guardar_regadera(regadera, agua - 1):
 		_notificar("No se pudo usar la regadera.")
 		return
+	_reproducir_animacion_regadera(regadera)
 	_humedo = true
 	_planta["riegos"] = int(_planta.get("riegos", 0)) + 1
 	_planta["ultimo_riego_dia"] = _dia_mundo_actual()
