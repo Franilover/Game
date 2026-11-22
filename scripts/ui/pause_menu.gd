@@ -24,7 +24,7 @@ func configurar(inventario: Node) -> void:
 func establecer_modo_historia(activo: bool) -> void:
 	_modo_historia = activo
 	if is_instance_valid(mundo_button):
-		mundo_button.visible = not activo
+		mundo_button.visible = false
 
 
 func _ready() -> void:
