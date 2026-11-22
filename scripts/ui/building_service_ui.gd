@@ -693,6 +693,66 @@ func _construir_elaboracion_herbolario() -> void:
 		_agregar_tarjeta_receta_herbolario(receta, detalle)
 
 
+func _construir_procesamiento_herbolario() -> void:
+	_panel.custom_minimum_size = Vector2(540, 0)
+	_agregar_texto("SECADO Y TRITURACIÓN")
+	_agregar_texto("Selecciona flores u otros materiales para secarlos, triturarlos y realizar procesos botánicos.")
+	if not is_instance_valid(_world_items):
+		_agregar_texto("No se pudo acceder al catálogo compartido.")
+		return
+	if not _world_items.recetas_disponibles:
+		_agregar_texto("Las recetas todavía se están cargando. Cierra y vuelve a abrir esta mesa en unos momentos.")
+		if not _world_items.recetas_cargadas.is_connected(_al_recetas_herbolario_cargadas):
+			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
+		return
+
+	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 180.0, 260.0, 10)
+	var lista := layout["list_content"] as GridContainer
+	var panel_lista := layout["list_panel"] as PanelContainer
+	var panel_detalle := layout["detail_panel"] as PanelContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	_aplicar_fondo_seccion_boton(panel_lista)
+	_aplicar_fondo_seccion_boton(panel_detalle)
+
+	var vistos: Dictionary = {}
+	var seleccion_inicial: Dictionary = {}
+	var id_inicial := ""
+	if is_instance_valid(_inventario):
+		for objeto_variant in _inventario.runtime.state.items:
+			if not objeto_variant is Dictionary:
+				continue
+			var objeto := objeto_variant as Dictionary
+			if objeto.is_empty() or not _es_muestra_botanica(objeto):
+				continue
+			var item_id := str(objeto.get("item_id", objeto.get("id", "")))
+			if item_id.is_empty() or vistos.has(item_id):
+				continue
+			var item_catalogo := _world_items.buscar_item_por_id(item_id)
+			if item_catalogo.is_empty():
+				continue
+			vistos[item_id] = true
+			if seleccion_inicial.is_empty():
+				seleccion_inicial = item_catalogo
+				id_inicial = item_id
+			var boton := MENU_LAYOUT.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(item_catalogo))
+			PIXEL_UI_THEME.apply(boton, false)
+			MENU_LAYOUT.agregar_cantidad(boton, _contar_item(item_id))
+			boton.pressed.connect(_mostrar_procesos_item_herbolario.bind(item_id, item_catalogo, detalle))
+			lista.add_child(boton)
+
+	if vistos.is_empty():
+		var vacio := Label.new()
+		vacio.text = "No tienes materiales botánicos."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		lista.add_child(vacio)
+		var instruccion := Label.new()
+		instruccion.text = "Consigue flores, hojas, semillas o hierbas para procesarlas aquí."
+		instruccion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		detalle.add_child(instruccion)
+	else:
+		_mostrar_procesos_item_herbolario(id_inicial, seleccion_inicial, detalle)
+
+
 func _receta_es_de_estacion(receta: Dictionary, estacion_buscada: String) -> bool:
 	var propiedades_variant: Variant = receta.get("propiedades", {})
 	var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
