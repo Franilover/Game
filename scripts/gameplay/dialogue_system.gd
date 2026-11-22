@@ -61,7 +61,8 @@ var _indice_caracter: int = 0
 var _temporizador_texto: float = 0.0
 var _intervalo_caracter: float = 0.006
 var _temporizador_lectura_transito: float = 0.0
-const INTERVALO_CARACTER_CAMINANDO: float = 0.028
+const INTERVALO_CARACTER_NORMAL: float = 0.003
+const INTERVALO_CARACTER_CAMINANDO: float = 0.009
 const TIEMPO_LECTURA_TRANSITO: float = 2.5
 var _ultimo_toque_dialogo_msec: int = -1000
 var _recuerdo_pendiente_mostrar: Dictionary = {}
@@ -166,7 +167,10 @@ func _input(event: InputEvent) -> void:
 	# primary_action. Se procesa aquí antes de que el evento llegue al mundo.
 	if event is InputEventScreenTouch:
 		var toque := event as InputEventScreenTouch
-		if toque.pressed and dialogue_panel != null and is_instance_valid(dialogue_panel) and dialogue_panel.get_global_rect().has_point(toque.position):
+		if toque.pressed:
+			if dialogue_panel == null or not is_instance_valid(dialogue_panel) or not dialogue_panel.get_global_rect().has_point(toque.position):
+				get_viewport().set_input_as_handled()
+				return
 			# También se registra si el toque cae sobre un botón: así no se
 			# procesa dos veces cuando Godot emite el clic de ratón equivalente.
 			_ultimo_toque_dialogo_msec = Time.get_ticks_msec()
@@ -183,6 +187,9 @@ func _input(event: InputEvent) -> void:
 		# Los clics sobre controles de diálogo pertenecen a la interfaz.
 		if event is InputEventMouseButton:
 			var posicion_mouse := get_viewport().get_mouse_position()
+			if dialogue_panel == null or not is_instance_valid(dialogue_panel) or not dialogue_panel.get_global_rect().has_point(posicion_mouse):
+				get_viewport().set_input_as_handled()
+				return
 			if _tienda_mercado != null and is_instance_valid(_tienda_mercado) and _tienda_mercado.visible and _tienda_mercado.get_global_rect().has_point(posicion_mouse):
 				return
 			if _selector_items != null and _selector_items.visible and _selector_items.get_global_rect().has_point(posicion_mouse):
@@ -700,7 +707,7 @@ func _mostrar_linea_actual() -> void:
 	_indice_caracter = 0
 	_temporizador_texto = 0.0
 	_temporizador_lectura_transito = 0.0
-	_intervalo_caracter = INTERVALO_CARACTER_CAMINANDO if _dialogo_requiere_lectura_lenta() else 0.006
+	_intervalo_caracter = INTERVALO_CARACTER_CAMINANDO if _dialogo_requiere_lectura_lenta() else INTERVALO_CARACTER_NORMAL
 	text_label.text = ""
 	_actualizar_boton_accion()
 
@@ -1570,11 +1577,11 @@ func _actualizar_boton_accion() -> void:
 			if cancel_button != null and is_instance_valid(cancel_button):
 				cancel_button.visible = false
 			return
-		# Toda línea terminal sin decisiones ofrece un cierre explícito.
-		action_button.text = "Cerrar"
-		action_button.visible = true
+		# Sin respuestas ni despedida explícita, la conversación termina sola.
+		action_button.visible = false
 		if cancel_button != null and is_instance_valid(cancel_button):
 			cancel_button.visible = false
+		cerrar()
 		return
 
 	# La elección se presenta al terminar la conversación, no entre líneas.
@@ -1595,18 +1602,14 @@ func _actualizar_boton_accion() -> void:
 	action_button.text = str(accion.get("texto", "Aceptar"))
 	action_button.visible = true
 	if cancel_button != null:
-		cancel_button.visible = true
+		cancel_button.visible = false
 
 
 func _mostrar_cierre_dialogo() -> void:
 	_acciones.clear()
 	_respuestas.clear()
 	_limpiar_botones_respuesta()
-	if action_button != null and is_instance_valid(action_button):
-		action_button.text = "Cerrar"
-		action_button.visible = true
-	if cancel_button != null and is_instance_valid(cancel_button):
-		cancel_button.visible = false
+	cerrar()
 
 
 func _ejecutar_accion_dialogo() -> void:
@@ -3846,7 +3849,7 @@ func _crear_interfaz() -> void:
 
 	cancel_button = Button.new()
 	cancel_button.name = "DialogueCancel"
-	cancel_button.text = "Salir"
+	cancel_button.text = ""
 	cancel_button.visible = false
 	cancel_button.custom_minimum_size = Vector2(120, 34)
 	cancel_button.add_theme_font_size_override("font_size", 11)
