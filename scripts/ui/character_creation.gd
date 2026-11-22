@@ -158,6 +158,7 @@ func open(action: String) -> void:
 	# quedan al principio del catálogo) para que la vista previa nunca aparezca calva.
 	var lista_pelo: ItemList = _personalizacion_items.get("hair") as ItemList
 	if lista_pelo != null and lista_pelo.item_count > 1:
+		lista_pelo.select(1)
 		_al_seleccionar_pieza(1, "hair")
 	_actualizar_vista_previa()
 	visible = true
