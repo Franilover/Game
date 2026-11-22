@@ -37,9 +37,6 @@ func _crear_terreno() -> void:
 	var tierra_cells: Array[Vector2i] = []
 	var tierra_lookup: Dictionary = {}
 	for y in range(-18, 18):
-		for x in range(-26, 26):
-			nieve_cells.append(Vector2i(x, y))
-	for y in range(-18, 18):
 		for x in [-1, 0, 1]:
 			_agregar_celda_unica(tierra_cells, tierra_lookup, Vector2i(x, y))
 	for x in range(-26, 26):
@@ -54,6 +51,13 @@ func _crear_terreno() -> void:
 		_agregar_celda_unica(tierra_cells, tierra_lookup, Vector2i(0, y))
 	for x in range(1, 11):
 		_agregar_celda_unica(tierra_cells, tierra_lookup, Vector2i(x, -8))
+
+	# Las capas son excluyentes: la nieve no debe dibujarse encima de los caminos.
+	for y in range(-18, 18):
+		for x in range(-26, 26):
+			var celda := Vector2i(x, y)
+			if not tierra_lookup.has(celda):
+				nieve_cells.append(celda)
 
 	var capa_tierra := _crear_capa_dual("TerrenoTierraNevada", "res://assets/tilesets/Tierra Nevada.png", -4095)
 	var capa_nieve := _crear_capa_dual("TerrenoNieve", "res://assets/tilesets/Nieve.png", -4094)
