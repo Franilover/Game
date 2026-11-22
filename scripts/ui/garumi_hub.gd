@@ -53,7 +53,7 @@ func _crear_interfaz() -> void:
 	var encabezado := HBoxContainer.new()
 	columna.add_child(encabezado)
 	var titulo := Label.new()
-	titulo.text = "MESA DE GARUMIS"
+	titulo.text = "Garumis"
 	titulo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	titulo.add_theme_color_override("font_color", TEXTO)
 	titulo.add_theme_font_size_override("font_size", 14)
@@ -85,7 +85,7 @@ func _crear_interfaz() -> void:
 	separador.add_theme_color_override("separator", BORDE)
 	_pagina_garumis.add_child(separador)
 	var titulo_amigos := Label.new()
-	titulo_amigos.text = "AMIGOS"
+	titulo_amigos.text = "Amigos"
 	titulo_amigos.add_theme_color_override("font_color", TEXTO)
 	titulo_amigos.add_theme_font_size_override("font_size", 11)
 	_pagina_garumis.add_child(titulo_amigos)
@@ -135,7 +135,7 @@ func actualizar() -> void:
 		if registro is Dictionary:
 			_agregar_fila(_lista_amigos, registro as Dictionary, "Amigo")
 	if vinculados.is_empty() and amigos.is_empty():
-		_estado.text = "Aún no has conocido Garumis. Explora y conversa con ellos para registrar tus encuentros."
+		_estado.text = "Sin registros"
 	else:
 		_estado.text = ""
 
