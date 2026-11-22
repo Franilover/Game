@@ -69,7 +69,7 @@ theme_override_constants/separation = 4
 layout_mode = 2
 theme_override_colors/font_color = Color(0.9, 0.79, 0.58, 1)
 theme_override_font_sizes/font_size = 13
-text = "Selecciona un objeto"
+text = ""
 horizontal_alignment = 1
 autowrap_mode = 3
 
