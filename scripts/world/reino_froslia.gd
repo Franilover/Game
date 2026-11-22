@@ -68,18 +68,18 @@ func _crear_terreno() -> void:
 			_tilemap.set_cell(Vector2i(x, y), 2, Vector2i(2, 1))
 	for x in range(-26, 26):
 		for y in [-1, 0, 1]:
-			_tilemap.draw_cell(Vector2i(x, y), 2)
+			_tilemap.set_cell(Vector2i(x, y), 2, Vector2i(2, 1))
 	for y in range(-4, 5):
 		for x in range(-6, 7):
-			_tilemap.draw_cell(Vector2i(x, y), 2)
+			_tilemap.set_cell(Vector2i(x, y), 2, Vector2i(2, 1))
 
 	# Accesos desde el eje central a los tres edificios.
 	for x in range(-10, -1):
-		_tilemap.draw_cell(Vector2i(x, -8), 2)
+		_tilemap.set_cell(Vector2i(x, -8), 2, Vector2i(2, 1))
 	for y in range(-12, -1):
-		_tilemap.draw_cell(Vector2i(0, y), 2)
+		_tilemap.set_cell(Vector2i(0, y), 2, Vector2i(2, 1))
 	for x in range(1, 11):
-		_tilemap.draw_cell(Vector2i(x, -8), 2)
+		_tilemap.set_cell(Vector2i(x, -8), 2, Vector2i(2, 1))
 
 	_tilemap._update_cells(celdas, false)
 
