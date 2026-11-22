@@ -105,8 +105,8 @@ func iniciar() -> void:
 		entrar_reino("torres")
 	elif zona_guardada.begins_with("reino:"):
 		entrar_reino(zona_guardada.trim_prefix("reino:"))
-	elif not str(GameState.world_state.flags.get("reino_inicial", "")).strip_edges().is_empty():
-		entrar_reino(str(GameState.world_state.flags.get("reino_inicial", "torres"))) 
+	elif zona_guardada.is_empty() and not str(GameState.world_state.flags.get("reino_inicial", "")).strip_edges().is_empty():
+		entrar_reino(str(GameState.world_state.flags.get("reino_inicial", "torres")))
 	elif zona_guardada == TIPO_MUNDO_ABIERTO:
 		entrar_mundo_abierto()
 	elif zona_guardada == TIPO_EXPEDICION_BOSQUE:
