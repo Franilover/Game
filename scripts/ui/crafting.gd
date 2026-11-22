@@ -11,6 +11,7 @@ var _recetas: Array[Dictionary] = []
 @onready var _detalle_icono: TextureRect = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/RecipeIcon
 @onready var _detalle_ingredientes: RichTextLabel = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/Ingredients
 @onready var _boton_craftear: Button = $Margin/Column/Content/DetailPanel/DetailMargin/DetailColumn/CraftButton
+@onready var _panel_detalle: PanelContainer = $Margin/Column/Content/DetailPanel
 var _receta_seleccionada: Dictionary = {}
 var _tarjeta_receta_seleccionada: Button = null
 var _inventory: Node = null
@@ -44,6 +45,7 @@ func _ready() -> void:
 		var estilo_boton := PIXEL_UI_THEME.button_surface_style()
 		if estilo_boton != null:
 			fondo_detalle.add_theme_stylebox_override("panel", estilo_boton)
+	_boton_craftear.text = "Fabricar"
 	_boton_craftear.pressed.connect(_craftear_seleccionado)
 	_lista_scroll.resized.connect(_ajustar_columnas_recetas)
 	call_deferred("_ajustar_columnas_recetas")
@@ -238,11 +240,13 @@ func _actualizar_panel_detalle() -> void:
 	if _detalle_nombre == null:
 		return
 	if _receta_seleccionada.is_empty():
-		_detalle_nombre.text = "Selecciona un objeto"
+		_panel_detalle.visible = false
+		_detalle_nombre.text = ""
 		_detalle_icono.texture = null
 		_detalle_ingredientes.text = ""
 		_boton_craftear.disabled = true
 		return
+	_panel_detalle.visible = true
 
 	_detalle_nombre.text = str(_receta_seleccionada.get("nombre", "Receta"))
 	var resultado_variant: Variant = _receta_seleccionada.get("resultado", {})
