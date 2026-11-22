@@ -264,7 +264,7 @@ horizontal_alignment = 1
 [node name="Subtitle" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=2002603302]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = "Juega con otros exploradores de Garlia."
+text = ""
 horizontal_alignment = 1
 
 [node name="HostButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1334370356]
