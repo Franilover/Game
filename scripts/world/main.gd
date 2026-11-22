@@ -543,6 +543,12 @@ func _actualizar_limites_camara_zona(tipo: String) -> void:
 		_camera.limit_top = -1088
 		_camera.limit_bottom = 1088
 		_camera.limit_enabled = true
+	elif tipo == "reino:froslia":
+		_camera.limit_left = -832
+		_camera.limit_right = 832
+		_camera.limit_top = -576
+		_camera.limit_bottom = 576
+		_camera.limit_enabled = true
 	elif tipo == "hogar":
 		_camera.limit_left = -1200
 		_camera.limit_right = 1200
