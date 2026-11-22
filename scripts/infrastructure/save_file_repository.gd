@@ -90,21 +90,11 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 
 	var ruta_temporal := _ruta_temporal(ruta)
 	var ruta_respaldo := _ruta_respaldo(ruta)
-	# Para comprobar integridad basta con parsear: no duplicar recursivamente
-	# el mundo completo ni releer el archivo final varias veces por guardado.
-	var respaldo_valido := not _leer_json_dictionary_sin_copia(ruta_respaldo).is_empty()
-	var final_valido := not _leer_json_dictionary_sin_copia(ruta).is_empty()
-	if respaldo_valido and not final_valido:
-		# Recupera primero el último snapshot confirmado antes de reemplazarlo.
-		if FileAccess.file_exists(ruta):
-			_eliminar_archivo(ruta)
-		if not _renombrar_archivo(ruta_respaldo, ruta):
-			push_error(
-				"SaveFileRepository: existe un respaldo válido que no pudo restaurarse; "
-				+ "se cancela la escritura para conservarlo."
-			)
-			return false
-		final_valido = true
+	# La partida activa ya fue leída, parseada y validada al abrirla.
+	# No releer el archivo final ni el respaldo en cada guardado: además de caro,
+	# el snapshot nuevo proviene del estado vivo validado en memoria.
+	var habia_partida_previa := FileAccess.file_exists(ruta)
+	_eliminar_archivo(ruta_respaldo)
 	_eliminar_archivo(ruta_temporal)
 
 	var archivo := FileAccess.open(ruta_temporal, FileAccess.WRITE)
@@ -144,8 +134,6 @@ func escribir_partida(id: String, datos: Dictionary) -> bool:
 		)
 		return false
 
-	_eliminar_archivo(ruta_respaldo)
-	var habia_partida_previa := FileAccess.file_exists(ruta)
 	if habia_partida_previa and not _renombrar_archivo(ruta, ruta_respaldo):
 		_eliminar_archivo(ruta_temporal)
 		push_error(
