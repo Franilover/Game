@@ -32,10 +32,16 @@ theme_override_constants/separation = 8
 [node name="Header" type="HBoxContainer" parent="Panel/Margin/Column"]
 layout_mode = 2
 
-[node name="Close" type="Button" parent="Panel/Margin/Column/Header"]
-custom_minimum_size = Vector2(82, 32)
+[node name="Title" type="Label" parent="Panel/Margin/Column/Header"]
 layout_mode = 2
-text = "Cerrar"
+size_flags_horizontal = 3
+text = "Estudio Oris"
+
+[node name="Close" type="Button" parent="Panel/Margin/Column/Header"]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+text = "×"
+tooltip_text = "Cerrar"
 
 [node name="Body" type="HBoxContainer" parent="Panel/Margin/Column"]
 layout_mode = 2
