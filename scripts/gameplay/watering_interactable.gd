@@ -216,24 +216,31 @@ func _buscar_semilla() -> Dictionary:
 
 func _es_regadera(objeto: Dictionary) -> bool:
 	var identidad := _normalizar(str(objeto.get("nombre", "")) + " " + str(objeto.get("item_id", objeto.get("id", ""))))
-	if identidad.contains("regadera"):
+	if identidad.contains("regadera") or _es_cubo_con_agua(objeto):
 		return true
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	if propiedades_variant is Dictionary:
 		var herramienta_variant: Variant = (propiedades_variant as Dictionary).get("herramienta_recoleccion", {})
 		if herramienta_variant is Dictionary:
 			var tipo_herramienta := _normalizar(str((herramienta_variant as Dictionary).get("tipo", "")))
-			return tipo_herramienta == "regadera"
+			return tipo_herramienta in ["regadera", "cubo de agua", "recipiente de agua"]
 	return false
+
+
+func _es_cubo_con_agua(objeto: Dictionary) -> bool:
+	var identidad := _normalizar(str(objeto.get("nombre", "")) + " " + str(objeto.get("item_id", objeto.get("id", ""))))
+	return (identidad.contains("cubo") or identidad.contains("balde")) and identidad.contains("agua")
 
 
 func _obtener_agua(objeto: Dictionary) -> int:
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	if propiedades_variant is Dictionary:
-		var regadera_variant: Variant = (propiedades_variant as Dictionary).get("regadera", {})
-		if regadera_variant is Dictionary:
-			return clampi(int((regadera_variant as Dictionary).get("agua", AGUA_MAXIMA)), 0, AGUA_MAXIMA)
-	return AGUA_MAXIMA
+		var propiedades := propiedades_variant as Dictionary
+		var estado_variant: Variant = propiedades.get("recipiente_agua", propiedades.get("regadera", {}))
+		if estado_variant is Dictionary:
+			var capacidad := 1 if _es_cubo_con_agua(objeto) else AGUA_MAXIMA
+			return clampi(int((estado_variant as Dictionary).get("agua", capacidad)), 0, capacidad)
+	return 1 if _es_cubo_con_agua(objeto) else AGUA_MAXIMA
 
 
 func _guardar_regadera(regadera: Dictionary, nueva_cantidad: int) -> bool:
@@ -243,14 +250,17 @@ func _guardar_regadera(regadera: Dictionary, nueva_cantidad: int) -> bool:
 	var objeto: Dictionary = (regadera.get("objeto", {}) as Dictionary).duplicate(true)
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	var propiedades: Dictionary = (propiedades_variant as Dictionary).duplicate(true) if propiedades_variant is Dictionary else {}
-	var estado_variant: Variant = propiedades.get("regadera", {})
+	var es_cubo := _es_cubo_con_agua(objeto)
+	var capacidad := 1 if es_cubo else AGUA_MAXIMA
+	var estado_variant: Variant = propiedades.get("recipiente_agua", propiedades.get("regadera", {}))
 	var estado: Dictionary = (estado_variant as Dictionary).duplicate(true) if estado_variant is Dictionary else {}
-	var agua := clampi(nueva_cantidad, 0, AGUA_MAXIMA)
+	var agua := clampi(nueva_cantidad, 0, capacidad)
 	estado["agua"] = agua
-	estado["capacidad"] = AGUA_MAXIMA
-	propiedades["regadera"] = estado
+	estado["capacidad"] = capacidad
+	propiedades["recipiente_agua" if es_cubo else "regadera"] = estado
 	objeto["propiedades_game"] = propiedades
-	objeto["icono_ruta"] = str(ICONOS_REGADERA[agua])
+	if not es_cubo:
+		objeto["icono_ruta"] = str(ICONOS_REGADERA[agua])
 	return bool(inventario.call("establecer_objeto", int(regadera.get("indice", -1)), objeto))
 
 
