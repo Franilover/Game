@@ -110,6 +110,18 @@ func _ready() -> void:
 
 
 func _process(delta: float) -> void:
+	# Diagnóstico temporal de congelaciones: sólo registra frames anormalmente largos.
+	# No realiza escaneos, asignaciones ni consultas adicionales en cada frame.
+	if delta >= 0.20:
+		push_warning(
+			"PERF_FRAME: pausa/frame largo → %.0f ms | escena=%s | nodos=%d | objetos=%d"
+			% [
+				delta * 1000.0,
+				str(get_tree().current_scene.scene_file_path) if is_instance_valid(get_tree().current_scene) else "<sin escena>",
+				Performance.get_monitor(Performance.OBJECT_NODE_COUNT),
+				Performance.get_monitor(Performance.OBJECT_COUNT)
+			]
+		)
 	if not _hay_runtime_partida_activo():
 		if (_historia_reserva_activa or not active_save_id.is_empty()) and not _runtime_no_detectado_reportado:
 			var escena := get_tree().current_scene
@@ -736,11 +748,14 @@ func guardar_partida() -> bool:
 		return _rechazar_guardado("no hay una escena activa")
 
 	_guardado_en_curso = true
+	var diagnostico_inicio_usec := Time.get_ticks_usec()
 
 	capturar_estado_desde_juego(jugador)
+	var captura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
 	_sincronizar_garumis_vinculados_desde_escena()
 
 	var datos := _leer_archivo_partida(active_save_id)
+	var lectura_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0 - captura_ms
 
 	if datos.is_empty():
 		_guardado_en_curso = false
@@ -753,12 +768,22 @@ func guardar_partida() -> bool:
 		"semilla": world_state.world_seed,
 		"generador_version": 1
 	}
+	var serializacion_inicio_usec := Time.get_ticks_usec()
 	datos["estado"] = _serializar_estado()
+	var serializacion_ms := float(Time.get_ticks_usec() - serializacion_inicio_usec) / 1000.0
 
+	var escritura_inicio_usec := Time.get_ticks_usec()
 	var resultado := _escribir_archivo_partida(
 		active_save_id,
 		datos
 	)
+	var escritura_ms := float(Time.get_ticks_usec() - escritura_inicio_usec) / 1000.0
+	var total_ms := float(Time.get_ticks_usec() - diagnostico_inicio_usec) / 1000.0
+	if total_ms >= 80.0:
+		push_warning(
+			"PERF_SAVE: total=%.1f ms | captura=%.1f ms | lectura=%.1f ms | serializacion=%.1f ms | escritura_validacion=%.1f ms | resultado=%s"
+			% [total_ms, captura_ms, lectura_ms, serializacion_ms, escritura_ms, str(resultado)]
+		)
 
 	_guardado_en_curso = false
 
