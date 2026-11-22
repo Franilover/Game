@@ -42,6 +42,8 @@ var _primer_guardado_elapsed: float = 0.0
 var _ultimo_motivo_fallo_guardado: String = ""
 var _partida_aplicada_en_escena: bool = false
 var _guardado_en_curso: bool = false
+var _guardado_pendiente_despues_worker: bool = false
+var _guardado_pendiente_motivo: String = ""
 var _save_thread: Thread = null
 var _save_thread_datos: Dictionary = {}
 var _save_thread_started_usec: int = 0
@@ -176,20 +178,23 @@ func _notification(what: int) -> void:
 		return
 	if what == NOTIFICATION_APPLICATION_PAUSED:
 		_actualizar_guardado_en_segundo_plano(true)
-		guardar_progreso_actual("suspensión de la aplicación")
+		guardar_progreso_actual("suspensión de la aplicación", true)
 		return
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
 		# El cierre sí puede esperar: no abandonar un worker con una transacción
 		# de archivo activa. Después se realiza el guardado final síncrono.
 		_actualizar_guardado_en_segundo_plano(true)
-		var guardado := guardar_progreso_actual("cierre de la aplicación")
+		var guardado := guardar_progreso_actual("cierre de la aplicación", true)
 		if not guardado and (_historia_reserva_activa or not active_save_id.is_empty()):
 			push_error("GameState: no se pudo confirmar el guardado al cerrar. Motivo: " + _ultimo_motivo_fallo_guardado)
 		# Desactivar el cierre automático permite completar la escritura síncrona.
 		get_tree().quit()
 
 
-func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
+func guardar_progreso_actual(
+	motivo: String = "guardado manual",
+	confirmar_sincrono: bool = false
+) -> bool:
 	var escena_log := get_tree().current_scene
 	print(
 		"GameState: solicitud de guardado → ", motivo,
@@ -212,7 +217,19 @@ func guardar_progreso_actual(motivo: String = "guardado manual") -> bool:
 	if _historia_reserva_activa:
 		resultado = guardar_progreso_historia()
 	elif not active_save_id.is_empty():
-		resultado = guardar_partida()
+		if confirmar_sincrono:
+			# Reservado para suspensión/cierre: el worker se espera antes de
+			# confirmar el último estado directamente en disco.
+			_actualizar_guardado_en_segundo_plano(true)
+			resultado = guardar_partida()
+		elif _guardado_en_curso or _save_thread != null:
+			# Agrupar solicitudes simultáneas: al terminar el worker se captura
+			# el estado más reciente, sin rechazar ni bloquear el hilo principal.
+			_guardado_pendiente_despues_worker = true
+			_guardado_pendiente_motivo = motivo
+			return true
+		else:
+			resultado = guardar_partida_en_segundo_plano()
 	if not resultado and (_historia_reserva_activa or not active_save_id.is_empty()):
 		push_error("GameState: guardado fallido (" + motivo + "). " + _ultimo_motivo_fallo_guardado)
 	return resultado
@@ -933,6 +950,18 @@ func _actualizar_guardado_en_segundo_plano(esperar: bool = false) -> void:
 	_save_thread_captura_ms = 0.0
 	_save_thread_lectura_ms = 0.0
 	_save_thread_snapshot_ms = 0.0
+
+	# Una solicitud recibida mientras el worker escribía no se pierde: ahora
+	# se captura el estado actualizado en un nuevo worker, nunca en el hilo UI.
+	if _guardado_pendiente_despues_worker:
+		_guardado_pendiente_despues_worker = false
+		var motivo_pendiente := _guardado_pendiente_motivo
+		_guardado_pendiente_motivo = ""
+		if not active_save_id.is_empty() and not guardar_partida_en_segundo_plano():
+			push_warning(
+				"GameState: no se pudo iniciar el guardado en cola (%s). %s"
+				% [motivo_pendiente, _ultimo_motivo_fallo_guardado]
+			)
 
 
 ## Local worlds keep their runtime entity deltas in the private save.
