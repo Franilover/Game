@@ -22,29 +22,50 @@ const SLOT_LABELS := {
 	"shoes": "Zapatos"
 }
 
+# Catálogo explícito: los recursos quedan incluidos en la exportación y no
+# dependemos de que DirAccess pueda enumerar archivos dentro de res://.
+const CATALOG_ASSETS := {
+	"hair": [
+		{"name": "1 Front", "path": "res://assets/art/characters/customization/hair/1 Front.png", "texture": preload("res://assets/art/characters/customization/hair/1 Front.png")},
+		{"name": "2 Front", "path": "res://assets/art/characters/customization/hair/2 Front.png", "texture": preload("res://assets/art/characters/customization/hair/2 Front.png")},
+		{"name": "3 Front", "path": "res://assets/art/characters/customization/hair/3 Front.png", "texture": preload("res://assets/art/characters/customization/hair/3 Front.png")},
+		{"name": "curly", "path": "res://assets/art/characters/customization/hair/curly.png", "texture": preload("res://assets/art/characters/customization/hair/curly.png")},
+		{"name": "long", "path": "res://assets/art/characters/customization/hair/long.png", "texture": preload("res://assets/art/characters/customization/hair/long.png")},
+		{"name": "short", "path": "res://assets/art/characters/customization/hair/short.png", "texture": preload("res://assets/art/characters/customization/hair/short.png")}
+	],
+	"eyes": [
+		{"name": "expressive", "path": "res://assets/art/characters/customization/eyes/expressive.png", "texture": preload("res://assets/art/characters/customization/eyes/expressive.png")},
+		{"name": "simple", "path": "res://assets/art/characters/customization/eyes/simple.png", "texture": preload("res://assets/art/characters/customization/eyes/simple.png")}
+	],
+	"shirt": [
+		{"name": "hoodie", "path": "res://assets/art/characters/customization/shirts/hoodie.png", "texture": preload("res://assets/art/characters/customization/shirts/hoodie.png")},
+		{"name": "shirt", "path": "res://assets/art/characters/customization/shirts/shirt.png", "texture": preload("res://assets/art/characters/customization/shirts/shirt.png")},
+		{"name": "tunic", "path": "res://assets/art/characters/customization/shirts/tunic.png", "texture": preload("res://assets/art/characters/customization/shirts/tunic.png")}
+	],
+	"pants": [
+		{"name": "shorts", "path": "res://assets/art/characters/customization/pants/shorts.png", "texture": preload("res://assets/art/characters/customization/pants/shorts.png")},
+		{"name": "skirt", "path": "res://assets/art/characters/customization/pants/skirt.png", "texture": preload("res://assets/art/characters/customization/pants/skirt.png")},
+		{"name": "trousers", "path": "res://assets/art/characters/customization/pants/trousers.png", "texture": preload("res://assets/art/characters/customization/pants/trousers.png")}
+	],
+	"shoes": [
+		{"name": "boots", "path": "res://assets/art/characters/customization/shoes/boots.png", "texture": preload("res://assets/art/characters/customization/shoes/boots.png")},
+		{"name": "sneakers", "path": "res://assets/art/characters/customization/shoes/sneakers.png", "texture": preload("res://assets/art/characters/customization/shoes/sneakers.png")}
+	]
+}
+
 
 static func catalogo(slot: String) -> Array[Dictionary]:
 	var resultado: Array[Dictionary] = []
-	var directorio_path := str(SLOT_DIRECTORIES.get(slot, ""))
-	if directorio_path.is_empty():
-		return resultado
-	var directorio := DirAccess.open(directorio_path)
-	if directorio == null:
-		return resultado
-	var archivos := directorio.get_files()
-	archivos.sort()
-	for archivo in archivos:
-		if archivo.get_extension().to_lower() not in ["png", "webp"]:
+	var piezas: Array = CATALOG_ASSETS.get(slot, [])
+	for pieza_variant in piezas:
+		if not pieza_variant is Dictionary:
 			continue
-		var ruta := directorio_path + archivo
-		var textura := load(ruta) as Texture2D
-		if textura == null:
-			continue
+		var pieza: Dictionary = pieza_variant
 		resultado.append({
-			"id": archivo.get_basename(),
-			"nombre": archivo.get_basename().replace("_", " "),
-			"ruta": ruta,
-			"textura": textura
+			"id": str(pieza.get("name", "")),
+			"nombre": str(pieza.get("name", "")),
+			"ruta": str(pieza.get("path", "")),
+			"textura": pieza.get("texture") as Texture2D
 		})
 	return resultado
 
