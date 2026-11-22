@@ -938,7 +938,7 @@ func _mostrar_informacion() -> void:
 
 	var cantidad := int(objeto_seleccionado.get("cantidad", 1))
 	if cantidad > 1:
-		lineas.append("Cantidad: %d" % cantidad)
+		lineas.append("×%d" % cantidad)
 
 	item_name.text = nombre
 	var categoria := _obtener_categoria_objeto(objeto_seleccionado)
