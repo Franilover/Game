@@ -175,6 +175,7 @@ func _notification(what: int) -> void:
 		print("PERF_FOCUS: ventana recuperó el foco")
 		return
 	if what == NOTIFICATION_APPLICATION_PAUSED:
+		_actualizar_guardado_en_segundo_plano(true)
 		guardar_progreso_actual("suspensión de la aplicación")
 		return
 	if what == NOTIFICATION_WM_CLOSE_REQUEST or what == NOTIFICATION_WM_GO_BACK_REQUEST:
