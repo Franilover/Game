@@ -12,6 +12,7 @@ const EXPEDICION_BOSQUE_PATH := "res://scenes/world/expedicion_bosque.tscn"
 const RESERVA_CARMESI_PATH := "res://scenes/world/reserva_carmesi.tscn"
 const HOGAR_PATH := "res://scenes/world/hogar.tscn"
 const REINO_TORRES_ESCENA_PATH := "res://scenes/kingdom/reino_torres.tscn"
+const REINO_FROSLIA_ESCENA_PATH := "res://scenes/kingdom/reino_froslia.tscn"
 
 const TIPO_REINO_TORRES := "reino_torres"
 const TIPO_MUNDO_ABIERTO := "mundo_abierto"
@@ -104,6 +105,8 @@ func iniciar() -> void:
 		entrar_reino("torres")
 	elif zona_guardada.begins_with("reino:"):
 		entrar_reino(zona_guardada.trim_prefix("reino:"))
+	elif not str(GameState.world_state.flags.get("reino_inicial", "")).strip_edges().is_empty():
+		entrar_reino(str(GameState.world_state.flags.get("reino_inicial", "torres"))) 
 	elif zona_guardada == TIPO_MUNDO_ABIERTO:
 		entrar_mundo_abierto()
 	elif zona_guardada == TIPO_EXPEDICION_BOSQUE:
@@ -121,6 +124,14 @@ func entrar_reino_torres(regla: Dictionary = {}) -> void:
 func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 	var clave := clave_reino.strip_edges().to_lower()
 	if clave.is_empty():
+		return
+
+	# Froslia también es una escena local fija y no depende del catálogo remoto.
+	if clave == "froslia":
+		if tipo_actual == "reino:froslia" and is_instance_valid(zona_actual):
+			return
+		print("ZoneManager: entrada a Froslia → escena local fija.")
+		_cambiar_zona(REINO_FROSLIA_ESCENA_PATH, "reino:froslia")
 		return
 
 	# Torres es una escena local fija. Su destino nunca debe depender del
