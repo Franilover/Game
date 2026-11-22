@@ -218,8 +218,10 @@ func guardar_progreso_actual(
 		resultado = guardar_progreso_historia()
 	elif not active_save_id.is_empty():
 		if confirmar_sincrono:
-			# Reservado para suspensión/cierre: el worker se espera antes de
-			# confirmar el último estado directamente en disco.
+			# El guardado final captura el estado actual completo; una solicitud
+			# en cola queda absorbida por esta confirmación síncrona.
+			_guardado_pendiente_despues_worker = false
+			_guardado_pendiente_motivo = ""
 			_actualizar_guardado_en_segundo_plano(true)
 			resultado = guardar_partida()
 		elif _guardado_en_curso or _save_thread != null:
