@@ -38,9 +38,8 @@ func _ready() -> void:
 	configuracion_button.pressed.connect(_abrir_configuracion)
 	menu_button.pressed.connect(_volver_al_menu)
 
-	# Mundo sigue reservado; Configuración ya tiene panel funcional.
-	mundo_button.disabled = true
-	mundo_button.visible = not _modo_historia
+	# No mostrar acciones todavía no implementadas.
+	mundo_button.visible = false
 	configuracion_button.disabled = false
 	PIXEL_UI_THEME.apply(self)
 
