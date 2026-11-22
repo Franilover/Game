@@ -12,8 +12,6 @@ var duracion: float = 0.10
 
 var _afectados: Array[Node] = []
 var _area: Area2D
-var _visual: Polygon2D
-var _contorno: Line2D
 
 
 func configurar(
@@ -55,43 +53,6 @@ func configurar(
 	_area.add_child(shape)
 	add_child(_area)
 
-	_visual = Polygon2D.new()
-	_visual.name = "AttackVisual"
-
-	var mitad := ancho * 0.5
-	var inicio := 8.0
-	var final := inicio + alcance
-
-	_visual.polygon = PackedVector2Array([
-		Vector2(inicio, -mitad),
-		Vector2(final, -mitad),
-		Vector2(final, mitad),
-		Vector2(inicio, mitad)
-	])
-	_visual.color = color
-	_visual.z_index = 100
-	_visual.z_as_relative = true
-	add_child(_visual)
-
-	_contorno = Line2D.new()
-	_contorno.name = "AttackOutline"
-	_contorno.width = 2.0
-	_contorno.default_color = Color(
-		color.r,
-		color.g,
-		color.b,
-		minf(color.a + 0.25, 1.0)
-	)
-	_contorno.z_index = 101
-	_contorno.z_as_relative = true
-	_contorno.closed = true
-	_contorno.points = PackedVector2Array([
-		Vector2(inicio, -mitad),
-		Vector2(final, -mitad),
-		Vector2(final, mitad),
-		Vector2(inicio, mitad)
-	])
-	add_child(_contorno)
 
 	rotation = direccion.angle()
 
@@ -108,38 +69,8 @@ func _ready() -> void:
 	if _area == null:
 		return
 
-	if _visual != null or _contorno != null:
-		var tween := create_tween()
-		tween.set_parallel(true)
-
-		if _visual != null:
-			tween.tween_property(
-				_visual,
-				"modulate:a",
-				0.0,
-				duracion
-			)
-			tween.tween_property(
-				_visual,
-				"scale",
-				Vector2(1.08, 1.08),
-				duracion
-			)
-
-		if _contorno != null:
-			tween.tween_property(
-				_contorno,
-				"modulate:a",
-				0.0,
-				duracion
-			)
-			tween.tween_property(
-				_contorno,
-				"scale",
-				Vector2(1.08, 1.08),
-				duracion
-			)
-
+	# La hitbox permanece activa para detectar impactos, pero no se dibuja.
+	# La animación del arma es el único feedback visual del golpe.
 	await get_tree().physics_frame
 	if not is_instance_valid(self) or not CombatTargeting.es_atacante_valido(atacante):
 		if is_instance_valid(self):
