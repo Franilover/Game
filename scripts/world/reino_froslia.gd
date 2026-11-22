@@ -58,14 +58,14 @@ func _crear_terreno() -> void:
 	for y in range(-18, 18):
 		for x in range(-26, 26):
 			var celda := Vector2i(x, y)
-			_tilemap.draw_cell(celda, 1)
+			_tilemap.set_cell(celda, 1, Vector2i(2, 1))
 			celdas.append(celda)
 
 	# Caminos y plaza: Tierra Nevada cumple el mismo papel que Tierra
 	# sobre Pradera en el TileMap Dual de referencia.
 	for y in range(-18, 18):
 		for x in [-1, 0, 1]:
-			_tilemap.draw_cell(Vector2i(x, y), 2)
+			_tilemap.set_cell(Vector2i(x, y), 2, Vector2i(2, 1))
 	for x in range(-26, 26):
 		for y in [-1, 0, 1]:
 			_tilemap.draw_cell(Vector2i(x, y), 2)
@@ -92,7 +92,6 @@ func _crear_tileset_dual() -> TileSet:
 	tile_set.add_terrain_set()
 	tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
 	for nombre in ["<any>", "Nieve", "Tierra Nevada"]:
-		var terreno := tile_set.get_terrain_set_count()
 		if nombre == "<any>":
 			tile_set.add_terrain(0)
 			tile_set.set_terrain_name(0, 0, nombre)
