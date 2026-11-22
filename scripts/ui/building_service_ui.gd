@@ -284,7 +284,7 @@ func _construir_forja() -> void:
 	detalle.add_child(icono)
 
 	var desgaste := Label.new()
-	desgaste.text = "Durabilidad · %d / %d" % [actual, maximo]
+	desgaste.text = "%d / %d" % [actual, maximo]
 	desgaste.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(desgaste)
 
@@ -304,6 +304,7 @@ func _construir_forja() -> void:
 	var material_id := _material_reparacion(herramienta)
 	var boton_yunque := Button.new()
 	boton_yunque.text = "Yunque"
+	boton_yunque.tooltip_text = "Reparar con material: %s" % ("madera" if material_id == ITEM_MADERA else "piedra")
 	boton_yunque.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton_yunque.disabled = material_id.is_empty() or _contar_item(material_id) < 1
 	boton_yunque.pressed.connect(_reparar_con_material.bind(_herramienta_seleccionada, material_id))
@@ -312,6 +313,7 @@ func _construir_forja() -> void:
 
 	var boton_bruna := Button.new()
 	boton_bruna.text = "Bruna · %d" % PRECIO_REPARACION_BRUNA
+	boton_bruna.tooltip_text = "Reparación completa"
 	boton_bruna.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	boton_bruna.disabled = GameState.obtener_dinero() < PRECIO_REPARACION_BRUNA
 	boton_bruna.pressed.connect(_reparar_con_bruna.bind(_herramienta_seleccionada))
@@ -422,7 +424,6 @@ func _guardar_reparacion() -> void:
 
 
 func _construir_carpinteria() -> void:
-	_agregar_texto("Entrega madera y monedas para recibir el mueble directamente en tu inventario.")
 	for mueble in CATALOGO_CARPINTERIA:
 		var tarjeta := PanelContainer.new()
 		tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -1159,16 +1160,13 @@ func _mostrar_leccion_escuela(materia: String, detalle: VBoxContainer) -> void:
 	match materia:
 		"botanica":
 			_agregar_titulo_detalle(detalle, "Botánica")
-			_agregar_texto_detalle(detalle, "El vivero permite plantar semillas, cuidar la humedad de la tierra y recoger las flores cuando hayan crecido.")
-			_agregar_texto_detalle(detalle, "Para estudiar materiales vegetales, utiliza las mesas de investigación y procesamiento del Herbolario.")
+			_agregar_texto_detalle(detalle, "Siembra, riega y cosecha en el Vivero. Procesa materiales en el Herbolario.")
 		"oficios":
 			_agregar_titulo_detalle(detalle, "Oficios")
-			_agregar_texto_detalle(detalle, "La Forja sirve para reparar e inspeccionar armas y herramientas. La Carpintería permite encargar muebles usando madera y monedas.")
-			_agregar_texto_detalle(detalle, "Cada taller tiene sus propias estaciones; acércate a ellas para consultar sus servicios.")
+			_agregar_texto_detalle(detalle, "Forja: repara herramientas. Carpintería: encarga muebles.")
 		_:
 			_agregar_titulo_detalle(detalle, "Exploración")
-			_agregar_texto_detalle(detalle, "Prepara tus Garumis y revisa el espacio disponible en el inventario antes de salir.")
-			_agregar_texto_detalle(detalle, "El Gremio de Aventureros permite consultar rutas, iniciar viajes y revisar los descubrimientos registrados.")
+			_agregar_texto_detalle(detalle, "Prepara tus Garumis y consulta rutas en el Gremio de Aventureros.")
 
 
 
