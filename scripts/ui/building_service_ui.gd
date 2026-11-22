@@ -620,13 +620,12 @@ func _cultivo_esta_maduro(cultivo: Dictionary) -> bool:
 
 func _construir_elaboracion_herbolario() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
-	_agregar_texto("PREPARACIÓN DE PRODUCTOS BOTÁNICOS")
-	_agregar_texto("Aquí podrás elaborar infusiones, ungüentos, extractos y remedios con ingredientes ya procesados.")
+
 	if not is_instance_valid(_world_items):
 		_agregar_texto("No se pudo acceder al catálogo compartido.")
 		return
 	if not _world_items.recetas_disponibles:
-		_agregar_texto("Las recetas todavía se están cargando. Cierra y vuelve a abrir esta mesa en unos momentos.")
+		_agregar_texto("Cargando recetas…")
 		if not _world_items.recetas_cargadas.is_connected(_al_recetas_herbolario_cargadas):
 			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
 		return
@@ -636,7 +635,7 @@ func _construir_elaboracion_herbolario() -> void:
 		if _receta_es_de_estacion(receta, "herbolario_elaboracion") or _receta_es_de_estacion(receta, "herbolario"):
 			recetas_elaboracion.append(receta)
 	if recetas_elaboracion.is_empty():
-		_agregar_texto("Todavía no hay fórmulas de elaboración registradas. Esta mesa queda reservada para infusiones, ungüentos, extractos y remedios.")
+		_agregar_texto("Sin fórmulas disponibles.")
 		return
 	var scroll_recetas := ScrollContainer.new()
 	scroll_recetas.custom_minimum_size = Vector2(0, 280)
@@ -658,8 +657,7 @@ func _construir_procesamiento_herbolario() -> void:
 
 func _construir_procesamiento_herbolario_impl() -> void:
 	_panel.custom_minimum_size = Vector2(540, 0)
-	_agregar_texto("SECADO Y TRITURACIÓN")
-	_agregar_texto("Selecciona flores u otros materiales para secarlos, triturarlos y realizar procesos botánicos.")
+
 	if not is_instance_valid(_world_items):
 		_agregar_texto("No se pudo acceder al catálogo compartido.")
 		return
@@ -709,7 +707,7 @@ func _construir_procesamiento_herbolario_impl() -> void:
 		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		lista.add_child(vacio)
 		var instruccion := Label.new()
-		instruccion.text = "Consigue flores, hojas, semillas o hierbas para procesarlas aquí."
+		instruccion.text = "Sin materiales."
 		instruccion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		detalle.add_child(instruccion)
 	else:
@@ -964,7 +962,7 @@ func _agregar_boton_detalle(detalle: VBoxContainer, texto: String, accion: Calla
 
 
 func _construir_biblioteca() -> void:
-	_agregar_texto("Consulta los registros que has reunido durante tus viajes. Cada descubrimiento amplía el archivo de Torres.")
+
 	var layout := _crear_selector_edificio(142.0, 270.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
@@ -984,7 +982,7 @@ func _construir_biblioteca() -> void:
 		var boton := _agregar_opcion_selector(lista, texto_boton, id == _seccion_biblioteca, _seleccionar_seccion_biblioteca.bind(id, detalle), grupo_selector)
 		boton.custom_minimum_size = Vector2(0.0, 58.0)
 	_mostrar_detalle_biblioteca(_seccion_biblioteca, detalle)
-	_agregar_texto("Los registros se actualizan automáticamente cuando descubres algo nuevo.")
+
 
 
 func _contar_descubrimientos(categoria: String) -> int:
@@ -1005,26 +1003,12 @@ func _seleccionar_seccion_biblioteca(id: String, detalle: VBoxContainer) -> void
 func _mostrar_detalle_biblioteca(id: String, detalle: VBoxContainer) -> void:
 	_limpiar_detalle(detalle)
 	var nombres := {"criaturas":"Criaturas", "garumis":"Garumis", "biomas":"Biomas", "ecosistemas":"Ecosistemas", "habitats":"Hábitats"}
-	var descripciones := {
-		"criaturas":"Consulta las criaturas que has conocido y sus fichas disponibles.",
-		"garumis":"Consulta los linajes y especies de Garumis registrados en el Garudex.",
-		"biomas":"Revisa las regiones naturales que ya forman parte de tus mapas.",
-		"ecosistemas":"Estudia las comunidades que has encontrado y sus relaciones.",
-		"habitats":"Consulta los hábitats registrados durante la exploración."
-	}
+
 	_agregar_titulo_detalle(detalle, str(nombres.get(id, "Archivo")))
 	var cantidad := Label.new()
 	cantidad.text = "Catálogo de linajes y especies" if id == "garumis" else "%d registros descubiertos" % _contar_descubrimientos(id)
 	cantidad.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(cantidad)
-	var descripcion := Label.new()
-	descripcion.text = str(descripciones.get(id, "Registros de exploración."))
-	descripcion.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detalle.add_child(descripcion)
-	var nota := Label.new()
-	nota.text = "El catálogo reúne los linajes registrados." if id == "garumis" else "Los registros se amplían con cada descubrimiento."
-	nota.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	detalle.add_child(nota)
 	_agregar_boton_detalle(detalle, "Abrir Garudex" if id == "garumis" else "Abrir enciclopedia", _abrir_enciclopedia.bind(id))
 
 
@@ -1066,7 +1050,7 @@ func _abrir_enciclopedia(modo: String = "criaturas") -> void:
 
 
 func _construir_centro_expediciones() -> void:
-	_agregar_texto("El Gremio reúne a quienes exploran Garlia. Consulta rutas, prepara tus salidas y registra tus descubrimientos en la bitácora.")
+
 	var layout := _crear_selector_edificio(160.0, 260.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
@@ -1090,14 +1074,14 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 			_agregar_titulo_detalle(detalle, "Primera expedición")
 			var finalizada := _primera_expedicion_finalizada()
 			var estado := Label.new()
-			estado.text = "Esta salida ya fue completada." if finalizada else "El gremio tiene una ruta de iniciación disponible. Revisa tu equipo, prepara tus Garumis y deja espacio para los materiales que encuentres."
+			estado.text = "Completada" if finalizada else "Disponible"
 			estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			detalle.add_child(estado)
 			_agregar_boton_detalle(detalle, "Ver destinos y salir", _emitir_solicitud_selector_expediciones, finalizada)
 		"rutas":
 			_agregar_titulo_detalle(detalle, "Rutas y destinos")
 			var destinos := Label.new()
-			destinos.text = "Desde aquí puedes volver a Torres, salir al Mundo Abierto o iniciar la Primera Expedición cuando esté disponible."
+			destinos.text = "Torres · Mundo Abierto · Primera expedición"
 			destinos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			detalle.add_child(destinos)
 			_agregar_boton_detalle(detalle, "Abrir selector de viajes", _emitir_solicitud_selector_expediciones)
@@ -1113,7 +1097,7 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 
 
 func _construir_taberna() -> void:
-	_agregar_texto("Un lugar para descansar un momento, escuchar a los viajeros y enterarte de lo que ocurre en Torres.")
+
 	var layout := _crear_selector_edificio(142.0, 260.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
@@ -1146,15 +1130,14 @@ func _mostrar_detalle_taberna(seccion: String, detalle: VBoxContainer) -> void:
 		if conocidos == 0:
 			_agregar_texto_detalle(detalle, "Todavía no hay viajeros conocidos para registrar.")
 		else:
-			_agregar_texto_detalle(detalle, "Habitantes y viajeros conocidos en Torres: %d." % conocidos)
+			_agregar_texto_detalle(detalle, "%d habitantes" % conocidos)
 	else:
 		_agregar_titulo_detalle(detalle, "Sala común")
-		_agregar_texto_detalle(detalle, "Aquí se reúnen habitantes, comerciantes y aventureros. Es un buen lugar para buscar conversaciones y conocer las noticias de la ciudad.")
-		_agregar_texto_detalle(detalle, "Las conversaciones y encargos especiales podrán ampliarse a medida que se incorporen actividades sociales.")
+
 
 
 func _construir_escuela() -> void:
-	_agregar_texto("Un espacio para aprender los oficios y consultar apuntes prácticos antes de ponerse manos a la obra.")
+
 	var layout := _crear_selector_edificio(142.0, 260.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
@@ -1172,7 +1155,7 @@ func _construir_escuela() -> void:
 
 func _mostrar_leccion_escuela(materia: String, detalle: VBoxContainer) -> void:
 	_limpiar_detalle(detalle)
-	_agregar_texto_detalle(detalle, "Apuntes de consulta: no consumen objetos ni modifican atributos del personaje.")
+
 	match materia:
 		"botanica":
 			_agregar_titulo_detalle(detalle, "Botánica")
@@ -1197,7 +1180,7 @@ func _agregar_texto_detalle(contenedor: VBoxContainer, texto: String) -> void:
 
 
 func _construir_clinica() -> void:
-	_agregar_texto("Atención para viajeros. Recupera fuerzas antes de volver a explorar.")
+
 	var layout := _crear_selector_edificio(150.0, 250.0)
 	var lista := layout["list_content"] as GridContainer
 	lista.columns = 1
@@ -1301,12 +1284,12 @@ func _construir_menu_cuartel() -> void:
 	)
 	_agregar_opcion_menu_cuartel(
 		"Arsenal",
-		"Echa un vistazo a las armas disponibles y compra lo que necesites.",
+		"Armas disponibles.",
 		"cuartel_armas"
 	)
 	_agregar_opcion_menu_cuartel(
 		"Entrenamiento",
-		"Practica y mejora tus habilidades de combate.",
+		"Combate.",
 		"cuartel_entrenamiento"
 	)
 
@@ -1352,7 +1335,7 @@ func _volver_menu_cuartel() -> void:
 func _construir_cuartel_licencia() -> void:
 	var licencia := bool(GameState.world_state.flags.get("licencia_espadas", false))
 	if licencia:
-		_agregar_texto("Tu licencia de espadas ya está concedida.")
+		_agregar_texto("Licencia concedida.")
 		return
 	_agregar_texto("Solicita aquí la licencia necesaria para portar y comprar espadas.")
 	var solicitar := Button.new()
@@ -1367,7 +1350,7 @@ func _construir_cuartel_armas() -> void:
 	if not bool(GameState.world_state.flags.get("licencia_espadas", false)):
 		_agregar_texto("Necesitas obtener primero tu licencia en la mesa de solicitudes.")
 		return
-	_agregar_texto("Licencia verificada. Puedes adquirir estas armas:")
+
 	_agregar_boton_arma("Espada de Madera", ITEM_ESPADA_MADERA, PRECIO_ESPADA_MADERA)
 	_agregar_boton_arma("Espada de Piedra", ITEM_ESPADA_PIEDRA, PRECIO_ESPADA_PIEDRA)
 
@@ -1390,7 +1373,7 @@ func _construir_cuartel_entrenamiento() -> void:
 		return _nombre_entrenamiento(a).to_lower() < _nombre_entrenamiento(b).to_lower()
 	)
 	if candidatos.is_empty():
-		_agregar_texto("No hay criaturas ni aldeanos disponibles en esta zona. Vuelve cuando haya alguien cerca.")
+		_agregar_texto("Sin objetivos disponibles.")
 		return
 	for candidato in candidatos:
 		var fila := HBoxContainer.new()
