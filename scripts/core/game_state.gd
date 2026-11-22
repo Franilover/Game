@@ -1276,6 +1276,12 @@ func _estado_base_partida(
 	semilla: int,
 	personaje: Dictionary = {}
 ) -> Dictionary:
+	var flags_iniciales: Dictionary = {}
+	if not personaje.is_empty():
+		flags_iniciales["personaje"] = personaje.duplicate(true)
+	var reino_inicial := str(personaje.get("reino_inicial", "torres")).strip_edges().to_lower()
+	flags_iniciales["reino_inicial"] = "froslia" if reino_inicial == "froslia" else "torres"
+
 	return {
 		"version": SAVE_VERSION,
 		"id": id,
@@ -1290,9 +1296,7 @@ func _estado_base_partida(
 		"estado": {
 			"player": PlayerState.new().to_dictionary(),
 			"elapsed_time": 0.0,
-			"flags": {
-				"personaje": personaje.duplicate(true)
-			} if not personaje.is_empty() else {},
+			"flags": flags_iniciales,
 			"scene": "res://scenes/world/main.tscn"
 		}
 	}
