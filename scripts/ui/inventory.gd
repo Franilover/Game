@@ -85,6 +85,7 @@ var _slot_grids: Array[GridContainer] = []
 @onready var item_icon: TextureRect = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame/ItemIcon
 @onready var item_icon_frame: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/InfoPanel/ItemIconFrame
 @onready var skin_panel: PanelContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel
+@onready var skin_preview_root: Node2D = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel/SkinPreview/Viewport/PreviewRoot
 @onready var delete_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/DeleteButton
 @onready var use_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/UseButton
 @onready var equip_button: Button = $Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel/DetailBlock/DetailContent/ActionRow/EquipButton
@@ -92,6 +93,33 @@ var _slot_grids: Array[GridContainer] = []
 @onready var equipment_slots: VBoxContainer = $Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/EquipmentSlots
 @onready var _notas_texto: TextEdit = $Window/Margin/Column/Tabs/Notas/NotesText
 
+
+
+
+func _actualizar_vista_personaje() -> void:
+	if not is_instance_valid(skin_preview_root):
+		return
+	for hijo in skin_preview_root.get_children():
+		hijo.queue_free()
+	if not is_instance_valid(_player):
+		return
+	var visual_origen := _player.get_node_or_null("Visual") as Node2D
+	if not is_instance_valid(visual_origen):
+		return
+	# Se duplica únicamente la presentación visual: incluye el sprite direccional
+	# y las capas de personalización, sin duplicar lógica ni estado del jugador.
+	var vista := visual_origen.duplicate() as Node2D
+	if not is_instance_valid(vista):
+		return
+	vista.process_mode = Node.PROCESS_MODE_DISABLED
+	var sprite := vista.get_node_or_null("Sprite2D") as Sprite2D
+	if not is_instance_valid(sprite):
+		vista.queue_free()
+		return
+	const ESCALA_PREVIEW := 2.0
+	vista.scale = Vector2.ONE * ESCALA_PREVIEW
+	vista.position = Vector2(52.0, 90.0) - sprite.position * ESCALA_PREVIEW
+	skin_preview_root.add_child(vista)
 
 func _inicializar_navegacion_tabs() -> void:
 	var columna_principal := $Window/Margin/Column as VBoxContainer
@@ -146,6 +174,7 @@ func configurar(
 ) -> void:
 	_player = player
 	_world_items = world_items
+	call_deferred("_actualizar_vista_personaje")
 	if _world_items != null:
 		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_items_cargado):
 			_world_items.catalogo_cargado.connect(_al_catalogo_items_cargado)
@@ -437,6 +466,7 @@ func toggle_mapa() -> void:
 func abrir() -> void:
 	_abierto = true
 	visible = true
+	_actualizar_vista_personaje()
 	_notificar_estado_inventario_a_hogar(true)
 	_actualizar_admin_tab()
 
