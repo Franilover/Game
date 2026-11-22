@@ -1168,11 +1168,47 @@ func _guardar_progreso_diferido() -> void:
 
 
 func _serializar_estado() -> Dictionary:
+	var inicio_total_usec := Time.get_ticks_usec()
+	var inicio_descubrimientos_usec := inicio_total_usec
 	_sincronizar_descubrimientos()
+	var descubrimientos_ms := float(Time.get_ticks_usec() - inicio_descubrimientos_usec) / 1000.0
+
+	var inicio_jugador_usec := Time.get_ticks_usec()
+	var jugador_snapshot := player_state.to_dictionary()
+	var jugador_ms := float(Time.get_ticks_usec() - inicio_jugador_usec) / 1000.0
+
+	# Copiar cada entrada por separado conserva el snapshot profundo e inmutable
+	# que necesita el worker, y permite localizar qué bloque de progreso cuesta
+	# más copiar sin trasladar objetos vivos al hilo secundario.
+	var inicio_flags_usec := Time.get_ticks_usec()
+	var flags_snapshot: Dictionary = {}
+	var flag_mas_costosa := ""
+	var flag_mas_costosa_ms := 0.0
+	for clave_variant in world_state.flags:
+		var clave := str(clave_variant)
+		var inicio_flag_usec := Time.get_ticks_usec()
+		var valor: Variant = world_state.flags[clave_variant]
+		var copia: Variant = valor
+		if valor is Dictionary:
+			copia = (valor as Dictionary).duplicate(true)
+		elif valor is Array:
+			copia = (valor as Array).duplicate(true)
+		flags_snapshot[clave] = copia
+		var flag_ms := float(Time.get_ticks_usec() - inicio_flag_usec) / 1000.0
+		if flag_ms > flag_mas_costosa_ms:
+			flag_mas_costosa_ms = flag_ms
+			flag_mas_costosa = clave
+	var flags_ms := float(Time.get_ticks_usec() - inicio_flags_usec) / 1000.0
+	var total_ms := float(Time.get_ticks_usec() - inicio_total_usec) / 1000.0
+	if total_ms >= 20.0:
+		push_warning(
+			"PERF_SAVE_SNAPSHOT: total=%.1f ms | descubrimientos=%.1f ms | jugador=%.1f ms | flags=%.1f ms | flag_mas_costosa=%s (%.1f ms) | cantidad_flags=%d"
+			% [total_ms, descubrimientos_ms, jugador_ms, flags_ms, flag_mas_costosa, flag_mas_costosa_ms, flags_snapshot.size()]
+		)
 	return {
-		"player": player_state.to_dictionary(),
+		"player": jugador_snapshot,
 		"elapsed_time": world_state.elapsed_time,
-		"flags": world_state.flags.duplicate(true),
+		"flags": flags_snapshot,
 		"scene": world_state.current_scene
 	}
 
