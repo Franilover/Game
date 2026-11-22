@@ -5,6 +5,7 @@ const CoordinatorScript = preload("res://scripts/gameplay/player/player_locomoti
 const ActionScript = preload("res://scripts/gameplay/player/player_action_controller.gd")
 const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_controller.gd")
 const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
+const EquipmentAnimationScript = preload("res://scripts/characters/player_equipment_animation_controller.gd")
 const InputScript = preload("res://scripts/gameplay/player/player_input_controller.gd")
 const PhysicsScript = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 
@@ -21,6 +22,7 @@ func _run() -> void:
 	_probar_coordinador(errores)
 	_probar_recarga_dash_reutilizable(errores)
 	_probar_presentacion_visual(errores)
+	_probar_perfiles_animacion_equipo(errores)
 	_probar_adaptador_input(errores)
 	_probar_integracion_fisica(errores)
 
@@ -180,6 +182,28 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 	marcador.free()
 
  
+func _probar_perfiles_animacion_equipo(errores: Array[String]) -> void:
+	var espada := {"nombre": "Espada de prueba", "tipo": "arma"}
+	if EquipmentAnimationScript.obtener_tipo_animacion(espada) != "espada":
+		errores.append("La espada no seleccionó su perfil de barrido.")
+	var hacha := {
+		"nombre": "Herramienta",
+		"tipo": "herramienta",
+		"propiedades_game": {"herramienta_recoleccion": {"tipo": "hacha", "nivel": 1}}
+	}
+	if EquipmentAnimationScript.obtener_tipo_animacion(hacha) != "hacha":
+		errores.append("El hacha no seleccionó su perfil desde propiedades_game.")
+	var regadera := {"nombre": "Regadera", "tipo": "herramienta"}
+	if EquipmentAnimationScript.obtener_tipo_animacion(regadera) != "regadera":
+		errores.append("La regadera no seleccionó su perfil de uso.")
+	var perfil_espada := EquipmentAnimationScript.obtener_perfil(espada)
+	var perfil_hacha := EquipmentAnimationScript.obtener_perfil(hacha)
+	if float(perfil_espada.get("duracion", 0.0)) >= float(perfil_hacha.get("duracion", 0.0)):
+		errores.append("La espada y el hacha no conservan ritmos de animación distintos.")
+	if EquipmentAnimationScript.obtener_tipo_animacion({"nombre": "Objeto"}) != "generica":
+		errores.append("Un objeto sin clasificación no recibió el perfil genérico.")
+
+
 func _probar_adaptador_input(errores: Array[String]) -> void:
 	var input_controller = InputScript.new()
 	var evento_viaje := InputEventKey.new()
