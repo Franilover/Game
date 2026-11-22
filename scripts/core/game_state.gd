@@ -10,6 +10,7 @@ const STORY_SAVE_DIRECTORY := "user://historia"
 const STORY_SAVE_ID := "reserva_carmesi"
 const SAVE_VERSION: int = 3
 const AUTOSAVE_INTERVAL: float = 10.0
+const GUARDADO_RAPIDO_ESPERA_S: float = 1.0
 # Supabase puede no responder (modo offline/error de red). No permitir que una
 # configuración remota pendiente bloquee indefinidamente la restauración vital
 # ni, por consecuencia, todos los guardados locales.
@@ -158,6 +159,12 @@ func _process(delta: float) -> void:
 
 
 func _notification(what: int) -> void:
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_OUT:
+		print("PERF_FOCUS: ventana perdió el foco")
+		return
+	if what == NOTIFICATION_WM_WINDOW_FOCUS_IN:
+		print("PERF_FOCUS: ventana recuperó el foco")
+		return
 	if what == NOTIFICATION_APPLICATION_PAUSED:
 		guardar_progreso_actual("suspensión de la aplicación")
 		return
@@ -1015,6 +1022,9 @@ func _al_cambio_guardable(_a = null, _b = null, _c = null, _d = null) -> void:
 
 
 func _ejecutar_guardado_rapido() -> void:
+	# Agrupa varios cambios consecutivos (inventario, misiones, vínculos, etc.)
+	# en una sola escritura. Antes cada señal disparaba un guardado síncrono.
+	await get_tree().create_timer(GUARDADO_RAPIDO_ESPERA_S).timeout
 	_guardado_rapido_pendiente = false
 	if _historia_reserva_activa:
 		guardar_progreso_historia()
