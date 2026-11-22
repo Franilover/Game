@@ -6,6 +6,7 @@ var datos_objeto: Dictionary = {}
 var nombre: String = "Objeto"
 
 const DISTANCIA_INTERACCION: float = 52.0
+const DISTANCIA_RECOGIDA_AUTOMATICA: float = 18.0
 
 var _jugador: Player = null
 var _inventario: GarliaInventory = null
@@ -14,6 +15,8 @@ var _mission_manager: MissionManager = null
 @onready var _icono: Sprite2D = get_node_or_null("ItemIcon") as Sprite2D
 var _etiqueta_visible: bool = false
 var _consumido_por_criatura: bool = false
+var _recogida_automatica: bool = false
+var _recogida_en_curso: bool = false
 
 
 func _ready() -> void:
@@ -35,10 +38,14 @@ func configurar(nuevos_datos: Dictionary) -> void:
 	_consumido_por_criatura = false
 	datos_objeto = nuevos_datos.duplicate(true)
 	nombre = str(datos_objeto.get("nombre", "Objeto"))
+	_recogida_automatica = bool(datos_objeto.get("recogida_automatica", false))
 	_registrar_coleccionable_expedicion()
-	
+
+	if _recogida_automatica:
+		remove_from_group("interactable")
 	if is_instance_valid(_etiqueta):
 		_etiqueta.text = "[ LMB ] · " + nombre
+		_etiqueta.visible = false
 	
 	_actualizar_icono()
 	queue_redraw()
@@ -49,7 +56,7 @@ func obtener_datos() -> Dictionary:
 
 
 func es_recolectable() -> bool:
-	return true
+	return not _recogida_automatica and not _recogida_en_curso
 
 
 func get_interaction_distance() -> float:
@@ -67,15 +74,46 @@ func esta_cerca(persona: Node2D) -> bool:
 
 
 func _process(_delta: float) -> void:
-	if not is_instance_valid(_jugador) or not is_instance_valid(_etiqueta):
+	if not is_instance_valid(_jugador):
 		return
-	
+
+	if _recogida_automatica:
+		if not _recogida_en_curso and global_position.distance_squared_to(_jugador.global_position) <= DISTANCIA_RECOGIDA_AUTOMATICA * DISTANCIA_RECOGIDA_AUTOMATICA:
+			_recoger_automaticamente()
+		return
+
+	if not is_instance_valid(_etiqueta):
+		return
 	var cerca: bool = esta_cerca(_jugador)
 	if cerca == _etiqueta_visible:
 		return
-	
 	_etiqueta_visible = cerca
 	_etiqueta.visible = cerca
+
+
+func _recoger_automaticamente() -> void:
+	if _recogida_en_curso or _consumido_por_criatura or datos_objeto.is_empty():
+		return
+	if not is_instance_valid(_inventario):
+		return
+	_recogida_en_curso = true
+	var datos := obtener_datos()
+	if not datos.has("cantidad"):
+		datos["cantidad"] = 1
+	datos.erase("recogida_automatica")
+	if not _inventario.agregar_objeto(datos):
+		_recogida_en_curso = false
+		return
+
+	_consumido_por_criatura = true
+	_registrar_recoleccion_expedicion()
+	var item_id := str(datos.get("item_id", datos.get("id", ""))).strip_edges()
+	if not item_id.is_empty() and is_instance_valid(_mission_manager):
+		_mission_manager.registrar_recoleccion(item_id, int(datos.get("cantidad", 1)))
+	Events.notification_pushed.emit(
+		"Recolectaste " + nombre + " x" + str(datos.get("cantidad", 1))
+	)
+	queue_free()
 
 
 func _actualizar_icono() -> void:
@@ -113,7 +151,7 @@ func consumir_por_criatura(item_ids_permitidos: Array) -> bool:
 
 
 func can_interact(persona: Node) -> bool:
-	return persona is Node2D and esta_cerca(persona as Node2D)
+	return not _recogida_automatica and not _recogida_en_curso and persona is Node2D and esta_cerca(persona as Node2D)
 
 
 func get_interaction_text() -> String:
