@@ -530,8 +530,6 @@ func _construir_vivero() -> void:
 	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
 	var grupo_bancales := ButtonGroup.new()
 	for nombre in nombres:
-		var registro: Variant = estados.get(nombre, {})
-		var cultivo: Dictionary = registro if registro is Dictionary else {}
 		var boton := Button.new()
 		boton.custom_minimum_size = Vector2(52, 52)
 		boton.toggle_mode = true
