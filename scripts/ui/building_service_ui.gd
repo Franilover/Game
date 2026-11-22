@@ -1234,7 +1234,6 @@ func _mostrar_detalle_clinica(tipo: String, detalle: VBoxContainer) -> void:
 		_agregar_boton_detalle(detalle, "Completa · %d" % costo, _aplicar_tratamiento_clinica.bind(true), not (necesita_salud or necesita_eterium) or GameState.obtener_dinero() < costo)
 	else:
 		_agregar_boton_detalle(detalle, "Salud · %d" % costo, _aplicar_tratamiento_clinica.bind(false), not necesita_salud or GameState.obtener_dinero() < costo)
-	detalle.add_child(descripcion)
 
 
 func _aplicar_tratamiento_clinica(completo: bool) -> void:
