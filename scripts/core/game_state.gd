@@ -1173,6 +1173,8 @@ func _guardar_progreso_diferido() -> void:
 			return
 		if _partida_aplicada_en_escena and not _estado_vital_restaurado_en_escena:
 			return
+		if _guardado_en_curso:
+			return
 		guardar_progreso_historia()
 		return
 	if active_save_id.is_empty():
@@ -1180,7 +1182,14 @@ func _guardar_progreso_diferido() -> void:
 		return
 	if not _partida_aplicada_en_escena or not _estado_vital_restaurado_en_escena:
 		return
-	guardar_partida()
+	# El primer guardado tras entrar a una escena también debe ser asíncrono.
+	# Antes se llamaba guardar_partida(), que serializaba y escribía en el hilo
+	# principal cada vez que el runtime rearmaba _primer_guardado_pendiente.
+	# Si ya existe un worker, se deja pendiente sin generar intentos/rechazos.
+	if _guardado_en_curso or _save_thread != null:
+		return
+	if guardar_partida_en_segundo_plano():
+		_primer_guardado_pendiente = false
 
 
 func _serializar_estado() -> Dictionary:
