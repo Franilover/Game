@@ -13,6 +13,8 @@ var _personalizacion: Dictionary = {}
 var _personalizacion_items: Dictionary = {}
 var _personalizacion_colores: Dictionary = {}
 var _personalizacion_vistas: Dictionary = {}
+var _kingdom_selector: OptionButton
+var _kingdom_label: Label
 var _personalizacion_rows: VBoxContainer
 var _preview_container: Control
 var _preview_layers: Dictionary = {}
@@ -53,6 +55,7 @@ func _ready() -> void:
 		_update_confirm())
 	gender_free.text_changed.connect(func(_text: String) -> void:
 		_update_confirm())
+	_crear_selector_reino_inicial()
 	confirm_button.pressed.connect(_on_confirm)
 	cancel_button.pressed.connect(_on_cancel)
 	_crear_vista_previa()
@@ -137,6 +140,9 @@ func open(action: String) -> void:
 	# Revalidar al abrir evita depender de cómo se añadió esta instancia.
 	_normalizar_geometria_raiz()
 	_action = action
+	if is_instance_valid(_kingdom_label):
+		_kingdom_label.visible = action == "aventura"
+		_kingdom_selector.visible = action == "aventura"
 	partida_name_input.text = ""
 	seed_input.text = ""
 	name_input.text = ""
@@ -164,6 +170,24 @@ func open(action: String) -> void:
 	visible = true
 	name_input.grab_focus()
 	_update_confirm()
+
+func _crear_selector_reino_inicial() -> void:
+	_kingdom_label = Label.new()
+	_kingdom_label.name = "KingdomLabel"
+	_kingdom_label.text = "Reino inicial"
+	_kingdom_selector = OptionButton.new()
+	_kingdom_selector.name = "KingdomSelector"
+	_kingdom_selector.add_item("Torres")
+	_kingdom_selector.set_item_metadata(0, "torres")
+	_kingdom_selector.add_item("Froslia")
+	_kingdom_selector.set_item_metadata(1, "froslia")
+	_kingdom_selector.select(0)
+	creation_fields.add_child(_kingdom_label)
+	creation_fields.add_child(_kingdom_selector)
+	var indice_semilla := seed_input.get_index()
+	creation_fields.move_child(_kingdom_label, indice_semilla + 1)
+	creation_fields.move_child(_kingdom_selector, indice_semilla + 2)
+
 
 func _on_cancel() -> void:
 	_action = ""
@@ -405,7 +429,8 @@ func _on_confirm() -> void:
 		"nombre": name_input.text.strip_edges(),
 		"genero": gender_value,
 		"especie": species_data.duplicate(true),
-		"personalizacion": _obtener_personalizacion()
+		"personalizacion": _obtener_personalizacion(),
+		"reino_inicial": _kingdom_selector.get_item_metadata(_kingdom_selector.selected) if is_instance_valid(_kingdom_selector) and _kingdom_selector.selected >= 0 else "torres"
 	}
 	visible = false
 	confirmed.emit(config, _action)
