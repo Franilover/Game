@@ -885,7 +885,7 @@ func _abrir_multijugador() -> void:
 		return
 	login_overlay.visible = false
 	multiplayer_overlay.visible = true
-	multiplayer_status.text = "Selecciona un servidor guardado o introduce una dirección."
+	multiplayer_status.text = ""
 	public_directory_label.text = "Directorio público: pendiente de conectar al servicio central."
 	port_input.text = str(GarliaMultiplayer.DEFAULT_PORT)
 	_cargar_servidores_guardados()
