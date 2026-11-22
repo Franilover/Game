@@ -9,15 +9,28 @@ var sprite_base: Sprite2D = null
 var _tween: Tween = null
 var _sprite_equipo: Sprite2D = null
 
+# Perfiles compartidos por tipo de herramienta. Las duraciones incluyen
+# preparación, golpe y recuperación para que cada acción pueda leerse.
 const PERFILES := {
-	"espada": {"barrido": 1.75, "duracion": 0.18, "alcance": 19.0, "escala": 0.78},
-	"hacha": {"barrido": 1.25, "duracion": 0.27, "alcance": 17.0, "escala": 0.78},
-	"pico": {"barrido": 1.10, "duracion": 0.25, "alcance": 16.0, "escala": 0.78},
-	"pala": {"barrido": 0.95, "duracion": 0.24, "alcance": 15.0, "escala": 0.78},
-	"azada": {"barrido": 0.90, "duracion": 0.23, "alcance": 15.0, "escala": 0.78},
-	"hoz": {"barrido": 1.45, "duracion": 0.22, "alcance": 17.0, "escala": 0.78},
-	"regadera": {"barrido": 0.55, "duracion": 0.30, "alcance": 13.0, "escala": 0.72},
-	"generica": {"barrido": 1.05, "duracion": 0.24, "alcance": 15.0, "escala": 0.76}
+	"espada": {"barrido": 2.50, "duracion": 0.42, "alcance": 26.0, "escala": 1.05},
+	"hacha": {"barrido": 1.95, "duracion": 0.58, "alcance": 24.0, "escala": 1.08},
+	"pico": {"barrido": 1.45, "duracion": 0.50, "alcance": 23.0, "escala": 1.02},
+	"pala": {"barrido": 1.40, "duracion": 0.68, "alcance": 24.0, "escala": 1.05},
+	"azada": {"barrido": 1.55, "duracion": 0.52, "alcance": 22.0, "escala": 1.00},
+	"hoz": {"barrido": 2.20, "duracion": 0.48, "alcance": 24.0, "escala": 1.02},
+	"regadera": {"barrido": 0.90, "duracion": 0.55, "alcance": 18.0, "escala": 0.96},
+	"generica": {"barrido": 1.60, "duracion": 0.44, "alcance": 22.0, "escala": 0.98}
+}
+
+# Recursos explícitos: no dependemos de que DirAccess descubra archivos
+# para incluir los sprites de herramientas en una exportación PCK/APK.
+const TEXTURAS_RESPALDO := {
+	"espada": preload("res://assets/art/items/Espada de Madera.png"),
+	"hacha": preload("res://assets/art/items/Hacha de Madera.png"),
+	"pico": preload("res://assets/art/items/Pico de Madera.png"),
+	"pala": preload("res://assets/art/items/Pala de Madera.png"),
+	"azada": preload("res://assets/art/items/Azada Madera.png"),
+	"regadera": preload("res://assets/art/items/regadera llena.png")
 }
 
 
@@ -28,13 +41,14 @@ func configurar(nuevo_visual: Node2D, nuevo_sprite_base: Sprite2D) -> void:
 
 static func obtener_tipo_animacion(objeto: Dictionary) -> String:
 	var nombre := _normalizar(str(objeto.get("nombre", "")))
+	var nombre_sprite := _normalizar(str(objeto.get("nombre_sprite", "")))
 	var tipo := _normalizar(str(objeto.get("tipo", "")))
 	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
 	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
 	var herramienta_variant: Variant = propiedades.get("herramienta_recoleccion", {})
 	var herramienta: Dictionary = herramienta_variant as Dictionary if herramienta_variant is Dictionary else {}
 	var tipo_herramienta := _normalizar(str(herramienta.get("tipo", "")))
-	var identidad := nombre + " " + tipo + " " + tipo_herramienta
+	var identidad := nombre + " " + nombre_sprite + " " + tipo + " " + tipo_herramienta
 	for clave_categoria in ["categoria", "categoria_canonica", "clase", "subtipo"]:
 		var categoria_variant: Variant = objeto.get(clave_categoria, "")
 		if categoria_variant is Dictionary:
@@ -60,10 +74,18 @@ static func obtener_perfil(objeto: Dictionary) -> Dictionary:
 	return (PERFILES.get(tipo, PERFILES["generica"]) as Dictionary).duplicate(true)
 
 
+static func obtener_textura_respaldo(tipo: String) -> Texture2D:
+	return TEXTURAS_RESPALDO.get(tipo) as Texture2D
+
+
 func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 	if not is_instance_valid(visual) or objeto.is_empty():
 		return
+
+	var tipo := obtener_tipo_animacion(objeto)
 	var textura := ItemIconResolver.obtener_icono(objeto)
+	if textura == null:
+		textura = obtener_textura_respaldo(tipo)
 	if textura == null:
 		return
 
@@ -79,10 +101,10 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 		direccion = Vector2.DOWN
 	var perpendicular := Vector2(-direccion.y, direccion.x)
 	var origen := sprite_base.position if is_instance_valid(sprite_base) else Vector2(0.0, -22.0)
-	var alcance := float(perfil.get("alcance", 15.0))
-	var barrido := float(perfil.get("barrido", 1.0))
-	var duracion := float(perfil.get("duracion", 0.24))
-	var escala := float(perfil.get("escala", 0.76))
+	var alcance := float(perfil.get("alcance", 22.0))
+	var barrido := float(perfil.get("barrido", 1.6))
+	var duracion := float(perfil.get("duracion", 0.44))
+	var escala := float(perfil.get("escala", 0.98))
 	var angulo_base := direccion.angle() + PI * 0.5
 
 	_sprite_equipo = Sprite2D.new()
@@ -91,38 +113,41 @@ func reproducir(objeto: Dictionary, facing: Vector2) -> void:
 	_sprite_equipo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_sprite_equipo.centered = true
 	_sprite_equipo.scale = Vector2.ONE * escala
-	_sprite_equipo.z_index = 12
-	_sprite_equipo.position = origen + direccion * 3.0 - perpendicular * 8.0
-	_sprite_equipo.rotation = angulo_base - barrido * 0.5
+	_sprite_equipo.z_index = 20
+	_sprite_equipo.position = origen - direccion * 9.0 - perpendicular * 11.0
+	_sprite_equipo.rotation = angulo_base - barrido * 0.62
 	visual.add_child(_sprite_equipo)
 
 	_tween = visual.create_tween()
 	_tween.set_trans(Tween.TRANS_QUAD)
 	_tween.set_ease(Tween.EASE_OUT)
+	# Preparación breve: el objeto se retrasa antes de avanzar hacia el golpe.
+	_tween.tween_interval(0.07)
 	_tween.tween_property(
 		_sprite_equipo,
 		"position",
-		origen + direccion * alcance + perpendicular * 5.0,
-		duracion * 0.58
+		origen + direccion * alcance + perpendicular * 7.0,
+		duracion * 0.62
 	)
 	_tween.parallel().tween_property(
 		_sprite_equipo,
 		"rotation",
-		angulo_base + barrido * 0.5,
-		duracion * 0.58
+		angulo_base + barrido * 0.38,
+		duracion * 0.62
 	)
+	_tween.set_trans(Tween.TRANS_CUBIC)
 	_tween.set_ease(Tween.EASE_IN)
 	_tween.tween_property(
 		_sprite_equipo,
 		"position",
-		origen + direccion * 5.0 + perpendicular * 8.0,
-		duracion * 0.42
+		origen + direccion * 3.0 + perpendicular * 10.0,
+		duracion * 0.38
 	)
 	_tween.parallel().tween_property(
 		_sprite_equipo,
 		"modulate:a",
 		0.0,
-		duracion * 0.42
+		duracion * 0.38
 	)
 	_tween.tween_callback(_limpiar)
 
