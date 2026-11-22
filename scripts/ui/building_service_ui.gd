@@ -580,18 +580,24 @@ func _mostrar_detalle_bancal_vivero(nombre: String, detalle: VBoxContainer) -> v
 			icono.texture = ITEM_ICON_RESOLVER.obtener_icono(objeto)
 		detalle.add_child(icono)
 
-	var titulo := Label.new()
-	titulo.text = str(cultivo.get("nombre", "")) if ocupado else ""
-	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	titulo.add_theme_font_size_override("font_size", 17)
-	detalle.add_child(titulo)
+	if ocupado:
+		var titulo := Label.new()
+		titulo.text = str(cultivo.get("nombre", ""))
+		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		titulo.add_theme_font_size_override("font_size", 17)
+		detalle.add_child(titulo)
 
 	var estado := Label.new()
 	estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	if ocupado:
 		var riegos := int(cultivo.get("riegos", 0))
-		estado.text = "Lista" if _cultivo_esta_maduro(cultivo) else ("Húmeda · %d/2" % riegos if humedo else "Necesita agua · %d/2" % riegos)
+		if _cultivo_esta_maduro(cultivo):
+			estado.text = "Lista"
+		elif humedo:
+			estado.text = "Húmeda · %d/2" % riegos
+		else:
+			estado.text = "Necesita agua · %d/2" % riegos
 	else:
 		estado.text = "Húmeda" if humedo else "Vacía"
 	detalle.add_child(estado)
@@ -610,27 +616,6 @@ func _cultivo_esta_maduro(cultivo: Dictionary) -> bool:
 	var dia_actual := int(datos.get("anio", 0)) * 1000 + int(datos.get("dia", 1))
 	var dias := dia_actual - int(cultivo.get("dia_plantado", dia_actual))
 	return dias >= 2 and int(cultivo.get("riegos", 0)) >= 2
-
-
-func _obtener_regadera_en_manos() -> Dictionary:
-	if not is_instance_valid(_inventario):
-		return {}
-	for mano in ["izquierda", "derecha"]:
-		var indice := _inventario.obtener_indice_mano_activa(mano)
-		var objeto := _inventario.obtener_item(indice)
-		if objeto.is_empty():
-			continue
-		var nombre := str(objeto.get("nombre", "")).to_lower()
-		var propiedades_variant: Variant = objeto.get("propiedades_game", {})
-		var propiedades: Dictionary = propiedades_variant if propiedades_variant is Dictionary else {}
-		var herramienta_variant: Variant = propiedades.get("herramienta_recoleccion", {})
-		var herramienta: Dictionary = herramienta_variant if herramienta_variant is Dictionary else {}
-		if nombre.contains("regadera") or str(herramienta.get("tipo", "")).to_lower() == "regadera":
-			var estado_variant: Variant = propiedades.get("regadera", {})
-			var estado: Dictionary = estado_variant if estado_variant is Dictionary else {}
-			return {"agua": int(estado.get("agua", estado.get("agua_inicial", 4)))}
-	return {}
-
 
 
 func _construir_elaboracion_herbolario() -> void:
