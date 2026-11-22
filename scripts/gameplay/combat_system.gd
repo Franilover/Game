@@ -130,9 +130,8 @@ func _al_ataque_solicitado(
 ) -> void:
 	if not CombatTargeting.es_atacante_valido(player) or _tiempo_desde_ataque > 0.0:
 		return
-	var nombre_objeto := str(objeto.get("nombre", "")).strip_edges().to_lower()
-	if nombre_objeto.contains("espada") and not bool(GameState.world_state.flags.get("licencia_espadas", false)):
-		Events.notification_pushed.emit("Necesitas la licencia de espadas del Cuartel para usarla.")
+	if _arma_bloqueada_por_licencia(objeto):
+		_mostrar_aviso_licencia(objeto)
 		return
 
 	var direccion_ataque := _normalizar_direccion_ataque(direccion)
@@ -146,6 +145,29 @@ func _al_ataque_solicitado(
 			return
 		_atacar_con_objeto(objeto, direccion_ataque)
 		return
+
+
+func _arma_bloqueada_por_licencia(objeto: Dictionary) -> bool:
+	var nombre := str(objeto.get("nombre", "")).strip_edges().to_lower()
+	if not nombre.contains("espada"):
+		return false
+	if bool(GameState.world_state.flags.get("licencia_espadas", false)):
+		return false
+
+	# La licencia se exige únicamente dentro de zonas que son reinos.
+	# Mundo Abierto, Explorar Granja, expediciones y Hogar quedan libres.
+	var zone_manager := get_tree().get_first_node_in_group("zone_manager")
+	if not is_instance_valid(zone_manager) or not zone_manager.has_method("obtener_tipo_actual"):
+		return false
+	var tipo_zona := str(zone_manager.call("obtener_tipo_actual")).strip_edges().to_lower()
+	return tipo_zona == "reino_torres" or tipo_zona.begins_with("reino:")
+
+
+func _mostrar_aviso_licencia(objeto: Dictionary) -> void:
+	var nombre := str(objeto.get("nombre", "arma")).strip_edges()
+	if nombre.is_empty():
+		nombre = "arma"
+	Events.notification_pushed.emit('No puedes usar "%s" sin licencia' % nombre)
 
 
 func _es_herramienta(objeto: Dictionary) -> bool:
