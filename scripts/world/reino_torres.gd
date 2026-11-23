@@ -1972,6 +1972,7 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesOeste", MUEBLE_COFRE, Vector2(-185, 112), Vector2(0.9, 0.9), 1)
 			_agregar_sprite_mueble(cuarto, "CajaProvisionesExpedicionesEste", MUEBLE_COFRE, Vector2(185, 112), Vector2(0.9, 0.9), 1)
 			_agregar_estacion_edificio(cuarto, "centro_expediciones", "Mesa de expediciones", Vector2(0, 12))
+			_agregar_estacion_edificio(cuarto, "viaje_reinos", "Viajar entre reinos", Vector2(0, 145))
 		"clinica":
 			# La recepción queda al fondo; las camas se mantienen como decoración
 			# clínica y no heredan la acción de dormir de las camas domésticas.
@@ -2557,7 +2558,7 @@ func _puede_interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String)
 		return false
 	if tipo == "pasaje_exterior":
 		return _entrada_interior_id == "registro"
-	if tipo == "garumis":
+	if tipo == "garumis" or tipo == "viaje_reinos":
 		return _entrada_interior_id == "centro_expediciones"
 	if tipo.begins_with("cuartel_"):
 		return _entrada_interior_id == "cuartel"
@@ -2574,6 +2575,11 @@ func _interactuar_estacion_edificio(_jugador_objetivo: Node, tipo: String) -> vo
 		return
 	if tipo == "garumis":
 		_abrir_hub_garumis()
+		return
+	if tipo == "viaje_reinos":
+		var main := get_tree().root.find_child("Main", true, false)
+		if is_instance_valid(main) and main.has_method("_abrir_menu_viaje_reinos"):
+			main.call("_abrir_menu_viaje_reinos")
 		return
 	_abrir_menu_servicio_edificio(tipo)
 
