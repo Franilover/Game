@@ -1271,6 +1271,14 @@ func _crear_dialogo_rutina_contextual() -> Dictionary:
 		amable
 	)
 	if texto.is_empty():
+		texto = _obtener_texto_rutina_supabase(
+			nombre,
+			rutina_clave,
+			actividad,
+			ubicacion,
+			amable
+		)
+	if texto.is_empty():
 		texto = _obtener_texto_rutina_personaje(
 			nombre,
 			rutina_clave,
@@ -1320,6 +1328,54 @@ func _obtener_saludo_contextual_supabase(
 	var tono := "amable" if amable else "formal"
 	var plantilla := str(contexto.get(tono, contexto.get("formal", ""))).strip_edges()
 	return _reemplazar_variables_dialogo(plantilla) if not plantilla.is_empty() else ""
+
+
+## Selecciona textos de rutina almacenados en Supabase.
+## Las condiciones y el estado del NPC siguen siendo calculados por Godot.
+func _obtener_texto_rutina_supabase(
+	nombre: String,
+	rutina_clave: String,
+	actividad: String,
+	ubicacion: String,
+	amable: bool
+) -> String:
+	if not is_instance_valid(_fuente):
+		return ""
+	# Las condiciones cruzadas de Ivo (presencia de Elian y compra de pan)
+	# permanecen en el motor hasta migrar ese caso de forma específica.
+	if nombre == "ivo":
+		return ""
+	var datos_dialogo: Dictionary = _fuente.get_dialogue_data()
+	var rutina_variant: Variant = datos_dialogo.get("rutina_contextual", {})
+	if not rutina_variant is Dictionary:
+		return ""
+	var rutina := rutina_variant as Dictionary
+	var es_dia_libre := rutina_clave.begins_with("dia_libre")
+	var ubicaciones_hogar: Array[String] = [
+		"casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel",
+		"castillo", "vivienda_oeste_01", "vivienda_oeste_02", "vivienda_oeste_03"
+	]
+	var esta_en_hogar := ubicaciones_hogar.has(ubicacion)
+	var clave := ""
+	if es_dia_libre:
+		clave = "dia_libre_casa" if esta_en_hogar else "dia_libre_fuera"
+	elif esta_en_hogar:
+		clave = "hogar"
+	else:
+		var actividades_variant: Variant = rutina.get("actividades", {})
+		if actividades_variant is Dictionary:
+			var actividades := actividades_variant as Dictionary
+			var lineas_actividad: Variant = actividades.get(actividad, [])
+			if lineas_actividad is Array and (lineas_actividad as Array).size() >= 2:
+				return str((lineas_actividad as Array)[1 if amable else 0])
+		if rutina.has("general"):
+			clave = "general"
+	if clave.is_empty():
+		return ""
+	var lineas_variant: Variant = rutina.get(clave, [])
+	if not lineas_variant is Array or (lineas_variant as Array).size() < 2:
+		return ""
+	return str((lineas_variant as Array)[1 if amable else 0]).strip_edges()
 
 
 func _relacion_amable_actual() -> bool:
