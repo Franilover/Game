@@ -232,9 +232,18 @@ func _input(event: InputEvent) -> void:
 				_cerrar_selector_items()
 			elif _selector_conversacion != null and _selector_conversacion.visible:
 				_cerrar_selector_conversacion()
-			# Escape no termina la conversación: el cierre voluntario se realiza
-			# desde la opción explícita de despedida.
+			else:
+				# Cierre de emergencia: nunca dejar al jugador atrapado en un
+				# diálogo si una opción o interfaz secundaria quedó bloqueada.
+				cerrar()
 			get_viewport().set_input_as_handled()
+			return
+
+		if event.is_action_pressed("inventory"):
+			# El inventario no se superpone a una conversación. Se consume la
+			# tecla para evitar que se abra detrás del panel de diálogo.
+			get_viewport().set_input_as_handled()
+			return
 
 
 func _procesar_toque_dialogo(posicion: Vector2) -> bool:
@@ -277,6 +286,12 @@ func _toque_sobre_control(control: Control, posicion: Vector2) -> bool:
 		and control.is_visible_in_tree()
 		and control.get_global_rect().has_point(posicion)
 	)
+
+
+func _cerrar_inventarios_activos() -> void:
+	for inventario in get_tree().get_nodes_in_group("inventory"):
+		if is_instance_valid(inventario) and inventario.has_method("esta_abierto") and bool(inventario.call("esta_abierto")):
+			inventario.call("cerrar")
 
 
 func esta_abierto() -> bool:
@@ -408,6 +423,7 @@ func abrir(datos: Dictionary, fuente: Creature = null, iniciativa_directa: bool 
 		_acciones.clear()
 
 	_indice_linea = 0
+	_cerrar_inventarios_activos()
 	_abierto = true
 
 	if is_instance_valid(_fuente):
