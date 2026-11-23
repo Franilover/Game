@@ -7,7 +7,7 @@ const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
 const TAMANO_RETRATO := Vector2(64.0, 72.0)
 const SEPARACION_RETRATOS := 8
 
-var lista: GridContainer
+var lista: VBoxContainer
 var detalle: VBoxContainer
 var estado: Label
 var _lista_scroll: ScrollContainer
@@ -106,11 +106,10 @@ func _crear_ui() -> void:
 	_lista_scroll.resized.connect(_ajustar_columnas_retratos)
 	contenido.add_child(_lista_scroll)
 
-	lista = GridContainer.new()
-	lista.columns = 3
+	lista = VBoxContainer.new()
+	lista.name = "KingdomGroups"
 	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lista.add_theme_constant_override("h_separation", SEPARACION_RETRATOS)
-	lista.add_theme_constant_override("v_separation", SEPARACION_RETRATOS)
+	lista.add_theme_constant_override("separation", 10)
 	_lista_scroll.add_child(lista)
 
 	var panel_detalle := PanelContainer.new()
@@ -149,7 +148,10 @@ func _ajustar_columnas_retratos() -> void:
 		return
 	var ancho_util := maxi(1, int(_lista_scroll.size.x))
 	var paso := TAMANO_RETRATO.x + float(SEPARACION_RETRATOS)
-	lista.columns = clampi(floori(float(ancho_util + SEPARACION_RETRATOS) / paso), 2, 6)
+	var columnas := clampi(floori(float(ancho_util + SEPARACION_RETRATOS) / paso), 2, 6)
+	for rejilla_variant in lista.find_children("KingdomCharacterGrid", "GridContainer", true, false):
+		var rejilla := rejilla_variant as GridContainer
+		rejilla.columns = columnas
 
 
 func _actualizar() -> void:
@@ -163,7 +165,95 @@ func _actualizar() -> void:
 		estado.text = "Sin habitantes"
 		return
 
+	var grupos: Dictionary = {}
 	for personaje in personajes:
+		var clave_reino := _clave_reino_personaje(personaje)
+		if not grupos.has(clave_reino):
+			grupos[clave_reino] = []
+		(grupos[clave_reino] as Array).append(personaje)
+
+	var claves_reinos: Array = grupos.keys()
+	claves_reinos.sort_custom(func(a: Variant, b: Variant) -> bool:
+		return _nombre_reino(str(a)) < _nombre_reino(str(b))
+	)
+	for clave_reino_variant in claves_reinos:
+		var clave_reino := str(clave_reino_variant)
+		var seccion := PanelContainer.new()
+		seccion.name = "Kingdom_" + clave_reino
+		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var fondo_reino := PIXEL_UI_THEME.button_surface_style()
+		if fondo_reino != null:
+			seccion.add_theme_stylebox_override("panel", fondo_reino)
+		lista.add_child(seccion)
+
+		var margen_reino := MarginContainer.new()
+		margen_reino.add_theme_constant_override("margin_left", 8)
+		margen_reino.add_theme_constant_override("margin_top", 6)
+		margen_reino.add_theme_constant_override("margin_right", 8)
+		margen_reino.add_theme_constant_override("margin_bottom", 7)
+		seccion.add_child(margen_reino)
+
+		var contenido_reino := VBoxContainer.new()
+		contenido_reino.add_theme_constant_override("separation", 6)
+		margen_reino.add_child(contenido_reino)
+
+		var titulo_reino := Label.new()
+		titulo_reino.name = "KingdomHeading"
+		titulo_reino.text = _nombre_reino(clave_reino).to_upper()
+		titulo_reino.add_theme_color_override("font_color", Color("#E6D0A6"))
+		titulo_reino.add_theme_font_size_override("font_size", 12)
+		contenido_reino.add_child(titulo_reino)
+
+		var rejilla := GridContainer.new()
+		rejilla.name = "KingdomCharacterGrid"
+		rejilla.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		rejilla.add_theme_constant_override("h_separation", SEPARACION_RETRATOS)
+		rejilla.add_theme_constant_override("v_separation", SEPARACION_RETRATOS)
+		contenido_reino.add_child(rejilla)
+		for personaje_variant in grupos[clave_reino] as Array:
+			if personaje_variant is Dictionary:
+				_crear_tarjeta_personaje(personaje_variant as Dictionary, rejilla)
+
+	call_deferred("_ajustar_columnas_retratos")
+
+	estado.text = ""
+	if not _personaje_seleccionado_id.is_empty():
+		if _personajes_por_id.has(_personaje_seleccionado_id):
+			var datos_personaje: Dictionary = _personajes_por_id[_personaje_seleccionado_id]
+			_seleccionar(
+				_personaje_seleccionado_id,
+				str(datos_personaje.get("nombre", _personaje_seleccionado_id))
+			)
+		else:
+			_personaje_seleccionado_id = ""
+
+
+func _clave_reino_personaje(personaje: Dictionary) -> String:
+	for campo in ["reino_clave", "reino", "reino_id", "reino_nombre"]:
+		var valor := str(personaje.get(campo, "")).strip_edges()
+		if not valor.is_empty():
+			return valor.to_lower().replace(" ", "_")
+	var nacionalidad := str(personaje.get("nacionalidad", "")).strip_edges().to_lower()
+	if nacionalidad.contains("frosl"):
+		return "froslia"
+	if nacionalidad.contains("torres"):
+		return "torres"
+	return "sin_reino"
+
+
+func _nombre_reino(clave: String) -> String:
+	if clave == "froslia":
+		return "Froslia"
+	if clave == "torres":
+		return "Torres"
+	var reinos: Array[Dictionary] = WorldData.obtener_reinos_game()
+	for reino in reinos:
+		if str(reino.get("clave", "")).strip_edges().to_lower() == clave.to_lower() or str(reino.get("id", "")).strip_edges().to_lower() == clave.to_lower():
+			return str(reino.get("nombre", clave.capitalize()))
+	return clave.replace("_", " ").capitalize()
+
+
+func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> void:
 		# El catálogo ya contiene habitantes jugables/sociales; no excluirlos
 		# por campos opcionales de activación que pueden faltar en snapshots antiguos.
 		var personaje_id := str(personaje.get("id", "")).strip_edges()
@@ -178,7 +268,7 @@ func _actualizar() -> void:
 			"asset_key": asset_key,
 			"sprite_key": str(personaje.get("sprite_key", "")).strip_edges()
 		}
-
+	
 		var boton := Button.new()
 		boton.name = "RelationshipPortraitButton"
 		boton.custom_minimum_size = TAMANO_RETRATO
@@ -192,7 +282,7 @@ func _actualizar() -> void:
 		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
 		PIXEL_UI_THEME.apply(boton, false)
-
+	
 		var textura_cara := _cargar_retrato_cara(asset_key, nombre)
 		var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
 		if textura != null:
@@ -218,7 +308,7 @@ func _actualizar() -> void:
 			iniciales.add_theme_font_size_override("font_size", 14)
 			iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
 			boton.add_child(iniciales)
-
+	
 		var fondo_nombre := PanelContainer.new()
 		fondo_nombre.name = "NameButtonSurface"
 		fondo_nombre.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
@@ -244,20 +334,10 @@ func _actualizar() -> void:
 		nombre_margen.add_child(etiqueta)
 		fondo_nombre.add_child(nombre_margen)
 		boton.add_child(fondo_nombre)
-
-		lista.add_child(boton)
+	
+		rejilla.add_child(boton)
 		_botones.append(boton)
-
-	estado.text = ""
-	if not _personaje_seleccionado_id.is_empty():
-		if _personajes_por_id.has(_personaje_seleccionado_id):
-			var datos_personaje: Dictionary = _personajes_por_id[_personaje_seleccionado_id]
-			_seleccionar(
-				_personaje_seleccionado_id,
-				str(datos_personaje.get("nombre", _personaje_seleccionado_id))
-			)
-		else:
-			_personaje_seleccionado_id = ""
+	
 
 
 func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
