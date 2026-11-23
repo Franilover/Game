@@ -1264,15 +1264,22 @@ func _crear_dialogo_rutina_contextual() -> Dictionary:
 	var nombre := _fuente.get_nombre_visual().strip_edges().to_lower()
 	var destino := _nombre_ubicacion_rutina(ubicacion)
 	var amable := _relacion_amable_actual()
-	var texto := _obtener_texto_rutina_personaje(
-		nombre,
-		rutina_clave,
-		actividad,
-		destino,
+	var texto := _obtener_saludo_contextual_supabase(
 		en_transito,
 		dentro_edificio,
+		actividad,
 		amable
 	)
+	if texto.is_empty():
+		texto = _obtener_texto_rutina_personaje(
+			nombre,
+			rutina_clave,
+			actividad,
+			destino,
+			en_transito,
+			dentro_edificio,
+			amable
+		)
 	if texto.is_empty():
 		return {}
 
@@ -1281,6 +1288,34 @@ func _crear_dialogo_rutina_contextual() -> Dictionary:
 		"clave": clave_dialogo,
 		"lineas": [{"hablante": _fuente.get_nombre_visual(), "texto": texto}]
 	}
+
+
+## Obtiene variantes contextuales desde Supabase; Godot decide el estado.
+func _obtener_saludo_contextual_supabase(
+	en_transito: bool,
+	dentro_edificio: bool,
+	actividad: String,
+	amable: bool
+) -> String:
+	if not is_instance_valid(_fuente):
+		return ""
+	if dentro_edificio and not _actividad_es_desplazamiento(actividad):
+		return ""
+	if not en_transito and not (dentro_edificio and _actividad_es_desplazamiento(actividad)):
+		return ""
+	var datos_dialogo: Dictionary = _fuente.get_dialogue_data()
+	var saludos_variant: Variant = datos_dialogo.get("saludos_contextuales", {})
+	if not saludos_variant is Dictionary:
+		return ""
+	var saludos := saludos_variant as Dictionary
+	var clave := "dentro_edificio" if dentro_edificio else "transito"
+	var contexto_variant: Variant = saludos.get(clave, {})
+	if not contexto_variant is Dictionary:
+		return ""
+	var contexto := contexto_variant as Dictionary
+	var tono := "amable" if amable else "formal"
+	var plantilla := str(contexto.get(tono, contexto.get("formal", ""))).strip_edges()
+	return _reemplazar_variables_dialogo(plantilla) if not plantilla.is_empty() else ""
 
 
 func _relacion_amable_actual() -> bool:
