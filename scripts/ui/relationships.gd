@@ -99,22 +99,25 @@ func _crear_ui() -> void:
 	columna.add_child(contenido)
 
 	_lista_scroll = ScrollContainer.new()
-	_lista_scroll.custom_minimum_size = Vector2(220.0, 0.0)
+	_lista_scroll.custom_minimum_size = Vector2(190.0, 0.0)
 	_lista_scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	_lista_scroll.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	_lista_scroll.size_flags_stretch_ratio = 1.0
+	_lista_scroll.size_flags_stretch_ratio = 1.35
+	_lista_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_lista_scroll.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
 	_lista_scroll.resized.connect(_ajustar_columnas_retratos)
 	contenido.add_child(_lista_scroll)
 
 	lista = VBoxContainer.new()
 	lista.name = "KingdomGroups"
 	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	lista.add_theme_constant_override("separation", 10)
 	_lista_scroll.add_child(lista)
 
 	var panel_detalle := PanelContainer.new()
 	panel_detalle.name = "DetailPanelRight"
-	panel_detalle.custom_minimum_size = Vector2(170.0, 0.0)
+	panel_detalle.custom_minimum_size = Vector2(145.0, 0.0)
 	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel_detalle.size_flags_stretch_ratio = 0.8
 	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
@@ -146,9 +149,12 @@ func _crear_ui() -> void:
 func _ajustar_columnas_retratos() -> void:
 	if not is_instance_valid(lista) or not is_instance_valid(_lista_scroll):
 		return
-	var ancho_util := maxi(1, int(_lista_scroll.size.x))
+	# El ancho disponible ya excluye la barra vertical. Mantener una sola
+	# columna en paneles estrechos evita que el GridContainer fuerce scroll
+	# horizontal; en ventanas amplias se aprovecha el espacio hasta seis.
+	var ancho_util := maxi(1, int(_lista_scroll.size.x) - 18)
 	var paso := TAMANO_RETRATO.x + float(SEPARACION_RETRATOS)
-	var columnas := clampi(floori(float(ancho_util + SEPARACION_RETRATOS) / paso), 2, 6)
+	var columnas := clampi(floori(float(ancho_util + SEPARACION_RETRATOS) / paso), 1, 6)
 	for rejilla_variant in lista.find_children("KingdomCharacterGrid", "GridContainer", true, false):
 		var rejilla := rejilla_variant as GridContainer
 		rejilla.columns = columnas
