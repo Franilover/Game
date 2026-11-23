@@ -263,10 +263,13 @@ func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> 
 	if nombre.is_empty():
 		nombre = personaje_id
 	var asset_key := str(personaje.get("asset_key", nombre)).strip_edges()
+	var visual := WorldData.obtener_configuracion_visual_personaje_game(personaje_id)
 	_personajes_por_id[personaje_id] = {
 		"nombre": nombre,
 		"asset_key": asset_key,
-		"sprite_key": str(personaje.get("sprite_key", "")).strip_edges()
+		"sprite_key": str(personaje.get("sprite_key", "")).strip_edges(),
+		"sprite_path": str(visual.get("sprite_path", "")).strip_edges(),
+		"portrait_path": str(visual.get("portrait_path", "")).strip_edges()
 	}
 
 	var boton := Button.new()
@@ -283,7 +286,9 @@ func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> 
 	boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
 	PIXEL_UI_THEME.apply(boton, false)
 
-	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
+	var textura_cara := _cargar_textura_ruta(str(visual.get("portrait_path", "")))
+	if textura_cara == null:
+		textura_cara = _cargar_retrato_cara(asset_key, nombre)
 	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
 	if textura != null:
 		var retrato := TextureRect.new()
@@ -338,6 +343,14 @@ func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> 
 	rejilla.add_child(boton)
 	_botones.append(boton)
 
+
+
+func _cargar_textura_ruta(ruta: String) -> Texture2D:
+	var ruta_limpia := ruta.strip_edges()
+	if ruta_limpia.is_empty() or not ruta_limpia.begins_with("res://") or not ResourceLoader.exists(ruta_limpia):
+		return null
+	var recurso: Resource = ResourceLoader.load(ruta_limpia)
+	return recurso as Texture2D if recurso is Texture2D else null
 
 
 func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
@@ -411,9 +424,15 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var datos_personaje: Dictionary = _personajes_por_id.get(personaje_id, {})
 	var asset_key := str(datos_personaje.get("asset_key", nombre))
 	var sprite_key := str(datos_personaje.get("sprite_key", "")).strip_edges()
-	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
+	var sprite_path := str(datos_personaje.get("sprite_path", "")).strip_edges()
+	var portrait_path := str(datos_personaje.get("portrait_path", "")).strip_edges()
+	var textura_cara := _cargar_textura_ruta(portrait_path)
+	if textura_cara == null:
+		textura_cara = _cargar_retrato_cara(asset_key, nombre)
 	var textura_retrato := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
-	var textura_mapa := _cargar_sprite_mapa(sprite_key, nombre, not personaje_id.is_empty())
+	var textura_mapa := _cargar_textura_ruta(sprite_path)
+	if textura_mapa == null:
+		textura_mapa = _cargar_sprite_mapa(sprite_key, nombre, not personaje_id.is_empty())
 
 	# Las dos referencias visuales comparten el mismo ancho: retrato de perfil
 	# a la izquierda y sprite real de exploración a la derecha.
