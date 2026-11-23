@@ -429,6 +429,7 @@ func _on_confirm() -> void:
 	if gender.selected == 4:
 		gender_value = gender_free.text.strip_edges()
 	var species_data: Dictionary = species.get_item_metadata(species.selected) as Dictionary
+	var reino_seleccionado := str(_kingdom_selector.get_item_metadata(_kingdom_selector.selected)).strip_edges().to_lower() if is_instance_valid(_kingdom_selector) and _kingdom_selector.selected >= 0 else "torres"
 	var config: Dictionary = {
 		"nombre_partida": partida_name_input.text.strip_edges(),
 		"semilla": seed_input.text.strip_edges(),
@@ -436,7 +437,8 @@ func _on_confirm() -> void:
 		"genero": gender_value,
 		"especie": species_data.duplicate(true),
 		"personalizacion": _obtener_personalizacion(),
-		"reino_inicial": _kingdom_selector.get_item_metadata(_kingdom_selector.selected) if is_instance_valid(_kingdom_selector) and _kingdom_selector.selected >= 0 else "torres"
+		"reino_inicial": reino_seleccionado,
+		"nacionalidad": "Frosliano" if reino_seleccionado == "froslia" else "Torresiano"
 	}
 	visible = false
 	confirmed.emit(config, _action)
