@@ -45,9 +45,29 @@ func _run() -> void:
 		return
 	var selector := zona_torres.get_node("SelectorViajesLayer/SelectorViajesRoot/SelectorViajesCenter/SelectorViajes")
 	var destinos_fijos := selector.get_node_or_null("Contenido")
-	if destinos_fijos == null or destinos_fijos.get_node_or_null("Destino_torres") == null or destinos_fijos.get_node_or_null("Destino_mundo_abierto") == null:
-		_fail("El selector no muestra los dos destinos fijos.")
+	if destinos_fijos == null or destinos_fijos.get_node_or_null("Destino_torres") == null or destinos_fijos.get_node_or_null("Destino_froslia") == null or destinos_fijos.get_node_or_null("Destino_mundo_abierto") == null:
+		_fail("El selector no muestra Torres, Froslia y Mundo Abierto.")
 		return
+
+	# La opción Froslia debe usar el mismo contrato de viaje que el selector visual.
+	zona_torres.emit_signal("destino_viaje_solicitado", "froslia")
+	for _frame in range(120):
+		if manager.obtener_tipo_actual() == "reino:froslia":
+			break
+		await get_tree().process_frame
+	if manager.obtener_tipo_actual() != "reino:froslia":
+		_fail("Seleccionar Froslia desde la mesa de rutas no cargó su reino.")
+		return
+	manager.entrar_reino("torres")
+	for _frame in range(120):
+		if manager.obtener_tipo_actual() == "reino_torres":
+			break
+		await get_tree().process_frame
+	if manager.obtener_tipo_actual() != "reino_torres":
+		_fail("No se pudo regresar a Torres después de comprobar el destino Froslia.")
+		return
+	zona_torres = manager.obtener_zona_actual()
+
 	if zona_torres.get_node_or_null("Exit") != null:
 		_fail("La antigua salida/teletransporte del portón sigue presente.")
 		return
