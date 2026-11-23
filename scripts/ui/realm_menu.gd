@@ -94,6 +94,12 @@ func _reconstruir_destinos() -> void:
 		_agregar_destino("torres", "Torres", "REINO", _tipo_zona_actual == "reino_torres")
 		agregados["torres"] = true
 
+	# Froslia es una escena local jugable y su viaje no depende de que el
+	# catálogo remoto la marque como activa.
+	if not agregados.has("froslia"):
+		_agregar_destino("froslia", "Froslia", "REINO", _tipo_zona_actual == "reino:froslia")
+		agregados["froslia"] = true
+
 	_agregar_destino("mundo_abierto", "Mundo Abierto", "EXPLORACIÓN", _tipo_zona_actual == "mundo_abierto")
 	# Hogar usa una escena y un guardado local; no se ofrece dentro del mundo
 	# global multijugador para evitar mezclar parcelas entre jugadores.
