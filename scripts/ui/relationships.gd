@@ -258,7 +258,7 @@ func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> 
 	# por campos opcionales de activación que pueden faltar en snapshots antiguos.
 	var personaje_id := str(personaje.get("id", "")).strip_edges()
 	if personaje_id.is_empty():
-		continue
+		return
 	var nombre := str(personaje.get("nombre", "")).strip_edges()
 	if nombre.is_empty():
 		nombre = personaje_id
