@@ -925,6 +925,38 @@ func buscar_reino_game_por_clave(
 	return {}
 
 
+func obtener_configuracion_visual_personaje_game(personaje_game_id: String) -> Dictionary:
+	var buscado := personaje_game_id.strip_edges()
+	if buscado.is_empty():
+		return {}
+
+	var personaje := obtener_personaje_game_por_id(buscado)
+	if personaje.is_empty():
+		return {}
+
+	var reino_clave := str(personaje.get("reino_clave", "")).strip_edges()
+	var reino := buscar_reino_game_por_clave(reino_clave)
+	if reino.is_empty():
+		return {}
+
+	var propiedades_variant: Variant = reino.get("propiedades", {})
+	if not propiedades_variant is Dictionary:
+		return {}
+	var propiedades := propiedades_variant as Dictionary
+	var habitantes_variant: Variant = propiedades.get("habitantes", [])
+	if not habitantes_variant is Array:
+		return {}
+
+	for habitante_variant in habitantes_variant as Array:
+		if not habitante_variant is Dictionary:
+			continue
+		var habitante := habitante_variant as Dictionary
+		if str(habitante.get("personaje_game_id", "")).strip_edges() == buscado:
+			return habitante.duplicate(true)
+
+	return {}
+
+
 func obtener_reinos_game_de_bioma(
 	bioma_id: String
 ) -> Array[Dictionary]:
