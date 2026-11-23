@@ -356,13 +356,15 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 stretch = true
+texture_filter = 1
 mouse_filter = 2
 
 [node name="Viewport" type="SubViewport" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel/SkinPreview"]
 handle_input_locally = false
-size = Vector2i(104, 180)
+size = Vector2i(156, 270)
 transparent_bg = true
 render_target_update_mode = 2
+canvas_item_default_texture_filter = 1
 
 [node name="PreviewRoot" type="Node2D" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/RightPanel/EquipmentArea/SkinPanel/SkinPreview/Viewport"]
 
