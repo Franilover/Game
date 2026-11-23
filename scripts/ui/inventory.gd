@@ -542,14 +542,11 @@ func _aplicar_fondos_inventario() -> void:
 	# Cada grupo conserva su VBox y su Grid originales, pero queda contenido
 	# en una superficie con el mismo acabado que los botones de la interfaz.
 	for contenedor_variant in grid.get_children():
-		var contenedor := contenedor_variant as PanelContainer
+		var contenedor := contenedor_variant as Button
 		if contenedor == null:
 			continue
-		contenedor.add_theme_stylebox_override("panel", estilo_boton)
-		contenedor.add_theme_constant_override("margin_left", 5)
-		contenedor.add_theme_constant_override("margin_top", 5)
-		contenedor.add_theme_constant_override("margin_right", 5)
-		contenedor.add_theme_constant_override("margin_bottom", 5)
+		for margen in ["margin_left", "margin_top", "margin_right", "margin_bottom"]:
+			contenedor.add_theme_constant_override(margen, 5)
 
 	if is_instance_valid(detail_block):
 		detail_block.add_theme_stylebox_override("panel", estilo_boton)
@@ -603,10 +600,22 @@ func _crear_slots() -> void:
 		panel_grupo.name = "Grupo_" + str(grupo)
 		panel_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		panel_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-		var marco_grupo := PanelContainer.new()
+		# La superficie de cada sección (mano izquierda, mochila y mano
+		# derecha) usa el mismo control/estilo que un botón de la interfaz.
+		# El fondo no captura el ratón: los slots interiores siguen siendo
+		# los únicos elementos interactivos.
+		var marco_grupo := Button.new()
 		marco_grupo.name = "Marco_" + str(grupo)
+		marco_grupo.text = ""
+		marco_grupo.flat = false
+		marco_grupo.focus_mode = Control.FOCUS_NONE
+		marco_grupo.mouse_filter = Control.MOUSE_FILTER_IGNORE
 		marco_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		marco_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+		marco_grupo.add_theme_stylebox_override("normal", PIXEL_UI_THEME.button_surface_style())
+		marco_grupo.add_theme_stylebox_override("hover", PIXEL_UI_THEME.button_hover_style())
+		marco_grupo.add_theme_stylebox_override("pressed", PIXEL_UI_THEME.button_pressed_style())
+		marco_grupo.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		grid.add_child(marco_grupo)
 		marco_grupo.add_child(panel_grupo)
 
