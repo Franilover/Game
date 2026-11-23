@@ -504,6 +504,9 @@ func _al_solicitar_destino_viaje(destino_id: String) -> void:
 		"torres":
 			if tipo_actual != TIPO_REINO_TORRES:
 				entrar_reino("torres")
+		"froslia":
+			if tipo_actual != "reino:froslia":
+				entrar_reino("froslia")
 		"mundo_abierto":
 			entrar_mundo_abierto()
 		"expedicion_bosque":
