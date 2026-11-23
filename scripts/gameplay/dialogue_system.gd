@@ -1620,7 +1620,7 @@ func _evaluar_condicion_dialogo(condicion: Dictionary) -> bool:
 
 	match tipo:
 		"social":
-			if not relacion.has(campo) or not ["amistad", "confianza", "respeto", "afecto"].has(campo):
+			if not relacion.has(campo) or not ["amistad", "confianza", "respeto", "afecto"].has(campo) or valor_texto.is_empty():
 				return false
 			return _comparar_condicion_dialogo(float(relacion.get(campo, 0.0)), operador, float(valor_texto))
 		"estacion":
@@ -1647,10 +1647,19 @@ func _evaluar_condicion_dialogo(condicion: Dictionary) -> bool:
 		"mision":
 			if mission_manager == null or campo.is_empty():
 				return false
-			var requisito_mision := {"mision_clave": campo}
-			if not valor_texto.is_empty():
-				requisito_mision["estado"] = valor_texto.to_lower()
-			return mission_manager.cumple_requisito_dialogo(requisito_mision)
+			var mision := mission_manager.buscar_mision_por_clave(campo)
+			if mision.is_empty():
+				return false
+			var mision_id := str(mision.get("id", "")).strip_edges()
+			if mision_id.is_empty():
+				return false
+			var estado_mision := mission_manager.obtener_estado_mision(mision_id)
+			if estado_mision.is_empty():
+				return false
+			var estado_actual := str(estado_mision.get("estado", "disponible")).strip_edges().to_lower()
+			if valor_texto.is_empty():
+				return estado_actual in ["activa", "completada"]
+			return estado_actual == valor_texto.to_lower()
 		"tema_conversado":
 			if relationship_system == null or personaje_id.is_empty() or campo.is_empty():
 				return false
