@@ -1276,6 +1276,7 @@ func _crear_dialogo_rutina_contextual() -> Dictionary:
 			rutina_clave,
 			actividad,
 			ubicacion,
+			destino,
 			amable
 		)
 	if texto.is_empty():
@@ -1337,6 +1338,7 @@ func _obtener_texto_rutina_supabase(
 	rutina_clave: String,
 	actividad: String,
 	ubicacion: String,
+	destino: String,
 	amable: bool
 ) -> String:
 	if not is_instance_valid(_fuente):
@@ -1391,7 +1393,26 @@ func _obtener_texto_rutina_supabase(
 		if rutina.has("general"):
 			clave = "general"
 	if clave.is_empty():
-		return ""
+			var plantillas_variant: Variant = rutina.get("plantillas_generales", {})
+			if not plantillas_variant is Dictionary:
+				return ""
+			var plantillas := plantillas_variant as Dictionary
+			var clave_plantilla := ""
+			if _actividad_es_desplazamiento(actividad):
+				clave_plantilla = "desplazamiento_local" if bool(_fuente.get_meta("rutina_en_edificio", false)) else "desplazamiento"
+			elif bool(_fuente.get_meta("rutina_en_edificio", false)):
+				clave_plantilla = "respaldo_edificio"
+			else:
+				clave_plantilla = "respaldo_exterior"
+			var lineas_plantilla: Variant = plantillas.get(clave_plantilla, [])
+			if not lineas_plantilla is Array or (lineas_plantilla as Array).size() < 2:
+				return ""
+			var texto_plantilla := str((lineas_plantilla as Array)[1 if amable else 0])
+			var verbo := actividad.replace("_", " ").strip_edges()
+			if verbo.is_empty():
+				verbo = "atender mis asuntos"
+			texto_plantilla = texto_plantilla.replace("{actividad}", verbo).replace("{destino}", destino)
+			return texto_plantilla
 	var lineas_variant: Variant = rutina.get(clave, [])
 	if not lineas_variant is Array or (lineas_variant as Array).size() < 2:
 		return ""
