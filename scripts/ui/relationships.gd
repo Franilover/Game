@@ -181,7 +181,7 @@ func _actualizar() -> void:
 		var seccion := PanelContainer.new()
 		seccion.name = "Kingdom_" + clave_reino
 		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var fondo_reino := PIXEL_UI_THEME.button_surface_style()
+		var fondo_reino: StyleBox = PIXEL_UI_THEME.button_surface_style()
 		if fondo_reino != null:
 			seccion.add_theme_stylebox_override("panel", fondo_reino)
 		lista.add_child(seccion)
