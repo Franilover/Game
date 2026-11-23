@@ -1017,7 +1017,11 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		# conservar sus líneas de presentación antes de usar texto de rutina.
 		if not personaje_id.is_empty() and relationship_system != null:
 			var estado_inicial := relationship_system.obtener_estado_dialogo(personaje_id)
-			if bool(estado_inicial.get("primera_vez", false)) and (datos.has("lineas") or datos.has("texto")):
+			if (
+				bool(estado_inicial.get("primera_vez", false))
+				and (datos.has("lineas") or datos.has("texto"))
+				and _variante_tiene_lineas_validas(datos)
+			):
 				return datos.duplicate(true)
 		var dialogo_rutina_sin_variantes := _crear_dialogo_rutina_contextual()
 		return dialogo_rutina_sin_variantes if not dialogo_rutina_sin_variantes.is_empty() else datos.duplicate(true)
@@ -1032,6 +1036,8 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			continue
 
 		var variante := (variante_variant as Dictionary).duplicate(true)
+		if not _variante_cumple_condiciones(variante) or not _variante_tiene_lineas_validas(variante):
+			continue
 		var requisito_variant: Variant = variante.get("requisito", {})
 		if requisito_variant is Dictionary:
 			var requisito := requisito_variant as Dictionary
@@ -1077,7 +1083,7 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 		if bool(estado_inicial.get("primera_vez", false)):
 			if not principal.is_empty():
 				return principal.duplicate(true)
-			if datos.has("lineas") or datos.has("texto"):
+			if (datos.has("lineas") or datos.has("texto")) and _variante_tiene_lineas_validas(datos):
 				return datos.duplicate(true)
 
 		var contextual := _seleccionar_variante_contextual(variantes_variant as Array, personaje_id)
@@ -1091,7 +1097,11 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 				if not variante_social_variant is Dictionary:
 					continue
 				var variante_social := variante_social_variant as Dictionary
-				if not _variante_ya_mostrada(variante_social, personaje_id):
+				if (
+					_variante_cumple_condiciones(variante_social)
+					and _variante_tiene_lineas_validas(variante_social)
+					and not _variante_ya_mostrada(variante_social, personaje_id)
+				):
 					variantes_sociales_disponibles.append(variante_social)
 			var seleccion: Dictionary = social.seleccionar_variante_dialogo(variantes_sociales_disponibles, personaje_id)
 			if not seleccion.is_empty() and str(seleccion.get("clave", "")).strip_edges().to_lower() != "principal":
@@ -1103,7 +1113,9 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 
 	if not principal.is_empty():
 		return principal
-	return datos.duplicate(true)
+	if _variante_tiene_lineas_validas(datos):
+		return datos.duplicate(true)
+	return {}
 
 ## Desempata variantes de igual prioridad favoreciendo la condición más concreta.
 ## Así el resultado no depende del orden en que Supabase entregue el JSON.
@@ -1145,6 +1157,8 @@ func _seleccionar_variante_contextual(variantes: Array, personaje_id: String) ->
 		if not variante_variant is Dictionary:
 			continue
 		var variante := variante_variant as Dictionary
+		if not _variante_cumple_condiciones(variante) or not _variante_tiene_lineas_validas(variante):
+			continue
 		var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
 		if not requisito_contextual_variant is Dictionary:
 			continue
@@ -1507,6 +1521,187 @@ func _obtener_texto_rutina_personaje(
 	if dentro_edificio:
 		return ("Estoy con %s aquí. ¿Qué necesitabas?" if not amable else "Estoy con %s, pero me alegra que hayas venido. Cuéntame, ¿qué pasa?") % verbo
 	return ("Estoy en %s con %s. ¿Necesitabas algo?" if not amable else "Voy por %s mientras me ocupo de %s. ¿Qué pasa?") % [destino, verbo]
+
+
+## Evalúa las condiciones del constructor de diálogos.
+## _condiciones es la fuente de verdad cuando existe; los requisitos antiguos
+## siguen funcionando para los registros que todavía no usan el constructor.
+func _variante_cumple_condiciones(variante: Dictionary) -> bool:
+	var condiciones_variant: Variant = variante.get("_condiciones", [])
+	if condiciones_variant is Array and not (condiciones_variant as Array).is_empty():
+		return _evaluar_lista_condiciones_dialogo(
+			condiciones_variant as Array,
+			str(variante.get("_operador_logico", "AND"))
+		)
+
+	var requisito_variant: Variant = variante.get("requisito", {})
+	if requisito_variant is Dictionary and not (requisito_variant as Dictionary).is_empty():
+		if mission_manager == null or not mission_manager.cumple_requisito_dialogo(requisito_variant as Dictionary):
+			return false
+
+	var personaje_id := _obtener_personaje_id_actual()
+	var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null and not personaje_id.is_empty() else {}
+	var requisito_social_variant: Variant = variante.get("requisito_social", {})
+	if requisito_social_variant is Dictionary and not (requisito_social_variant as Dictionary).is_empty():
+		if not _cumple_requisito_social_contextual(requisito_social_variant as Dictionary, relacion):
+			return false
+
+	var requisito_contextual_variant: Variant = variante.get("requisito_contextual", {})
+	if requisito_contextual_variant is Dictionary and not (requisito_contextual_variant as Dictionary).is_empty():
+		var contexto := _obtener_contexto_condiciones_dialogo()
+		if contexto.is_empty() or not _cumple_requisito_contextual(requisito_contextual_variant as Dictionary, contexto):
+			return false
+	return true
+
+
+func _variante_tiene_lineas_validas(variante: Dictionary) -> bool:
+	var lineas_variant: Variant = variante.get("lineas", variante.get("lines", []))
+	if not lineas_variant is Array:
+		return not str(variante.get("texto", variante.get("text", ""))).strip_edges().is_empty()
+	for linea_variant in lineas_variant as Array:
+		if linea_variant is String:
+			if not str(linea_variant).strip_edges().is_empty():
+				return true
+			continue
+		if not linea_variant is Dictionary:
+			continue
+		var linea := linea_variant as Dictionary
+		if str(linea.get("texto", linea.get("text", ""))).strip_edges().is_empty():
+			continue
+		var condiciones_variant: Variant = linea.get("_condiciones", [])
+		if not condiciones_variant is Array or (condiciones_variant as Array).is_empty():
+			return true
+		if _evaluar_lista_condiciones_dialogo(condiciones_variant as Array, str(linea.get("_operador_logico", "AND"))):
+			return true
+	return false
+
+
+func _evaluar_lista_condiciones_dialogo(condiciones: Array, operador: String) -> bool:
+	var resultados: Array[bool] = []
+	for condicion_variant in condiciones:
+		if not condicion_variant is Dictionary:
+			resultados.append(false)
+			continue
+		resultados.append(_evaluar_condicion_dialogo(condicion_variant as Dictionary))
+	if resultados.is_empty():
+		return true
+	if operador.strip_edges().to_upper() == "OR":
+		for resultado in resultados:
+			if resultado:
+				return true
+		return false
+	for resultado in resultados:
+		if not resultado:
+			return false
+	return true
+
+
+func _obtener_contexto_condiciones_dialogo() -> Dictionary:
+	if relationship_system != null and relationship_system.has_method("obtener_contexto_temporal"):
+		var contexto_variant: Variant = relationship_system.call("obtener_contexto_temporal")
+		if contexto_variant is Dictionary and not (contexto_variant as Dictionary).is_empty():
+			return (contexto_variant as Dictionary).duplicate(true)
+	var atmosfera := get_tree().root.find_child("WorldAtmosphere", true, false)
+	if is_instance_valid(atmosfera) and atmosfera.has_method("obtener_tiempo"):
+		var tiempo_variant: Variant = atmosfera.call("obtener_tiempo")
+		if tiempo_variant is Dictionary:
+			return (tiempo_variant as Dictionary).duplicate(true)
+	return {}
+
+
+func _evaluar_condicion_dialogo(condicion: Dictionary) -> bool:
+	var tipo := str(condicion.get("tipo", "")).strip_edges().to_lower()
+	var campo := str(condicion.get("campo", "")).strip_edges()
+	var operador := str(condicion.get("operador", "==")).strip_edges()
+	var valor_texto := str(condicion.get("valor", "")).strip_edges()
+	var personaje_id := _obtener_personaje_id_actual()
+	var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null and not personaje_id.is_empty() else {}
+	var contexto := _obtener_contexto_condiciones_dialogo()
+
+	match tipo:
+		"social":
+			if not relacion.has(campo) or not ["amistad", "confianza", "respeto", "afecto"].has(campo):
+				return false
+			return _comparar_condicion_dialogo(float(relacion.get(campo, 0.0)), operador, float(valor_texto))
+		"estacion":
+			if campo.is_empty():
+				return false
+			var estacion_actual := str(contexto.get("estacion_id", "")).strip_edges()
+			return not estacion_actual.is_empty() and estacion_actual.to_lower() == campo.to_lower()
+		"hora":
+			if campo.is_empty():
+				return false
+			var hora := float(contexto.get("hora_del_dia", contexto.get("hora", -1.0)))
+			if hora < 0.0:
+				return false
+			var periodo := ""
+			if hora >= 5.0 and hora < 11.0:
+				periodo = "mañana"
+			elif hora >= 11.0 and hora < 14.0:
+				periodo = "mediodía"
+			elif hora >= 14.0 and hora < 19.0:
+				periodo = "tarde"
+			else:
+				periodo = "noche"
+			return periodo.to_lower() == campo.to_lower()
+		"mision":
+			if mission_manager == null or campo.is_empty():
+				return false
+			var requisito_mision := {"mision_clave": campo}
+			if not valor_texto.is_empty():
+				requisito_mision["estado"] = valor_texto.to_lower()
+			return mission_manager.cumple_requisito_dialogo(requisito_mision)
+		"tema_conversado":
+			if relationship_system == null or personaje_id.is_empty() or campo.is_empty():
+				return false
+			if not relationship_system.has_method("obtener_recuerdos"):
+				return false
+			var recuerdos_variant: Variant = relationship_system.call("obtener_recuerdos", personaje_id)
+			if not recuerdos_variant is Array:
+				return false
+			for recuerdo_variant in recuerdos_variant as Array:
+				if not recuerdo_variant is Dictionary:
+					continue
+				var recuerdo := recuerdo_variant as Dictionary
+				if str(recuerdo.get("tipo", "")).to_lower() == "dialogo" and str(recuerdo.get("clave", "")).to_lower() == campo.to_lower():
+					return true
+			return false
+		"objeto":
+			if not is_instance_valid(_inventario) or campo.is_empty():
+				return false
+			if not _inventario.has_method("serializar"):
+				return false
+			var inventario_variant: Variant = _inventario.call("serializar")
+			if not inventario_variant is Dictionary:
+				return false
+			var items_variant: Variant = (inventario_variant as Dictionary).get("items", [])
+			if not items_variant is Array:
+				return false
+			for item_variant in items_variant as Array:
+				if not item_variant is Dictionary:
+					continue
+				var item := item_variant as Dictionary
+				var identificador := str(item.get("item_id", item.get("id", item.get("clave", "")))).strip_edges()
+				var nombre_item := str(item.get("nombre", item.get("name", ""))).strip_edges()
+				if identificador.to_lower() == campo.to_lower() or nombre_item.to_lower() == campo.to_lower():
+					return true
+			return false
+		_:
+			return false
+
+
+func _comparar_condicion_dialogo(actual: float, operador: String, esperado: float) -> bool:
+	match operador:
+		">=":
+			return actual >= esperado
+		"<=":
+			return actual <= esperado
+		"==":
+			return is_equal_approx(actual, esperado)
+		"!=":
+			return not is_equal_approx(actual, esperado)
+		_:
+			return false
 
 
 func _cumple_requisito_contextual(requisito: Dictionary, contexto: Dictionary) -> bool:
@@ -3275,6 +3470,17 @@ func _normalizar_lineas(datos: Dictionary) -> Array[Dictionary]:
 		).strip_edges()
 
 		if texto.is_empty():
+			continue
+
+		var condiciones_linea_variant: Variant = linea.get("_condiciones", [])
+		if (
+			condiciones_linea_variant is Array
+			and not (condiciones_linea_variant as Array).is_empty()
+			and not _evaluar_lista_condiciones_dialogo(
+				condiciones_linea_variant as Array,
+				str(linea.get("_operador_logico", "AND"))
+			)
+		):
 			continue
 
 		# Conservar metadatos narrativos (variantes de personalidad/relación,
