@@ -254,90 +254,90 @@ func _nombre_reino(clave: String) -> String:
 
 
 func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> void:
-		# El catálogo ya contiene habitantes jugables/sociales; no excluirlos
-		# por campos opcionales de activación que pueden faltar en snapshots antiguos.
-		var personaje_id := str(personaje.get("id", "")).strip_edges()
-		if personaje_id.is_empty():
-			continue
-		var nombre := str(personaje.get("nombre", "")).strip_edges()
-		if nombre.is_empty():
-			nombre = personaje_id
-		var asset_key := str(personaje.get("asset_key", nombre)).strip_edges()
-		_personajes_por_id[personaje_id] = {
-			"nombre": nombre,
-			"asset_key": asset_key,
-			"sprite_key": str(personaje.get("sprite_key", "")).strip_edges()
-		}
-	
-		var boton := Button.new()
-		boton.name = "RelationshipPortraitButton"
-		boton.custom_minimum_size = TAMANO_RETRATO
-		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		boton.size_flags_vertical = Control.SIZE_FILL
-		boton.toggle_mode = true
-		boton.clip_contents = true
-		boton.text = ""
-		boton.set_meta("personaje_id", personaje_id)
-		boton.tooltip_text = ""
-		boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
-		boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
-		PIXEL_UI_THEME.apply(boton, false)
-	
-		var textura_cara := _cargar_retrato_cara(asset_key, nombre)
-		var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
-		if textura != null:
-			var retrato := TextureRect.new()
-			retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			retrato.offset_left = 4.0
-			retrato.offset_top = 3.0
-			retrato.offset_right = -4.0
-			retrato.offset_bottom = -16.0
-			retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-			retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-			retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			retrato.texture = textura
-			boton.add_child(retrato)
-		else:
-			var iniciales := Label.new()
-			iniciales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-			iniciales.offset_bottom = -16.0
-			iniciales.text = nombre.substr(0, 2).to_upper()
-			iniciales.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			iniciales.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			iniciales.add_theme_font_size_override("font_size", 14)
-			iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
-			boton.add_child(iniciales)
-	
-		var fondo_nombre := PanelContainer.new()
-		fondo_nombre.name = "NameButtonSurface"
-		fondo_nombre.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
-		fondo_nombre.offset_left = 2.0
-		fondo_nombre.offset_right = -2.0
-		fondo_nombre.offset_top = -16.0
-		fondo_nombre.offset_bottom = -1.0
-		fondo_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		fondo_nombre.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
-		var nombre_margen := MarginContainer.new()
-		nombre_margen.add_theme_constant_override("margin_left", 2)
-		nombre_margen.add_theme_constant_override("margin_right", 2)
-		nombre_margen.add_theme_constant_override("margin_top", 0)
-		nombre_margen.add_theme_constant_override("margin_bottom", 0)
-		var etiqueta := Label.new()
-		etiqueta.text = nombre
-		etiqueta.clip_text = true
-		etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		etiqueta.add_theme_font_size_override("font_size", 8)
-		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
-		etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		nombre_margen.add_child(etiqueta)
-		fondo_nombre.add_child(nombre_margen)
-		boton.add_child(fondo_nombre)
-	
-		rejilla.add_child(boton)
-		_botones.append(boton)
-	
+	# El catálogo ya contiene habitantes jugables/sociales; no excluirlos
+	# por campos opcionales de activación que pueden faltar en snapshots antiguos.
+	var personaje_id := str(personaje.get("id", "")).strip_edges()
+	if personaje_id.is_empty():
+		continue
+	var nombre := str(personaje.get("nombre", "")).strip_edges()
+	if nombre.is_empty():
+		nombre = personaje_id
+	var asset_key := str(personaje.get("asset_key", nombre)).strip_edges()
+	_personajes_por_id[personaje_id] = {
+		"nombre": nombre,
+		"asset_key": asset_key,
+		"sprite_key": str(personaje.get("sprite_key", "")).strip_edges()
+	}
+
+	var boton := Button.new()
+	boton.name = "RelationshipPortraitButton"
+	boton.custom_minimum_size = TAMANO_RETRATO
+	boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	boton.size_flags_vertical = Control.SIZE_FILL
+	boton.toggle_mode = true
+	boton.clip_contents = true
+	boton.text = ""
+	boton.set_meta("personaje_id", personaje_id)
+	boton.tooltip_text = ""
+	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	boton.pressed.connect(_seleccionar.bind(personaje_id, nombre))
+	PIXEL_UI_THEME.apply(boton, false)
+
+	var textura_cara := _cargar_retrato_cara(asset_key, nombre)
+	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
+	if textura != null:
+		var retrato := TextureRect.new()
+		retrato.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		retrato.offset_left = 4.0
+		retrato.offset_top = 3.0
+		retrato.offset_right = -4.0
+		retrato.offset_bottom = -16.0
+		retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+		retrato.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+		retrato.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		retrato.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		retrato.texture = textura
+		boton.add_child(retrato)
+	else:
+		var iniciales := Label.new()
+		iniciales.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		iniciales.offset_bottom = -16.0
+		iniciales.text = nombre.substr(0, 2).to_upper()
+		iniciales.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		iniciales.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+		iniciales.add_theme_font_size_override("font_size", 14)
+		iniciales.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		boton.add_child(iniciales)
+
+	var fondo_nombre := PanelContainer.new()
+	fondo_nombre.name = "NameButtonSurface"
+	fondo_nombre.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_WIDE)
+	fondo_nombre.offset_left = 2.0
+	fondo_nombre.offset_right = -2.0
+	fondo_nombre.offset_top = -16.0
+	fondo_nombre.offset_bottom = -1.0
+	fondo_nombre.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	fondo_nombre.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+	var nombre_margen := MarginContainer.new()
+	nombre_margen.add_theme_constant_override("margin_left", 2)
+	nombre_margen.add_theme_constant_override("margin_right", 2)
+	nombre_margen.add_theme_constant_override("margin_top", 0)
+	nombre_margen.add_theme_constant_override("margin_bottom", 0)
+	var etiqueta := Label.new()
+	etiqueta.text = nombre
+	etiqueta.clip_text = true
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	etiqueta.add_theme_font_size_override("font_size", 8)
+	etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
+	etiqueta.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	nombre_margen.add_child(etiqueta)
+	fondo_nombre.add_child(nombre_margen)
+	boton.add_child(fondo_nombre)
+
+	rejilla.add_child(boton)
+	_botones.append(boton)
+
 
 
 func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
