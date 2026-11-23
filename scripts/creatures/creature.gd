@@ -315,6 +315,18 @@ func _cargar_sprite() -> void:
 		queue_redraw()
 		return
 
+	# Los NPC de reinos locales pueden declarar una ruta propia para reutilizar
+	# sprites del paquete artístico del reino sin copiarlos a la carpeta global.
+	var sprite_path := str(datos.get("sprite_path", "")).strip_edges()
+	if sprite_path.begins_with("res://assets/art/kingdom/Froslia/Personajes/") and ResourceLoader.exists(sprite_path):
+		var textura_local := ResourceLoader.load(sprite_path) as Texture2D
+		if textura_local != null:
+			sprite.texture = textura_local
+			_normalizar_escala_sprite_personaje(sprite)
+			sprite.visible = true
+			set_meta("sprite_key_cargado", sprite_path)
+			return
+
 	# Los habitantes locales pueden tener una clave visual explícita aunque
 	# sus datos provengan de una plantilla de criatura. Priorizarla evita que
 	# _es_humano() o el nombre del registro impidan cargar su arte propio.

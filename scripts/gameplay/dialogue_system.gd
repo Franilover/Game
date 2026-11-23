@@ -834,7 +834,13 @@ func _actualizar_retrato(hablante: String) -> void:
 		nombres_retrato.append(nombre)
 
 	var textura: Texture2D = null
+	if is_instance_valid(npc_retrato):
+		var ruta_personalizada := str(npc_retrato.datos.get("portrait_path", "")).strip_edges()
+		if ruta_personalizada.begins_with("res://assets/art/kingdom/Froslia/Personajes/Heads/") and ResourceLoader.exists(ruta_personalizada):
+			textura = ResourceLoader.load(ruta_personalizada) as Texture2D
 	for nombre_retrato in nombres_retrato:
+		if textura != null:
+			break
 		if nombre_retrato.is_empty() or nombre_retrato.contains("/") or nombre_retrato.contains("\\"):
 			continue
 		for extension in [".png", ".PNG"]:

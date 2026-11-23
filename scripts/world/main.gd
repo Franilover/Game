@@ -735,6 +735,8 @@ func _inicializar_runtime_de_zona() -> void:
 
 	if tipo_zona_actual == "reino_torres":
 		call_deferred("_materializar_npcs_reino_torres")
+	elif tipo_zona_actual == "reino:froslia":
+		call_deferred("_materializar_npcs_froslia")
 
 	if GarliaMultiplayer.es_servidor_dedicado():
 		GarliaWorldNetwork.inicializar_mundo_servidor(
@@ -754,6 +756,116 @@ func _inicializar_runtime_de_zona() -> void:
 			_world_generator.entity_manager if _world_generator != null else null,
 			tipo_zona_actual
 		)
+
+
+## NPC locales de Froslia. Sus sprites y retratos pertenecen al paquete visual del reino;
+## no dependen de registros remotos ni modifican el catálogo de Supabase.
+func _retirar_npcs_froslia() -> void:
+	for npc in get_tree().get_nodes_in_group("froslia_game_npc"):
+		if not is_instance_valid(npc):
+			continue
+		npc.remove_from_group("froslia_game_npc")
+		npc.remove_from_group("interactable")
+		npc.queue_free()
+
+
+func _materializar_npcs_froslia() -> void:
+	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "reino:froslia":
+		return
+	var zona := _zone_manager.obtener_zona_actual() as Node2D
+	if not is_instance_valid(zona):
+		return
+	# Evita duplicados si la inicialización de la zona se solicita más de una vez.
+	var existentes: Dictionary = {}
+	for npc in get_tree().get_nodes_in_group("froslia_game_npc"):
+		if is_instance_valid(npc):
+			existentes[str(npc.get_meta("froslia_npc_clave", ""))] = npc
+
+	var escena_criatura := _obtener_escena_criatura()
+	if escena_criatura == null:
+		push_error("Main: no se pudo cargar Creature para los habitantes de Froslia.")
+		return
+
+	var habitantes: Array[Dictionary] = [
+		{
+			"clave": "marin", "nombre": "Marin", "oficio": "Médico",
+			"sprite": "Marin.png", "retrato": "Marin.png",
+			"posicion": Vector2(-480.0, 112.0),
+			"presentacion": "Hola, soy Marin. Atiendo a quienes necesitan cuidados en Froslia."
+		},
+		{
+			"clave": "daren", "nombre": "Daren", "oficio": "Posadero",
+			"sprite": "Daren.png", "retrato": "Daren.png",
+			"posicion": Vector2(400.0, 112.0),
+			"presentacion": "¡Bienvenido! Soy Daren. Si buscas un lugar donde descansar, puedes pasar por la posada."
+		},
+		{
+			"clave": "velaria", "nombre": "Velaria", "oficio": "Comerciante",
+			"sprite": "Velaria.png", "retrato": "Velaria.png",
+			"posicion": Vector2(-112.0, 112.0),
+			"presentacion": "Hola, soy Velaria. Me encargo del comercio de la ciudad."
+		},
+		{
+			"clave": "niven", "nombre": "Niven", "oficio": "Estudiante",
+			"sprite": "Niven.png", "retrato": "Niven.png",
+			"posicion": Vector2(0.0, -320.0),
+			"presentacion": "¡Hola! Soy Niven, estudiante de la escuela de Froslia."
+		}
+	]
+
+	for habitante in habitantes:
+		var clave := str(habitante["clave"])
+		if existentes.has(clave):
+			continue
+		var nombre := str(habitante["nombre"])
+		var datos: Dictionary = {
+			"id": "froslia_humano_local",
+			"nombre": "Humano",
+			"nombre_individual": nombre,
+			"sprite_path": "res://assets/art/kingdom/Froslia/Personajes/" + str(habitante["sprite"]),
+			"portrait_path": "res://assets/art/kingdom/Froslia/Personajes/Heads/" + str(habitante["retrato"]),
+			"stats_dnd": {"hp_max": 20, "ac": 10},
+			"ubicacion_clave": clave,
+			"dialogo": {
+				"variantes": [{
+					"clave": "principal",
+					"lineas": [{
+						"hablante": nombre,
+						"texto": str(habitante["presentacion"])
+					}]
+				}]
+			}
+		}
+		var npc := escena_criatura.instantiate() as Creature
+		if npc == null:
+			push_warning("Main: no se pudo instanciar a " + nombre + ".")
+			continue
+		npc.name = "Froslia_" + nombre
+		npc.move_speed = 0.0
+		npc.collision_layer = 0
+		npc.collision_mask = 1
+		npc.mostrar_nombre_debug = false
+		npc.configurar_dependencias(_dialogue_system, MissionManager, $Entities, _world_items, WorldData)
+		npc.configurar(datos)
+		$Entities.add_child(npc)
+		npc.global_position = zona.to_global(habitante["posicion"])
+		if is_instance_valid(_player):
+			npc.add_collision_exception_with(_player)
+		npc.remove_from_group("creatures")
+		npc.remove_from_group("damageable")
+		npc.add_to_group("froslia_game_npc")
+		npc.set_meta("froslia_npc_clave", clave)
+		npc.set_meta("froslia_oficio", str(habitante["oficio"]))
+		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
+		if movimiento != null:
+			movimiento.detener_por_rutina()
+			movimiento.set_process(false)
+			movimiento.set_physics_process(false)
+		var ai := npc.get_node_or_null("AIController")
+		if ai != null:
+			ai.set_process(false)
+			ai.set_physics_process(false)
+		print("Main: habitante de Froslia materializado → ", nombre, " | oficio=", habitante["oficio"])
 
 
 func _al_mundo_datos_listo_para_npcs() -> void:
