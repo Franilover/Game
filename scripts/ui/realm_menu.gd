@@ -72,7 +72,9 @@ func _reconstruir_destinos() -> void:
 				continue
 			var reino := variante as Dictionary
 			var clave := str(reino.get("clave", "")).strip_edges().to_lower()
-			if clave.is_empty() or agregados.has(clave) or not bool(desbloqueados.get(clave, false)):
+			# La escena local de Froslia tiene ruta y nombre propios; no tomar
+			# una posible entrada remota de Geplital como destino de viaje.
+			if clave == "froslia" or clave.is_empty() or agregados.has(clave) or not bool(desbloqueados.get(clave, false)):
 				continue
 			var propiedades_variant: Variant = reino.get("propiedades", {})
 			if not propiedades_variant is Dictionary:
