@@ -1277,10 +1277,16 @@ func _estado_base_partida(
 	personaje: Dictionary = {}
 ) -> Dictionary:
 	var flags_iniciales: Dictionary = {}
-	if not personaje.is_empty():
-		flags_iniciales["personaje"] = personaje.duplicate(true)
 	var reino_inicial := str(personaje.get("reino_inicial", "torres")).strip_edges().to_lower()
-	flags_iniciales["reino_inicial"] = "froslia" if reino_inicial == "froslia" else "torres"
+	reino_inicial = "froslia" if reino_inicial == "froslia" else "torres"
+	var nacionalidad := "Frosliano" if reino_inicial == "froslia" else "Torresiano"
+	var personaje_guardado := personaje.duplicate(true)
+	if not personaje_guardado.is_empty():
+		personaje_guardado["reino_inicial"] = reino_inicial
+		personaje_guardado["nacionalidad"] = nacionalidad
+		flags_iniciales["personaje"] = personaje_guardado
+	flags_iniciales["reino_inicial"] = reino_inicial
+	flags_iniciales["nacionalidad"] = nacionalidad
 
 	return {
 		"version": SAVE_VERSION,
@@ -1560,7 +1566,15 @@ func obtener_configuracion_personaje_admin() -> Dictionary:
 
 
 func establecer_configuracion_personaje(personaje: Dictionary) -> void:
-	world_state.flags["personaje"] = personaje.duplicate(true)
+	var configuracion := personaje.duplicate(true)
+	var reino_inicial := str(configuracion.get("reino_inicial", world_state.flags.get("reino_inicial", "torres"))).strip_edges().to_lower()
+	reino_inicial = "froslia" if reino_inicial == "froslia" else "torres"
+	var nacionalidad := "Frosliano" if reino_inicial == "froslia" else "Torresiano"
+	configuracion["reino_inicial"] = reino_inicial
+	configuracion["nacionalidad"] = nacionalidad
+	world_state.flags["reino_inicial"] = reino_inicial
+	world_state.flags["nacionalidad"] = nacionalidad
+	world_state.flags["personaje"] = configuracion
 
 
 func establecer_configuracion_personaje_admin(configuracion: Dictionary) -> void:
