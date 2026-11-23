@@ -786,8 +786,8 @@ func _inicializar_runtime_de_zona() -> void:
 		)
 
 
-## NPC locales de Froslia. Sus sprites y retratos pertenecen al paquete visual del reino;
-## no dependen de registros remotos ni modifican el catálogo de Supabase.
+## Los habitantes de Froslia se materializan desde personajes_game y desde
+## la configuración espacial/visual guardada en reinos_game.propiedades.
 func _retirar_npcs_froslia() -> void:
 	for npc in get_tree().get_nodes_in_group("froslia_game_npc"):
 		if not is_instance_valid(npc):
