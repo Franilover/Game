@@ -73,6 +73,9 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 				_poligonos_fijos.append(nodo as Polygon2D)
 		_limites_mapa_fijo = Rect2(-1200.0, -700.0, 2400.0, 1400.0)
 		_actualizar_limites_mapa_contenido()
+	elif _tipo_zona == "reino:froslia":
+		# Froslia ocupa 52 × 36 tiles de 32 px, centrados en el origen.
+		_limites_mapa_fijo = Rect2(-832.0, -576.0, 1664.0, 1152.0)
 	elif _tipo_zona == "expedicion:bosque":
 		_limites_mapa_fijo = Rect2(0.0, -1024.0, 5120.0, 2048.0)
 	_centro_mapa_fijo = _limites_mapa_fijo.get_center()
@@ -81,10 +84,14 @@ func configurar_zona(jugador: Node2D, contexto: WorldContext, tipo_zona: String,
 	_refrescar()
 
 
+func _es_mapa_zona_fija() -> bool:
+	return _tipo_zona in ["reino_torres", "reino:froslia", "expedicion:bosque"]
+
+
 func _process(delta: float) -> void:
 	if not visible:
 		return
-	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+	if _es_mapa_zona_fija():
 		var velocidad_pan := 520.0 / _zoom_mapa_fijo
 		var direccion := Vector2.ZERO
 		if Input.is_key_pressed(KEY_A) or Input.is_key_pressed(KEY_LEFT):
@@ -101,7 +108,7 @@ func _process(delta: float) -> void:
 			queue_redraw()
 	if _player == null:
 		return
-	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+	if _es_mapa_zona_fija():
 		var posicion_jugador := _player.global_position
 		var tile_fijo := Vector2i(floori(posicion_jugador.x / 32.0), floori(posicion_jugador.y / 32.0))
 		if tile_fijo != _ultima_actualizacion:
@@ -142,7 +149,7 @@ func _gui_input(event: InputEvent) -> void:
 			return
 		if boton.pressed and (boton.button_index == MOUSE_BUTTON_WHEEL_UP or boton.button_index == MOUSE_BUTTON_WHEEL_DOWN):
 			var factor := 1.15 if boton.button_index == MOUSE_BUTTON_WHEEL_UP else 1.0 / 1.15
-			if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+			if _es_mapa_zona_fija():
 				_zoom_mapa_fijo = clampf(_zoom_mapa_fijo * factor, 1.0, 5.0)
 				_limitar_centro_mapa()
 			else:
@@ -164,7 +171,7 @@ func _gui_input(event: InputEvent) -> void:
 		return
 	elif event is InputEventMagnifyGesture:
 		var gesto := event as InputEventMagnifyGesture
-		if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+		if _es_mapa_zona_fija():
 			_zoom_mapa_fijo = clampf(_zoom_mapa_fijo * gesto.factor, 1.0, 5.0)
 			_limitar_centro_mapa()
 		else:
@@ -199,12 +206,12 @@ func _clave_tile(tile: Vector2i) -> String:
 
 func _draw() -> void:
 	draw_rect(Rect2(Vector2.ZERO, size), Color("#191009"), true)
-	var mapa_rect := Rect2(Vector2.ZERO, size) if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque" else Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
+	var mapa_rect := Rect2(Vector2.ZERO, size) if _es_mapa_zona_fija() else Rect2(4.0, 20.0, size.x - 8.0, size.y - 24.0)
 	if mapa_rect.size.x <= 0.0 or mapa_rect.size.y <= 0.0:
 		return
 	draw_rect(mapa_rect, Color("#26170d"), true)
 
-	if _tipo_zona == "reino_torres" or _tipo_zona == "expedicion:bosque":
+	if _es_mapa_zona_fija():
 		_dibujar_mapa_zona_fija(mapa_rect)
 		return
 
@@ -260,7 +267,7 @@ func _dibujar_mapa_zona_fija(mapa_rect: Rect2) -> void:
 	if is_instance_valid(_player) and is_instance_valid(_zona_fija):
 		posicion = _zona_fija.to_local(_player.global_position)
 	_dibujar_marcador_jugador(_punto_a_mapa(posicion, mapa_rect, limites))
-	if _tipo_zona == "reino_torres":
+	if _tipo_zona in ["reino_torres", "reino:froslia"]:
 		_dibujar_marcadores_aldeanos(mapa_rect, limites)
 
 
@@ -331,7 +338,7 @@ func _dibujar_sprites_mapa(mapa_rect: Rect2, limites: Rect2) -> void:
 		var ancestro: Node = sprite
 		var es_aldeano := false
 		while ancestro != null and ancestro != _zona_fija:
-			if ancestro.is_in_group("torres_game_npc"):
+			if ancestro.is_in_group("torres_game_npc") or ancestro.is_in_group("froslia_game_npc"):
 				es_aldeano = true
 				break
 			ancestro = ancestro.get_parent()
@@ -359,9 +366,10 @@ func _dibujar_marcadores_aldeanos(mapa_rect: Rect2, limites: Rect2) -> void:
 		return
 
 	var aldeanos: Array[Node] = []
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if is_instance_valid(nodo) and nodo is Node2D:
-			aldeanos.append(nodo)
+	for grupo_npc in ["torres_game_npc", "froslia_game_npc"]:
+		for nodo in get_tree().get_nodes_in_group(grupo_npc):
+			if is_instance_valid(nodo) and nodo is Node2D:
+				aldeanos.append(nodo)
 	aldeanos.sort_custom(func(a: Node, b: Node) -> bool:
 		var datos_a: Variant = a.get("datos")
 		var datos_b: Variant = b.get("datos")
