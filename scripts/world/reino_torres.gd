@@ -2752,6 +2752,7 @@ func _crear_selector_viajes() -> void:
 	estaciones.add_theme_font_size_override("font_size", 12)
 	contenido.add_child(estaciones)
 	_agregar_boton_destino(contenido, "Torres", "torres")
+	_agregar_boton_destino(contenido, "Froslia", "froslia")
 	_agregar_boton_destino(contenido, "Mundo Abierto", "mundo_abierto")
 
 	var expediciones := Label.new()
