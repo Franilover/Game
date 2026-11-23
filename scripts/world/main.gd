@@ -579,6 +579,7 @@ func _al_mundo_inicializado() -> void:
 func _inicializar_runtime_de_zona() -> void:
 	_player = $Entities/Player as Player
 	_retirar_npcs_reino_torres()
+	_retirar_npcs_froslia()
 
 	if _player == null:
 		push_error("Main: no se encontró Entities/Player.")
