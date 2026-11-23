@@ -1341,15 +1341,35 @@ func _obtener_texto_rutina_supabase(
 ) -> String:
 	if not is_instance_valid(_fuente):
 		return ""
-	# Las condiciones cruzadas de Ivo (presencia de Elian y compra de pan)
-	# permanecen en el motor hasta migrar ese caso de forma específica.
-	if nombre == "ivo":
-		return ""
 	var datos_dialogo: Dictionary = _fuente.get_dialogue_data()
 	var rutina_variant: Variant = datos_dialogo.get("rutina_contextual", {})
 	if not rutina_variant is Dictionary:
 		return ""
 	var rutina := rutina_variant as Dictionary
+	if nombre == "ivo":
+		var especiales_variant: Variant = rutina.get("casos_especiales", {})
+		if especiales_variant is Dictionary:
+			var especiales := especiales_variant as Dictionary
+			var clave_especial := ""
+			if rutina_clave == "ivo_paseo_sin_panadero":
+				clave_especial = "paseo_sin_panadero"
+			elif actividad == "comprar_pan" and ubicacion == "panaderia":
+				if bool(_fuente.get_meta("rutina_en_edificio", false)):
+					var elian_presente := false
+					for candidato_variant in get_tree().get_nodes_in_group("torres_game_npc"):
+						if not candidato_variant is Creature or not is_instance_valid(candidato_variant):
+							continue
+						var candidato := candidato_variant as Creature
+						if candidato.get_nombre_visual().strip_edges().to_lower() == "elian":
+							elian_presente = bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == "panaderia"
+							break
+					clave_especial = "comprar_pan_presente" if elian_presente else "comprar_pan_ausente"
+				else:
+					clave_especial = "comprar_pan_transito"
+			if not clave_especial.is_empty():
+				var lineas_especiales: Variant = especiales.get(clave_especial, [])
+				if lineas_especiales is Array and (lineas_especiales as Array).size() >= 2:
+					return str((lineas_especiales as Array)[1 if amable else 0])
 	var es_dia_libre := rutina_clave.begins_with("dia_libre")
 	var ubicaciones_hogar: Array[String] = [
 		"casa_elian", "casa_bruna", "casa_darven", "casa_saira", "casa_narel",
