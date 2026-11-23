@@ -1,6 +1,10 @@
 extends Node2D
 ## Primera versión explorable de Froslia: terreno nevado y tres edificios.
 
+signal centro_expediciones_interactuado
+
+const CONTEXTUAL_ACTION_TARGET_SCRIPT: Script = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+
 const TILE_SIZE := 32
 const TILE_MAP_DUAL_SCRIPT: Script = preload("res://addons/TileMapDual/tile_map_dual.gd")
 const GHOST_MATERIAL: Material = preload("res://addons/TileMapDual/ghost_material.tres")
@@ -28,6 +32,7 @@ var _terrain_layers: Array[TileMapDual] = []
 func _ready() -> void:
 	_crear_terreno()
 	_crear_edificios()
+	_crear_interaccion_centro_expediciones()
 	_crear_limites()
 
 
@@ -190,3 +195,30 @@ func _crear_edificios() -> void:
 			var escala := minf(tamano_objetivo.x / tamano_textura.x, tamano_objetivo.y / tamano_textura.y)
 			sprite.scale = Vector2.ONE * escala
 		cuerpo.add_child(sprite)
+
+
+
+func _crear_interaccion_centro_expediciones() -> void:
+	# El punto de interacción queda frente al edificio, no sobre su colisión.
+	var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
+	if not is_instance_valid(objetivo):
+		push_error("ReinoFroslia: no se pudo crear la interacción del Centro de Expediciones.")
+		return
+	objetivo.name = "ViajeEntreReinos"
+	objetivo.position = Vector2(-320.0, -144.0)
+	objetivo.call(
+		"configurar",
+		"Viajar entre reinos",
+		84.0,
+		Callable(self, "_puede_interactuar_centro_expediciones"),
+		Callable(self, "_solicitar_viaje_entre_reinos")
+	)
+	add_child(objetivo)
+
+
+func _puede_interactuar_centro_expediciones(jugador: Node) -> bool:
+	return is_instance_valid(jugador) and jugador.is_in_group("player")
+
+
+func _solicitar_viaje_entre_reinos(_jugador: Node) -> void:
+	centro_expediciones_interactuado.emit()
