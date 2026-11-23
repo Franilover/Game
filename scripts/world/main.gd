@@ -289,32 +289,48 @@ func _input(event: InputEvent) -> void:
 	if not is_instance_valid(_zone_manager):
 		return
 	var zona_actual: String = str(_zone_manager.obtener_tipo_actual())
+	var reino_hogar := _obtener_reino_inicial_personaje()
 	if zona_actual == "mundo_abierto":
-		if _zone_manager.has_method("regresar_viaje_exterior"):
+		if reino_hogar == "torres" and _zone_manager.has_method("regresar_viaje_exterior"):
 			var regreso: Variant = await _zone_manager.call("regresar_viaje_exterior")
 			if bool(regreso):
 				return
-		_zone_manager.entrar_reino("torres")
+		_zone_manager.entrar_reino(reino_hogar)
 		return
 	if zona_actual.begins_with("expedicion:"):
 		if _zone_manager.has_method("salir_expedicion"):
-			_zone_manager.call("salir_expedicion")
+			var regreso_expedicion: Variant = await _zone_manager.call("salir_expedicion")
+			if bool(regreso_expedicion) and reino_hogar != "torres":
+				_zone_manager.entrar_reino(reino_hogar)
 		else:
-			_zone_manager.entrar_reino("torres")
+			_zone_manager.entrar_reino(reino_hogar)
 		return
-	if zona_actual != "reino_torres":
-		_zone_manager.entrar_reino("torres")
+	var tipo_reino_hogar := "reino_torres" if reino_hogar == "torres" else "reino:" + reino_hogar
+	if zona_actual != tipo_reino_hogar:
+		_zone_manager.entrar_reino(reino_hogar)
+
+
+func _obtener_reino_inicial_personaje() -> String:
+	var reino := str(GameState.world_state.flags.get("reino_inicial", "")).strip_edges().to_lower()
+	if reino.is_empty():
+		var personaje := GameState.obtener_configuracion_personaje()
+		reino = str(personaje.get("reino_inicial", "torres")).strip_edges().to_lower()
+	return "froslia" if reino == "froslia" else "torres"
 
 
 func _es_modo_historia() -> bool:
 	return is_instance_valid(_zone_manager) and _zone_manager.obtener_tipo_actual() == "historia:reserva_carmesi"
 
 
+func _abrir_menu_viaje_reinos() -> void:
+	if not is_instance_valid(_realm_menu) or not is_instance_valid(_zone_manager):
+		return
+	if _realm_menu.has_method("alternar"):
+		_realm_menu.call("alternar", _supabase_client, GameState, str(_zone_manager.obtener_tipo_actual()))
+
+
 func _al_solicitar_destino_reino(clave: String) -> void:
 	var clave_normalizada := clave.strip_edges().to_lower()
-	if clave_normalizada != "torres":
-		push_warning("Main: los viajes a otros destinos están deshabilitados; sólo se permite regresar a Torres.")
-		return
 	print("Main: destino solicitado desde RealmMenu → ", clave_normalizada)
 	if _zone_manager == null or not is_instance_valid(_zone_manager):
 		return
@@ -334,6 +350,13 @@ func _al_solicitar_destino_reino(clave: String) -> void:
 			_zone_manager.salir_expedicion()
 		else:
 			_zone_manager.entrar_reino("torres")
+		return
+
+	if clave_normalizada in ["froslia", "reino:froslia"]:
+		if GarliaWorldNetwork.es_cliente_en_mundo_global():
+			GarliaWorldNetwork.enviar_solicitud_viaje("froslia")
+		else:
+			_zone_manager.entrar_reino("froslia")
 		return
 
 	if GarliaWorldNetwork.es_cliente_en_mundo_global():
@@ -448,6 +471,10 @@ func _detectar_reinos_descubiertos() -> void:
 
 
 func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
+	if is_instance_valid(_zona) and _zona.has_signal("centro_expediciones_interactuado"):
+		var callback_centro := Callable(self, "_abrir_menu_viaje_reinos")
+		if not _zona.is_connected("centro_expediciones_interactuado", callback_centro):
+			_zona.connect("centro_expediciones_interactuado", callback_centro)
 	if GarliaMultiplayer.es_servidor_dedicado():
 		GarliaWorldNetwork.preparar_cambio_zona_servidor()
 	_world_generator = _zone_manager.obtener_world_generator()
@@ -809,7 +836,7 @@ func _materializar_npcs_froslia() -> void:
 		{
 			"clave": "niven", "nombre": "Niven", "oficio": "Estudiante",
 			"sprite": "Niven.png", "retrato": "Niven.png",
-			"posicion": Vector2(0.0, -320.0),
+			"posicion": Vector2(112.0, -300.0),
 			"presentacion": "¡Hola! Soy Niven, estudiante de la escuela de Froslia."
 		}
 	]
@@ -850,6 +877,11 @@ func _materializar_npcs_froslia() -> void:
 		npc.configurar(datos)
 		$Entities.add_child(npc)
 		npc.global_position = zona.to_global(habitante["posicion"])
+		# La instancia puede ejecutar _ready después de configurar los datos.
+		# Reaplicar el recurso visual ya dentro del árbol evita que el sprite de
+		# Niven quede sin textura tras su inicialización.
+		npc.call_deferred("_cargar_sprite")
+		npc.call_deferred("_actualizar_profundidad")
 		if is_instance_valid(_player):
 			npc.add_collision_exception_with(_player)
 		npc.remove_from_group("creatures")
