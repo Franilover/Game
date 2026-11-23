@@ -612,6 +612,7 @@ func _crear_slots() -> void:
 		marco_grupo.flat = false
 		marco_grupo.focus_mode = Control.FOCUS_NONE
 		marco_grupo.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		marco_grupo.custom_minimum_size = Vector2(140.0, 120.0)
 		marco_grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		marco_grupo.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 		marco_grupo.add_theme_stylebox_override("normal", PIXEL_UI_THEME.button_surface_style())
@@ -619,6 +620,11 @@ func _crear_slots() -> void:
 		marco_grupo.add_theme_stylebox_override("pressed", PIXEL_UI_THEME.button_pressed_style())
 		marco_grupo.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
 		grid.add_child(marco_grupo)
+		panel_grupo.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
+		panel_grupo.offset_left = 5.0
+		panel_grupo.offset_top = 5.0
+		panel_grupo.offset_right = -5.0
+		panel_grupo.offset_bottom = -5.0
 		marco_grupo.add_child(panel_grupo)
 
 		var titulo := panel_grupo.get_node("Title") as Label
