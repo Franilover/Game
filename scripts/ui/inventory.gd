@@ -118,7 +118,9 @@ func _actualizar_vista_personaje() -> void:
 		return
 	const ESCALA_PREVIEW := 2.0
 	vista.scale = Vector2.ONE * ESCALA_PREVIEW
-	vista.position = Vector2(52.0, 90.0) - sprite.position * ESCALA_PREVIEW
+	# El SubViewport ahora renderiza a la resolución física del panel
+	# escalado; centrar con sus nuevas dimensiones evita desplazar el sprite.
+	vista.position = Vector2(78.0, 135.0) - sprite.position * ESCALA_PREVIEW
 	skin_preview_root.add_child(vista)
 
 func _inicializar_navegacion_tabs() -> void:
