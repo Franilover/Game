@@ -853,8 +853,10 @@ func _materializar_npcs_froslia() -> void:
 		var personaje: Dictionary = personajes_por_id[personaje_game_id]
 		var nombre := str(personaje.get("nombre", "")).strip_edges()
 		var criatura_id := str(personaje.get("criatura_id", "")).strip_edges()
-		if nombre.is_empty() or criatura_id.is_empty():
-			push_warning("Main: el registro de personajes_game '%s' no contiene nombre o criatura_id." % personaje_game_id)
+		var criatura := WorldData.obtener_criatura(criatura_id)
+		var nombre_criatura := str(criatura.get("nombre", "")).strip_edges()
+		if nombre.is_empty() or criatura_id.is_empty() or nombre_criatura.is_empty():
+			push_warning("Main: el registro canónico de '%s' no contiene identidad o especie resoluble." % personaje_game_id)
 			continue
 
 		var posicion_variant: Variant = habitante.get("posicion", {})
@@ -867,14 +869,19 @@ func _materializar_npcs_froslia() -> void:
 			float(posicion_datos.get("y", 0.0))
 		)
 
+		var stats_variant: Variant = habitante.get("stats_dnd", {})
+		var stats_dnd: Dictionary = {}
+		if stats_variant is Dictionary:
+			stats_dnd = (stats_variant as Dictionary).duplicate(true)
+		var velocidad := float(habitante.get("move_speed", 0.0))
 		var datos: Dictionary = {
 			"id": criatura_id,
-			"nombre": "Humano",
+			"nombre": nombre_criatura,
 			"nombre_individual": nombre,
 			"personaje_game_id": personaje_game_id,
 			"sprite_path": str(habitante.get("sprite_path", "")).strip_edges(),
 			"portrait_path": str(habitante.get("portrait_path", "")).strip_edges(),
-			"stats_dnd": {"hp_max": 20, "ac": 10},
+			"stats_dnd": stats_dnd,
 			"ubicacion_clave": str(personaje.get("ubicacion_clave", clave))
 		}
 		var npc := escena_criatura.instantiate() as Creature
@@ -883,7 +890,7 @@ func _materializar_npcs_froslia() -> void:
 			continue
 
 		npc.name = "Froslia_" + nombre
-		npc.move_speed = 0.0
+		npc.move_speed = velocidad
 		npc.collision_layer = 0
 		npc.collision_mask = 1
 		npc.mostrar_nombre_debug = false
