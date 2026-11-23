@@ -2292,16 +2292,52 @@ func _establecer_menu_principal_social(mostrar: bool) -> void:
 
 func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 	var opciones: Array[Dictionary] = []
-	if categoria == "preguntar":
-		opciones.append(_crear_opcion_dia_social())
-		opciones.append(_crear_opcion_gustos_social())
-		opciones.append(_crear_opcion_consejo_social())
-		opciones.append(_crear_opcion_ayuda_social())
-	else:
-		opciones.append(_crear_opcion_trabajo_social())
-		opciones.append(_crear_opcion_reino_social())
-		opciones.append(_crear_opcion_novedades_social())
-		opciones.append(_crear_opcion_preocupacion_social())
+	if not is_instance_valid(_fuente):
+		return opciones
+
+	# Las opciones visibles proceden exclusivamente de dialogos_game.
+	# No generar preguntas/respuestas alternativas desde GDScript: el editor
+	# de Supabase determina el contenido, clasificación y requisitos.
+	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
+	var datos_dialogo := _fuente.get_dialogue_data()
+	var temas_variant: Variant = datos_dialogo.get("temas_conversacion", [])
+	if not temas_variant is Array:
+		return opciones
+
+	var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null else {}
+	var recuerdos: Array = relationship_system.obtener_recuerdos(personaje_id) if relationship_system != null else []
+	var categoria_normalizada := categoria.strip_edges().to_lower()
+
+	for tema_variant in temas_variant as Array:
+		if not tema_variant is Dictionary:
+			continue
+		var tema := tema_variant as Dictionary
+		if str(tema.get("tipo", "")).strip_edges().to_lower() != categoria_normalizada:
+			continue
+		if not _cumple_requisitos_tema_conversacion(tema, relacion, recuerdos):
+			continue
+
+		var clave_tema := str(tema.get("clave", "")).strip_edges()
+		var titulo := str(tema.get("texto", "")).strip_edges()
+		var texto_jugador := str(tema.get("jugador", "")).strip_edges()
+		var respuesta := _obtener_respuesta_tema(tema, clave_tema, recuerdos, relacion)
+		if clave_tema.is_empty() or titulo.is_empty() or texto_jugador.is_empty() or respuesta.is_empty():
+			continue
+
+		var opcion := {
+			"clave": clave_tema,
+			"tipo": categoria_normalizada,
+			"texto": titulo,
+			"jugador": texto_jugador,
+			"respuesta": respuesta,
+			"evento": str(tema.get("evento", "interesarse")),
+			"importancia": _obtener_importancia_tema(tema)
+		}
+		var acciones_variant: Variant = tema.get("acciones", [])
+		if acciones_variant is Array:
+			opcion["acciones"] = (acciones_variant as Array).duplicate(true)
+		opciones.append(opcion)
+
 	return opciones
 
 
