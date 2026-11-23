@@ -447,12 +447,19 @@ func toggle() -> void:
 		abrir()
 
 
+func _cerrar_dialogos_activos() -> void:
+	for dialogo in get_tree().get_nodes_in_group("dialogue_system"):
+		if is_instance_valid(dialogo) and dialogo.has_method("esta_abierto") and bool(dialogo.call("esta_abierto")):
+			dialogo.call("cerrar")
+
+
 func toggle_mapa() -> void:
 	var tabs: TabContainer = $Window/Margin/Column/Tabs
 	if _abierto and tabs.current_tab == 2:
 		cerrar()
 		return
 	if not _abierto:
+		_cerrar_dialogos_activos()
 		_abierto = true
 		visible = true
 		_notificar_estado_inventario_a_hogar(true)
@@ -464,6 +471,7 @@ func toggle_mapa() -> void:
 
 
 func abrir() -> void:
+	_cerrar_dialogos_activos()
 	_abierto = true
 	visible = true
 	_actualizar_vista_personaje()
