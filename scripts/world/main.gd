@@ -803,7 +803,28 @@ func _materializar_npcs_froslia() -> void:
 	var zona := _zone_manager.obtener_zona_actual() as Node2D
 	if not is_instance_valid(zona):
 		return
-	# Evita duplicados si la inicialización de la zona se solicita más de una vez.
+
+	# El catálogo y la configuración espacial/visual se leen desde Supabase.
+	# El script sólo materializa las entidades que el reino declara.
+	var reino := WorldData.buscar_reino_game_por_clave("froslia")
+	if reino.is_empty():
+		push_warning("Main: Froslia todavía no está disponible en el catálogo remoto reinos_game.")
+		return
+	var propiedades_variant: Variant = reino.get("propiedades", {})
+	if not propiedades_variant is Dictionary:
+		push_warning("Main: propiedades de Froslia no tienen un formato válido.")
+		return
+	var habitantes_variant: Variant = (propiedades_variant as Dictionary).get("habitantes", [])
+	if not habitantes_variant is Array or (habitantes_variant as Array).is_empty():
+		push_warning("Main: Froslia no tiene habitantes configurados en Supabase.")
+		return
+
+	var personajes_por_id: Dictionary = {}
+	for personaje in WorldData.obtener_personajes_game():
+		var personaje_id := str(personaje.get("id", "")).strip_edges()
+		if not personaje_id.is_empty():
+			personajes_por_id[personaje_id] = personaje
+
 	var existentes: Dictionary = {}
 	for npc in get_tree().get_nodes_in_group("froslia_game_npc"):
 		if is_instance_valid(npc):
@@ -814,60 +835,53 @@ func _materializar_npcs_froslia() -> void:
 		push_error("Main: no se pudo cargar Creature para los habitantes de Froslia.")
 		return
 
-	var habitantes: Array[Dictionary] = [
-		{
-			"clave": "marin", "nombre": "Marin", "oficio": "Médico",
-			"sprite": "Marin.png", "retrato": "Marin.png",
-			"posicion": Vector2(-480.0, 112.0),
-			"presentacion": "Hola, soy Marin. Atiendo a quienes necesitan cuidados en Froslia."
-		},
-		{
-			"clave": "daren", "nombre": "Daren", "oficio": "Posadero",
-			"sprite": "Daren.png", "retrato": "Daren.png",
-			"posicion": Vector2(400.0, 112.0),
-			"presentacion": "¡Bienvenido! Soy Daren. Si buscas un lugar donde descansar, puedes pasar por la posada."
-		},
-		{
-			"clave": "velaria", "nombre": "Velaria", "oficio": "Comerciante",
-			"sprite": "Velaria.png", "retrato": "Velaria.png",
-			"posicion": Vector2(-112.0, 112.0),
-			"presentacion": "Hola, soy Velaria. Me encargo del comercio de la ciudad."
-		},
-		{
-			"clave": "niven", "nombre": "Niven", "oficio": "Estudiante",
-			"sprite": "Niven.png", "retrato": "Niven.png",
-			"posicion": Vector2(112.0, -300.0),
-			"presentacion": "¡Hola! Soy Niven, estudiante de la escuela de Froslia."
-		}
-	]
-
-	for habitante in habitantes:
-		var clave := str(habitante["clave"])
+	var materializados := 0
+	for habitante_variant in habitantes_variant as Array:
+		if not habitante_variant is Dictionary:
+			continue
+		var habitante := habitante_variant as Dictionary
+		var personaje_game_id := str(habitante.get("personaje_game_id", "")).strip_edges()
+		var clave := str(habitante.get("clave", "")).strip_edges()
+		if personaje_game_id.is_empty() or clave.is_empty():
+			continue
 		if existentes.has(clave):
 			continue
-		var nombre := str(habitante["nombre"])
+		if not personajes_por_id.has(personaje_game_id):
+			push_warning("Main: el habitante configurado '%s' no existe en personajes_game." % clave)
+			continue
+
+		var personaje: Dictionary = personajes_por_id[personaje_game_id]
+		var nombre := str(personaje.get("nombre", "")).strip_edges()
+		var criatura_id := str(personaje.get("criatura_id", "")).strip_edges()
+		if nombre.is_empty() or criatura_id.is_empty():
+			push_warning("Main: el registro de personajes_game '%s' no contiene nombre o criatura_id." % personaje_game_id)
+			continue
+
+		var posicion_variant: Variant = habitante.get("posicion", {})
+		if not posicion_variant is Dictionary:
+			push_warning("Main: el habitante '%s' no tiene posición válida en Supabase." % nombre)
+			continue
+		var posicion_datos := posicion_variant as Dictionary
+		var posicion := Vector2(
+			float(posicion_datos.get("x", 0.0)),
+			float(posicion_datos.get("y", 0.0))
+		)
+
 		var datos: Dictionary = {
-			"id": "froslia_humano_local",
+			"id": criatura_id,
 			"nombre": "Humano",
 			"nombre_individual": nombre,
-			"sprite_path": "res://assets/art/kingdom/Froslia/Personajes/" + str(habitante["sprite"]),
-			"portrait_path": "res://assets/art/kingdom/Froslia/Personajes/Heads/" + str(habitante["retrato"]),
+			"personaje_game_id": personaje_game_id,
+			"sprite_path": str(habitante.get("sprite_path", "")).strip_edges(),
+			"portrait_path": str(habitante.get("portrait_path", "")).strip_edges(),
 			"stats_dnd": {"hp_max": 20, "ac": 10},
-			"ubicacion_clave": clave,
-			"dialogo": {
-				"variantes": [{
-					"clave": "principal",
-					"lineas": [{
-						"hablante": nombre,
-						"texto": str(habitante["presentacion"])
-					}]
-				}]
-			}
+			"ubicacion_clave": str(personaje.get("ubicacion_clave", clave))
 		}
 		var npc := escena_criatura.instantiate() as Creature
 		if npc == null:
 			push_warning("Main: no se pudo instanciar a " + nombre + ".")
 			continue
+
 		npc.name = "Froslia_" + nombre
 		npc.move_speed = 0.0
 		npc.collision_layer = 0
@@ -876,10 +890,8 @@ func _materializar_npcs_froslia() -> void:
 		npc.configurar_dependencias(_dialogue_system, MissionManager, $Entities, _world_items, WorldData)
 		npc.configurar(datos)
 		$Entities.add_child(npc)
-		npc.global_position = zona.to_global(habitante["posicion"])
-		# La instancia puede ejecutar _ready después de configurar los datos.
-		# Reaplicar el recurso visual ya dentro del árbol evita que el sprite de
-		# Niven quede sin textura tras su inicialización.
+		npc.global_position = zona.to_global(posicion)
+		# La ruta del sprite procede de reinos_game.propiedades.habitantes.
 		npc.call_deferred("_cargar_sprite")
 		npc.call_deferred("_actualizar_profundidad")
 		if is_instance_valid(_player):
@@ -888,7 +900,7 @@ func _materializar_npcs_froslia() -> void:
 		npc.remove_from_group("damageable")
 		npc.add_to_group("froslia_game_npc")
 		npc.set_meta("froslia_npc_clave", clave)
-		npc.set_meta("froslia_oficio", str(habitante["oficio"]))
+		npc.set_meta("froslia_oficio", str(habitante.get("oficio", "")))
 		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 		if movimiento != null:
 			movimiento.detener_por_rutina()
@@ -898,12 +910,19 @@ func _materializar_npcs_froslia() -> void:
 		if ai != null:
 			ai.set_process(false)
 			ai.set_physics_process(false)
-		print("Main: habitante de Froslia materializado → ", nombre, " | oficio=", habitante["oficio"])
+		materializados += 1
+
+	print("Main: habitantes de Froslia materializados desde Supabase → ", materializados)
 
 
 func _al_mundo_datos_listo_para_npcs() -> void:
-	if is_instance_valid(_zone_manager) and _zone_manager.obtener_tipo_actual() == "reino_torres":
-		call_deferred("_materializar_npcs_reino_torres")
+	if not is_instance_valid(_zone_manager):
+		return
+	match _zone_manager.obtener_tipo_actual():
+		"reino_torres":
+			call_deferred("_materializar_npcs_reino_torres")
+		"reino:froslia":
+			call_deferred("_materializar_npcs_froslia")
 
 
 func _retirar_npcs_reino_torres() -> void:
