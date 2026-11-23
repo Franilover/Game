@@ -303,6 +303,10 @@ func _obtener_color_capa_terreno(capa: TileMapLayer) -> Color:
 	var nodo_actual: Node = capa
 	while nodo_actual != null and nodo_actual != _zona_fija:
 		var nombre := nodo_actual.name
+		if nombre == "TerrenoNieve":
+			return Color("#dce5e8")
+		if nombre == "TerrenoTierraNevada":
+			return Color("#9b8267")
 		if nombre.begins_with("TerrainDual_Zone_"):
 			var indice_texto := nombre.trim_prefix("TerrainDual_Zone_")
 			var indice_zona := indice_texto.to_int()
