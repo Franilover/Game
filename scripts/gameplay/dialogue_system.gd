@@ -1086,6 +1086,10 @@ func _seleccionar_dialogo(datos: Dictionary) -> Dictionary:
 			if (datos.has("lineas") or datos.has("texto")) and _variante_tiene_lineas_validas(datos):
 				return datos.duplicate(true)
 
+		var condicionada := _seleccionar_variante_condicionada(variantes_variant as Array, personaje_id)
+		if not condicionada.is_empty():
+			return condicionada
+
 		var contextual := _seleccionar_variante_contextual(variantes_variant as Array, personaje_id)
 		if not contextual.is_empty():
 			return contextual
@@ -1132,6 +1136,47 @@ func _obtener_personaje_id_actual() -> String:
 	if not is_instance_valid(_fuente):
 		return ""
 	return _fuente.get_personaje_game_id().strip_edges()
+
+
+## Selecciona variantes del constructor visual aunque no tengan un requisito
+## contextual o social heredado. La prioridad y especificidad hacen el resultado
+## determinista, sin depender del orden del JSON recibido desde Supabase.
+func _seleccionar_variante_condicionada(variantes: Array, personaje_id: String) -> Dictionary:
+	var mejor: Dictionary = {}
+	var mejor_prioridad := -2147483648
+	var mejor_especificidad := -1
+	for variante_variant in variantes:
+		if not variante_variant is Dictionary:
+			continue
+		var variante := variante_variant as Dictionary
+		var condiciones_variant: Variant = variante.get("_condiciones", [])
+		if not condiciones_variant is Array or (condiciones_variant as Array).is_empty():
+			continue
+		if not _variante_cumple_condiciones(variante) or not _variante_tiene_lineas_validas(variante):
+			continue
+		if str(variante.get("clave", "")).strip_edges().to_lower() == "principal":
+			continue
+		if _variante_ya_mostrada(variante, personaje_id):
+			continue
+		var prioridad := int(variante.get("prioridad", 0))
+		var especificidad := _obtener_especificidad_variante(variante)
+		if (
+			mejor.is_empty()
+			or prioridad > mejor_prioridad
+			or (
+				prioridad == mejor_prioridad
+				and especificidad > mejor_especificidad
+			)
+			or (
+				prioridad == mejor_prioridad
+				and especificidad == mejor_especificidad
+				and str(variante.get("clave", "")) < str(mejor.get("clave", ""))
+			)
+		):
+			mejor = variante.duplicate(true)
+			mejor_prioridad = prioridad
+			mejor_especificidad = especificidad
+	return mejor
 
 
 ## Selecciona variantes condicionadas por el calendario del mundo.
