@@ -1299,6 +1299,10 @@ func _obtener_saludo_contextual_supabase(
 ) -> String:
 	if not is_instance_valid(_fuente):
 		return ""
+	# Ivo tiene condiciones de tránsito que dependen de Elian y de la compra de pan.
+	# Se conserva esa selección específica en el motor hasta migrarla aparte.
+	if _fuente.get_nombre_visual().strip_edges().to_lower() == "ivo":
+		return ""
 	if dentro_edificio and not _actividad_es_desplazamiento(actividad):
 		return ""
 	if not en_transito and not (dentro_edificio and _actividad_es_desplazamiento(actividad)):
