@@ -627,12 +627,6 @@ func _mostrar_detalle_dialogos() -> void:
 	titulo.add_theme_font_size_override("font_size", 18)
 	_detalle.add_child(titulo)
 
-	var fuente := Label.new()
-	fuente.text = "DIÁLOGOS · WorldData / Supabase"
-	fuente.add_theme_font_size_override("font_size", 10)
-	fuente.modulate = Color(0.72, 0.76, 0.84)
-	_detalle.add_child(fuente)
-
 	if _dialogos_admin.is_empty():
 		var vacio := Label.new()
 		vacio.text = "No hay diálogos cargados para este personaje."
@@ -649,10 +643,14 @@ func _mostrar_detalle_dialogos() -> void:
 			continue
 		var contenido := contenido_variant as Dictionary
 
-		var titulo_registro := Label.new()
-		titulo_registro.text = str(registro.get("titulo", clave_registro)).replace("_", " ").capitalize()
-		titulo_registro.add_theme_font_size_override("font_size", 13)
-		_detalle.add_child(titulo_registro)
+		var titulo_registro_texto := str(registro.get("titulo", "")).strip_edges()
+		if titulo_registro_texto.is_empty() and clave_registro.to_lower() != "principal":
+			titulo_registro_texto = clave_registro.replace("_", " ").capitalize()
+		if not titulo_registro_texto.is_empty() and titulo_registro_texto.to_lower() != "principal":
+			var titulo_registro := Label.new()
+			titulo_registro.text = titulo_registro_texto
+			titulo_registro.add_theme_font_size_override("font_size", 13)
+			_detalle.add_child(titulo_registro)
 
 		var variantes_variant: Variant = contenido.get("variantes", [])
 		var variantes: Array = variantes_variant if variantes_variant is Array else []
