@@ -39,6 +39,8 @@ var _contenido_narrativo: VBoxContainer = null
 var _pestana_narrativa := "dialogos"
 var _dialogos_admin: Array[Dictionary] = []
 var _dialogo_seleccionado_admin: int = -1
+var _filas_dialogos_admin: Array[Button] = []
+var _etiqueta_cantidad_dialogos_admin: Label = null
 var _escenas_admin: Array[Dictionary] = []
 var _eventos_admin: Array[Dictionary] = []
 var _botones_pestana_narrativa: Dictionary = {}
@@ -152,9 +154,10 @@ func _crear_ui() -> void:
 	titulo_columna.add_child(contenido)
 
 	var izquierda := VBoxContainer.new()
-	izquierda.custom_minimum_size = Vector2(90, 0)
+	izquierda.custom_minimum_size = Vector2(150, 0)
 	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	izquierda.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	izquierda.size_flags_stretch_ratio = 0.32
 	contenido.add_child(izquierda)
 
 	var scroll := ScrollContainer.new()
@@ -178,6 +181,7 @@ func _crear_ui() -> void:
 	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	scroll_detalle.size_flags_stretch_ratio = 0.68
 	scroll_detalle.follow_focus = false
 	contenido.add_child(scroll_detalle)
 
@@ -231,6 +235,8 @@ func _cambiar_modo(modo: String) -> void:
 
 
 func _limpiar_lista() -> void:
+	_filas_dialogos_admin.clear()
+	_etiqueta_cantidad_dialogos_admin = null
 	for hijo in _lista.get_children():
 		hijo.queue_free()
 
@@ -369,15 +375,21 @@ func _cargar_dialogos() -> void:
 	)
 	if personajes.is_empty():
 		var aviso := Label.new()
-		aviso.text = "No hay personajes disponibles en WorldData."
+		aviso.text = "No hay personajes disponibles."
 		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_lista.add_child(aviso)
 		return
 
-	var encabezado := Label.new()
-	encabezado.text = "PERSONAJES · %d" % personajes.size()
-	encabezado.add_theme_font_size_override("font_size", 10)
-	_lista.add_child(encabezado)
+	var busqueda := LineEdit.new()
+	busqueda.placeholder_text = "Buscar personaje..."
+	busqueda.clear_button_enabled = true
+	busqueda.custom_minimum_size = Vector2(0, 30)
+	busqueda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_lista.add_child(busqueda)
+
+	_etiqueta_cantidad_dialogos_admin = Label.new()
+	_etiqueta_cantidad_dialogos_admin.add_theme_font_size_override("font_size", 10)
+	_lista.add_child(_etiqueta_cantidad_dialogos_admin)
 
 	for personaje in personajes:
 		var personaje_id := str(personaje.get("id", "")).strip_edges()
@@ -385,13 +397,34 @@ func _cargar_dialogos() -> void:
 			continue
 		var registros := WorldData.obtener_dialogos_game_de_personaje(personaje_id)
 		var resumen := _resumen_contenido_dialogos(registros)
+		var nombre := str(personaje.get("nombre", "Personaje"))
 		var boton := Button.new()
-		boton.text = str(personaje.get("nombre", "Personaje")) + "\n" + resumen
+		boton.text = nombre + "\\n" + resumen
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.custom_minimum_size = Vector2(0, 44)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.set_meta("nombre_dialogo", nombre.to_lower())
 		boton.pressed.connect(_seleccionar_personaje_dialogos.bind(personaje))
 		PIXEL_UI_THEME.apply(boton, false)
 		_lista.add_child(boton)
+		_filas_dialogos_admin.append(boton)
+
+	busqueda.text_changed.connect(_filtrar_personajes_dialogos_admin)
+	_filtrar_personajes_dialogos_admin(busqueda.text)
+
+
+func _filtrar_personajes_dialogos_admin(texto: String) -> void:
+	var filtro := texto.strip_edges().to_lower()
+	var visibles := 0
+	for boton in _filas_dialogos_admin:
+		if not is_instance_valid(boton):
+			continue
+		var coincide := filtro.is_empty() or str(boton.get_meta("nombre_dialogo", "")).contains(filtro)
+		boton.visible = coincide
+		if coincide:
+			visibles += 1
+	if is_instance_valid(_etiqueta_cantidad_dialogos_admin):
+		_etiqueta_cantidad_dialogos_admin.text = "%d de %d personajes" % [visibles, _filas_dialogos_admin.size()]
 
 
 func _resumen_contenido_dialogos(registros: Array[Dictionary]) -> String:
