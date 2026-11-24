@@ -29,9 +29,9 @@ const SLOT_LABELS := {
 # y preload() provoca errores de parseo en estas rutas.
 const CATALOG_ASSETS := {
 	"hair": [
-		{"name": "1 Front", "path": "res://assets/art/characters/customization/hair/1 Front.png"},
-		{"name": "2 Front", "path": "res://assets/art/characters/customization/hair/2 Front.png"},
-		{"name": "3 Front", "path": "res://assets/art/characters/customization/hair/3 Front.png"}
+		{"name": "Pelo 1", "path": "res://assets/art/characters/customization/hair/1 Front.png"},
+		{"name": "Pelo 2", "path": "res://assets/art/characters/customization/hair/2 Front.png"},
+		{"name": "Pelo 3", "path": "res://assets/art/characters/customization/hair/3 Front.png"}
 	],
 	"eyes": [
 		{"name": "expressive", "path": "res://assets/art/characters/customization/eyes/expressive.png"}
@@ -112,6 +112,8 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		var capa := Sprite2D.new()
 		capa.name = "Appearance_" + slot
 		capa.add_to_group("character_customization_layer")
+		capa.set_meta("appearance_slot", slot)
+		capa.set_meta("appearance_base_path", ruta)
 		capa.texture = textura
 		capa.position = sprite_base.position
 		capa.centered = sprite_base.centered
@@ -124,3 +126,29 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		capa.modulate = html_a_color(pieza.get("color", "#ffffff"), Color.WHITE)
 		visual.add_child(capa)
 		indice_z += 1
+
+
+static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> void:
+	if visual == null or not is_instance_valid(visual):
+		return
+	var cabello := visual.get_node_or_null("Appearance_hair") as Sprite2D
+	if cabello == null:
+		return
+	var ruta_base := str(cabello.get_meta("appearance_base_path", "")).strip_edges()
+	if ruta_base.is_empty():
+		return
+	var direccion := "Front"
+	var invertir := false
+	if absf(facing.y) >= absf(facing.x):
+		direccion = "Back" if facing.y < 0.0 else "Front"
+	else:
+		direccion = "Lateral"
+		invertir = facing.x > 0.0
+	var numero_pelo := ruta_base.get_file().get_basename().get_slice(" ", 0)
+	var ruta := ruta_base.get_base_dir() + "/" + numero_pelo + " " + direccion + ".png"
+	if not ResourceLoader.exists(ruta):
+		ruta = ruta_base
+	var textura := ResourceLoader.load(ruta) as Texture2D
+	if textura != null:
+		cabello.texture = textura
+	cabello.flip_h = invertir

@@ -74,6 +74,7 @@ func actualizar_estado(estado: int, facing: Vector2) -> void:
 func _actualizar_sprite_direccional(estado: int, facing: Vector2) -> void:
 	if sprite == null or not is_instance_valid(sprite):
 		return
+	CharacterAppearance.actualizar_cabello_direccion(visual, facing)
 
 	# Los sprites direccionales disponibles son poses para caminar/correr.
 	# Al detenerse, saltar o hacer dash se conserva la skin frontal base.

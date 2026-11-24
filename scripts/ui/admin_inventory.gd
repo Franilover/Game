@@ -357,13 +357,80 @@ func _al_catalogo_objetos_disponible(_items: Array) -> void:
 
 func _cargar_aldeanos() -> void:
 	var personajes: Array[Dictionary] = WorldData.obtener_personajes_game()
-	personajes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
-		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
-	)
-	var cuadricula := _crear_cuadricula()
+	if personajes.is_empty():
+		var aviso := Label.new()
+		aviso.text = "No hay aldeanos disponibles."
+		_lista.add_child(aviso)
+		return
+	var grupos: Dictionary = {}
 	for personaje in personajes:
-		var nombre := str(personaje.get("nombre", "Personaje"))
-		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_aldeano(personaje), personaje)
+		var clave_reino := _clave_reino_aldeano(personaje)
+		if not grupos.has(clave_reino):
+			grupos[clave_reino] = []
+		(grupos[clave_reino] as Array).append(personaje)
+	var claves_reinos: Array = grupos.keys()
+	claves_reinos.sort_custom(func(a: Variant, b: Variant) -> bool:
+		return _nombre_reino_aldeano(str(a)).to_lower() < _nombre_reino_aldeano(str(b)).to_lower()
+	)
+	for clave_reino_variant in claves_reinos:
+		var clave_reino := str(clave_reino_variant)
+		var seccion := PanelContainer.new()
+		seccion.name = "Kingdom_" + clave_reino
+		seccion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		seccion.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_surface_style())
+		var margen := MarginContainer.new()
+		margen.add_theme_constant_override("margin_left", 8)
+		margen.add_theme_constant_override("margin_top", 6)
+		margen.add_theme_constant_override("margin_right", 8)
+		margen.add_theme_constant_override("margin_bottom", 7)
+		seccion.add_child(margen)
+		var contenido := VBoxContainer.new()
+		contenido.add_theme_constant_override("separation", 6)
+		margen.add_child(contenido)
+		var titulo := Label.new()
+		titulo.name = "KingdomHeading"
+		titulo.text = _nombre_reino_aldeano(clave_reino).to_upper()
+		titulo.add_theme_color_override("font_color", Color("#E6D0A6"))
+		titulo.add_theme_font_size_override("font_size", 12)
+		contenido.add_child(titulo)
+		var cuadricula := GridContainer.new()
+		cuadricula.columns = 4
+		cuadricula.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		cuadricula.add_theme_constant_override("h_separation", 5)
+		cuadricula.add_theme_constant_override("v_separation", 5)
+		contenido.add_child(cuadricula)
+		var habitantes: Array = grupos[clave_reino]
+		habitantes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+			return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
+		)
+		for personaje in habitantes:
+			var nombre := str(personaje.get("nombre", "Personaje"))
+			_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_aldeano(personaje), personaje)
+		_lista.add_child(seccion)
+
+
+func _clave_reino_aldeano(personaje: Dictionary) -> String:
+	for campo in ["reino_clave", "reino", "reino_id", "reino_nombre"]:
+		var valor := str(personaje.get(campo, "")).strip_edges()
+		if not valor.is_empty():
+			return valor.to_lower().replace(" ", "_")
+	var nacionalidad := str(personaje.get("nacionalidad", "")).strip_edges().to_lower()
+	if nacionalidad.contains("frosl"):
+		return "froslia"
+	if nacionalidad.contains("torres"):
+		return "torres"
+	return "sin_reino"
+
+
+func _nombre_reino_aldeano(clave: String) -> String:
+	if clave == "froslia":
+		return "Froslia"
+	if clave == "torres":
+		return "Torres"
+	for reino in WorldData.obtener_reinos_game():
+		if str(reino.get("clave", "")).strip_edges().to_lower() == clave.to_lower() or str(reino.get("id", "")).strip_edges().to_lower() == clave.to_lower():
+			return str(reino.get("nombre", clave.capitalize()))
+	return clave.replace("_", " ").capitalize()
 
 
 func _al_mundo_actualizado_dialogos() -> void:
@@ -486,28 +553,31 @@ func _seleccionar_personaje_dialogos(personaje: Dictionary) -> void:
 
 
 func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
+	var personaje_id := str(personaje.get("id", "")).strip_edges()
+	if not personaje_id.is_empty():
+		var visual := WorldData.obtener_configuracion_visual_personaje_game(personaje_id)
+		for campo in ["sprite_path", "portrait_path"]:
+			var ruta := str(visual.get(campo, "")).strip_edges()
+			if ruta.begins_with("res://") and ResourceLoader.exists(ruta):
+				var textura_visual := ResourceLoader.load(ruta) as Texture2D
+				if textura_visual != null:
+					return textura_visual
 	var claves: Array[String] = []
 	for campo in ["sprite_key", "nombre_individual", "nombre_personaje", "nombre_npc", "nombre"]:
 		var clave := str(personaje.get(campo, "")).strip_edges()
 		if not clave.is_empty() and not claves.has(clave):
 			claves.append(clave)
-
 	for clave in claves:
 		if clave.contains("/") or clave.contains("\\"):
 			continue
 		for extension in [".png", ".PNG"]:
 			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
-			if not ResourceLoader.exists(ruta):
-				continue
-			var textura := load(ruta) as Texture2D
-			if textura != null:
-				return textura
-
-	# Mismo respaldo humano que utiliza Creature cuando falta el retrato propio.
+			if ResourceLoader.exists(ruta):
+				var textura := ResourceLoader.load(ruta) as Texture2D
+				if textura != null:
+					return textura
 	var ruta_base := "res://assets/art/characters/Sprite-0004.png"
-	if ResourceLoader.exists(ruta_base):
-		return load(ruta_base) as Texture2D
-	return null
+	return ResourceLoader.load(ruta_base) as Texture2D if ResourceLoader.exists(ruta_base) else null
 
 
 func _obtener_grupo_objeto(item: Dictionary) -> String:
