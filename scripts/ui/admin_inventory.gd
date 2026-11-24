@@ -38,6 +38,7 @@ var _npc_conversation_system: Node = null
 var _contenido_narrativo: VBoxContainer = null
 var _pestana_narrativa := "dialogos"
 var _dialogos_admin: Array[Dictionary] = []
+var _dialogo_seleccionado_admin: int = -1
 var _escenas_admin: Array[Dictionary] = []
 var _eventos_admin: Array[Dictionary] = []
 var _botones_pestana_narrativa: Dictionary = {}
@@ -127,7 +128,7 @@ func _crear_ui() -> void:
 	encabezado.add_theme_constant_override("separation", 3)
 	titulo_columna.add_child(encabezado)
 
-	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["aldeanos", "Aldeanos"], ["tiempo", "Tiempo"]]:
+	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["aldeanos", "Aldeanos"], ["dialogos", "Diálogos"], ["tiempo", "Tiempo"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
 		boton.toggle_mode = true
@@ -237,6 +238,8 @@ func _cargar_lista() -> void:
 		_cargar_criaturas()
 	elif _modo == "objetos":
 		_cargar_objetos()
+	elif _modo == "dialogos":
+		_cargar_dialogos()
 	else:
 		_cargar_aldeanos()
 
@@ -327,6 +330,54 @@ func _cargar_aldeanos() -> void:
 	for personaje in personajes:
 		var nombre := str(personaje.get("nombre", "Personaje"))
 		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_aldeano(personaje), personaje)
+
+
+func _cargar_dialogos() -> void:
+	if not WorldData.cargado:
+		var aviso := Label.new()
+		aviso.text = "Esperando los datos del mundo..."
+		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_lista.add_child(aviso)
+		return
+
+	var personajes := WorldData.obtener_personajes_game()
+	personajes.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a.get("nombre", "")).to_lower() < str(b.get("nombre", "")).to_lower()
+	)
+	if personajes.is_empty():
+		var aviso := Label.new()
+		aviso.text = "No hay personajes disponibles en WorldData."
+		aviso.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_lista.add_child(aviso)
+		return
+
+	var encabezado := Label.new()
+	encabezado.text = "PERSONAJES · %d" % personajes.size()
+	encabezado.add_theme_font_size_override("font_size", 10)
+	_lista.add_child(encabezado)
+
+	for personaje in personajes:
+		var personaje_id := str(personaje.get("id", "")).strip_edges()
+		if personaje_id.is_empty():
+			continue
+		var registros := WorldData.obtener_dialogos_game_de_personaje(personaje_id)
+		var boton := Button.new()
+		boton.text = "%s  ·  %d" % [str(personaje.get("nombre", "Personaje")), registros.size()]
+		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.custom_minimum_size = Vector2(0, 32)
+		boton.pressed.connect(_seleccionar_personaje_dialogos.bind(personaje))
+		PIXEL_UI_THEME.apply(boton, false)
+		_lista.add_child(boton)
+
+
+func _seleccionar_personaje_dialogos(personaje: Dictionary) -> void:
+	_seleccion = personaje.duplicate(true)
+	_dialogos_admin = WorldData.obtener_dialogos_game_de_personaje(str(personaje.get("id", "")))
+	_dialogos_admin.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
+		return str(a.get("clave", "")).to_lower() < str(b.get("clave", "")).to_lower()
+	)
+	_dialogo_seleccionado_admin = 0 if not _dialogos_admin.is_empty() else -1
+	_mostrar_detalle()
 
 
 func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
@@ -445,6 +496,11 @@ func _mostrar_detalle() -> void:
 	if _detalle == null:
 		return
 
+	if _modo == "dialogos":
+		_mostrar_detalle_dialogos()
+		return
+
+	_boton_accion.visible = true
 	_limpiar_detalle()
 
 	if _seleccion.is_empty():
@@ -508,6 +564,85 @@ func _mostrar_detalle() -> void:
 		_boton_accion.text = "Invocar criatura"
 
 	_boton_accion.disabled = false
+
+
+func _mostrar_detalle_dialogos() -> void:
+	_limpiar_detalle()
+	_boton_accion.visible = false
+	_cantidad.visible = false
+
+	if _seleccion.is_empty():
+		_estado.text = "Selecciona un personaje para explorar sus diálogos."
+		return
+
+	var nombre := str(_seleccion.get("nombre", "Personaje"))
+	var titulo := Label.new()
+	titulo.text = nombre
+	titulo.add_theme_font_size_override("font_size", 17)
+	_detalle.add_child(titulo)
+
+	var fuente := Label.new()
+	fuente.text = "WorldData · snapshot/cache sincronizado con Supabase"
+	fuente.add_theme_font_size_override("font_size", 9)
+	fuente.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_detalle.add_child(fuente)
+
+	var resumen := Label.new()
+	resumen.text = "%d registros de diálogo" % _dialogos_admin.size()
+	_detalle.add_child(resumen)
+
+	if _dialogos_admin.is_empty():
+		var vacio := Label.new()
+		vacio.text = "Este personaje no tiene registros de diálogo cargados."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_detalle.add_child(vacio)
+		return
+
+	var separador := HSeparator.new()
+	_detalle.add_child(separador)
+	var etiqueta_registros := Label.new()
+	etiqueta_registros.text = "REGISTROS"
+	etiqueta_registros.add_theme_font_size_override("font_size", 10)
+	_detalle.add_child(etiqueta_registros)
+
+	for indice in range(_dialogos_admin.size()):
+		var registro := _dialogos_admin[indice]
+		var clave := str(registro.get("clave", "principal"))
+		var nombre_registro := str(registro.get("titulo", registro.get("nombre", clave)))
+		var boton := Button.new()
+		boton.text = ("› " if indice == _dialogo_seleccionado_admin else "") + nombre_registro + "  ·  " + clave
+		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.custom_minimum_size = Vector2(0, 28)
+		boton.pressed.connect(_seleccionar_registro_dialogo.bind(indice))
+		PIXEL_UI_THEME.apply(boton, false)
+		_detalle.add_child(boton)
+
+	if _dialogo_seleccionado_admin < 0 or _dialogo_seleccionado_admin >= _dialogos_admin.size():
+		return
+
+	var registro_seleccionado := _dialogos_admin[_dialogo_seleccionado_admin]
+	var titulo_contenido := Label.new()
+	titulo_contenido.text = "CONTENIDO COMPLETO"
+	titulo_contenido.add_theme_font_size_override("font_size", 10)
+	_detalle.add_child(titulo_contenido)
+
+	var visor := TextEdit.new()
+	visor.name = "DialogueJsonViewer"
+	visor.editable = false
+	visor.selecting_enabled = true
+	visor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
+	visor.custom_minimum_size = Vector2(0, 260)
+	visor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	visor.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	visor.text = JSON.stringify(registro_seleccionado, "  ")
+	_detalle.add_child(visor)
+
+
+func _seleccionar_registro_dialogo(indice: int) -> void:
+	if indice < 0 or indice >= _dialogos_admin.size():
+		return
+	_dialogo_seleccionado_admin = indice
+	_mostrar_detalle()
 
 
 func _mostrar_detalle_aldeano() -> void:
