@@ -399,7 +399,7 @@ func _cargar_dialogos() -> void:
 		var resumen := _resumen_contenido_dialogos(registros)
 		var nombre := str(personaje.get("nombre", "Personaje"))
 		var boton := Button.new()
-		boton.text = nombre + "\\n" + resumen
+		boton.text = nombre + "\n" + resumen
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.custom_minimum_size = Vector2(0, 44)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
