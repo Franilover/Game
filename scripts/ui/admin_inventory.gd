@@ -41,6 +41,7 @@ var _dialogos_admin: Array[Dictionary] = []
 var _dialogo_seleccionado_admin: int = -1
 var _filas_dialogos_admin: Array[Button] = []
 var _etiqueta_cantidad_dialogos_admin: Label = null
+var _retrato_dialogo_admin: TextureRect = null
 var _escenas_admin: Array[Dictionary] = []
 var _eventos_admin: Array[Dictionary] = []
 var _botones_pestana_narrativa: Dictionary = {}
@@ -154,11 +155,20 @@ func _crear_ui() -> void:
 	titulo_columna.add_child(contenido)
 
 	var izquierda := VBoxContainer.new()
-	izquierda.custom_minimum_size = Vector2(150, 0)
+	izquierda.custom_minimum_size = Vector2(112, 0)
 	izquierda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	izquierda.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	izquierda.size_flags_stretch_ratio = 0.32
+	izquierda.size_flags_stretch_ratio = 0.22
 	contenido.add_child(izquierda)
+
+	_retrato_dialogo_admin = TextureRect.new()
+	_retrato_dialogo_admin.custom_minimum_size = Vector2(0, 84)
+	_retrato_dialogo_admin.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_retrato_dialogo_admin.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_retrato_dialogo_admin.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_retrato_dialogo_admin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_retrato_dialogo_admin.visible = false
+	izquierda.add_child(_retrato_dialogo_admin)
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "CreatureObjectListScroll"
@@ -181,7 +191,7 @@ func _crear_ui() -> void:
 	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll_detalle.size_flags_stretch_ratio = 0.68
+	scroll_detalle.size_flags_stretch_ratio = 0.78
 	scroll_detalle.follow_focus = false
 	contenido.add_child(scroll_detalle)
 
@@ -401,7 +411,8 @@ func _cargar_dialogos() -> void:
 		var boton := Button.new()
 		boton.text = nombre + "\n" + resumen
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		boton.custom_minimum_size = Vector2(0, 44)
+		boton.custom_minimum_size = Vector2(0, 36)
+		boton.add_theme_font_size_override("font_size", 9)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.set_meta("nombre_dialogo", nombre.to_lower())
 		boton.pressed.connect(_seleccionar_personaje_dialogos.bind(personaje))
@@ -448,6 +459,9 @@ func _resumen_contenido_dialogos(registros: Array[Dictionary]) -> String:
 
 func _seleccionar_personaje_dialogos(personaje: Dictionary) -> void:
 	_seleccion = personaje.duplicate(true)
+	if is_instance_valid(_retrato_dialogo_admin):
+		_retrato_dialogo_admin.texture = _obtener_sprite_aldeano(_seleccion)
+		_retrato_dialogo_admin.visible = _retrato_dialogo_admin.texture != null
 	_dialogos_admin = WorldData.obtener_dialogos_game_de_personaje(str(personaje.get("id", "")))
 	_dialogos_admin.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return str(a.get("clave", "")).to_lower() < str(b.get("clave", "")).to_lower()
@@ -646,27 +660,27 @@ func _mostrar_detalle_dialogos() -> void:
 	_limpiar_detalle()
 	_boton_accion.visible = false
 	_cantidad.visible = false
-
 	if _seleccion.is_empty():
 		_estado.visible = true
 		_estado.text = "Selecciona un personaje para explorar sus diálogos."
+		if is_instance_valid(_retrato_dialogo_admin):
+			_retrato_dialogo_admin.texture = null
+			_retrato_dialogo_admin.visible = false
 		return
-
 	_estado.text = ""
 	_estado.visible = false
 	var nombre := str(_seleccion.get("nombre", "Personaje"))
 	var titulo := Label.new()
 	titulo.text = nombre
-	titulo.add_theme_font_size_override("font_size", 18)
+	titulo.add_theme_font_size_override("font_size", 14)
 	_detalle.add_child(titulo)
-
 	if _dialogos_admin.is_empty():
 		var vacio := Label.new()
 		vacio.text = "No hay diálogos cargados para este personaje."
+		vacio.add_theme_font_size_override("font_size", 10)
 		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_detalle.add_child(vacio)
 		return
-
 	for registro in _dialogos_admin:
 		var clave_registro := str(registro.get("clave", "principal"))
 		var contenido_variant: Variant = registro.get("dialogo", {})
@@ -675,73 +689,80 @@ func _mostrar_detalle_dialogos() -> void:
 		if not contenido_variant is Dictionary:
 			continue
 		var contenido := contenido_variant as Dictionary
-
 		var titulo_registro_texto := str(registro.get("titulo", "")).strip_edges()
 		if titulo_registro_texto.is_empty() and clave_registro.to_lower() != "principal":
 			titulo_registro_texto = clave_registro.replace("_", " ").capitalize()
 		if not titulo_registro_texto.is_empty() and titulo_registro_texto.to_lower() != "principal":
 			var titulo_registro := Label.new()
 			titulo_registro.text = titulo_registro_texto
-			titulo_registro.add_theme_font_size_override("font_size", 13)
+			titulo_registro.add_theme_font_size_override("font_size", 11)
 			_detalle.add_child(titulo_registro)
-
 		var variantes_variant: Variant = contenido.get("variantes", [])
 		var variantes: Array = variantes_variant if variantes_variant is Array else []
 		if variantes.is_empty() and contenido.has("lineas"):
 			variantes = [{"clave": clave_registro, "lineas": contenido.get("lineas", [])}]
-
 		if not variantes.is_empty():
-			_agregar_encabezado_dialogo(_detalle, "CONVERSACIONES", "%d variantes" % variantes.size())
+			var seccion_base := _crear_seccion_dialogo(_detalle, "DIÁLOGOS BASE", "%d variantes" % variantes.size())
 			for variante_variant in variantes:
 				if variante_variant is Dictionary:
-					_renderizar_variante_dialogo(_detalle, variante_variant as Dictionary)
-
+					_renderizar_variante_dialogo(seccion_base, variante_variant as Dictionary)
 		var temas_variant: Variant = contenido.get("temas_conversacion", [])
 		if temas_variant is Array and not (temas_variant as Array).is_empty():
-			_agregar_encabezado_dialogo(_detalle, "TEMAS PARA CONVERSAR", "%d temas" % (temas_variant as Array).size())
-			for tema_variant in temas_variant as Array:
+			var temas := temas_variant as Array
+			var seccion_social := _crear_seccion_dialogo(_detalle, "CONVERSACIÓN SOCIAL", "%d temas" % temas.size())
+			for tema_variant in temas:
 				if tema_variant is Dictionary:
-					_renderizar_tema_dialogo(_detalle, tema_variant as Dictionary)
-
+					_renderizar_tema_dialogo(seccion_social, tema_variant as Dictionary)
 		var respuestas_variant: Variant = contenido.get("respuestas_rutina", {})
-		if respuestas_variant is Dictionary and not (respuestas_variant as Dictionary).is_empty():
-			_agregar_encabezado_dialogo(_detalle, "RESPUESTAS DE RUTINA", "%d entradas" % (respuestas_variant as Dictionary).size())
-			_renderizar_mapa_dialogo(_detalle, respuestas_variant as Dictionary, 0)
-
 		var rutina_variant: Variant = contenido.get("rutina_contextual", {})
-		if rutina_variant is Dictionary and not (rutina_variant as Dictionary).is_empty():
-			_agregar_encabezado_dialogo(_detalle, "DIÁLOGOS SEGÚN ACTIVIDAD", "")
-			_renderizar_mapa_dialogo(_detalle, rutina_variant as Dictionary, 0)
-
+		var hay_respuestas := respuestas_variant is Dictionary and not (respuestas_variant as Dictionary).is_empty()
+		var hay_rutina := rutina_variant is Dictionary and not (rutina_variant as Dictionary).is_empty()
+		if hay_respuestas or hay_rutina:
+			var total_rutina := 0
+			if hay_respuestas:
+				total_rutina += (respuestas_variant as Dictionary).size()
+			if hay_rutina:
+				total_rutina += (rutina_variant as Dictionary).size()
+			var seccion_rutina := _crear_seccion_dialogo(_detalle, "RUTINA Y ACTIVIDADES", "%d grupos" % total_rutina)
+			if hay_respuestas:
+				_renderizar_mapa_dialogo(seccion_rutina, respuestas_variant as Dictionary, 0)
+			if hay_rutina:
+				_renderizar_mapa_dialogo(seccion_rutina, rutina_variant as Dictionary, 0)
 		var saludos_variant: Variant = contenido.get("saludos_contextuales", {})
 		if saludos_variant is Dictionary and not (saludos_variant as Dictionary).is_empty():
-			_agregar_encabezado_dialogo(_detalle, "SALUDOS CONTEXTUALES", "")
-			_renderizar_mapa_dialogo(_detalle, saludos_variant as Dictionary, 0)
-
+			var saludos := saludos_variant as Dictionary
+			var seccion_saludos := _crear_seccion_dialogo(_detalle, "SALUDOS CONTEXTUALES", "%d grupos" % saludos.size())
+			_renderizar_mapa_dialogo(seccion_saludos, saludos, 0)
 		var claves_conocidas := ["variantes", "lineas", "temas_conversacion", "respuestas_rutina", "rutina_contextual", "saludos_contextuales"]
 		for clave in contenido.keys():
 			if str(clave) in claves_conocidas:
 				continue
-			_agregar_encabezado_dialogo(_detalle, str(clave).replace("_", " ").to_upper(), "")
-			_renderizar_valor_dialogo(_detalle, contenido[clave], 0)
+			var seccion_extra := _crear_seccion_dialogo(_detalle, "OTROS DATOS · " + str(clave).replace("_", " ").to_upper())
+			_renderizar_valor_dialogo(seccion_extra, contenido[clave], 0)
 
 
-func _agregar_encabezado_dialogo(padre: Control, texto: String, detalle: String) -> void:
-	var fila := HBoxContainer.new()
-	fila.add_theme_constant_override("separation", 6)
-	padre.add_child(fila)
-	var titulo := Label.new()
-	titulo.text = texto
-	titulo.add_theme_font_size_override("font_size", 10)
-	fila.add_child(titulo)
-	if not detalle.is_empty():
-		var cantidad := Label.new()
-		cantidad.text = detalle
-		cantidad.add_theme_font_size_override("font_size", 9)
-		cantidad.modulate = Color(0.68, 0.72, 0.8)
-		fila.add_child(cantidad)
-	var separador := HSeparator.new()
-	padre.add_child(separador)
+func _crear_seccion_dialogo(padre: Control, texto: String, detalle: String = "") -> VBoxContainer:
+	var grupo := VBoxContainer.new()
+	grupo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	grupo.add_theme_constant_override("separation", 3)
+	padre.add_child(grupo)
+	var encabezado := Button.new()
+	encabezado.toggle_mode = true
+	encabezado.button_pressed = true
+	encabezado.alignment = HORIZONTAL_ALIGNMENT_LEFT
+	encabezado.custom_minimum_size = Vector2(0, 23)
+	encabezado.add_theme_font_size_override("font_size", 10)
+	encabezado.text = "▾  " + texto + ("  ·  " + detalle if not detalle.is_empty() else "")
+	grupo.add_child(encabezado)
+	var contenido := VBoxContainer.new()
+	contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contenido.add_theme_constant_override("separation", 4)
+	grupo.add_child(contenido)
+	encabezado.toggled.connect(func(expandido: bool) -> void:
+		contenido.visible = expandido
+		encabezado.text = ("▾  " if expandido else "▸  ") + texto + ("  ·  " + detalle if not detalle.is_empty() else "")
+	)
+	return contenido
 
 
 func _crear_tarjeta_dialogo(padre: Control, titulo_texto: String, subtitulo: String = "") -> VBoxContainer:
@@ -749,22 +770,22 @@ func _crear_tarjeta_dialogo(padre: Control, titulo_texto: String, subtitulo: Str
 	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	padre.add_child(panel)
 	var margen := MarginContainer.new()
-	margen.add_theme_constant_override("margin_left", 9)
-	margen.add_theme_constant_override("margin_right", 9)
-	margen.add_theme_constant_override("margin_top", 7)
-	margen.add_theme_constant_override("margin_bottom", 7)
+	margen.add_theme_constant_override("margin_left", 6)
+	margen.add_theme_constant_override("margin_right", 6)
+	margen.add_theme_constant_override("margin_top", 4)
+	margen.add_theme_constant_override("margin_bottom", 4)
 	panel.add_child(margen)
 	var tarjeta := VBoxContainer.new()
-	tarjeta.add_theme_constant_override("separation", 5)
+	tarjeta.add_theme_constant_override("separation", 3)
 	margen.add_child(tarjeta)
 	var titulo := Label.new()
 	titulo.text = titulo_texto.replace("_", " ").capitalize()
-	titulo.add_theme_font_size_override("font_size", 12)
+	titulo.add_theme_font_size_override("font_size", 10)
 	tarjeta.add_child(titulo)
 	if not subtitulo.is_empty():
 		var etiqueta := Label.new()
 		etiqueta.text = subtitulo
-		etiqueta.add_theme_font_size_override("font_size", 9)
+		etiqueta.add_theme_font_size_override("font_size", 8)
 		etiqueta.modulate = Color(0.7, 0.74, 0.82)
 		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		tarjeta.add_child(etiqueta)
@@ -775,16 +796,17 @@ func _agregar_texto_dialogo(padre: Control, etiqueta: String, texto: String) -> 
 	if texto.strip_edges().is_empty():
 		return
 	var bloque := VBoxContainer.new()
-	bloque.add_theme_constant_override("separation", 2)
+	bloque.add_theme_constant_override("separation", 1)
 	padre.add_child(bloque)
 	if not etiqueta.is_empty():
 		var titulo := Label.new()
 		titulo.text = etiqueta.replace("_", " ").capitalize()
-		titulo.add_theme_font_size_override("font_size", 9)
+		titulo.add_theme_font_size_override("font_size", 8)
 		titulo.modulate = Color(0.68, 0.74, 0.86)
 		bloque.add_child(titulo)
 	var cuerpo := Label.new()
 	cuerpo.text = texto
+	cuerpo.add_theme_font_size_override("font_size", 9)
 	cuerpo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	bloque.add_child(cuerpo)
