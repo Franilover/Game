@@ -2384,6 +2384,7 @@ func _establecer_menu_principal_social(mostrar: bool) -> void:
 
 func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 	var opciones: Array[Dictionary] = []
+	var categoria_normalizada := categoria.strip_edges().to_lower()
 	if not is_instance_valid(_fuente):
 		return opciones
 
@@ -2419,7 +2420,6 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 
 	var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null else {}
 	var recuerdos: Array = relationship_system.obtener_recuerdos(personaje_id) if relationship_system != null else []
-	var categoria_normalizada := categoria.strip_edges().to_lower()
 	var hitos_preguntar_agregados: Dictionary = {}
 	if categoria_normalizada == "preguntar" and relationship_system != null:
 		relationship_system.preparar_hitos_preguntas(personaje_id, temas_variant as Array)
