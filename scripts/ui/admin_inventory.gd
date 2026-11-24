@@ -52,6 +52,10 @@ func _ready() -> void:
 	_crear_ui()
 	PIXEL_UI_THEME.apply(self, false)
 	visible = false
+	if not WorldData.mundo_listo.is_connected(_al_mundo_actualizado_dialogos):
+		WorldData.mundo_listo.connect(_al_mundo_actualizado_dialogos)
+	if not WorldData.mundo_actualizado.is_connected(_al_mundo_actualizado_dialogos):
+		WorldData.mundo_actualizado.connect(_al_mundo_actualizado_dialogos)
 
 
 func configurar(jugador: Player, spawner: WorldEntitySpawner, inventario: GarliaInventory, world_items: GarliaWorldItems = null) -> void:
@@ -332,6 +336,22 @@ func _cargar_aldeanos() -> void:
 		_crear_celda_sprite(cuadricula, nombre, _obtener_sprite_aldeano(personaje), personaje)
 
 
+func _al_mundo_actualizado_dialogos() -> void:
+	if _modo != "dialogos" or not visible:
+		return
+	var personaje_id := str(_seleccion.get("id", "")).strip_edges()
+	_cargar_lista()
+	if not personaje_id.is_empty():
+		var personaje := WorldData.obtener_personaje_game_por_id(personaje_id)
+		if not personaje.is_empty():
+			_seleccionar_personaje_dialogos(personaje)
+			return
+	_seleccion.clear()
+	_dialogos_admin.clear()
+	_dialogo_seleccionado_admin = -1
+	_mostrar_detalle()
+
+
 func _cargar_dialogos() -> void:
 	if not WorldData.cargado:
 		var aviso := Label.new()
@@ -582,7 +602,7 @@ func _mostrar_detalle_dialogos() -> void:
 	_detalle.add_child(titulo)
 
 	var fuente := Label.new()
-	fuente.text = "WorldData · snapshot/cache sincronizado con Supabase"
+	fuente.text = "WorldData · snapshot/cache local; sincronización automática con Supabase"
 	fuente.add_theme_font_size_override("font_size", 9)
 	fuente.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_detalle.add_child(fuente)
