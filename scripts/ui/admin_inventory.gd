@@ -615,9 +615,12 @@ func _mostrar_detalle_dialogos() -> void:
 	_cantidad.visible = false
 
 	if _seleccion.is_empty():
+		_estado.visible = true
 		_estado.text = "Selecciona un personaje para explorar sus diálogos."
 		return
 
+	_estado.text = ""
+	_estado.visible = false
 	var nombre := str(_seleccion.get("nombre", "Personaje"))
 	var titulo := Label.new()
 	titulo.text = nombre
