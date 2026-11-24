@@ -250,6 +250,107 @@ func _obtener_impacto_evento(evento: String) -> Dictionary:
 	return (tabla.get(evento, {}) as Dictionary).duplicate(true)
 
 
+## Registra un descubrimiento que puede revelar la historia de cualquier NPC.
+## La clave es global para que el hallazgo pueda venir de otro personaje o evento.
+func registrar_descubrimiento_social(clave: String, contexto: Dictionary = {}) -> bool:
+	var id := clave.strip_edges()
+	if id.is_empty() or _game_state == null or not is_instance_valid(_game_state):
+		return false
+	var flags_variant: Variant = _game_state.world_state.flags.get("descubrimientos_sociales", {})
+	var descubrimientos: Dictionary = flags_variant.duplicate(true) if flags_variant is Dictionary else {}
+	if descubrimientos.has(id):
+		return false
+	descubrimientos[id] = {
+		"momento": Time.get_datetime_string_from_system(true),
+		"contexto": contexto.duplicate(true)
+	}
+	_game_state.world_state.flags["descubrimientos_sociales"] = descubrimientos
+	if _game_state.has_method("guardar_partida"):
+		_game_state.call_deferred("guardar_partida")
+	return true
+
+
+func existe_descubrimiento_social(clave: String) -> bool:
+	var id := clave.strip_edges()
+	if id.is_empty() or _game_state == null or not is_instance_valid(_game_state):
+		return false
+	var flags_variant: Variant = _game_state.world_state.flags.get("descubrimientos_sociales", {})
+	if not flags_variant is Dictionary:
+		return false
+	return (flags_variant as Dictionary).has(id)
+
+
+## Las preguntas personales deben declarar hito=1..4 en dialogos_game.
+## Las preguntas antiguas sin hito quedan ocultas hasta ser clasificadas.
+func esta_hito_pregunta_desbloqueado(personaje_id: String, tema: Dictionary) -> bool:
+	var hito := int(tema.get("hito", tema.get("hito_id", 0)))
+	if hito < 1 or hito > 4:
+		return false
+	var relacion := obtener_relacion(personaje_id)
+	if relacion.is_empty():
+		return false
+	var desbloqueados_variant: Variant = relacion.get("_hitos_preguntas_desbloqueados", {})
+	var desbloqueados: Dictionary = desbloqueados_variant.duplicate(true) if desbloqueados_variant is Dictionary else {}
+	var clave_hito := str(hito)
+	if bool(desbloqueados.get(clave_hito, false)):
+		return true
+
+	var desbloqueo_variant: Variant = tema.get("desbloqueo", {})
+	var desbloqueo: Dictionary = desbloqueo_variant.duplicate(true) if desbloqueo_variant is Dictionary else {}
+	var tipo := str(desbloqueo.get("tipo", "")).strip_edges().to_lower()
+	var cumple := false
+
+	match hito:
+		1:
+			var minimo := float(desbloqueo.get("amistad_min", 100.0))
+			cumple = float(relacion.get("amistad", 0.0)) >= minimo
+		2:
+			var descubrimiento := str(desbloqueo.get("descubrimiento", "")).strip_edges()
+			cumple = not descubrimiento.is_empty() and existe_descubrimiento_social(descubrimiento)
+		3:
+			var item_id := str(desbloqueo.get("item_id", "")).strip_edges()
+			var recuerdos := obtener_recuerdos(personaje_id)
+			if not item_id.is_empty():
+				for recuerdo_variant in recuerdos:
+					if not recuerdo_variant is Dictionary:
+						continue
+					var recuerdo := recuerdo_variant as Dictionary
+					var tipo_recuerdo := str(recuerdo.get("tipo", "")).strip_edges().to_lower()
+					if tipo_recuerdo in ["regalo", "objeto_devuelto", "devolucion"] and str(recuerdo.get("item_id", "")).strip_edges() == item_id:
+						cumple = true
+						break
+		4:
+			var requisitos_variant: Variant = desbloqueo.get("requiere_hitos", [1, 2, 3])
+			var requisitos: Array = requisitos_variant if requisitos_variant is Array else [1, 2, 3]
+			cumple = not requisitos.is_empty()
+			for requisito_variant in requisitos:
+				var requisito := str(int(requisito_variant))
+				if not bool(desbloqueados.get(requisito, false)):
+					cumple = false
+					break
+
+	if not cumple:
+		return false
+	desbloqueados[clave_hito] = true
+	relacion["_hitos_preguntas_desbloqueados"] = desbloqueados
+	_guardar_relacion_guardada(personaje_id, relacion)
+	return true
+
+
+## Permite que una devolución importante use el mismo hito que un regalo especial.
+func registrar_devolucion_importante(personaje_id: String, item_id: String, nombre_item: String = "") -> bool:
+	if personaje_id.strip_edges().is_empty() or item_id.strip_edges().is_empty():
+		return false
+	registrar_recuerdo(personaje_id, {
+		"tipo": "objeto_devuelto",
+		"item_id": item_id.strip_edges(),
+		"item_nombre": nombre_item.strip_edges(),
+		"importancia": 5.0,
+		"momento": Time.get_datetime_string_from_system(true)
+	})
+	return true
+
+
 func registrar_dialogo(personaje_id: String, clave: String) -> Dictionary:
 	var id := personaje_id.strip_edges()
 	var clave_dialogo := clave.strip_edges()
