@@ -42,6 +42,7 @@ var _dialogo_seleccionado_admin: int = -1
 var _filas_dialogos_admin: Array[Button] = []
 var _etiqueta_cantidad_dialogos_admin: Label = null
 var _retrato_dialogo_admin: TextureRect = null
+var _nombre_retrato_dialogo_admin: Label = null
 var _escenas_admin: Array[Dictionary] = []
 var _eventos_admin: Array[Dictionary] = []
 var _botones_pestana_narrativa: Dictionary = {}
@@ -169,6 +170,11 @@ func _crear_ui() -> void:
 	_retrato_dialogo_admin.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	_retrato_dialogo_admin.visible = false
 	izquierda.add_child(_retrato_dialogo_admin)
+	_nombre_retrato_dialogo_admin = Label.new()
+	_nombre_retrato_dialogo_admin.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_nombre_retrato_dialogo_admin.add_theme_font_size_override("font_size", 9)
+	_nombre_retrato_dialogo_admin.visible = false
+	izquierda.add_child(_nombre_retrato_dialogo_admin)
 
 	var scroll := ScrollContainer.new()
 	scroll.name = "CreatureObjectListScroll"
@@ -228,6 +234,11 @@ func _cambiar_modo(modo: String) -> void:
 		return
 
 	_modo = modo
+	if is_instance_valid(_retrato_dialogo_admin):
+		_retrato_dialogo_admin.visible = modo == "dialogos" and _retrato_dialogo_admin.texture != null
+		_retrato_dialogo_admin.custom_minimum_size = Vector2(0, 84) if modo == "dialogos" else Vector2.ZERO
+	if is_instance_valid(_nombre_retrato_dialogo_admin):
+		_nombre_retrato_dialogo_admin.visible = modo == "dialogos" and not _nombre_retrato_dialogo_admin.text.is_empty()
 	for clave in _botones:
 		var boton: Button = _botones[clave]
 		boton.button_pressed = clave == _modo
@@ -462,6 +473,10 @@ func _seleccionar_personaje_dialogos(personaje: Dictionary) -> void:
 	if is_instance_valid(_retrato_dialogo_admin):
 		_retrato_dialogo_admin.texture = _obtener_sprite_aldeano(_seleccion)
 		_retrato_dialogo_admin.visible = _retrato_dialogo_admin.texture != null
+		_retrato_dialogo_admin.custom_minimum_size = Vector2(0, 84)
+	if is_instance_valid(_nombre_retrato_dialogo_admin):
+		_nombre_retrato_dialogo_admin.text = str(_seleccion.get("nombre", ""))
+		_nombre_retrato_dialogo_admin.visible = not _nombre_retrato_dialogo_admin.text.is_empty()
 	_dialogos_admin = WorldData.obtener_dialogos_game_de_personaje(str(personaje.get("id", "")))
 	_dialogos_admin.sort_custom(func(a: Dictionary, b: Dictionary) -> bool:
 		return str(a.get("clave", "")).to_lower() < str(b.get("clave", "")).to_lower()
@@ -666,6 +681,9 @@ func _mostrar_detalle_dialogos() -> void:
 		if is_instance_valid(_retrato_dialogo_admin):
 			_retrato_dialogo_admin.texture = null
 			_retrato_dialogo_admin.visible = false
+		if is_instance_valid(_nombre_retrato_dialogo_admin):
+			_nombre_retrato_dialogo_admin.text = ""
+			_nombre_retrato_dialogo_admin.visible = false
 		return
 	_estado.text = ""
 	_estado.visible = false
@@ -702,7 +720,7 @@ func _mostrar_detalle_dialogos() -> void:
 		if variantes.is_empty() and contenido.has("lineas"):
 			variantes = [{"clave": clave_registro, "lineas": contenido.get("lineas", [])}]
 		if not variantes.is_empty():
-			var seccion_base := _crear_seccion_dialogo(_detalle, "DIÁLOGOS BASE", "%d variantes" % variantes.size())
+			var seccion_base := _crear_seccion_dialogo(_detalle, "DIÁLOGOS SITUACIONALES", "%d variantes" % variantes.size())
 			for variante_variant in variantes:
 				if variante_variant is Dictionary:
 					_renderizar_variante_dialogo(seccion_base, variante_variant as Dictionary)
