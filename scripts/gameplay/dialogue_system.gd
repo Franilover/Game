@@ -550,6 +550,10 @@ func _avanzar() -> void:
 		text_label.text = _texto_completo
 		_marcar_recuerdo_pendiente_mostrado()
 		_marcar_variante_pendiente_mostrada()
+		# Completar la línea manualmente debe actualizar también el estado de
+		# las respuestas y acciones finales. Sin esto, _process ya no vuelve a
+		# entrar en el revelado y el diálogo puede quedarse bloqueado al final.
+		_actualizar_boton_accion()
 		return
 
 	if _indice_linea >= _lineas.size() - 1 and not _respuestas.is_empty():
