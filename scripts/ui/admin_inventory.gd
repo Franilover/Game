@@ -386,9 +386,9 @@ func _cargar_dialogos() -> void:
 		var registros := WorldData.obtener_dialogos_game_de_personaje(personaje_id)
 		var resumen := _resumen_contenido_dialogos(registros)
 		var boton := Button.new()
-		boton.text = str(personaje.get("nombre", "Personaje")) + "  ·  " + resumen
+		boton.text = str(personaje.get("nombre", "Personaje")) + "\n" + resumen
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		boton.custom_minimum_size = Vector2(0, 32)
+		boton.custom_minimum_size = Vector2(0, 44)
 		boton.pressed.connect(_seleccionar_personaje_dialogos.bind(personaje))
 		PIXEL_UI_THEME.apply(boton, false)
 		_lista.add_child(boton)
