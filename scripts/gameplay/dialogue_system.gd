@@ -2138,56 +2138,6 @@ func _crear_respuestas_rutina() -> Array[Dictionary]:
 				"despedida": true
 			})
 	return respuestas
-	var respuestas: Array[Dictionary] = []
-	var datos_dialogo: Dictionary = _fuente.get_dialogue_data() if is_instance_valid(_fuente) else {}
-	var contenido_variant: Variant = datos_dialogo.get("respuestas_rutina", {})
-	if not contenido_variant is Dictionary:
-		return respuestas
-	var contenido := contenido_variant as Dictionary
-
-	var definiciones: Array[Dictionary] = [
-		{"clave": "preguntar", "evento": "interesarse"},
-		{"clave": "apoyar", "evento": "apoyar"},
-		{"clave": "compartir_conocimiento", "evento": "compartir_conocimiento"}
-	]
-	for definicion in definiciones:
-		var entrada_variant: Variant = contenido.get(str(definicion["clave"]), {})
-		if not entrada_variant is Dictionary:
-			continue
-		var entrada := entrada_variant as Dictionary
-		var texto := str(entrada.get("texto", "")).strip_edges()
-		var jugador := str(entrada.get("jugador", "")).strip_edges()
-		var respuesta := str(entrada.get("respuesta", "")).strip_edges()
-		if texto.is_empty() or jugador.is_empty() or respuesta.is_empty():
-			continue
-		respuestas.append({
-			"texto": texto,
-			"jugador": jugador,
-			"respuesta": respuesta,
-			"evento": str(entrada.get("evento", definicion["evento"]))
-		})
-
-	var despedida_variant: Variant = contenido.get("despedida_jugador", {})
-	if despedida_variant is Dictionary:
-		var despedida := despedida_variant as Dictionary
-		var clave_despedida := "normal"
-		var actividad := str(_contexto_rutina_conversacion.get("actividad", "")).strip_edges()
-		if bool(_contexto_rutina_conversacion.get("dentro_edificio", false)) and _actividad_es_desplazamiento(actividad):
-			clave_despedida = "dentro_edificio"
-		elif _actividad_es_desplazamiento(actividad):
-			clave_despedida = "desplazamiento"
-		elif _actividad_impide_una_conversacion_larga(actividad):
-			clave_despedida = "ocupado"
-		var frase := str(despedida.get(clave_despedida, despedida.get("normal", ""))).strip_edges()
-		if not frase.is_empty():
-			respuestas.append({
-				"texto": "Despedirme con amabilidad",
-				"jugador": _reemplazar_variables_dialogo(frase),
-				"respuesta": _obtener_reaccion_despedida_rutina(),
-				"evento": "despedirse",
-				"despedida": true
-			})
-	return respuestas
 
 
 
