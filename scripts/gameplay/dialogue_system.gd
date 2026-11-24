@@ -2392,7 +2392,28 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 	# de Supabase determina el contenido, clasificación y requisitos.
 	var personaje_id := _fuente.get_personaje_game_id().strip_edges()
 	var datos_dialogo := _fuente.get_dialogue_data()
-	var temas_variant: Variant = datos_dialogo.get("temas_conversacion", [])
+
+	# La estructura v1 de Supabase separa los temas por categoria:
+	# contenido_narrativo.temas.preguntas y contenido_narrativo.temas.hablar.
+	# Si existe la estructura nueva, es la fuente prioritaria incluso cuando
+	# una categoria esta vacia. El formato antiguo solo sirve como compatibilidad
+	# para registros que aun no tengan contenido_narrativo.
+	var temas_variant: Variant = []
+	var estructura_narrativa_nueva := false
+	var contenido_narrativo_variant: Variant = datos_dialogo.get("contenido_narrativo", {})
+	if contenido_narrativo_variant is Dictionary:
+		var contenido_narrativo := contenido_narrativo_variant as Dictionary
+		var temas_nuevos_variant: Variant = contenido_narrativo.get("temas", {})
+		if temas_nuevos_variant is Dictionary:
+			estructura_narrativa_nueva = true
+			var temas_nuevos := temas_nuevos_variant as Dictionary
+			var clave_categoria := "preguntas" if categoria_normalizada == "preguntar" else categoria_normalizada
+			var categoria_variant: Variant = temas_nuevos.get(clave_categoria, [])
+			if categoria_variant is Array:
+				temas_variant = categoria_variant
+
+	if not estructura_narrativa_nueva:
+		temas_variant = datos_dialogo.get("temas_conversacion", [])
 	if not temas_variant is Array:
 		return opciones
 
@@ -2408,8 +2429,8 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 			continue
 		var tema := tema_variant as Dictionary
 		var tipo_tema := str(tema.get("tipo", "")).strip_edges().to_lower()
-		if categoria_normalizada == "preguntar":
-			if tipo_tema not in ["preguntar", "pregunta"]:
+		if not estructura_narrativa_nueva and categoria_normalizada == "preguntar":
+			if tipo_tema not in ["preguntar", "pregunta", "preguntas"]:
 				continue
 			# Las cuatro preguntas personales nuevas deben declarar un hito.
 			if relationship_system == null or not relationship_system.esta_hito_pregunta_desbloqueado(personaje_id, tema):
@@ -2417,7 +2438,7 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 			var clave_hito := str(int(tema.get("hito", tema.get("hito_id", 0))))
 			if hitos_preguntar_agregados.has(clave_hito):
 				continue
-		elif tipo_tema != categoria_normalizada:
+		elif not estructura_narrativa_nueva and tipo_tema != categoria_normalizada:
 			continue
 		if not _cumple_requisitos_tema_conversacion(tema, relacion, recuerdos):
 			continue
