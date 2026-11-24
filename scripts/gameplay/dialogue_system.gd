@@ -2399,6 +2399,8 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 	var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null else {}
 	var recuerdos: Array = relationship_system.obtener_recuerdos(personaje_id) if relationship_system != null else []
 	var categoria_normalizada := categoria.strip_edges().to_lower()
+	if categoria_normalizada == "preguntar" and relationship_system != null:
+		relationship_system.preparar_hitos_preguntas(personaje_id, temas_variant as Array)
 
 	for tema_variant in temas_variant as Array:
 		if not tema_variant is Dictionary:
