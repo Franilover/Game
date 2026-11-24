@@ -1069,6 +1069,45 @@ func obtener_dialogo_game(
 	return {}
 
 
+## Devuelve el bloque narrativo v1 de un personaje sin modificar el JSON
+## original ni descartar las claves heredadas que siguen en uso.
+func obtener_contenido_narrativo_game(personaje_id: String) -> Dictionary:
+	if personaje_id.is_empty():
+		return {}
+	for registro_variant in _dialogos_game:
+		if not registro_variant is Dictionary:
+			continue
+		var registro := registro_variant as Dictionary
+		if str(registro.get("personaje_id", "")) != personaje_id:
+			continue
+		var dialogo_variant: Variant = registro.get("dialogo", {})
+		if not dialogo_variant is Dictionary:
+			return {}
+		var contenido_variant: Variant = (dialogo_variant as Dictionary).get("contenido_narrativo", {})
+		if contenido_variant is Dictionary:
+			return (contenido_variant as Dictionary).duplicate(true)
+	return {}
+
+
+## Lee una de las seis categorias Dialogos. Los disparadores de cada categoria
+## permanecen en el sistema de gameplay; este metodo solo entrega su contenido.
+func obtener_dialogos_narrativos_game(personaje_id: String, grupo: String) -> Array[Dictionary]:
+	var resultado: Array[Dictionary] = []
+	if grupo not in ["principal", "amistad", "saludo", "despedida", "viajando", "invitaciones"]:
+		return resultado
+	var contenido := obtener_contenido_narrativo_game(personaje_id)
+	var dialogos_variant: Variant = contenido.get("dialogos", {})
+	if not dialogos_variant is Dictionary:
+		return resultado
+	var grupo_variant: Variant = (dialogos_variant as Dictionary).get(grupo, [])
+	if not grupo_variant is Array:
+		return resultado
+	for entrada_variant in grupo_variant as Array:
+		if entrada_variant is Dictionary:
+			resultado.append((entrada_variant as Dictionary).duplicate(true))
+	return resultado
+
+
 func obtener_dialogos_game_de_personaje(
 	personaje_id: String
 ) -> Array[Dictionary]:
