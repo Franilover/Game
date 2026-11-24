@@ -119,6 +119,8 @@ func _actualizar_visibilidad() -> void:
 	if _botones.has("tiempo"):
 		(_botones["tiempo"] as Button).disabled = not _puede_controlar_tiempo()
 	_cargar_lista()
+	if _modo == "dialogos":
+		_al_mundo_actualizado_dialogos()
 	_actualizar_panel_tiempo()
 
 
