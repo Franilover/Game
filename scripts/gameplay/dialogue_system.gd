@@ -2399,6 +2399,7 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 	var relacion: Dictionary = relationship_system.obtener_relacion(personaje_id) if relationship_system != null else {}
 	var recuerdos: Array = relationship_system.obtener_recuerdos(personaje_id) if relationship_system != null else []
 	var categoria_normalizada := categoria.strip_edges().to_lower()
+	var hitos_preguntar_agregados: Dictionary = {}
 	if categoria_normalizada == "preguntar" and relationship_system != null:
 		relationship_system.preparar_hitos_preguntas(personaje_id, temas_variant as Array)
 
@@ -2412,6 +2413,9 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 				continue
 			# Las cuatro preguntas personales nuevas deben declarar un hito.
 			if relationship_system == null or not relationship_system.esta_hito_pregunta_desbloqueado(personaje_id, tema):
+				continue
+			var clave_hito := str(int(tema.get("hito", tema.get("hito_id", 0))))
+			if hitos_preguntar_agregados.has(clave_hito):
 				continue
 		elif tipo_tema != categoria_normalizada:
 			continue
@@ -2438,6 +2442,8 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 		if acciones_variant is Array:
 			opcion["acciones"] = (acciones_variant as Array).duplicate(true)
 		opciones.append(opcion)
+		if categoria_normalizada == "preguntar":
+			hitos_preguntar_agregados[str(int(tema.get("hito", tema.get("hito_id", 0))))] = true
 
 	return opciones
 
