@@ -2363,12 +2363,15 @@ func _cerrar_selector_conversacion() -> void:
 
 
 func _crear_menu_principal_social() -> Array[Dictionary]:
-	return [
-		{"clave":"menu_preguntar","texto":"Preguntar","tipo_menu":"preguntar"},
-		{"clave":"menu_hablar","texto":"Hablar","tipo_menu":"hablar"},
-		{"clave":"menu_cumplido","texto":"Dar cumplido","tipo_menu":"cumplido"},
-		{"clave":"menu_despedirse","texto":"Despedirse","tipo_menu":"despedirse"}
-	]
+	var opciones: Array[Dictionary] = []
+	# Al conocerse, el jugador sólo puede conversar de forma casual.
+	# Preguntar aparece cuando al menos uno de los cuatro hitos personales se abre.
+	if not _crear_opciones_submenu_social("preguntar").is_empty():
+		opciones.append({"clave":"menu_preguntar","texto":"Preguntar","tipo_menu":"preguntar"})
+	opciones.append({"clave":"menu_hablar","texto":"Hablar","tipo_menu":"hablar"})
+	opciones.append({"clave":"menu_cumplido","texto":"Dar cumplido","tipo_menu":"cumplido"})
+	opciones.append({"clave":"menu_despedirse","texto":"Despedirse","tipo_menu":"despedirse"})
+	return opciones
 
 
 func _establecer_menu_principal_social(mostrar: bool) -> void:
@@ -2401,7 +2404,14 @@ func _crear_opciones_submenu_social(categoria: String) -> Array[Dictionary]:
 		if not tema_variant is Dictionary:
 			continue
 		var tema := tema_variant as Dictionary
-		if str(tema.get("tipo", "")).strip_edges().to_lower() != categoria_normalizada:
+		var tipo_tema := str(tema.get("tipo", "")).strip_edges().to_lower()
+		if categoria_normalizada == "preguntar":
+			if tipo_tema not in ["preguntar", "pregunta"]:
+				continue
+			# Las cuatro preguntas personales nuevas deben declarar un hito.
+			if relationship_system == null or not relationship_system.esta_hito_pregunta_desbloqueado(personaje_id, tema):
+				continue
+		elif tipo_tema != categoria_normalizada:
 			continue
 		if not _cumple_requisitos_tema_conversacion(tema, relacion, recuerdos):
 			continue
