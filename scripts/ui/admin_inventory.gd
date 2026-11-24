@@ -384,13 +384,33 @@ func _cargar_dialogos() -> void:
 		if personaje_id.is_empty():
 			continue
 		var registros := WorldData.obtener_dialogos_game_de_personaje(personaje_id)
+		var resumen := _resumen_contenido_dialogos(registros)
 		var boton := Button.new()
-		boton.text = "%s  ·  %d" % [str(personaje.get("nombre", "Personaje")), registros.size()]
+		boton.text = str(personaje.get("nombre", "Personaje")) + "  ·  " + resumen
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.custom_minimum_size = Vector2(0, 32)
 		boton.pressed.connect(_seleccionar_personaje_dialogos.bind(personaje))
 		PIXEL_UI_THEME.apply(boton, false)
 		_lista.add_child(boton)
+
+
+func _resumen_contenido_dialogos(registros: Array[Dictionary]) -> String:
+	var variantes_total := 0
+	var temas_total := 0
+	for registro in registros:
+		var contenido_variant: Variant = registro.get("dialogo", {})
+		if not contenido_variant is Dictionary:
+			continue
+		var contenido := contenido_variant as Dictionary
+		var variantes_variant: Variant = contenido.get("variantes", [])
+		if variantes_variant is Array:
+			variantes_total += (variantes_variant as Array).size()
+		elif contenido.has("lineas"):
+			variantes_total += 1
+		var temas_variant: Variant = contenido.get("temas_conversacion", [])
+		if temas_variant is Array:
+			temas_total += (temas_variant as Array).size()
+	return "%d variantes · %d temas" % [variantes_total, temas_total]
 
 
 func _seleccionar_personaje_dialogos(personaje: Dictionary) -> void:
@@ -691,13 +711,18 @@ func _agregar_encabezado_dialogo(padre: Control, texto: String, detalle: String)
 
 
 func _crear_tarjeta_dialogo(padre: Control, titulo_texto: String, subtitulo: String = "") -> VBoxContainer:
+	var panel := PanelContainer.new()
+	panel.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	padre.add_child(panel)
+	var margen := MarginContainer.new()
+	margen.add_theme_constant_override("margin_left", 9)
+	margen.add_theme_constant_override("margin_right", 9)
+	margen.add_theme_constant_override("margin_top", 7)
+	margen.add_theme_constant_override("margin_bottom", 7)
+	panel.add_child(margen)
 	var tarjeta := VBoxContainer.new()
 	tarjeta.add_theme_constant_override("separation", 5)
-	tarjeta.add_theme_constant_override("margin_left", 8)
-	tarjeta.add_theme_constant_override("margin_right", 8)
-	tarjeta.add_theme_constant_override("margin_top", 6)
-	tarjeta.add_theme_constant_override("margin_bottom", 6)
-	padre.add_child(tarjeta)
+	margen.add_child(tarjeta)
 	var titulo := Label.new()
 	titulo.text = titulo_texto.replace("_", " ").capitalize()
 	titulo.add_theme_font_size_override("font_size", 12)
