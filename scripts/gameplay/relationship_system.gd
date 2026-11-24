@@ -171,6 +171,17 @@ func registrar_evento_social(
 	if id.is_empty() or clave_evento.is_empty():
 		return {}
 
+	# Un evento puede revelar algo sobre otro NPC. La clave explícita se guarda
+	# globalmente y no queda ligada al personaje con quien se habló.
+	var descubrimiento_clave := str(contexto.get("descubrimiento_clave", "")).strip_edges()
+	if not descubrimiento_clave.is_empty():
+		registrar_descubrimiento_social(descubrimiento_clave, {
+			"personaje_origen": id,
+			"evento": clave_evento,
+			"evento_id": evento_id,
+			"contexto": contexto
+		})
+
 	var definicion := _obtener_impacto_evento(clave_evento)
 	if definicion.is_empty():
 		push_warning("RelationshipSystem: evento social desconocido: " + clave_evento)
@@ -282,6 +293,24 @@ func existe_descubrimiento_social(clave: String) -> bool:
 
 ## Las preguntas personales deben declarar hito=1..4 en dialogos_game.
 ## Las preguntas antiguas sin hito quedan ocultas hasta ser clasificadas.
+## Evalúa primero los hitos 1-3 y después el final, evitando depender
+## del orden de las preguntas dentro del JSON de Supabase.
+func preparar_hitos_preguntas(personaje_id: String, temas: Array) -> void:
+	for hito_objetivo in [1, 2, 3]:
+		for tema_variant in temas:
+			if not tema_variant is Dictionary:
+				continue
+			var tema := tema_variant as Dictionary
+			if int(tema.get("hito", tema.get("hito_id", 0))) == hito_objetivo:
+				esta_hito_pregunta_desbloqueado(personaje_id, tema)
+	for tema_variant in temas:
+		if not tema_variant is Dictionary:
+			continue
+		var tema := tema_variant as Dictionary
+		if int(tema.get("hito", tema.get("hito_id", 0))) == 4:
+			esta_hito_pregunta_desbloqueado(personaje_id, tema)
+
+
 func esta_hito_pregunta_desbloqueado(personaje_id: String, tema: Dictionary) -> bool:
 	var hito := int(tema.get("hito", tema.get("hito_id", 0)))
 	if hito < 1 or hito > 4:
