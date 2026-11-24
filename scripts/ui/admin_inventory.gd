@@ -601,64 +601,209 @@ func _mostrar_detalle_dialogos() -> void:
 	var nombre := str(_seleccion.get("nombre", "Personaje"))
 	var titulo := Label.new()
 	titulo.text = nombre
-	titulo.add_theme_font_size_override("font_size", 17)
+	titulo.add_theme_font_size_override("font_size", 18)
 	_detalle.add_child(titulo)
 
 	var fuente := Label.new()
-	fuente.text = "WorldData · snapshot/cache local; sincronización automática con Supabase"
-	fuente.add_theme_font_size_override("font_size", 9)
-	fuente.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	fuente.text = "DIÁLOGOS · WorldData / Supabase"
+	fuente.add_theme_font_size_override("font_size", 10)
+	fuente.modulate = Color(0.72, 0.76, 0.84)
 	_detalle.add_child(fuente)
-
-	var resumen := Label.new()
-	resumen.text = "%d registros de diálogo" % _dialogos_admin.size()
-	_detalle.add_child(resumen)
 
 	if _dialogos_admin.is_empty():
 		var vacio := Label.new()
-		vacio.text = "Este personaje no tiene registros de diálogo cargados."
+		vacio.text = "No hay diálogos cargados para este personaje."
 		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		_detalle.add_child(vacio)
 		return
 
+	for registro in _dialogos_admin:
+		var clave_registro := str(registro.get("clave", "principal"))
+		var contenido_variant: Variant = registro.get("dialogo", {})
+		if contenido_variant is Array:
+			contenido_variant = {"lineas": contenido_variant}
+		if not contenido_variant is Dictionary:
+			continue
+		var contenido := contenido_variant as Dictionary
+
+		var titulo_registro := Label.new()
+		titulo_registro.text = str(registro.get("titulo", clave_registro)).replace("_", " ").capitalize()
+		titulo_registro.add_theme_font_size_override("font_size", 13)
+		_detalle.add_child(titulo_registro)
+
+		var variantes_variant: Variant = contenido.get("variantes", [])
+		var variantes: Array = variantes_variant if variantes_variant is Array else []
+		if variantes.is_empty() and contenido.has("lineas"):
+			variantes = [{"clave": clave_registro, "lineas": contenido.get("lineas", [])}]
+
+		if not variantes.is_empty():
+			_agregar_encabezado_dialogo(_detalle, "CONVERSACIONES", "%d variantes" % variantes.size())
+			for variante_variant in variantes:
+				if variante_variant is Dictionary:
+					_renderizar_variante_dialogo(_detalle, variante_variant as Dictionary)
+
+		var temas_variant: Variant = contenido.get("temas_conversacion", [])
+		if temas_variant is Array and not (temas_variant as Array).is_empty():
+			_agregar_encabezado_dialogo(_detalle, "TEMAS PARA CONVERSAR", "%d temas" % (temas_variant as Array).size())
+			for tema_variant in temas_variant as Array:
+				if tema_variant is Dictionary:
+					_renderizar_tema_dialogo(_detalle, tema_variant as Dictionary)
+
+		var respuestas_variant: Variant = contenido.get("respuestas_rutina", {})
+		if respuestas_variant is Dictionary and not (respuestas_variant as Dictionary).is_empty():
+			_agregar_encabezado_dialogo(_detalle, "RESPUESTAS DE RUTINA", "%d entradas" % (respuestas_variant as Dictionary).size())
+			_renderizar_mapa_dialogo(_detalle, respuestas_variant as Dictionary, 0)
+
+		var rutina_variant: Variant = contenido.get("rutina_contextual", {})
+		if rutina_variant is Dictionary and not (rutina_variant as Dictionary).is_empty():
+			_agregar_encabezado_dialogo(_detalle, "DIÁLOGOS SEGÚN ACTIVIDAD", "")
+			_renderizar_mapa_dialogo(_detalle, rutina_variant as Dictionary, 0)
+
+		var saludos_variant: Variant = contenido.get("saludos_contextuales", {})
+		if saludos_variant is Dictionary and not (saludos_variant as Dictionary).is_empty():
+			_agregar_encabezado_dialogo(_detalle, "SALUDOS CONTEXTUALES", "")
+			_renderizar_mapa_dialogo(_detalle, saludos_variant as Dictionary, 0)
+
+		var claves_conocidas := ["variantes", "lineas", "temas_conversacion", "respuestas_rutina", "rutina_contextual", "saludos_contextuales"]
+		for clave in contenido.keys():
+			if str(clave) in claves_conocidas:
+				continue
+			_agregar_encabezado_dialogo(_detalle, str(clave).replace("_", " ").to_upper(), "")
+			_renderizar_valor_dialogo(_detalle, contenido[clave], 0)
+
+
+func _agregar_encabezado_dialogo(padre: Control, texto: String, detalle: String) -> void:
+	var fila := HBoxContainer.new()
+	fila.add_theme_constant_override("separation", 6)
+	padre.add_child(fila)
+	var titulo := Label.new()
+	titulo.text = texto
+	titulo.add_theme_font_size_override("font_size", 10)
+	fila.add_child(titulo)
+	if not detalle.is_empty():
+		var cantidad := Label.new()
+		cantidad.text = detalle
+		cantidad.add_theme_font_size_override("font_size", 9)
+		cantidad.modulate = Color(0.68, 0.72, 0.8)
+		fila.add_child(cantidad)
 	var separador := HSeparator.new()
-	_detalle.add_child(separador)
-	var etiqueta_registros := Label.new()
-	etiqueta_registros.text = "REGISTROS"
-	etiqueta_registros.add_theme_font_size_override("font_size", 10)
-	_detalle.add_child(etiqueta_registros)
+	padre.add_child(separador)
 
-	for indice in range(_dialogos_admin.size()):
-		var registro := _dialogos_admin[indice]
-		var clave := str(registro.get("clave", "principal"))
-		var nombre_registro := str(registro.get("titulo", registro.get("nombre", clave)))
-		var boton := Button.new()
-		boton.text = ("› " if indice == _dialogo_seleccionado_admin else "") + nombre_registro + "  ·  " + clave
-		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		boton.custom_minimum_size = Vector2(0, 28)
-		boton.pressed.connect(_seleccionar_registro_dialogo.bind(indice))
-		PIXEL_UI_THEME.apply(boton, false)
-		_detalle.add_child(boton)
 
-	if _dialogo_seleccionado_admin < 0 or _dialogo_seleccionado_admin >= _dialogos_admin.size():
+func _crear_tarjeta_dialogo(padre: Control, titulo_texto: String, subtitulo: String = "") -> VBoxContainer:
+	var tarjeta := VBoxContainer.new()
+	tarjeta.add_theme_constant_override("separation", 5)
+	tarjeta.add_theme_constant_override("margin_left", 8)
+	tarjeta.add_theme_constant_override("margin_right", 8)
+	tarjeta.add_theme_constant_override("margin_top", 6)
+	tarjeta.add_theme_constant_override("margin_bottom", 6)
+	padre.add_child(tarjeta)
+	var titulo := Label.new()
+	titulo.text = titulo_texto.replace("_", " ").capitalize()
+	titulo.add_theme_font_size_override("font_size", 12)
+	tarjeta.add_child(titulo)
+	if not subtitulo.is_empty():
+		var etiqueta := Label.new()
+		etiqueta.text = subtitulo
+		etiqueta.add_theme_font_size_override("font_size", 9)
+		etiqueta.modulate = Color(0.7, 0.74, 0.82)
+		etiqueta.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		tarjeta.add_child(etiqueta)
+	return tarjeta
+
+
+func _agregar_texto_dialogo(padre: Control, etiqueta: String, texto: String) -> void:
+	if texto.strip_edges().is_empty():
 		return
+	var bloque := VBoxContainer.new()
+	bloque.add_theme_constant_override("separation", 2)
+	padre.add_child(bloque)
+	if not etiqueta.is_empty():
+		var titulo := Label.new()
+		titulo.text = etiqueta.replace("_", " ").capitalize()
+		titulo.add_theme_font_size_override("font_size", 9)
+		titulo.modulate = Color(0.68, 0.74, 0.86)
+		bloque.add_child(titulo)
+	var cuerpo := Label.new()
+	cuerpo.text = texto
+	cuerpo.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	cuerpo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	bloque.add_child(cuerpo)
 
-	var registro_seleccionado := _dialogos_admin[_dialogo_seleccionado_admin]
-	var titulo_contenido := Label.new()
-	titulo_contenido.text = "CONTENIDO COMPLETO"
-	titulo_contenido.add_theme_font_size_override("font_size", 10)
-	_detalle.add_child(titulo_contenido)
 
-	var visor := TextEdit.new()
-	visor.name = "DialogueJsonViewer"
-	visor.editable = false
-	visor.selecting_enabled = true
-	visor.wrap_mode = TextEdit.LINE_WRAPPING_BOUNDARY
-	visor.custom_minimum_size = Vector2(0, 260)
-	visor.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	visor.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	visor.text = JSON.stringify(registro_seleccionado, "  ")
-	_detalle.add_child(visor)
+func _renderizar_variante_dialogo(padre: Control, variante: Dictionary) -> void:
+	var clave := str(variante.get("clave", "Conversación"))
+	var prioridad := int(variante.get("prioridad", 0))
+	var requisitos: Array[String] = []
+	for campo in ["requisito_social", "requisito_contextual"]:
+		var requisito_variant: Variant = variante.get(campo, {})
+		if requisito_variant is Dictionary:
+			for requisito_clave in (requisito_variant as Dictionary).keys():
+				requisitos.append("%s: %s" % [str(requisito_clave).replace("_", " "), str((requisito_variant as Dictionary)[requisito_clave])])
+	var tarjeta := _crear_tarjeta_dialogo(padre, clave, "Prioridad %d" % prioridad + ("  ·  " + "  /  ".join(PackedStringArray(requisitos)) if not requisitos.is_empty() else ""))
+	var lineas_variant: Variant = variante.get("lineas", [])
+	if lineas_variant is Array:
+		for linea_variant in lineas_variant as Array:
+			if not linea_variant is Dictionary:
+				continue
+			var linea := linea_variant as Dictionary
+			_agregar_texto_dialogo(tarjeta, str(linea.get("hablante", "Personaje")), str(linea.get("texto", "")))
+	if tarjeta.get_child_count() == 1:
+		_agregar_texto_dialogo(tarjeta, "", "Esta variante no contiene líneas de texto.")
+
+
+func _renderizar_tema_dialogo(padre: Control, tema: Dictionary) -> void:
+	var clave := str(tema.get("clave", "tema"))
+	var subtitulo := str(tema.get("tipo", "conversación")).capitalize()
+	var requisitos: Array[String] = []
+	for campo in ["requiere_tema", "requisito_social"]:
+		var valor: Variant = tema.get(campo, null)
+		if valor is Dictionary:
+			for requisito_clave in (valor as Dictionary).keys():
+				requisitos.append("%s: %s" % [str(requisito_clave).replace("_", " "), str((valor as Dictionary)[requisito_clave])])
+		elif valor != null:
+			requisitos.append(str(campo).replace("_", " ") + ": " + str(valor))
+	if not requisitos.is_empty():
+		subtitulo += "  ·  " + " / ".join(PackedStringArray(requisitos))
+	var tarjeta := _crear_tarjeta_dialogo(padre, str(tema.get("texto", clave)), subtitulo)
+	_agregar_texto_dialogo(tarjeta, "Jugador", str(tema.get("jugador", "")))
+	_agregar_texto_dialogo(tarjeta, str(_seleccion.get("nombre", "Personaje")), str(tema.get("respuesta", "")))
+	_agregar_texto_dialogo(tarjeta, "Respuesta repetida", str(tema.get("respuesta_repetida", "")))
+
+
+func _renderizar_mapa_dialogo(padre: Control, datos: Dictionary, profundidad: int) -> void:
+	if profundidad > 4:
+		return
+	var claves: Array = datos.keys()
+	claves.sort()
+	for clave_variant in claves:
+		var clave := str(clave_variant)
+		var valor: Variant = datos[clave_variant]
+		if valor is Dictionary:
+			var grupo := _crear_tarjeta_dialogo(padre, clave)
+			_renderizar_mapa_dialogo(grupo, valor as Dictionary, profundidad + 1)
+		elif valor is Array:
+			var elementos := valor as Array
+			var grupo := _crear_tarjeta_dialogo(padre, clave, "%d entradas" % elementos.size())
+			for indice in range(elementos.size()):
+				_renderizar_valor_dialogo(grupo, elementos[indice], profundidad + 1, "Opción %d" % (indice + 1))
+		else:
+			_renderizar_valor_dialogo(padre, valor, profundidad, clave)
+
+
+func _renderizar_valor_dialogo(padre: Control, valor: Variant, profundidad: int, etiqueta: String = "") -> void:
+	if profundidad > 4:
+		return
+	if valor is Dictionary:
+		var grupo := _crear_tarjeta_dialogo(padre, etiqueta if not etiqueta.is_empty() else "Detalles")
+		_renderizar_mapa_dialogo(grupo, valor as Dictionary, profundidad + 1)
+	elif valor is Array:
+		var elementos := valor as Array
+		var grupo := _crear_tarjeta_dialogo(padre, etiqueta if not etiqueta.is_empty() else "Opciones", "%d entradas" % elementos.size())
+		for indice in range(elementos.size()):
+			_renderizar_valor_dialogo(grupo, elementos[indice], profundidad + 1, "Opción %d" % (indice + 1))
+	else:
+		_agregar_texto_dialogo(padre, etiqueta, str(valor))
 
 
 func _seleccionar_registro_dialogo(indice: int) -> void:
