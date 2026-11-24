@@ -294,6 +294,8 @@ func _crear_tarjeta_personaje(personaje: Dictionary, rejilla: GridContainer) -> 
 
 	var textura_cara := _cargar_textura_ruta(str(visual.get("portrait_path", "")))
 	if textura_cara == null:
+		textura_cara = _cargar_textura_ruta(str(visual.get("sprite_path", "")))
+	if textura_cara == null:
 		textura_cara = _cargar_retrato_cara(asset_key, nombre)
 	var textura := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
 	if textura != null:
@@ -433,6 +435,8 @@ func _seleccionar(personaje_id: String, nombre: String) -> void:
 	var sprite_path := str(datos_personaje.get("sprite_path", "")).strip_edges()
 	var portrait_path := str(datos_personaje.get("portrait_path", "")).strip_edges()
 	var textura_cara := _cargar_textura_ruta(portrait_path)
+	if textura_cara == null:
+		textura_cara = _cargar_textura_ruta(sprite_path)
 	if textura_cara == null:
 		textura_cara = _cargar_retrato_cara(asset_key, nombre)
 	var textura_retrato := textura_cara if textura_cara != null else _cargar_retrato(asset_key, nombre)
