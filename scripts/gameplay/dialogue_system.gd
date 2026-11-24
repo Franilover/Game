@@ -2364,10 +2364,16 @@ func _cerrar_selector_conversacion() -> void:
 
 func _crear_menu_principal_social() -> Array[Dictionary]:
 	var opciones: Array[Dictionary] = []
-	# Al conocerse, el jugador sólo puede conversar de forma casual.
-	# Preguntar aparece cuando al menos uno de los cuatro hitos personales se abre.
-	if not _crear_opciones_submenu_social("preguntar").is_empty():
-		opciones.append({"clave":"menu_preguntar","texto":"Preguntar","tipo_menu":"preguntar"})
+	# Preguntar permanece visible desde el primer encuentro, pero sólo se
+	# habilita cuando el sistema social confirma al menos un hito personal.
+	var preguntar_desbloqueado := not _crear_opciones_submenu_social("preguntar").is_empty()
+	opciones.append({
+		"clave": "menu_preguntar",
+		"texto": "Preguntar" if preguntar_desbloqueado else "Preguntar · Bloqueado",
+		"tipo_menu": "preguntar",
+		"bloqueado": not preguntar_desbloqueado
+	})
+	# Hablar siempre está disponible; su contenido procede de Supabase.
 	opciones.append({"clave":"menu_hablar","texto":"Hablar","tipo_menu":"hablar"})
 	opciones.append({"clave":"menu_cumplido","texto":"Dar cumplido","tipo_menu":"cumplido"})
 	opciones.append({"clave":"menu_despedirse","texto":"Despedirse","tipo_menu":"despedirse"})
@@ -3490,6 +3496,10 @@ func _crear_botones_respuesta() -> void:
 		boton.custom_minimum_size = Vector2(0, 34)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		boton.add_theme_font_size_override("font_size", 11)
+		var bloqueado := bool(opcion.get("bloqueado", false))
+		boton.disabled = bloqueado
+		if bloqueado:
+			boton.tooltip_text = "Desbloquea al menos un hito personal para poder preguntar."
 		boton.pressed.connect(_seleccionar_respuesta.bind(indice))
 		_respuestas_container.add_child(boton)
 	PIXEL_UI_THEME.apply(_respuestas_container)
@@ -3515,6 +3525,10 @@ func _seleccionar_respuesta(indice: int) -> void:
 	if indice < 0 or indice >= _respuestas.size():
 		return
 	var opcion: Dictionary = _respuestas[indice]
+	# Protección adicional: una opción bloqueada no puede ejecutarse aunque
+	# se invoque el callback desde otro punto de la interfaz.
+	if bool(opcion.get("bloqueado", false)):
+		return
 	if not _respuesta_es_utilizable(opcion):
 		_respuestas.remove_at(indice)
 		_limpiar_botones_respuesta()
