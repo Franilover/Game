@@ -1,4 +1,4 @@
-extends CharacterBody2D
+extends Entity
 class_name SaltusPlayer
 
 const IDLE_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
@@ -27,6 +27,7 @@ var _walk_texture: Texture2D
 
 
 func _ready() -> void:
+	super._ready()
 	add_to_group("saltus_player")
 	if sprite != null:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
