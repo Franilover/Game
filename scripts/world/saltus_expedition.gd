@@ -69,18 +69,13 @@ func _ready() -> void:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	if not contenido_escena_preconstruido:
-		# Compatibilidad temporal para escenas antiguas aún no convertidas.
-		_crear_relleno_fondo()
-		_crear_terreno()
-		_crear_puntos_sector()
-		_crear_fondo_y_parallax()
-		_crear_arboleda()
-		_crear_criaturas()
-		_crear_ambiente()
-		_crear_mecanicas_ambientales()
+		push_error("Saltus: la escena aún no contiene el mundo editable. Abre expedicion_saltus.tscn y ejecuta tools/editor/build_saltus_editable_map.gd.")
+		return
+	# El escenario ya está serializado en expedicion_saltus.tscn.
+	# En runtime solo se inicializan sistemas de progreso y cámara.
 	_crear_grafo_sector()
 	_configurar_camara()
-	print("Saltus: escena cargada | contenido preconstruido=", contenido_escena_preconstruido, " | jugador=", _player.global_position)
+	print("Saltus: escena editable cargada | jugador=", _player.global_position)
 
 
 func _process(_delta: float) -> void:
