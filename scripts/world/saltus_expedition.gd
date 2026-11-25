@@ -146,9 +146,13 @@ func _crear_terreno() -> void:
 	# Pisos independientes: entrada, claro, galerías inferiores y arena final.
 	var suelos: Array[Dictionary] = [
 		{"x": 0, "y": 14, "w": 24, "d": 6},
-		{"x": 30, "y": 14, "w": 25, "d": 6},
-		{"x": 61, "y": 14, "w": 24, "d": 6},
-		{"x": 91, "y": 14, "w": 28, "d": 6},
+		# Tres shafts controlados conectan el nivel superior con las galerías inferiores.
+		{"x": 30, "y": 14, "w": 12, "d": 6},
+		{"x": 48, "y": 14, "w": 7, "d": 6},
+		{"x": 61, "y": 14, "w": 2, "d": 6},
+		{"x": 67, "y": 14, "w": 18, "d": 6},
+		{"x": 91, "y": 14, "w": 2, "d": 6},
+		{"x": 97, "y": 14, "w": 22, "d": 6},
 		{"x": 126, "y": 14, "w": 24, "d": 6},
 		{"x": 158, "y": 14, "w": 42, "d": 6},
 		{"x": 43, "y": 28, "w": 23, "d": 6},
@@ -279,7 +283,7 @@ func _crear_grafo_sector() -> void:
 
 func _crear_puntos_sector() -> void:
 	_crear_punto_descanso(Vector2(96.0, 448.0))
-	_crear_punto_descanso(Vector2(2016.0, 448.0))
+	_crear_punto_descanso(Vector2(1536.0, 448.0))
 	_crear_punto_descanso(Vector2(2400.0, 960.0))
 	_crear_punto_descanso(Vector2(4480.0, 320.0))
 	_crear_punto_descanso(Vector2(5344.0, 448.0))
@@ -287,7 +291,7 @@ func _crear_puntos_sector() -> void:
 	# Indicaciones breves integradas en el recorrido para enseñar cada acción.
 	_crear_indicacion_tutorial("SALTA", Vector2(320.0, 330.0))
 	_crear_indicacion_tutorial("PARKOUR", Vector2(1040.0, 300.0))
-	_crear_indicacion_tutorial("DASH", Vector2(1710.0, 300.0))
+	_crear_indicacion_tutorial("DASH", Vector2(1500.0, 300.0))
 	_crear_indicacion_tutorial("FLOR DETECTORA", Vector2(1632.0, 365.0))
 	_crear_indicacion_tutorial("CRIATURAS", Vector2(2500.0, 300.0))
 
