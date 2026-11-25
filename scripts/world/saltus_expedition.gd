@@ -57,13 +57,13 @@ func _crear_terreno() -> void:
 	_pintar_plataforma(9, 12, 5)
 	_pintar_plataforma(17, 10, 5)
 	_pintar_plataforma(25, 12, 4)
-	_pintar_plataforma(32, 9, 5)
+	_pintar_plataforma(32, 10, 5)
 	_pintar_plataforma(41, 11, 5)
 	_pintar_plataforma(50, 9, 5)
 	_pintar_plataforma(59, 12, 5)
 	_pintar_plataforma(68, 10, 5)
 	_pintar_plataforma(78, 12, 6)
-	_pintar_plataforma(84, 9, 4)
+	_pintar_plataforma(84, 10, 4)
 
 
 func _crear_tileset_bosque(one_way: bool) -> TileSet:
