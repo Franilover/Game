@@ -17,9 +17,9 @@ func _run() -> void:
 	if root == null or root.scene_file_path != SCENE_PATH:
 		push_error("Saltus: abre scenes/world/expedicion_saltus.tscn antes de ejecutar este script.")
 		return
-	if bool(root.get("contenido_escena_preconstruido")):
-		# La escena ya existe: repara los propietarios para habilitar su edición
-		# sin regenerar ni duplicar plantas, criaturas, terreno o mecanismos.
+	print("Saltus: comprobando contenido materializado de la escena...")
+	if bool(root.get("contenido_escena_preconstruido")) and _escena_tiene_contenido_editable(root):
+		# Solo evitamos reconstruir si el .tscn realmente contiene todas las categorías.
 		for hijo: Node in root.get_children():
 			_asignar_owner_recursivo(hijo, root)
 		var escena_existente := PackedScene.new()
@@ -31,8 +31,12 @@ func _run() -> void:
 		if error_guardado != OK:
 			push_error("Saltus: no se pudo guardar la escena editable: " + error_string(error_guardado))
 			return
-		print("Saltus: propietarios reparados. Flores, bloques, criaturas y mecanismos ya pertenecen a la escena y pueden editarse.")
+		print("Saltus: escena editable verificada y propietarios reparados.")
 		return
+
+	# Si el indicador quedó activado en una ejecución parcial pero el árbol solo
+	# contiene Player, reconstruimos. Nunca usamos el booleano como única prueba.
+	_limpiar_contenido_generado(root)
 
 	# La raíz abierta puede ser un PlaceholderScriptInstance aunque el script
 	# tenga @tool. Instanciamos una fábrica real desde el recurso GDScript.
@@ -213,3 +217,55 @@ func _agregar_sprite(parent: Node, nombre: String, ruta: String) -> void:
 	if sprite.texture != null:
 		sprite.position.y = -sprite.texture.get_height() * sprite.scale.y * 0.5
 	parent.add_child(sprite)
+
+
+func _escena_tiene_contenido_editable(root: Node) -> bool:
+	var mapa := root.get_node_or_null("Mapa")
+	var vegetacion := root.get_node_or_null("Vegetacion")
+	var criaturas := root.get_node_or_null("Criaturas")
+	var mecanismos := root.get_node_or_null("Mecanismos")
+	var checkpoints := root.get_node_or_null("PuntosDeControl")
+	var fondos := root.get_node_or_null("Fondos")
+	if mapa == null or vegetacion == null or criaturas == null:
+		return false
+	if mecanismos == null or checkpoints == null or fondos == null:
+		return false
+	return (
+		_contiene_nombre(mapa, "TerrenoSaltusV2")
+		and _contiene_prefijo(vegetacion, "FloraImpulsora_")
+		and _contiene_prefijo(vegetacion, "FlorDetectora_")
+		and _contiene_prefijo(criaturas, "Zlish_")
+		and _contiene_prefijo(criaturas, "Flaxis_")
+		and _contiene_nombre(mecanismos, "PuertaFlorDetectora")
+		and _contiene_prefijo(mecanismos, "CorrienteAerea")
+		and _contiene_nombre(checkpoints, "PuntoDescanso")
+		and _contiene_prefijo(fondos, "Parallax")
+	)
+
+
+func _contiene_nombre(nodo: Node, nombre: String) -> bool:
+	if nodo.name == nombre:
+		return true
+	for hijo: Node in nodo.get_children():
+		if _contiene_nombre(hijo, nombre):
+			return true
+	return false
+
+
+func _contiene_prefijo(nodo: Node, prefijo: String) -> bool:
+	if nodo.name.begins_with(prefijo):
+		return true
+	for hijo: Node in nodo.get_children():
+		if _contiene_prefijo(hijo, prefijo):
+			return true
+	return false
+
+
+func _limpiar_contenido_generado(root: Node) -> void:
+	for hijo: Node in root.get_children().duplicate():
+		if hijo.name == "Player":
+			continue
+		root.remove_child(hijo)
+		hijo.free()
+	root.set("contenido_escena_preconstruido", false)
+	print("Saltus: árbol incompleto detectado; se reconstruirá desde cero conservando Player.")
