@@ -30,22 +30,19 @@ func _process(_delta: float) -> void:
 func _crear_terreno() -> void:
 	var tile_set: TileSet = _crear_tileset_bosque(false)
 	var platform_tile_set: TileSet = _crear_tileset_bosque(true)
-	if tile_set == null:
+	if tile_set == null or platform_tile_set == null:
+		push_error("Saltus: no se pudieron preparar los TileSet del terreno.")
 		return
 
 	_terrain_layer = TileMapLayer.new()
 	_terrain_layer.name = "Terreno"
 	_terrain_layer.tile_set = tile_set
-	_terrain_layer.collision_layer = 1
-	_terrain_layer.collision_mask = 1
 	_terrain_layer.z_index = -10
 	add_child(_terrain_layer)
 
 	_platform_layer = TileMapLayer.new()
 	_platform_layer.name = "Plataformas"
 	_platform_layer.tile_set = platform_tile_set
-	_platform_layer.collision_layer = 1
-	_platform_layer.collision_mask = 1
 	_platform_layer.z_index = -5
 	add_child(_platform_layer)
 
@@ -75,12 +72,17 @@ func _crear_tileset_bosque(one_way: bool) -> TileSet:
 	var tile_set: TileSet = TileSet.new()
 	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	tile_set.add_physics_layer()
+	tile_set.set_physics_layer_collision_layer(0, 1)
+	tile_set.set_physics_layer_collision_mask(0, 1)
 
 	var atlas: TileSetAtlasSource = TileSetAtlasSource.new()
 	atlas.texture = textura
 	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	atlas.create_tile(TILE_ATLAS_COORDS)
+	tile_set.add_source(atlas, 0)
 
+	# El TileData debe configurarse después de añadir su atlas al TileSet,
+	# para que ya disponga de la capa física 0.
 	var tile_data: TileData = atlas.get_tile_data(TILE_ATLAS_COORDS, 0)
 	if tile_data == null:
 		push_error("Saltus: no se pudo preparar el tile sólido del atlas de bosque.")
@@ -99,7 +101,6 @@ func _crear_tileset_bosque(one_way: bool) -> TileSet:
 			Vector2(0.0, 32.0)
 		])
 	)
-	tile_set.add_source(atlas, 0)
 	return tile_set
 
 
@@ -121,7 +122,7 @@ func _crear_ambiente() -> void:
 		hojas.amount = 9
 		hojas.lifetime = 7.0
 		hojas.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-		hojas.emission_box_extents = Vector2(230.0, 105.0)
+		hojas.emission_rect_extents = Vector2(230.0, 105.0)
 		hojas.direction = Vector2(-0.25, 1.0)
 		hojas.spread = 24.0
 		hojas.gravity = Vector2(16.0, 24.0)
