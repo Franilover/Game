@@ -16,7 +16,7 @@ La escena `expedicion_saltus.tscn` mantiene una única escena y una sola coorden
 - **Claro central:** zona de inicio, descansadero y cruces de superficie.
 - **Arboleda vertical:** ruta escalonada por plataformas, con ascenso hasta las copas y retorno por plataformas inferiores.
 - **Raíces profundas:** galerías bajo el claro, alcanzables mediante los desniveles y plataformas de descenso.
-- **Atajo sellado:** un paso superior de Arboleda permanece cerrado hasta recoger el núcleo de exploración; al recogerlo se registra la habilidad de prototipo `impulso_aereo` y se desbloquea la conexión lógica hacia Raíces.
+- **Atajo sellado:** un descenso alternativo desde Arboleda hacia Raíces permanece cerrado hasta recoger el núcleo de exploración en una plataforma elevada; al recogerlo se registra la habilidad de prototipo `impulso_aereo` y se desbloquea la conexión lógica hacia Raíces.
 - **Descanso y caída:** el punto de descanso registra la posición de retorno; caer fuera del límite inferior devuelve al jugador a ese punto.
 
 La habilidad y el núcleo son contenido de prototipo para validar el flujo de exploración y desbloqueo. Su nombre, comportamiento definitivo y adquisición final siguen sujetos al diseño de habilidades de Saltus.
