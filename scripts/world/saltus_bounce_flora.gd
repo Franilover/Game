@@ -40,7 +40,7 @@ func _al_entrar_en_contacto(body: Node2D) -> void:
 	_animar_compresion()
 
 func _crear_visual() -> void:
-	 _sprite = Sprite2D.new()
+	_sprite = Sprite2D.new()
 	_sprite.name = "FlorSaltarinaSprite"
 	_sprite.texture = load(TEXTURE_PATH) as Texture2D
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
