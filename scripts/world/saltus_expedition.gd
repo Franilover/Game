@@ -173,6 +173,11 @@ func _crear_terreno() -> void:
 		{"x": 142, "y": -6, "w": 7}, {"x": 148, "y": -8, "w": 7},
 		{"x": 154, "y": -10, "w": 6},
 		{"x": 29, "y": 19, "w": 7}, {"x": 38, "y": 22, "w": 8},
+		# Escalera de retorno: permite salir de Raíces sin depender del Impulso Aéreo.
+		{"x": 70, "y": 28, "w": 5}, {"x": 74, "y": 26, "w": 5},
+		{"x": 78, "y": 24, "w": 5}, {"x": 81, "y": 22, "w": 5},
+		{"x": 84, "y": 20, "w": 5}, {"x": 87, "y": 18, "w": 5},
+		{"x": 90, "y": 16, "w": 5},
 		{"x": 48, "y": 19, "w": 8}, {"x": 57, "y": 23, "w": 8},
 		{"x": 67, "y": 20, "w": 8}, {"x": 78, "y": 24, "w": 8},
 		{"x": 90, "y": 20, "w": 8},
@@ -240,6 +245,8 @@ func _crear_grafo_sector() -> void:
 
 func _crear_puntos_sector() -> void:
 	_crear_punto_descanso(Vector2(480.0, 408.0))
+	# Descanso en el suelo principal de Raíces profundas.
+	_crear_punto_descanso(Vector2(2480.0, 936.0))
 	var hallazgo := Area2D.new()
 	hallazgo.name = "NucleoDeImpulso"
 	hallazgo.position = Vector2(2600.0, 190.0)
@@ -301,13 +308,15 @@ func _al_recoger_nucleo(cuerpo: Node2D, hallazgo: Area2D) -> void:
 	if cuerpo != _player:
 		return
 	_ability_flags["impulso_aereo"] = true
+	if is_instance_valid(_player):
+		_player.unlock_air_dash()
 	if is_instance_valid(_world_graph):
 		_world_graph.unlock_connection(&"arboleda_raices_impulso")
 	if is_instance_valid(_sector_gate):
 		_sector_gate.queue_free()
 	if is_instance_valid(hallazgo):
 		hallazgo.queue_free()
-	print("Saltus: hallazgo registrado | atajo de Arboleda y Raíces desbloqueado.")
+	print("Saltus: Impulso Aéreo adquirido | segundo dash en el aire habilitado | paso sellado abierto.")
 
 func _crear_colision_suelo(inicio_x: int, ancho: int) -> void:
 	var cuerpo := StaticBody2D.new()
