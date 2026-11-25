@@ -368,7 +368,7 @@ func _cargar_retrato(asset_key: String, nombre: String) -> Texture2D:
 	if not nombre.is_empty() and nombre not in claves:
 		claves.append(nombre)
 	for clave in claves:
-		var ruta := "res://assets/art/characters/" + clave + ".png"
+		var ruta := "res://assets/art/kingdom/Torres/Personajes/" + clave + ".png"
 		if ResourceLoader.exists(ruta):
 			var recurso: Resource = load(ruta)
 			if recurso is Texture2D:
@@ -384,7 +384,7 @@ func _cargar_sprite_mapa(sprite_key: String, nombre: String, tiene_personaje: bo
 		claves.append(nombre)
 	for clave in claves:
 		for extension in [".png", ".PNG"]:
-			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
+			var ruta: String = "res://assets/art/kingdom/Torres/Personajes/" + clave + str(extension)
 			if not ResourceLoader.exists(ruta):
 				continue
 			var recurso: Resource = load(ruta)
@@ -393,7 +393,7 @@ func _cargar_sprite_mapa(sprite_key: String, nombre: String, tiene_personaje: bo
 
 	# Es el mismo fallback que utiliza Creature._cargar_sprite() en el mapa.
 	if tiene_personaje:
-		var ruta_base := "res://assets/art/characters/Sprite-0004.png"
+		var ruta_base := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
 		if ResourceLoader.exists(ruta_base):
 			return load(ruta_base) as Texture2D
 	return null
@@ -406,7 +406,7 @@ func _cargar_retrato_cara(asset_key: String, nombre: String) -> Texture2D:
 	if not nombre.is_empty() and nombre not in claves:
 		claves.append(nombre)
 	for clave in claves:
-		var ruta := "res://assets/art/characters/heads/" + clave + ".png"
+		var ruta := "res://assets/art/kingdom/Torres/Personajes/heads/" + clave + ".png"
 		if ResourceLoader.exists(ruta):
 			var recurso: Resource = load(ruta)
 			if recurso is Texture2D:

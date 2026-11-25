@@ -6,12 +6,12 @@ class_name CharacterAppearance
 
 const SLOTS: Array[String] = ["body", "hair", "eyes", "shirt", "pants", "shoes"]
 const SLOT_DIRECTORIES := {
-	"body": "res://assets/art/characters/customization/body/",
-	"hair": "res://assets/art/characters/customization/hair/",
-	"eyes": "res://assets/art/characters/customization/eyes/",
-	"shirt": "res://assets/art/characters/customization/shirts/",
-	"pants": "res://assets/art/characters/customization/pants/",
-	"shoes": "res://assets/art/characters/customization/shoes/"
+	"body": "res://assets/art/kingdom/Torres/Personajes/customization/body/",
+	"hair": "res://assets/art/kingdom/Torres/Personajes/customization/hair/",
+	"eyes": "res://assets/art/kingdom/Torres/Personajes/customization/eyes/",
+	"shirt": "res://assets/art/kingdom/Torres/Personajes/customization/shirts/",
+	"pants": "res://assets/art/kingdom/Torres/Personajes/customization/pants/",
+	"shoes": "res://assets/art/kingdom/Torres/Personajes/customization/shoes/"
 }
 const SLOT_LABELS := {
 	"body": "Cuerpo",
@@ -29,21 +29,21 @@ const SLOT_LABELS := {
 # y preload() provoca errores de parseo en estas rutas.
 const CATALOG_ASSETS := {
 	"hair": [
-		{"name": "Pelo 1", "path": "res://assets/art/characters/customization/hair/1 Front.png"},
-		{"name": "Pelo 2", "path": "res://assets/art/characters/customization/hair/2 Front.png"},
-		{"name": "Pelo 3", "path": "res://assets/art/characters/customization/hair/3 Front.png"}
+		{"name": "Pelo 1", "path": "res://assets/art/kingdom/Torres/Personajes/customization/hair/1 Front.png"},
+		{"name": "Pelo 2", "path": "res://assets/art/kingdom/Torres/Personajes/customization/hair/2 Front.png"},
+		{"name": "Pelo 3", "path": "res://assets/art/kingdom/Torres/Personajes/customization/hair/3 Front.png"}
 	],
 	"eyes": [
-		{"name": "expressive", "path": "res://assets/art/characters/customization/eyes/expressive.png"}
+		{"name": "expressive", "path": "res://assets/art/kingdom/Torres/Personajes/customization/eyes/expressive.png"}
 	],
 	"shirt": [
-		{"name": "tunic", "path": "res://assets/art/characters/customization/shirts/tunic.png"}
+		{"name": "tunic", "path": "res://assets/art/kingdom/Torres/Personajes/customization/shirts/tunic.png"}
 	],
 	"pants": [
-		{"name": "skirt", "path": "res://assets/art/characters/customization/pants/skirt.png"}
+		{"name": "skirt", "path": "res://assets/art/kingdom/Torres/Personajes/customization/pants/skirt.png"}
 	],
 	"shoes": [
-		{"name": "sneakers", "path": "res://assets/art/characters/customization/shoes/sneakers.png"}
+		{"name": "sneakers", "path": "res://assets/art/kingdom/Torres/Personajes/customization/shoes/sneakers.png"}
 	]
 }
 

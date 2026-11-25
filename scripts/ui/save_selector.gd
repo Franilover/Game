@@ -330,7 +330,7 @@ func _construir_editor_partida() -> void:
 
 func _cargar_aspectos_edicion() -> void:
 	_aspectos_list.clear()
-	var directorio := DirAccess.open("res://assets/art/characters/skins/")
+	var directorio := DirAccess.open("res://assets/art/kingdom/Torres/Personajes/skins/")
 	if directorio == null:
 		return
 	var archivos := directorio.get_files()
@@ -338,7 +338,7 @@ func _cargar_aspectos_edicion() -> void:
 	for archivo in archivos:
 		if archivo.get_extension().to_lower() not in ["png", "webp", "jpg", "jpeg"]:
 			continue
-		var ruta := "res://assets/art/characters/skins/" + archivo
+		var ruta := "res://assets/art/kingdom/Torres/Personajes/skins/" + archivo
 		var textura := load(ruta) as Texture2D
 		if textura == null:
 			continue

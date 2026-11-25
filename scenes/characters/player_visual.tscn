@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/characters/Sprite-0004.png" id="1_player_texture"]
+[ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png" id="1_player_texture"]
 
 [node name="Visual" type="Node2D"]
 z_as_relative = false

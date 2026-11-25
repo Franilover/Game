@@ -39,4 +39,4 @@ Las escenas de criatura heredan las plantillas existentes `creature.tscn` y `gar
 
 No todos los assets del repositorio tienen todavía una escena propia: los archivos fuente Aseprite sin exportación PNG no se convierten automáticamente en escenas visuales. Tampoco se han extraído aún todos los paneles y controles construidos dinámicamente por HUD e inventario. La lógica de entrada, minijuego, actualización de vida, selección de objetos y acciones permanece en scripts.
 
-La personalización declara una capa `body`, pero actualmente no existe `assets/art/characters/customization/body/`; por eso esa capa queda disponible en la escena pero no ofrece opciones en el catálogo. No se ha inventado ni sustituido ningún sprite corporal.
+La personalización declara una capa `body`, pero actualmente no existe `assets/art/kingdom/Torres/Personajes/customization/body/`; por eso esa capa queda disponible en la escena pero no ofrece opciones en el catálogo. No se ha inventado ni sustituido ningún sprite corporal.

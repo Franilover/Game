@@ -333,7 +333,7 @@ func _cargar_sprite() -> void:
 	var sprite_key_local := str(datos.get("sprite_key", "")).strip_edges()
 	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\"):
 		for extension in [".png", ".PNG"]:
-			var ruta_personaje: String = "res://assets/art/characters/" + sprite_key_local + str(extension)
+			var ruta_personaje: String = "res://assets/art/kingdom/Torres/Personajes/" + sprite_key_local + str(extension)
 			if not FileAccess.file_exists(ruta_personaje) and not ResourceLoader.exists(ruta_personaje):
 				continue
 			var recurso_personaje: Resource = ResourceLoader.load(ruta_personaje)
@@ -354,12 +354,12 @@ func _cargar_sprite() -> void:
 		var sprite_personaje := str(datos.get("sprite_key", nombre_individual)).strip_edges()
 		if not sprite_personaje.is_empty():
 			rutas.append(
-				"res://assets/art/characters/"
+				"res://assets/art/kingdom/Torres/Personajes/"
 				+ sprite_personaje
 				+ ".png"
 			)
 			rutas.append(
-				"res://assets/art/characters/"
+				"res://assets/art/kingdom/Torres/Personajes/"
 				+ sprite_personaje
 				+ ".PNG"
 			)
@@ -417,7 +417,7 @@ func _cargar_sprite() -> void:
 			continue
 
 		sprite.texture = textura
-		if _es_humano() and ruta.begins_with("res://assets/art/characters/"):
+		if _es_humano() and ruta.begins_with("res://assets/art/kingdom/Torres/Personajes/"):
 			_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
 			_normalizar_escala_sprite_personaje(sprite)
 		return
@@ -425,7 +425,7 @@ func _cargar_sprite() -> void:
 	# Mientras cada NPC recibe su sprite propio, reutilizamos el cuerpo humano
 	# base ya incluido en el proyecto. No generamos ni sustituimos arte del usuario.
 	if _es_humano() and not get_personaje_game_id().is_empty():
-		var sprite_humano_base := "res://assets/art/characters/Sprite-0004.png"
+		var sprite_humano_base := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
 		if ResourceLoader.exists(sprite_humano_base):
 			var textura_base := load(sprite_humano_base) as Texture2D
 			if textura_base != null:
@@ -461,7 +461,7 @@ func _configurar_sprites_direccionales_npc(sprite_key: String, sprite: Sprite2D)
 
 
 func _cargar_sprite_direccional_personaje(nombre_archivo: String) -> Texture2D:
-	var ruta := "res://assets/art/characters/" + nombre_archivo
+	var ruta := "res://assets/art/kingdom/Torres/Personajes/" + nombre_archivo
 	if not ResourceLoader.exists(ruta):
 		return null
 	return ResourceLoader.load(ruta) as Texture2D
