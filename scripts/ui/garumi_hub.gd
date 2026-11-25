@@ -208,10 +208,10 @@ func _crear_sprite_fila(registro: Dictionary) -> TextureRect:
 
 	for clave in claves:
 		for ruta in [
-			"res://assets/art/garumis/" + clave + ".png",
-			"res://assets/art/garumis/" + clave + ".PNG",
-			"res://assets/art/garumis/" + clave + ".svg",
-			"res://assets/art/garumis/" + clave + ".SVG",
+			"res://assets/art/creatures/criaturas/" + clave + ".png",
+			"res://assets/art/creatures/criaturas/" + clave + ".PNG",
+			"res://assets/art/creatures/criaturas/" + clave + ".svg",
+			"res://assets/art/creatures/criaturas/" + clave + ".SVG",
 			"res://assets/art/creatures/" + clave + ".png",
 			"res://assets/art/creatures/" + clave + ".PNG",
 			"res://assets/art/creatures/" + clave + "/" + clave + ".png",

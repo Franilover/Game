@@ -15,8 +15,8 @@
 - Los Garumis se preparan tanto en la ruta de aparición directa como en DATA LOD. Se conserva `categoria_entidad`, `asset_key`, `runtime_instance_key` y `habitat_clave` al descargar/restaurar un chunk; la categoría determina la escena/pool al materializar.
 - El grupo `garumis` se mantiene separado del grupo normal `creatures` y fuera de `damageable`. Los Garumis no tienen vida de juego, no reciben daño ni participan en combates como unidades. El combate normal del jugador sigue usando armas y el sistema común contra criaturas combatientes. La absorción por Necromancers requiere su propio contrato y todavía no está implementada.
 - `Garumi` tiene script y escena propios (`scripts/creatures/garumi.gd`, `scenes/creatures/garumi.tscn`) y una pool separada. Reutiliza movimiento y representación del mundo, pero no expone salud, daño, derrota, experiencia ni estadísticas de combate. Su conducta usa `GarumiBrain`, separada de la IA de combate de criaturas.
-- `Creature` busca el sprite propio en `res://assets/art/garumis/<asset_key>.png`, `.PNG`, `.svg` o `.SVG`. No reutiliza por accidente un sprite de criatura normal.
-- `assets/art/garumis/Oruvan.svg` es un sprite abstracto dibujado a mano y no canónico. Mientras `garumis_game` esté vacío, el prototipo automático está **activado por defecto en builds debug** y su probabilidad es 1.0 para cada chunk que tenga una posición caminable válida. Se puede desactivar con `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Lleva metadata explícita de prueba visual de Orumi gen. 1; no es un registro canónico ni reemplaza a Oruvan. En builds de lanzamiento, `OS.is_debug_build()` impide que aparezca. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
+- `Creature` busca el sprite propio en `res://assets/art/creatures/criaturas/<asset_key>.png`, `.PNG`, `.svg` o `.SVG`. No reutiliza por accidente un sprite de criatura normal.
+- `assets/art/creatures/criaturas/Oruvan.svg` es un sprite abstracto dibujado a mano y no canónico. Mientras `garumis_game` esté vacío, el prototipo automático está **activado por defecto en builds debug** y su probabilidad es 1.0 para cada chunk que tenga una posición caminable válida. Se puede desactivar con `mostrar_prototipo_garumi_en_debug_sin_catalogo`. Lleva metadata explícita de prueba visual de Orumi gen. 1; no es un registro canónico ni reemplaza a Oruvan. En builds de lanzamiento, `OS.is_debug_build()` impide que aparezca. Si falla también la textura SVG, queda el proxy geométrico de desarrollo.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
 
 ### Disponibilidad visual en depuración (corrección inmediata)
@@ -69,7 +69,7 @@ El RPC ya emite el único registro autorizado para esta prueba. El arte de Oruva
 
 ### Arte y siguiente paso
 
-- Carpeta de arte: `assets/art/garumis/`.
+- Carpeta de arte: `assets/art/creatures/criaturas/`.
 - Nombre recomendado: archivo PNG con el basename indicado en `asset_key`; sin ruta ni extensión en el campo.
 - Crear y añadir los sprites como arte propio/pixel art; no se generan sprites de IA ni se asigna una criatura existente como si fuese un Garumi.
 - El diagnóstico permite distinguir un catálogo vacío, registros sin aparición ecológica y sprites que aún no existen.

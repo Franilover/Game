@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ww7kkmlhci2g"
-path="res://.godot/imported/Velki.png-147c215c11445329192a74ce07f96024.ctex"
+uid="uid://nlfdq585l2mc"
+path="res://.godot/imported/Desell.png-45613f16c5a59857849c050a350d6e7c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/garumis/Velki.png"
-dest_files=["res://.godot/imported/Velki.png-147c215c11445329192a74ce07f96024.ctex"]
+source_file="res://assets/art/creatures/criaturas/Desell.png"
+dest_files=["res://.godot/imported/Desell.png-45613f16c5a59857849c050a350d6e7c.ctex"]
 
 [params]
 

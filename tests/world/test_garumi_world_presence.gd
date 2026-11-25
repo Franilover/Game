@@ -44,7 +44,7 @@ func _run() -> void:
 		var sprite_test := garumi_sprite_test.get_node("Sprite2D") as Sprite2D
 		_expect(
 			sprite_test != null and sprite_test.texture != null,
-			"El juego debe cargar assets/art/garumis/%s.png usando el nombre visible como fallback." % nombre_sprite
+			"El juego debe cargar assets/art/creatures/criaturas/%s.png usando el nombre visible como fallback." % nombre_sprite
 		)
 		_expect(
 			not bool(garumi_sprite_test.get_meta("garumi_sprite_missing", true)),

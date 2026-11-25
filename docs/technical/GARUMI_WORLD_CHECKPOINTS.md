@@ -22,7 +22,7 @@ Incluye los cambios de combate temporal y sus checkpoints previos a esta rama. U
 
 `c0757974ee45f8243e88e174bbb1ae5828a7071a`
 
-Añade el catálogo independiente `garumis_game`, selectores ecológicos de aparición, probabilidad/peso, resolución de sprites en `assets/art/garumis/`, proxy geométrico de desarrollo e integración inicial del spawner.
+Añade el catálogo independiente `garumis_game`, selectores ecológicos de aparición, probabilidad/peso, resolución de sprites en `assets/art/creatures/criaturas/`, proxy geométrico de desarrollo e integración inicial del spawner.
 
 ### GP-02 — Escena y clase separadas
 
@@ -40,7 +40,7 @@ Añade selección Garumi en DATA LOD, recuperación de categoría/clave de sprit
 
 `8facf8926cc8f4c297473e481e975002a19ded7b`
 
-Añade `assets/art/garumis/Garumi_Prototipo.svg`, un sprite abstracto hecho a mano y expresamente no canónico. El cargador de Garumis reconoce SVG además de PNG.
+Añade `assets/art/creatures/criaturas/Garumi_Prototipo.svg`, un sprite abstracto hecho a mano y expresamente no canónico. El cargador de Garumis reconoce SVG además de PNG.
 
 ### GP-05 — Presencia de prueba sin catálogo canónico
 
@@ -74,7 +74,7 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 - Se aplicó la migración Supabase `emitir_garumi_orumi_gen1_para_prueba`, que extiende `get_mundo_inicial()` con `garumis_game`. Los RPC ambiental v1/v2 heredan la clave.
 - Verificación real del RPC ambiental v2: devuelve exactamente un elemento, `Oruvan`, con `asset_key = "Oruvan"`, `estado_documentacion = "canon"` y `probabilidad_chunk = 1.0`.
 - La regla de hábitat `general` y probabilidad 1.0 son temporales para probar el flujo; no son la ecología definitiva de Oruvan.
-- `assets/art/garumis/Oruvan.svg` es una copia renombrada del antiguo sprite abstracto. La textura está provisionalmente asignada; falta confirmar el nuevo build dentro de Godot.
+- `assets/art/creatures/criaturas/Oruvan.svg` es una copia renombrada del antiguo sprite abstracto. La textura está provisionalmente asignada; falta confirmar el nuevo build dentro de Godot.
 
 ## Estado de verificación
 
@@ -84,7 +84,7 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 - Revisión estática: el flujo de datos y las rutas de materialización se revisaron; eso no sustituye compilación ni prueba en ejecución.
 - El snapshot incluido `data/world_initial.json` aún no contiene `garumis_game`; Oruvan llega por el RPC remoto y se guarda en la caché del jugador.
 - La comprobación SQL confirmó que el RPC ambiental v2 devuelve sólo Oruvan, con `asset_key = Oruvan`; la migración quedó registrada como `20261027145719`.
-- El sprite actual es `assets/art/garumis/Oruvan.svg`, provisional y abstracto; no es el diseño final.
+- El sprite actual es `assets/art/creatures/criaturas/Oruvan.svg`, provisional y abstracto; no es el diseño final.
 - La aparición y carga de textura dentro de Godot después de sincronizar/reiniciar siguen pendientes de verificación.
 
 ## Protocolo para el siguiente bloque

@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://nlfdq585l2mc"
-path="res://.godot/imported/Desell.png-45613f16c5a59857849c050a350d6e7c.ctex"
+uid="uid://b58agoak7r8sb"
+path="res://.godot/imported/Plava.png-6e3b10461fb09271fb75cfb6e2b84987.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/garumis/Desell.png"
-dest_files=["res://.godot/imported/Desell.png-45613f16c5a59857849c050a350d6e7c.ctex"]
+source_file="res://assets/art/creatures/criaturas/Plava.png"
+dest_files=["res://.godot/imported/Plava.png-6e3b10461fb09271fb75cfb6e2b84987.ctex"]
 
 [params]
 

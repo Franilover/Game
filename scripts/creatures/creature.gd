@@ -295,10 +295,10 @@ func _cargar_sprite() -> void:
 			if clave_asset.is_empty() or clave_asset.contains("/") or clave_asset.contains("\\"):
 				continue
 			var rutas_garumi: Array[String] = [
-				"res://assets/art/garumis/" + clave_asset + ".png",
-				"res://assets/art/garumis/" + clave_asset + ".PNG",
-				"res://assets/art/garumis/" + clave_asset + ".svg",
-				"res://assets/art/garumis/" + clave_asset + ".SVG"
+				"res://assets/art/creatures/criaturas/" + clave_asset + ".png",
+				"res://assets/art/creatures/criaturas/" + clave_asset + ".PNG",
+				"res://assets/art/creatures/criaturas/" + clave_asset + ".svg",
+				"res://assets/art/creatures/criaturas/" + clave_asset + ".SVG"
 			]
 			for ruta_garumi in rutas_garumi:
 				if not ResourceLoader.exists(ruta_garumi):
