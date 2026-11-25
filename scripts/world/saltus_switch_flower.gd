@@ -25,16 +25,18 @@ func _ready() -> void:
 	if shape_node == null:
 		shape_node = CollisionShape2D.new()
 		var circle := CircleShape2D.new()
-		circle.radius = 20.0
+		circle.radius = 28.0
 		shape_node.shape = circle
-		shape_node.position = Vector2(0.0, -4.0)
+		shape_node.position = Vector2(0.0, -16.0)
 		add_child(shape_node)
 
 	_sprite = Sprite2D.new()
 	_sprite.name = "Sprite2D"
 	_sprite.texture = load(TEXTURE_PATH) as Texture2D
 	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_sprite.position = Vector2(0.0, -10.0)
+	_sprite.scale = Vector2(2.0, 2.0)
+	if _sprite.texture != null:
+		_sprite.position.y = -_sprite.texture.get_height() * _sprite.scale.y * 0.5
 	add_child(_sprite)
 	if _sprite.texture == null:
 		push_error("Saltus: no se pudo cargar " + TEXTURE_PATH)
