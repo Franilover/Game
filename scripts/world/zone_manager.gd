@@ -279,7 +279,8 @@ func _restaurar_jugador_principal_saltus(posicion: Vector2) -> void:
 		_jugador_principal_saltus = _obtener_jugador_principal()
 	if is_instance_valid(_jugador_principal_saltus):
 		_jugador_principal_saltus.global_position = posicion
-		_jugador_principal_saltus.velocity = Vector2.ZERO
+		if _jugador_principal_saltus is CharacterBody2D:
+			(_jugador_principal_saltus as CharacterBody2D).velocity = Vector2.ZERO
 		_jugador_principal_saltus.visible = _saltus_player_visible_previo
 		_jugador_principal_saltus.set_physics_process(_saltus_player_fisica_previa)
 		_jugador_principal_saltus.set_process_input(_saltus_player_input_previo)
