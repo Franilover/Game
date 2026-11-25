@@ -173,6 +173,8 @@ func _crear_terreno() -> void:
 	# Rutas de enseñanza: saltos cortos, un hueco de dash y parkour escalonado.
 	var plataformas: Array[Dictionary] = [
 		{"x": 4, "y": 12, "w": 4}, {"x": 10, "y": 10, "w": 4},
+		# Puentes superiores sobre los shafts: dejan pasar por arriba sin tapar la caída inferior.
+		{"x": 43, "y": 12, "w": 5}, {"x": 93, "y": 12, "w": 4},
 		{"x": 16, "y": 11, "w": 4}, {"x": 23, "y": 12, "w": 4},
 		{"x": 27, "y": 12, "w": 4}, {"x": 33, "y": 11, "w": 5},
 		{"x": 39, "y": 9, "w": 5}, {"x": 46, "y": 10, "w": 5},
@@ -208,13 +210,20 @@ func _crear_terreno() -> void:
 		{"x": 82, "y": 18, "w": 4}, {"x": 86, "y": 16, "w": 4},
 		{"x": 90, "y": 14, "w": 4},
 		# Galerías inferiores: recorrido transversal y dos salidas.
-		{"x": 78, "y": 27, "w": 6}, {"x": 86, "y": 25, "w": 6},
-		{"x": 94, "y": 23, "w": 6}, {"x": 101, "y": 21, "w": 6},
-		{"x": 108, "y": 19, "w": 6}, {"x": 115, "y": 17, "w": 6},
-		{"x": 122, "y": 15, "w": 6}, {"x": 129, "y": 13, "w": 5},
+		{"x": 78, "y": 28, "w": 6}, {"x": 86, "y": 26, "w": 6},
+		{"x": 94, "y": 24, "w": 6}, {"x": 99, "y": 28, "w": 6},
+		{"x": 103, "y": 27, "w": 6}, {"x": 108, "y": 25, "w": 6},
+		{"x": 115, "y": 23, "w": 6}, {"x": 122, "y": 21, "w": 6},
+		{"x": 126, "y": 29, "w": 6},
+		# Retorno desde la galería oriental hasta el suelo de la arena.
+		{"x": 132, "y": 27, "w": 5}, {"x": 136, "y": 25, "w": 5},
+		{"x": 140, "y": 23, "w": 5}, {"x": 144, "y": 21, "w": 5},
+		{"x": 148, "y": 19, "w": 5}, {"x": 152, "y": 17, "w": 5},
+		{"x": 156, "y": 15, "w": 5}, {"x": 160, "y": 14, "w": 5},
 		# Cruce de copas y conexión con la zona del jefe.
-		{"x": 140, "y": 10, "w": 5}, {"x": 146, "y": 7, "w": 5},
-		{"x": 151, "y": 10, "w": 5}, {"x": 158, "y": 12, "w": 5},
+		{"x": 120, "y": 12, "w": 6}, {"x": 140, "y": 10, "w": 5},
+		{"x": 146, "y": 7, "w": 5}, {"x": 150, "y": 12, "w": 8},
+		{"x": 158, "y": 12, "w": 5},
 		{"x": 166, "y": 11, "w": 5}, {"x": 174, "y": 9, "w": 5},
 		{"x": 182, "y": 11, "w": 5}, {"x": 190, "y": 12, "w": 5}
 	]
