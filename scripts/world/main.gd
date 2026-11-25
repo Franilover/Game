@@ -483,7 +483,10 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		GarliaWorldNetwork.preparar_cambio_zona_servidor()
 	_world_generator = _zone_manager.obtener_world_generator()
 	_world_entity_spawner = null
-	_actualizar_limites_camara_zona(tipo)
+	if tipo == "expedicion:saltus":
+		_activar_camara_saltus(_zona)
+	else:
+		_actualizar_limites_camara_zona(tipo)
 	if is_instance_valid(_world_climate_visuals):
 		_world_climate_visuals.establecer_perfil_climatico(str(CLIMATE_PROFILES_BY_ZONE.get(tipo, "")))
 	var es_modo_historia := tipo == "historia:reserva_carmesi"
@@ -1366,6 +1369,9 @@ func _restaurar_garumis_vinculados() -> void:
 
 
 func _configurar_camara() -> void:
+	if is_instance_valid(_zone_manager) and _zone_manager.obtener_tipo_actual() == "expedicion:saltus":
+		_activar_camara_saltus(_zone_manager.zona_actual)
+		return
 	var camara_actual: Camera2D = get_viewport().get_camera_2d()
 
 	if camara_actual != null:
@@ -1416,7 +1422,31 @@ func _configurar_camara() -> void:
 	_seguir_jugador()
 
 
+func _activar_camara_saltus(zona: Node = null) -> void:
+	# Saltus usa una cámara propia. La GameCamera de Main sigue al jugador
+	# principal oculto y, si permanece activa, deja la expedición fuera de vista.
+	if is_instance_valid(_camera):
+		_camera.enabled = false
+	var zona_objetivo: Node = zona
+	if not is_instance_valid(zona_objetivo) and is_instance_valid(_zone_manager):
+		zona_objetivo = _zone_manager.zona_actual
+	if not is_instance_valid(zona_objetivo):
+		push_warning("Main: no se encontró la zona Saltus para activar su cámara.")
+		return
+	var camara_saltus := zona_objetivo.get_node_or_null("Player/Camera2D") as Camera2D
+	if not is_instance_valid(camara_saltus):
+		push_warning("Main: Saltus no contiene Player/Camera2D.")
+		return
+	camara_saltus.enabled = true
+	camara_saltus.make_current()
+	camara_saltus.reset_smoothing()
+	_ultima_posicion_camara = Vector2.INF
+	print("Main: cámara de Saltus activada → ", camara_saltus.get_path())
+
+
 func _seguir_jugador() -> void:
+	if is_instance_valid(_zone_manager) and _zone_manager.obtener_tipo_actual() == "expedicion:saltus":
+		return
 	if _player == null or _camera == null:
 		return
 	if is_instance_valid(_cutscene_director) and _cutscene_director.esta_activo():
