@@ -44,7 +44,7 @@ func _input(event: InputEvent) -> void:
 	if tecla.pressed and not tecla.echo:
 		if tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE:
 			_jump_requested = true
-		elif tecla.keycode in [KEY_SHIFT, KEY_SHIFT_L, KEY_SHIFT_R] or tecla.physical_keycode in [KEY_SHIFT, KEY_SHIFT_L, KEY_SHIFT_R]:
+		elif tecla.keycode == KEY_SHIFT or tecla.physical_keycode == KEY_SHIFT:
 			_dash_requested = true
 
 
