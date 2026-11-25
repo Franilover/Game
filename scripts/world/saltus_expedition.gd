@@ -10,6 +10,8 @@ const SALTUS_CREATURE_SCRIPT = preload("res://scripts/world/saltus_creature_2d.g
 const WORLD_GRAPH_SCRIPT = preload("res://scripts/world/saltus_world_graph.gd")
 const ROOM_DEFINITION_SCRIPT = preload("res://scripts/world/saltus_room_definition.gd")
 const WORLD_CONNECTION_SCRIPT = preload("res://scripts/world/saltus_world_connection.gd")
+const WIND_CURRENT_SCRIPT = preload("res://scripts/world/saltus_wind_current.gd")
+const BOUNCE_FLORA_SCRIPT = preload("res://scripts/world/saltus_bounce_flora.gd")
 const LEVEL_WIDTH_TILES: int = 160
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
@@ -69,6 +71,7 @@ func _ready() -> void:
 	_crear_arboleda()
 	_crear_criaturas()
 	_crear_ambiente()
+	_crear_mecanicas_ambientales()
 	_configurar_camara()
 	print("Saltus: inicializado | terreno=", is_instance_valid(_terrain_layer), " | celdas=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0, " | jugador=", _player.global_position)
 
@@ -511,6 +514,32 @@ func _crear_ambiente() -> void:
 		hojas.scale_amount_max = 0.55
 		hojas.modulate = Color(0.86, 0.94, 0.72, 0.82)
 		add_child(hojas)
+
+
+func _crear_mecanicas_ambientales() -> void:
+	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
+	for configuracion in [
+		{"posicion": Vector2(1680.0, 180.0), "direccion": Vector2(-0.12, -1.0), "fuerza": 560.0},
+		{"posicion": Vector2(3020.0, 40.0), "direccion": Vector2(0.55, -0.85), "fuerza": 490.0},
+		{"posicion": Vector2(4380.0, -170.0), "direccion": Vector2(0.1, -1.0), "fuerza": 620.0}
+	]:
+		var corriente := WIND_CURRENT_SCRIPT.new() as Area2D
+		corriente.name = "CorrienteAerea_%d" % int(configuracion["posicion"].x)
+		corriente.position = configuracion["posicion"]
+		corriente.set("direction", configuracion["direccion"])
+		corriente.set("acceleration", float(configuracion["fuerza"]))
+		add_child(corriente)
+
+	# Hongos elásticos: permiten ganar altura y enlazar plataformas alternativas.
+	for posicion in [
+		Vector2(1240.0, 176.0),
+		Vector2(2520.0, 368.0),
+		Vector2(3900.0, 48.0)
+	]:
+		var planta := BOUNCE_FLORA_SCRIPT.new() as Area2D
+		planta.name = "FloraImpulsora_%d" % int(posicion.x)
+		planta.position = posicion
+		add_child(planta)
 
 
 func _configurar_camara() -> void:
