@@ -154,13 +154,11 @@ func _crear_colision_plataforma(inicio_x: int, fila_y: int, ancho: int) -> void:
 	cuerpo.name = "Plataforma_%d_%d" % [inicio_x, fila_y]
 	cuerpo.collision_layer = 1
 	cuerpo.collision_mask = 0
-	cuerpo.one_way_collision = true
-	cuerpo.one_way_collision_margin = 5.0
 	var forma := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(ancho * TILE_SIZE, 8.0)
+	rect.size = Vector2(ancho * TILE_SIZE, 16.0)
 	forma.shape = rect
-	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, fila_y * TILE_SIZE + 4.0)
+	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, fila_y * TILE_SIZE + 8.0)
 	cuerpo.add_child(forma)
 	add_child(cuerpo)
 
