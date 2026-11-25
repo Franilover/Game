@@ -6,7 +6,7 @@ const TILE_ATLAS_DEFAULT: Vector2i = Vector2i(2, 1)
 const TILESET_TEXTURE_PATH: String = "res://assets/tilesets/Bosque.png"
 const TREE_TEXTURE_PATH: String = "res://assets/art/props/Árbol.png"
 const LEAF_TEXTURE_PATH: String = "res://assets/art/items/Hojas.png"
-const LEVEL_WIDTH_TILES: int = 90
+const LEVEL_WIDTH_TILES: int = 120
 const GROUND_TOP: int = 14
 const TILE_SEQUENCE: Array[Vector2i] = [
 	Vector2i(0, 3), Vector2i(3, 3),
@@ -100,18 +100,30 @@ func _crear_terreno() -> void:
 	_terrain_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_terrain_layer)
 
-	for x in range(LEVEL_WIDTH_TILES):
-		for y in range(GROUND_TOP, GROUND_TOP + 6):
-			_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_DEFAULT)
-	_crear_colision_suelo()
+	# El suelo tiene dos cortes que obligan a elegir rutas elevadas o saltar.
+	var tramos_suelo: Array[Vector2i] = [Vector2i(0, 25), Vector2i(30, 62), Vector2i(67, LEVEL_WIDTH_TILES)]
+	for tramo in tramos_suelo:
+		for x in range(tramo.x, tramo.y):
+			for y in range(GROUND_TOP, GROUND_TOP + 6):
+				_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_DEFAULT)
+		_crear_colision_suelo(tramo.x, tramo.y - tramo.x)
 
 	# Plataformas visuales del mismo atlas original, con colisión unidireccional.
 	for datos in [
-		{"x": 9, "y": 12, "w": 5}, {"x": 17, "y": 10, "w": 5},
-		{"x": 25, "y": 12, "w": 4}, {"x": 32, "y": 10, "w": 5},
-		{"x": 41, "y": 11, "w": 5}, {"x": 50, "y": 9, "w": 5},
-		{"x": 59, "y": 12, "w": 5}, {"x": 68, "y": 10, "w": 5},
-		{"x": 78, "y": 12, "w": 6}, {"x": 84, "y": 10, "w": 4},
+		# Ruta inicial: ascenso por plataformas escalonadas.
+		{"x": 7, "y": 12, "w": 4}, {"x": 13, "y": 10, "w": 4},
+		{"x": 19, "y": 8, "w": 5}, {"x": 25, "y": 11, "w": 4},
+		# Primer corte: puente bajo y ruta superior alternativa.
+		{"x": 25, "y": 12, "w": 5}, {"x": 29, "y": 10, "w": 4},
+		{"x": 35, "y": 8, "w": 5}, {"x": 42, "y": 10, "w": 4},
+		{"x": 48, "y": 12, "w": 5}, {"x": 54, "y": 9, "w": 5},
+		# Zona central: plataformas en zigzag y mirador elevado.
+		{"x": 61, "y": 12, "w": 6}, {"x": 68, "y": 10, "w": 4},
+		{"x": 73, "y": 8, "w": 5}, {"x": 80, "y": 6, "w": 5},
+		{"x": 87, "y": 9, "w": 5}, {"x": 94, "y": 11, "w": 4},
+		# Último tramo: rutas paralelas y descenso hacia la salida.
+		{"x": 100, "y": 8, "w": 5}, {"x": 107, "y": 10, "w": 5},
+		{"x": 113, "y": 12, "w": 5},
 	]:
 		var inicio_x := int(datos["x"])
 		var fila_y := int(datos["y"])
@@ -123,16 +135,16 @@ func _crear_terreno() -> void:
 	call_deferred("_actualizar_tiles_dual")
 
 
-func _crear_colision_suelo() -> void:
+func _crear_colision_suelo(inicio_x: int, ancho: int) -> void:
 	var cuerpo := StaticBody2D.new()
 	cuerpo.name = "ColisionSuelo"
 	cuerpo.collision_layer = 1
 	cuerpo.collision_mask = 0
 	var forma := CollisionShape2D.new()
 	var rect := RectangleShape2D.new()
-	rect.size = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE, 6.0 * TILE_SIZE)
+	rect.size = Vector2(ancho * TILE_SIZE, 6.0 * TILE_SIZE)
 	forma.shape = rect
-	forma.position = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE * 0.5, (GROUND_TOP + 3.0) * TILE_SIZE)
+	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, (GROUND_TOP + 3.0) * TILE_SIZE)
 	cuerpo.add_child(forma)
 	add_child(cuerpo)
 
@@ -172,13 +184,13 @@ func _crear_arboleda() -> void:
 	if textura == null:
 		push_warning("Saltus: no se pudo cargar el sprite de árbol.")
 		return
-	for index in range(30):
+	for index in range(40):
 		var arbol := Sprite2D.new()
 		arbol.name = "Arbol_%02d" % index
 		arbol.texture = textura
 		arbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 		arbol.scale = Vector2(3.0, 3.0)
-		arbol.position = Vector2(80.0 + float(index) * 98.0, 385.0 + float((index * 17) % 36))
+		arbol.position = Vector2(80.0 + float(index) * 96.0, 365.0 + float((index * 17) % 62))
 		arbol.z_as_relative = false
 		arbol.z_index = -2
 		add_child(arbol)
@@ -219,13 +231,14 @@ func _configurar_camara() -> void:
 	if camara == null:
 		return
 	camara.enabled = true
-	camara.global_position = _player.global_position + Vector2(0.0, -35.0)
+	camara.global_position = _player.global_position + Vector2(0.0, -48.0)
+	camara.zoom = Vector2(1.35, 1.35)
 	camara.make_current()
 	camara.reset_smoothing()
 	camara.limit_left = 0
 	camara.limit_right = LEVEL_WIDTH_TILES * TILE_SIZE
 	camara.limit_top = -120
-	camara.limit_bottom = 720
+	camara.limit_bottom = 820
 	camara.position_smoothing_enabled = true
 	camara.position_smoothing_speed = 5.5
 	camara.drag_horizontal_enabled = true
