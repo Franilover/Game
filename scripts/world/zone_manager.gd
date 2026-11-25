@@ -114,6 +114,8 @@ func iniciar() -> void:
 		entrar_reino(zona_guardada.trim_prefix("reino:"))
 	elif zona_guardada.is_empty() and not str(GameState.world_state.flags.get("reino_inicial", "")).strip_edges().is_empty():
 		entrar_reino(str(GameState.world_state.flags.get("reino_inicial", "torres")))
+	elif zona_guardada == TIPO_EXPEDICION_SALTUS:
+		await _reanudar_expedicion_saltus()
 	elif zona_guardada == TIPO_MUNDO_ABIERTO:
 		entrar_mundo_abierto()
 	elif zona_guardada == TIPO_EXPEDICION_BOSQUE:
@@ -205,6 +207,31 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 
 ## Saltus puede iniciarse desde el Gremio de Aventureros de cualquiera de los dos reinos.
 ## La expedición conserva el reino y la posición exacta desde donde fue abierta.
+func _reanudar_expedicion_saltus() -> void:
+	var estado_variant: Variant = GameState.world_state.flags.get("expedicion_saltus_estado", {})
+	if not estado_variant is Dictionary or not bool((estado_variant as Dictionary).get("activa", false)):
+		entrar_reino("torres")
+		return
+	var jugador := _obtener_jugador_principal()
+	if not is_instance_valid(jugador):
+		push_warning("ZoneManager: no se pudo recuperar el jugador para reanudar Saltus.")
+		entrar_reino("torres")
+		return
+	_jugador_principal_saltus = jugador
+	_saltus_player_visible_previo = jugador.visible
+	_saltus_player_fisica_previa = jugador.is_physics_processing()
+	_saltus_player_input_previo = jugador.is_processing_input()
+	_saltus_player_unhandled_previo = jugador.is_processing_unhandled_input()
+	jugador.set_physics_process(false)
+	jugador.set_process_input(false)
+	jugador.set_process_unhandled_input(false)
+	jugador.visible = false
+	await _cambiar_zona(EXPEDICION_SALTUS_PATH, TIPO_EXPEDICION_SALTUS)
+	if tipo_actual != TIPO_EXPEDICION_SALTUS:
+		_restaurar_jugador_principal_saltus(jugador.global_position)
+		entrar_reino("torres")
+
+
 func iniciar_expedicion_saltus() -> bool:
 	if _transicionando or tipo_actual not in [TIPO_REINO_TORRES, "reino:froslia"]:
 		return false
