@@ -6,6 +6,7 @@ const TILE_ATLAS_DEFAULT: Vector2i = Vector2i(2, 1)
 const TILESET_TEXTURE_PATH: String = "res://assets/tilesets/Bosque.png"
 const TREE_TEXTURE_PATH: String = "res://assets/art/props/Árbol.png"
 const LEAF_TEXTURE_PATH: String = "res://assets/art/items/Hojas.png"
+const SALTUS_CREATURE_SCRIPT = preload("res://scripts/world/saltus_creature_2d.gd")
 const LEVEL_WIDTH_TILES: int = 120
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
@@ -31,6 +32,7 @@ const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
 var _terrain_layer: TileMapDual
 var _player: SaltusPlayer
 var _platforms: Array[Dictionary] = []
+var _fondo_cielo: Sprite2D
 
 
 func _ready() -> void:
@@ -52,7 +54,9 @@ func _ready() -> void:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	_crear_terreno()
+	_crear_fondo_y_parallax()
 	_crear_arboleda()
+	_crear_criaturas()
 	_crear_ambiente()
 	_configurar_camara()
 	print("Saltus: inicializado | terreno=", is_instance_valid(_terrain_layer), " | celdas=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0, " | jugador=", _player.global_position)
@@ -180,21 +184,110 @@ func _finalizar_renderer_terreno() -> void:
 		_terrain_layer.reconstruir_renderer_dual()
 
 
+func _crear_fondo_y_parallax() -> void:
+	# Cielo verdoso en degradado, colocado detrás de todos los elementos.
+	var gradiente := Gradient.new()
+	gradiente.colors = PackedColorArray([
+		Color("#8EAE86"),
+		Color("#C2D2A0"),
+		Color("#E0D9A8")
+	])
+	gradiente.offsets = PackedFloat32Array([0.0, 0.56, 1.0])
+	var textura_cielo := GradientTexture2D.new()
+	textura_cielo.gradient = gradiente
+	textura_cielo.width = 512
+	textura_cielo.height = 320
+	textura_cielo.fill_from = Vector2(0.5, 0.0)
+	textura_cielo.fill_to = Vector2(0.5, 1.0)
+	_fondo_cielo = Sprite2D.new()
+	_fondo_cielo.name = "CieloVerdoso"
+	_fondo_cielo.texture = textura_cielo
+	_fondo_cielo.position = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE * 0.5, 115.0)
+	_fondo_cielo.scale = Vector2(8.0, 2.2)
+	_fondo_cielo.z_as_relative = false
+	_fondo_cielo.z_index = -30
+	add_child(_fondo_cielo)
+
+
 func _crear_arboleda() -> void:
 	var textura := load(TREE_TEXTURE_PATH) as Texture2D
 	if textura == null:
 		push_warning("Saltus: no se pudo cargar el sprite de árbol.")
 		return
-	for index in range(40):
-		var arbol := Sprite2D.new()
-		arbol.name = "Arbol_%02d" % index
-		arbol.texture = textura
-		arbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		arbol.scale = Vector2(3.0, 3.0)
-		arbol.position = Vector2(80.0 + float(index) * 96.0, 365.0 + float((index * 17) % 62))
-		arbol.z_as_relative = false
-		arbol.z_index = -2
-		add_child(arbol)
+
+	var capas := [
+		{"nombre": "ArboledaLejana", "profundidad": -22, "parallax": 0.22, "escala_min": 0.75, "escala_max": 1.15, "y": 230.0, "cantidad": 30, "alpha": 0.68},
+		{"nombre": "ArboledaMedia", "profundidad": -12, "parallax": 0.48, "escala_min": 1.25, "escala_max": 2.0, "y": 310.0, "cantidad": 25, "alpha": 0.86},
+		{"nombre": "ArboledaCercana", "profundidad": -4, "parallax": 0.78, "escala_min": 2.1, "escala_max": 3.2, "y": 365.0, "cantidad": 22, "alpha": 1.0}
+	]
+	var rng := RandomNumberGenerator.new()
+	rng.seed = 731942
+	for capa_datos in capas:
+		var capa := Parallax2D.new()
+		capa.name = str(capa_datos["nombre"])
+		capa.scroll_scale = Vector2(float(capa_datos["parallax"]), 1.0)
+		capa.repeat_size = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE, 0.0)
+		capa.z_as_relative = false
+		capa.z_index = int(capa_datos["profundidad"])
+		add_child(capa)
+		for index in range(int(capa_datos["cantidad"])):
+			var arbol := Sprite2D.new()
+			arbol.name = "Arbol_%02d" % index
+			arbol.texture = textura
+			arbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+			var escala := rng.randf_range(float(capa_datos["escala_min"]), float(capa_datos["escala_max"]))
+			arbol.scale = Vector2.ONE * escala
+			arbol.position = Vector2(
+				rng.randf_range(0.0, LEVEL_WIDTH_TILES * TILE_SIZE),
+				float(capa_datos["y"]) + rng.randf_range(-24.0, 28.0)
+			)
+			arbol.modulate = Color(1.0, 1.0, 1.0, float(capa_datos["alpha"]))
+			capa.add_child(arbol)
+
+
+func _crear_criaturas() -> void:
+	# Zlish recorre tramos de suelo y plataformas, saltando de forma periódica.
+	for posicion in [Vector2(620.0, 400.0), Vector2(1460.0, 336.0), Vector2(2480.0, 400.0)]:
+		var zlish := _crear_criatura("Zlish", posicion)
+		zlish.patrol_range = 145.0
+		zlish.jump_interval_min = 1.8
+		zlish.jump_interval_max = 3.8
+	# Flaxis patrulla en altura y detecta al jugador para lanzarse en picada.
+	for posicion in [Vector2(1040.0, 220.0), Vector2(2180.0, 190.0), Vector2(3300.0, 240.0)]:
+		var flaxis := _crear_criatura("Flaxis", posicion)
+		flaxis.detection_range = 235.0
+		flaxis.flight_speed = 105.0
+		flaxis.attack_damage = 8
+
+
+func _crear_criatura(especie: String, posicion: Vector2) -> Node2D:
+	var criatura := CharacterBody2D.new()
+	criatura.name = "%s_%d" % [especie, int(posicion.x)]
+	criatura.set_script(SALTUS_CREATURE_SCRIPT)
+	criatura.especie = especie
+	criatura.position = posicion
+	criatura.z_as_relative = false
+	criatura.z_index = 110
+	var sprite := Sprite2D.new()
+	sprite.name = "Sprite2D"
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	if especie == "Zlish":
+		sprite.texture = load("res://assets/art/creatures/Zlish/Zlish_Idle.png") as Texture2D
+		sprite.hframes = 11
+		sprite.position = Vector2(0.0, -17.0)
+	else:
+		sprite.texture = load("res://assets/art/creatures/Flaxis/Flaxis.png") as Texture2D
+		sprite.position = Vector2.ZERO
+	criatura.add_child(sprite)
+	var colision := CollisionShape2D.new()
+	var forma := CapsuleShape2D.new()
+	forma.radius = 9.0 if especie == "Zlish" else 8.0
+	forma.height = 22.0 if especie == "Zlish" else 18.0
+	colision.shape = forma
+	colision.position = Vector2(0.0, -10.0) if especie == "Zlish" else Vector2.ZERO
+	criatura.add_child(colision)
+	add_child(criatura)
+	return criatura
 
 
 func _crear_ambiente() -> void:
