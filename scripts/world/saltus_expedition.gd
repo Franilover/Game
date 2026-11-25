@@ -550,7 +550,6 @@ func _crear_mecanicas_ambientales() -> void:
 	interruptor.name = "FlorDetectora_1712"
 	interruptor.position = Vector2(1712.0, 264.0)
 	add_child(interruptor)
-	interruptor.activated.connect(Callable(puerta, "activate_from_switch"))
 
 	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
 	for configuracion in [
