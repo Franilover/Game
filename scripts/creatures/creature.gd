@@ -1054,6 +1054,8 @@ func _actualizar_animacion_caminando(delta: float) -> void:
 	if sprite == null:
 		_detener_animacion_caminando()
 		return
+	if nombre_normalizado.to_lower() == "zlish":
+		sprite.flip_h = velocity.x > 0.0
 
 	_caminando_tiempo += delta
 	var intervalo := 1.0 / maxf(_caminando_fps, 1.0)
