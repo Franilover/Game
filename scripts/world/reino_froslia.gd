@@ -4,6 +4,7 @@ extends Node2D
 signal centro_expediciones_interactuado
 
 const CONTEXTUAL_ACTION_TARGET_SCRIPT: Script = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
+const BUILDING_SERVICE_UI_SCRIPT: Script = preload("res://scripts/ui/building_service_ui.gd")
 
 const TILE_SIZE := 32
 const TILE_MAP_DUAL_SCRIPT: Script = preload("res://addons/TileMapDual/tile_map_dual.gd")
@@ -199,26 +200,66 @@ func _crear_edificios() -> void:
 
 
 func _crear_interaccion_centro_expediciones() -> void:
-	# El punto de interacción queda frente al edificio, no sobre su colisión.
+	# Los tres edificios usan el mismo servicio que sus equivalentes en Torres.
+	_crear_objetivo_edificio("centro_expediciones", "Centro de Expediciones", Vector2(-320.0, -144.0))
+	_crear_objetivo_edificio("escuela", "Escuela", Vector2(0.0, -304.0))
+	_crear_objetivo_edificio("cuartel", "Cuartel de la Guardia", Vector2(320.0, -144.0))
+
+
+func _crear_objetivo_edificio(tipo: String, nombre: String, posicion: Vector2) -> void:
 	var objetivo := CONTEXTUAL_ACTION_TARGET_SCRIPT.new() as Node2D
 	if not is_instance_valid(objetivo):
-		push_error("ReinoFroslia: no se pudo crear la interacción del Centro de Expediciones.")
+		push_error("ReinoFroslia: no se pudo crear la interacción de %s." % nombre)
 		return
-	objetivo.name = "ViajeEntreReinos"
-	objetivo.position = Vector2(-320.0, -144.0)
+	objetivo.name = "Servicio_" + tipo
+	objetivo.position = posicion
 	objetivo.call(
 		"configurar",
-		"Viajar entre reinos",
+		"Interactuar · " + nombre,
 		84.0,
-		Callable(self, "_puede_interactuar_centro_expediciones"),
-		Callable(self, "_solicitar_viaje_entre_reinos")
+		Callable(self, "_puede_interactuar_edificio"),
+		Callable(self, "_abrir_menu_servicio_edificio").bind(tipo)
 	)
 	add_child(objetivo)
 
 
-func _puede_interactuar_centro_expediciones(jugador: Node) -> bool:
+func _puede_interactuar_edificio(jugador: Node) -> bool:
 	return is_instance_valid(jugador) and jugador.is_in_group("player")
 
 
-func _solicitar_viaje_entre_reinos(_jugador: Node) -> void:
-	centro_expediciones_interactuado.emit()
+func _abrir_menu_servicio_edificio(tipo: String, _jugador: Node) -> void:
+	if get_tree().get_first_node_in_group("building_service_ui") != null:
+		return
+	var sistema := get_tree().get_first_node_in_group("interaction_system")
+	if not is_instance_valid(sistema):
+		Events.notification_pushed.emit("No se pudo acceder al sistema de interacción.")
+		return
+	var inventario := sistema.get("inventory") as InventoryController
+	var world_items := sistema.get("world_items") as GarliaWorldItems
+	if not is_instance_valid(inventario):
+		Events.notification_pushed.emit("No se pudo acceder al inventario.")
+		return
+	var interfaz := BUILDING_SERVICE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.add_to_group("building_service_ui")
+	if interfaz.has_signal("solicitar_selector_expediciones"):
+		interfaz.connect("solicitar_selector_expediciones", Callable(self, "_abrir_selector_viajes_desde_servicio"))
+	if interfaz.has_signal("solicitar_expedicion_saltus"):
+		interfaz.connect("solicitar_expedicion_saltus", Callable(self, "_iniciar_expedicion_saltus"))
+	get_tree().root.add_child(interfaz)
+	interfaz.call("configurar", tipo, inventario, world_items, get_tree().get_first_node_in_group("player"))
+
+
+func _abrir_selector_viajes_desde_servicio() -> void:
+	var main := get_tree().root.find_child("Main", true, false)
+	if is_instance_valid(main) and main.has_method("_abrir_menu_viaje_reinos"):
+		main.call("_abrir_menu_viaje_reinos")
+
+
+func _iniciar_expedicion_saltus() -> void:
+	var gestor := get_tree().get_first_node_in_group("zone_manager")
+	if is_instance_valid(gestor) and gestor.has_method("iniciar_expedicion_saltus"):
+		gestor.call("iniciar_expedicion_saltus")
+	else:
+		Events.notification_pushed.emit("No se pudo iniciar la expedición Saltus.")
