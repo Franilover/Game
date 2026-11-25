@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://assets/art/kingdom/Froslia/Cuartel_de_la_Guardia.png"
+source_file="res://assets/art/kingdom/Froslia/Edificios/Cuartel_de_la_Guardia.png"
 dest_files=["res://.godot/imported/Cuartel_de_la_Guardia.png-598bdf55d198d6c57e6bf3124c4a75b6.ctex"]
 
 [params]

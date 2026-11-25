@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://assets/art/kingdom/Froslia/Clinica.png"
+source_file="res://assets/art/kingdom/Froslia/Edificios/Clinica.png"
 dest_files=["res://.godot/imported/Clinica.png-e8f83d51f3e1e17d47166bbf4beac377.ctex"]
 
 [params]

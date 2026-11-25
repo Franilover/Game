@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://assets/art/kingdom/Froslia/Forja.png"
+source_file="res://assets/art/kingdom/Froslia/Edificios/Forja.png"
 dest_files=["res://.godot/imported/Forja.png-9044895cfe1879c2505ca841faf81c3a.ctex"]
 
 [params]

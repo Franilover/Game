@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://assets/art/kingdom/Froslia/Centro de Expediciones.png"
+source_file="res://assets/art/kingdom/Froslia/Edificios/Centro de Expediciones.png"
 dest_files=["res://.godot/imported/Centro de Expediciones.png-2909e1ac34225e9134a682d6c75e4daa.ctex"]
 
 [params]

@@ -10,7 +10,7 @@ metadata={
 
 [deps]
 
-source_file="res://assets/art/kingdom/Froslia/Mercado Puesto.png"
+source_file="res://assets/art/kingdom/Froslia/Edificios/Mercado Puesto.png"
 dest_files=["res://.godot/imported/Mercado Puesto.png-e8bc01f4bc4696bab366b92b6349b4d0.ctex"]
 
 [params]
