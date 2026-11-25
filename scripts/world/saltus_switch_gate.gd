@@ -1,3 +1,4 @@
+@tool
 extends StaticBody2D
 class_name SaltusSwitchGate
 ## Barrera del mundo que se retira cuando recibe la activación de una flor detectora.
@@ -9,6 +10,8 @@ signal opened
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	add_to_group("saltus_switch_targets")
 	collision_layer = 1
 	collision_mask = 0
