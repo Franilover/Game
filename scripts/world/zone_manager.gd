@@ -9,6 +9,7 @@ signal zona_cambiada(tipo: String, zona: Node)
 
 const MUNDO_ABIERTO_PATH := "res://scenes/world/mundo_abierto.tscn"
 const EXPEDICION_BOSQUE_PATH := "res://scenes/world/expedicion_bosque.tscn"
+const EXPEDICION_SALTUS_PATH := "res://scenes/world/expedicion_saltus.tscn"
 const RESERVA_CARMESI_PATH := "res://scenes/world/reserva_carmesi.tscn"
 const HOGAR_PATH := "res://scenes/world/hogar.tscn"
 const REINO_TORRES_ESCENA_PATH := "res://scenes/kingdom/reino_torres.tscn"
@@ -17,6 +18,7 @@ const REINO_FROSLIA_ESCENA_PATH := "res://scenes/kingdom/reino_froslia.tscn"
 const TIPO_REINO_TORRES := "reino_torres"
 const TIPO_MUNDO_ABIERTO := "mundo_abierto"
 const TIPO_EXPEDICION_BOSQUE := "expedicion:bosque"
+const TIPO_EXPEDICION_SALTUS := "expedicion:saltus"
 const TIPO_RESERVA_CARMESI := "historia:reserva_carmesi"
 const TIPO_HOGAR := "hogar"
 
@@ -28,6 +30,11 @@ var _entrada_hogar_desde_torres_pendiente: bool = false
 var _retorno_hogar_a_torres_pendiente: bool = false
 var _debug_registrado: bool = false
 var _supabase_client: GarliaSupabaseClient = null
+var _jugador_principal_saltus: Node2D = null
+var _saltus_player_visible_previo: bool = true
+var _saltus_player_fisica_previa: bool = true
+var _saltus_player_input_previo: bool = true
+var _saltus_player_unhandled_previo: bool = true
 
 
 static func resolver_posicion_reanudacion(
@@ -194,6 +201,90 @@ func entrar_reino(clave_reino: String, regla: Dictionary = {}) -> void:
 	if tipo_actual == TIPO_REINO_TORRES and clave != "torres":
 		GameState.marcar_reino_torres_visitado()
 	_cambiar_zona(escena, tipo)
+
+
+## Saltus puede iniciarse desde el Gremio de Aventureros de cualquiera de los dos reinos.
+## La expedición conserva el reino y la posición exacta desde donde fue abierta.
+func iniciar_expedicion_saltus() -> bool:
+	if _transicionando or tipo_actual not in [TIPO_REINO_TORRES, "reino:froslia"]:
+		return false
+	if not ResourceLoader.exists(EXPEDICION_SALTUS_PATH):
+		push_error("ZoneManager: no existe la escena de la expedición Saltus.")
+		return false
+	var jugador := _obtener_jugador_principal()
+	if not is_instance_valid(jugador):
+		return false
+	var estado_previo: Variant = GameState.world_state.flags.get("expedicion_saltus_estado", {})
+	if estado_previo is Dictionary and bool((estado_previo as Dictionary).get("activa", false)):
+		return false
+
+	_jugador_principal_saltus = jugador
+	_saltus_player_visible_previo = jugador.visible
+	_saltus_player_fisica_previa = jugador.is_physics_processing()
+	_saltus_player_input_previo = jugador.is_processing_input()
+	_saltus_player_unhandled_previo = jugador.is_processing_unhandled_input()
+	var origen_tipo := tipo_actual
+	var origen_posicion := jugador.global_position
+	GameState.world_state.flags["expedicion_saltus_estado"] = {
+		"activa": true,
+		"origen_tipo": origen_tipo,
+		"origen_posicion": {"x": origen_posicion.x, "y": origen_posicion.y}
+	}
+	jugador.set_physics_process(false)
+	jugador.set_process_input(false)
+	jugador.set_process_unhandled_input(false)
+	jugador.visible = false
+	await _cambiar_zona(EXPEDICION_SALTUS_PATH, TIPO_EXPEDICION_SALTUS)
+	if tipo_actual != TIPO_EXPEDICION_SALTUS:
+		_restaurar_jugador_principal_saltus(origen_posicion)
+		GameState.world_state.flags.erase("expedicion_saltus_estado")
+		return false
+	_guardar_partida_si_disponible()
+	return true
+
+
+func salir_expedicion_saltus() -> bool:
+	if _transicionando or tipo_actual != TIPO_EXPEDICION_SALTUS:
+		return false
+	var estado_variant: Variant = GameState.world_state.flags.get("expedicion_saltus_estado", {})
+	if not estado_variant is Dictionary:
+		return false
+	var estado := (estado_variant as Dictionary).duplicate(true)
+	if not bool(estado.get("activa", false)):
+		return false
+	var origen_tipo := str(estado.get("origen_tipo", ""))
+	var escena_origen := REINO_TORRES_ESCENA_PATH if origen_tipo == TIPO_REINO_TORRES else REINO_FROSLIA_ESCENA_PATH if origen_tipo == "reino:froslia" else ""
+	if escena_origen.is_empty() or not ResourceLoader.exists(escena_origen):
+		push_warning("ZoneManager: el reino de origen de Saltus no es válido.")
+		return false
+	var origen_variant: Variant = estado.get("origen_posicion", {})
+	if not origen_variant is Dictionary:
+		return false
+	var origen := origen_variant as Dictionary
+	var posicion := Vector2(float(origen.get("x", 0.0)), float(origen.get("y", 0.0)))
+	estado["activa"] = false
+	GameState.world_state.flags["expedicion_saltus_estado"] = estado
+	await _cambiar_zona(escena_origen, origen_tipo)
+	if tipo_actual != origen_tipo:
+		estado["activa"] = true
+		GameState.world_state.flags["expedicion_saltus_estado"] = estado
+		return false
+	_restaurar_jugador_principal_saltus(posicion)
+	_guardar_partida_si_disponible()
+	return true
+
+
+func _restaurar_jugador_principal_saltus(posicion: Vector2) -> void:
+	if not is_instance_valid(_jugador_principal_saltus):
+		_jugador_principal_saltus = _obtener_jugador_principal()
+	if is_instance_valid(_jugador_principal_saltus):
+		_jugador_principal_saltus.global_position = posicion
+		_jugador_principal_saltus.velocity = Vector2.ZERO
+		_jugador_principal_saltus.visible = _saltus_player_visible_previo
+		_jugador_principal_saltus.set_physics_process(_saltus_player_fisica_previa)
+		_jugador_principal_saltus.set_process_input(_saltus_player_input_previo)
+		_jugador_principal_saltus.set_process_unhandled_input(_saltus_player_unhandled_previo)
+	_jugador_principal_saltus = null
 
 
 ## Primera expedición: estado local y retorno a Torres.
