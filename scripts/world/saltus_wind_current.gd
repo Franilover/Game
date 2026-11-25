@@ -1,3 +1,4 @@
+@tool
 extends Area2D
 ## Corriente ambiental reutilizable: acelera al jugador dentro de su volumen.
 signal body_affected(body: Node2D)
@@ -8,6 +9,8 @@ signal body_affected(body: Node2D)
 @export var affects_group: StringName = &"saltus_player"
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	monitoring = true
 	monitorable = false
 	collision_layer = 0
