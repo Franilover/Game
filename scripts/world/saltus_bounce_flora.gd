@@ -24,8 +24,6 @@ func _ready() -> void:
 func _al_entrar_en_contacto(body: Node2D) -> void:
 	if body == null or not body.is_in_group(affects_group):
 		return
-	if not ("velocity" in body):
-		return
 	var velocidad: Vector2 = body.get("velocity")
 	if velocidad.y < 0.0:
 		return
