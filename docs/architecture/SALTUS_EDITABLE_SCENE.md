@@ -1,32 +1,51 @@
-# Saltus — edición visual del mapa
+# Saltus — expedición completa editable en Godot
 
-El terreno de Saltus se carga desde `scenes/world/saltus_map_v2.tscn`. La expedición ya no llama a `_crear_terreno()` al iniciar el juego.
+La escena de trabajo es `scenes/world/expedicion_saltus.tscn`. El objetivo del constructor es guardar el escenario completo dentro de esa escena: terreno, colisiones, fondos, vegetación, criaturas, mecanismos, checkpoints y zona del primer jefe.
 
-## Crear la escena editable por primera vez
+## Conversión inicial (una sola vez)
 
 1. Actualiza la rama `work/design-and-architecture`.
 2. Abre el proyecto en Godot.
-3. En el panel FileSystem, abre `tools/editor/build_saltus_editable_map.gd`.
-4. Con el script abierto, usa **File → Run** (o el botón Run del EditorScript).
-5. Se generará `scenes/world/saltus_map_v2.tscn`.
-6. Abre esa escena. Selecciona `TerrenoSaltusV2` para editar el TileMapDual con las herramientas TileMap.
+3. Abre `scenes/world/expedicion_saltus.tscn` como escena activa.
+4. En FileSystem abre `tools/editor/build_saltus_editable_map.gd`.
+5. Ejecuta el EditorScript con **File → Run**.
+6. El script organiza los nodos y guarda la misma escena `expedicion_saltus.tscn`.
+7. Recarga la escena en el editor para ver el árbol completo.
 
-El generador utiliza la geometría V2 existente y la guarda como celdas serializadas en la escena. No se ejecuta durante el juego.
+No ejecutes el constructor sobre otra escena. Tampoco lo ejecutes otra vez después de personalizar Saltus: está diseñado para la conversión inicial y advierte si detecta que ya fue ejecutado.
 
-## Qué puedes editar
+## Árbol esperado
 
-- Pintar y borrar tiles en el panel TileMap.
-- Cambiar la forma del terreno y las plataformas.
-- Mover el nodo `TerrenoSaltusV2` completo.
-- Editar las colisiones estáticas serializadas dentro de la escena.
+```text
+ExpedicionSaltus
+├── Player
+├── Mapa
+│   ├── TerrenoSaltusV2
+│   ├── Terreno_*
+│   └── Plataforma_*
+├── Vegetacion
+│   ├── FloraImpulsora_*
+│   └── FlorDetectora_Tutorial
+├── Criaturas
+│   ├── Zlish_*
+│   └── Flaxis_*
+├── Mecanismos
+│   ├── PuertaFlorDetectora
+│   └── CorrienteAerea_*
+├── PuntosDeControl
+├── Fondos
+├── Ambiente
+└── ElementosTutorial
+    ├── Indicacion_*
+    └── ZonaPrimerJefe
+```
 
-## Importante: colisiones
+Los nodos son instancias editables dentro de la escena. Puedes seleccionar y mover criaturas, plantas, checkpoints, puertas, corrientes, fondos y elementos de tutorial desde el viewport o el Inspector. El TileMapDual conserva sus celdas y recursos en la escena.
 
-El generador también serializa los cuerpos de colisión del terreno y las plataformas. Si cambias mucho la forma del TileMap, revisa y ajusta esos nodos de colisión en la misma escena. En esta primera conversión las colisiones son nodos independientes, no colisión automática por tile.
+## Colisiones y cambios de terreno
 
-## Responsabilidades
+Las colisiones del terreno y plataformas son nodos `StaticBody2D` independientes dentro de `Mapa`. Si pintas o borras tiles, ajusta también las colisiones correspondientes. Mover un objeto de vegetación o una criatura no requiere editar GDScript.
 
-- `saltus_map_v2.tscn`: terreno, tiles y colisiones base editables.
-- `saltus_expedition.gd`: lógica de expedición, cámara, criaturas, flores, checkpoints, fondos y grafo de regiones.
+## Qué ocurre al iniciar el juego
 
-El mapa resultante es una escena normal de Godot que se puede abrir, editar y guardar con Ctrl+S. Si vuelves a ejecutar el generador, reconstruirá el archivo a partir de la geometría codificada; por eso no debes volver a ejecutarlo después de empezar a personalizar el TileMap, salvo que quieras regenerarlo desde cero.
+`saltus_expedition.gd` ya no construye el escenario durante el juego. La escena serializada contiene el mundo; el script inicializa el grafo de regiones, progreso y cámara. Si ejecutas el juego antes de hacer la conversión inicial, aparecerá un error indicando que falta el contenido editable.
