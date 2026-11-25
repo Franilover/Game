@@ -15,6 +15,8 @@ var _player: SaltusPlayer
 
 func _ready() -> void:
 	_player = get_node_or_null("Player") as SaltusPlayer
+	if is_instance_valid(_player):
+		_player.z_index = 3
 	_crear_terreno()
 	_crear_ambiente()
 	_configurar_camara()
@@ -37,13 +39,13 @@ func _crear_terreno() -> void:
 	_terrain_layer = TileMapLayer.new()
 	_terrain_layer.name = "Terreno"
 	_terrain_layer.tile_set = tile_set
-	_terrain_layer.z_index = -10
+	_terrain_layer.z_index = 0
 	add_child(_terrain_layer)
 
 	_platform_layer = TileMapLayer.new()
 	_platform_layer.name = "Plataformas"
 	_platform_layer.tile_set = platform_tile_set
-	_platform_layer.z_index = -5
+	_platform_layer.z_index = 1
 	add_child(_platform_layer)
 
 	for x in range(LEVEL_WIDTH_TILES):
@@ -117,6 +119,7 @@ func _crear_ambiente() -> void:
 	for centro_x in [420.0, 1120.0, 1840.0, 2540.0]:
 		var hojas: CPUParticles2D = CPUParticles2D.new()
 		hojas.name = "HojasEnElAire"
+		hojas.z_index = 2
 		hojas.position = Vector2(centro_x, 150.0)
 		hojas.texture = textura_hojas
 		hojas.amount = 9
