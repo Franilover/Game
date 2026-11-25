@@ -1,3 +1,4 @@
+@tool
 extends Node2D
 class_name SaltusExpedition
 
@@ -52,6 +53,8 @@ var _sector_gate: StaticBody2D
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	_player = get_node_or_null("Player") as SaltusPlayer
 	if not is_instance_valid(_player):
 		push_error("Saltus: no se encontró el nodo Player.")
@@ -79,6 +82,8 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	if not is_instance_valid(_player):
 		return
 	if _player.global_position.y > 1500.0:
