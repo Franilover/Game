@@ -19,7 +19,7 @@ func _ready() -> void:
 		var circle := CircleShape2D.new()
 		circle.radius = 22.0
 		shape_node.shape = circle
-		shape_node.position.y = -5.0
+		shape_node.position.y = -12.0
 		add_child(shape_node)
 	_crear_visual()
 
@@ -40,7 +40,9 @@ func _crear_visual() -> void:
 	sprite.name = "FlorSaltarinaSprite"
 	sprite.texture = load(TEXTURE_PATH) as Texture2D
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.position = Vector2(0.0, -10.0)
+	sprite.scale = Vector2(2.0, 2.0)
+	if sprite.texture != null:
+		sprite.position.y = -sprite.texture.get_height() * sprite.scale.y * 0.5
 	add_child(sprite)
 	if sprite.texture == null:
 		push_error("Saltus: no se pudo cargar " + TEXTURE_PATH)
