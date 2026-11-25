@@ -31,6 +31,7 @@ var _coin_button: Button = null
 var _modo_historia: bool = false
 var _eterium_ui_elapsed: float = 0.0
 var _hud_status_elapsed: float = 0.0
+var _saltus_hud_mode: bool = false
 
 var mostrar_contexto_mundo: bool = false
 
@@ -242,6 +243,7 @@ func _process(delta: float) -> void:
 	_hud_status_elapsed += delta
 	if _hud_status_elapsed >= 0.2:
 		_hud_status_elapsed = 0.0
+		_actualizar_modo_lateral_saltus()
 		_actualizar_reloj_calendario()
 		_actualizar_boton_monedas()
 
@@ -1586,6 +1588,21 @@ func _actualizar_layout_hud_movil() -> void:
 		_garumi_selector_panel.custom_minimum_size = selector_size
 
 	_actualizar_layout_hud_superior()
+
+
+func _actualizar_modo_lateral_saltus() -> void:
+	var gestor := get_tree().get_first_node_in_group("zone_manager")
+	var tipo_zona := str(gestor.call("obtener_tipo_actual")) if is_instance_valid(gestor) and gestor.has_method("obtener_tipo_actual") else ""
+	var modo_lateral := tipo_zona == "expedicion:saltus"
+	if modo_lateral == _saltus_hud_mode:
+		return
+	_saltus_hud_mode = modo_lateral
+	if is_instance_valid(_clock_panel):
+		_clock_panel.visible = not modo_lateral
+	if is_instance_valid(_coin_button):
+		_coin_button.visible = not modo_lateral
+	if not modo_lateral:
+		_actualizar_layout_hud_superior()
 
 
 func _preparar_reloj_calendario() -> void:
