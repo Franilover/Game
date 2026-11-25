@@ -1,12 +1,15 @@
 extends Node
 class_name SaltusWorldGraph
 
+const ROOM_SCRIPT = preload("res://scripts/world/saltus_room_definition.gd")
+const CONNECTION_SCRIPT = preload("res://scripts/world/saltus_world_connection.gd")
+
 ## Logical navigation graph for a seamless world. It does not load or unload rooms.
 signal room_discovered(room_id: StringName)
 signal connection_unlocked(connection_id: StringName)
 
-@export var rooms: Array[SaltusRoomDefinition] = []
-@export var connections: Array[SaltusWorldConnection] = []
+@export var rooms: Array = []
+@export var connections: Array = []
 
 var _discovered_rooms: Dictionary = {}
 var _unlocked_connections: Dictionary = {}
@@ -16,15 +19,15 @@ func _ready() -> void:
 	_validar_grafo()
 
 
-func get_room(room_id: StringName) -> SaltusRoomDefinition:
+func get_room(room_id: StringName):
 	for room in rooms:
 		if room != null and room.room_id == room_id:
 			return room
 	return null
 
 
-func get_room_at(world_position: Vector2) -> SaltusRoomDefinition:
-	var room_found: SaltusRoomDefinition
+func get_room_at(world_position: Vector2):
+	var room_found: Variant = null
 	var smallest_area: float = INF
 	for room in rooms:
 		if room == null or not room.contains_point(world_position):
@@ -60,8 +63,8 @@ func get_connections_for_room(
 	include_locked: bool = true,
 	abilities: Dictionary = {},
 	world_flags: Dictionary = {}
-) -> Array[SaltusWorldConnection]:
-	var result: Array[SaltusWorldConnection] = []
+) -> Array:
+	var result: Array = []
 	for connection in connections:
 		if connection == null or not connection.connects_room(room_id):
 			continue
@@ -78,14 +81,14 @@ func can_traverse(
 	abilities: Dictionary = {},
 	world_flags: Dictionary = {}
 ) -> bool:
-	var connection := _get_connection(connection_id)
+	var connection: Variant = _get_connection(connection_id)
 	if connection == null or not connection.allows_departure_from(from_room_id):
 		return false
 	if _unlocked_connections.has(connection_id):
 		return true
 
 	match connection.requirement_type:
-		SaltusWorldConnection.RequirementType.NONE:
+		CONNECTION_SCRIPT.RequirementType.NONE:
 			return true
 		SaltusWorldConnection.RequirementType.ABILITY:
 			return bool(abilities.get(connection.requirement_key, false))
@@ -156,7 +159,7 @@ func restore_progress(progress: Dictionary) -> void:
 				_unlocked_connections[connection_id] = true
 
 
-func _get_connection(connection_id: StringName) -> SaltusWorldConnection:
+func _get_connection(connection_id: StringName):
 	for connection in connections:
 		if connection != null and connection.connection_id == connection_id:
 			return connection
