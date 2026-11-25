@@ -21,6 +21,7 @@ Sustituir la distribución horizontal anterior por un recorrido continuo, vertic
 - Sendero → raíces profundas → copas.
 - Arboleda ↔ raíces profundas mediante una conexión lateral.
 - La ruta superior de la arboleda asciende hasta una cresta de copas a más de 500 px sobre el suelo y desciende por otra vertiente.
+- Tres shafts controlados desde el suelo superior permiten descubrir las galerías inferiores.
 - Las raíces tienen una escalera de plataformas que permite regresar al nivel principal.
 - Todos los enlaces del grafo son bidireccionales y no exigen habilidades futuras.
 
