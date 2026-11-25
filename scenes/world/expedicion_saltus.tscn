@@ -1,0 +1,31 @@
+[gd_scene load_steps=5 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/saltus_expedition.gd" id="1_world"]
+[ext_resource type="Script" path="res://scripts/world/saltus_player.gd" id="2_player"]
+[ext_resource type="Texture2D" path="res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png" id="3_player_texture"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_player"]
+radius = 7.0
+height = 22.0
+
+[node name="ExpedicionSaltus" type="Node2D"]
+script = ExtResource("1_world")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(96, 408)
+collision_layer = 2
+collision_mask = 1
+script = ExtResource("2_player")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Player"]
+position = Vector2(0, -11)
+shape = SubResource("CapsuleShape2D_player")
+
+[node name="Sprite2D" type="Sprite2D" parent="Player"]
+position = Vector2(0, -22)
+texture = ExtResource("3_player_texture")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+position = Vector2(0, -35)
+position_smoothing_enabled = true
+position_smoothing_speed = 5.5
