@@ -275,12 +275,12 @@ func _crear_puntos_sector() -> void:
 	_sector_gate.collision_mask = 0
 	var gate_shape := CollisionShape2D.new()
 	var gate_rect := RectangleShape2D.new()
-	gate_rect.size = Vector2(20.0, 500.0)
+	gate_rect.size = Vector2(20.0, 1100.0)
 	gate_shape.shape = gate_rect
 	_sector_gate.add_child(gate_shape)
 	var gate_visual := Polygon2D.new()
 	gate_visual.color = Color("#596B4B")
-	gate_visual.polygon = PackedVector2Array([Vector2(-10, -250), Vector2(10, -250), Vector2(10, 250), Vector2(-10, 250)])
+	gate_visual.polygon = PackedVector2Array([Vector2(-10, -550), Vector2(10, -550), Vector2(10, 550), Vector2(-10, 550)])
 	_sector_gate.add_child(gate_visual)
 	add_child(_sector_gate)
 
