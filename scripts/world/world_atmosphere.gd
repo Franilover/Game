@@ -32,6 +32,8 @@ var _anio_inicio: int = 0
 var _modulacion: CanvasModulate
 var _color_iluminacion_actual: Color = Color.WHITE
 var _iluminacion_inicializada: bool = false
+var _iluminacion_fija_activa: bool = false
+var _color_iluminacion_fija: Color = Color.WHITE
 var _world_data: WorldDataService = null
 var _claves_luz_actuales: Array[Dictionary] = []
 var _claves_luz_predeterminadas: Array[Dictionary] = []
@@ -297,6 +299,11 @@ func _actualizar_estacion() -> void:
 
 func _actualizar_iluminacion(delta: float = 0.0) -> void:
 	if _modulacion == null or not is_instance_valid(_modulacion):
+		return
+	if _iluminacion_fija_activa:
+		_color_iluminacion_actual = _color_iluminacion_fija
+		_iluminacion_inicializada = true
+		_modulacion.color = _color_iluminacion_fija
 		return
 
 	var dia_normalizado := hora_del_dia / maxf(horas_por_dia, 1.0)
@@ -690,4 +697,17 @@ func _aplicar_estado_guardado(
 
 	_dia_del_anio_normalizado()
 	_actualizar_estacion()
+	_actualizar_iluminacion()
+
+
+## Sustituye el ciclo de luz por el color definido por la escena activa.
+func establecer_iluminacion_fija(color: Color) -> void:
+	_iluminacion_fija_activa = true
+	_color_iluminacion_fija = color
+	_actualizar_iluminacion()
+
+
+func restablecer_iluminacion_dinamica() -> void:
+	_iluminacion_fija_activa = false
+	_iluminacion_inicializada = false
 	_actualizar_iluminacion()
