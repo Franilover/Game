@@ -187,6 +187,13 @@ func _crear_terreno() -> void:
 		{"x": 96, "y": -5, "w": 5}, {"x": 103, "y": -7, "w": 5},
 		{"x": 110, "y": -6, "w": 5}, {"x": 117, "y": -4, "w": 5},
 		{"x": 124, "y": -2, "w": 5},
+		# Copa alta: segundo ascenso, cresta superior y descenso conectado.
+		{"x": 107, "y": -9, "w": 5}, {"x": 111, "y": -11, "w": 5},
+		{"x": 115, "y": -13, "w": 5}, {"x": 119, "y": -15, "w": 5},
+		{"x": 123, "y": -17, "w": 5}, {"x": 127, "y": -15, "w": 5},
+		{"x": 131, "y": -13, "w": 5}, {"x": 135, "y": -11, "w": 5},
+		{"x": 139, "y": -9, "w": 5}, {"x": 143, "y": -7, "w": 5},
+		{"x": 147, "y": -5, "w": 5},
 		# Descenso hacia Raíces profundas.
 		{"x": 39, "y": 18, "w": 5}, {"x": 44, "y": 21, "w": 5},
 		{"x": 49, "y": 24, "w": 5}, {"x": 55, "y": 26, "w": 5},
@@ -235,9 +242,9 @@ func _crear_grafo_sector() -> void:
 	var definiciones: Array[Dictionary] = [
 		{"id": &"entrada_claro", "region": &"entrada", "bounds": Rect2(0.0, 0.0, 1050.0, 700.0), "tags": ["inicio", "tutorial"]},
 		{"id": &"sendero_parkour", "region": &"sendero", "bounds": Rect2(850.0, 0.0, 1100.0, 700.0), "tags": ["salto", "dash", "combate"]},
-		{"id": &"arboleda_vertical", "region": &"arboleda", "bounds": Rect2(1850.0, -2300.0, 2600.0, 3000.0), "tags": ["vertical", "ramas", "rutas_altas"]},
+		{"id": &"arboleda_vertical", "region": &"arboleda", "bounds": Rect2(1850.0, -850.0, 2600.0, 1550.0), "tags": ["vertical", "ramas", "rutas_altas"]},
 		{"id": &"raices_profundas", "region": &"raices", "bounds": Rect2(1200.0, 650.0, 3000.0, 700.0), "tags": ["subterraneo", "cavernas", "retorno"]},
-		{"id": &"cruce_copas", "region": &"copas", "bounds": Rect2(3600.0, -1700.0, 1500.0, 2200.0), "tags": ["altura", "atajos", "detectora"]},
+		{"id": &"cruce_copas", "region": &"copas", "bounds": Rect2(3600.0, -850.0, 1500.0, 1350.0), "tags": ["altura", "atajos", "detectora"]},
 		{"id": &"claro_jefe", "region": &"jefe", "bounds": Rect2(5000.0, 0.0, 1400.0, 700.0), "tags": ["arena", "encuentro"]},
 	]
 	var rooms: Array = []
@@ -611,7 +618,7 @@ func _configurar_camara() -> void:
 	camara.reset_smoothing()
 	camara.limit_left = 0
 	camara.limit_right = LEVEL_WIDTH_TILES * TILE_SIZE
-	camara.limit_top = -2600
+	camara.limit_top = -900
 	camara.limit_bottom = 1600
 	camara.limit_smoothed = false
 	camara.position_smoothing_enabled = true
