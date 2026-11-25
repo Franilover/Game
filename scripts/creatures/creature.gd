@@ -76,6 +76,9 @@ var _caminando_frame_actual: int = 0
 var _caminando_frames_totales: int = 1
 var _caminando_tiempo: float = 0.0
 var _caminando_fps: float = 8.0
+var _zlish_idle_tiempo: float = 0.0
+var _zlish_idle_frame: int = 0
+var _zlish_idle_fps: float = 5.0
 
 var _sprite_npc_base: Texture2D = null
 var _sprite_npc_lateral: Texture2D = null
@@ -1074,15 +1077,18 @@ func _iniciar_animacion_caminando() -> bool:
 		return false
 
 	var nombre := criatura_nombre.strip_edges()
-	var rutas: Array[String] = [
-		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png",
+	var rutas: Array[String] = []
+	if nombre.to_lower() == "zlish":
+		rutas.append("res://assets/art/creatures/Zlish/Zlish Izquierda.png")
+	rutas.append_array([
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png", 
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.PNG",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_walking.png",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_walking.PNG",
 		# Compatibilidad temporal con assets anteriores.
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.png",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.PNG"
-	]
+	])
 
 	var textura: Texture2D = null
 	for ruta in rutas:
@@ -1119,6 +1125,8 @@ func _iniciar_animacion_caminando() -> bool:
 	sprite.hframes = hframes
 	sprite.vframes = vframes
 	sprite.frame = 0
+	if nombre.to_lower() == "zlish":
+		sprite.flip_h = velocity.x > 0.0
 
 	return true
 
@@ -1143,6 +1151,30 @@ func _detener_animacion_caminando() -> void:
 	_caminando_frames_totales = 1
 	_caminando_tiempo = 0.0
 	_caminando_textura_base = null
+	if criatura_nombre.strip_edges().to_lower() == "zlish":
+		var sprite := get_node_or_null("Sprite2D") as Sprite2D
+		if sprite != null:
+			sprite.flip_h = false
+
+
+func _actualizar_animacion_idle_zlish(delta: float) -> void:
+	if criatura_nombre.strip_edges().to_lower() != "zlish" or _ataque_animando or _caminando_animando:
+		return
+	if velocity.length_squared() > 0.25:
+		return
+	var sprite := get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null or sprite.texture == null:
+		return
+	# Zlish_Idle.png contiene 11 cuadros de 32x32 en una tira horizontal.
+	if sprite.hframes != 11 or sprite.vframes != 1:
+		sprite.hframes = 11
+		sprite.vframes = 1
+	_zlish_idle_tiempo += delta
+	var intervalo := 1.0 / maxf(_zlish_idle_fps, 1.0)
+	while _zlish_idle_tiempo >= intervalo:
+		_zlish_idle_tiempo -= intervalo
+		_zlish_idle_frame = (_zlish_idle_frame + 1) % 11
+		sprite.frame = _zlish_idle_frame
 
 
 func _es_humano() -> bool:
@@ -1202,6 +1234,7 @@ func _physics_process(delta: float) -> void:
 		global_position = global_position.lerp(_red_posicion_objetivo, factor)
 		velocity = _red_velocidad_objetivo
 		_actualizar_animacion_caminando(delta)
+		_actualizar_animacion_idle_zlish(delta)
 		_actualizar_sprite_direccional_npc()
 		return
 	if _siguiendo_jugador:
@@ -1221,6 +1254,7 @@ func _physics_process(delta: float) -> void:
 		velocity = Vector2.ZERO
 
 	_actualizar_animacion_caminando(delta)
+	_actualizar_animacion_idle_zlish(delta)
 	_actualizar_sprite_direccional_npc()
 
 
