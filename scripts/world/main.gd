@@ -498,7 +498,6 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 			_world_atmosphere.restablecer_iluminacion_dinamica()
 		if is_instance_valid(_world_climate_visuals):
 			_world_climate_visuals.restablecer_clima_dinamico()
-	else:
 		_actualizar_limites_camara_zona(tipo)
 	if is_instance_valid(_world_climate_visuals):
 		_world_climate_visuals.establecer_perfil_climatico(str(CLIMATE_PROFILES_BY_ZONE.get(tipo, "")))
