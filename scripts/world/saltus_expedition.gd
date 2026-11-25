@@ -10,7 +10,7 @@ const SALTUS_CREATURE_SCRIPT = preload("res://scripts/world/saltus_creature_2d.g
 const WORLD_GRAPH_SCRIPT = preload("res://scripts/world/saltus_world_graph.gd")
 const ROOM_DEFINITION_SCRIPT = preload("res://scripts/world/saltus_room_definition.gd")
 const WORLD_CONNECTION_SCRIPT = preload("res://scripts/world/saltus_world_connection.gd")
-const LEVEL_WIDTH_TILES: int = 160
+const LEVEL_WIDTH_TILES: int = 190
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
 @export var iluminacion_escena: Color = Color("#FFFDF2")
@@ -170,6 +170,11 @@ func _crear_terreno() -> void:
 		{"x": 106, "y": 6, "w": 7}, {"x": 116, "y": 9, "w": 7},
 		{"x": 126, "y": 7, "w": 7}, {"x": 137, "y": 4, "w": 8},
 		{"x": 148, "y": 8, "w": 7},
+		# Ascenso superior hasta el paso sellado y el hallazgo de exploración.
+		{"x": 153, "y": 6, "w": 7}, {"x": 159, "y": 4, "w": 7},
+		{"x": 165, "y": 2, "w": 7}, {"x": 171, "y": 0, "w": 7},
+		{"x": 177, "y": -2, "w": 7}, {"x": 183, "y": -4, "w": 7},
+		{"x": 187, "y": -6, "w": 3},
 		{"x": 29, "y": 19, "w": 7}, {"x": 38, "y": 22, "w": 8},
 		{"x": 48, "y": 19, "w": 8}, {"x": 57, "y": 23, "w": 8},
 		{"x": 67, "y": 20, "w": 8}, {"x": 78, "y": 24, "w": 8},
@@ -209,7 +214,7 @@ func _crear_grafo_sector() -> void:
 	var arboleda := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
 	arboleda.room_id = &"arboleda_vertical"
 	arboleda.region_id = &"arboleda"
-	arboleda.bounds = Rect2(180.0, -1700.0, 4940.0, 2200.0)
+	arboleda.bounds = Rect2(180.0, -1700.0, 5900.0, 2200.0)
 	arboleda.tags = PackedStringArray(["vertical", "copas", "atajos"])
 	var raices := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
 	raices.room_id = &"raices_profundas"
@@ -240,7 +245,7 @@ func _crear_puntos_sector() -> void:
 	_crear_punto_descanso(Vector2(480.0, 408.0))
 	var hallazgo := Area2D.new()
 	hallazgo.name = "NucleoDeImpulso"
-	hallazgo.position = Vector2(2860.0, -430.0)
+	hallazgo.position = Vector2(5900.0, -180.0)
 	hallazgo.collision_layer = 0
 	hallazgo.collision_mask = 2
 	var forma := CollisionShape2D.new()
@@ -256,17 +261,17 @@ func _crear_puntos_sector() -> void:
 	add_child(hallazgo)
 	_sector_gate = StaticBody2D.new()
 	_sector_gate.name = "AtajoSellado"
-	_sector_gate.position = Vector2(3400.0, -390.0)
+	_sector_gate.position = Vector2(6000.0, -180.0)
 	_sector_gate.collision_layer = 1
 	_sector_gate.collision_mask = 0
 	var gate_shape := CollisionShape2D.new()
 	var gate_rect := RectangleShape2D.new()
-	gate_rect.size = Vector2(20.0, 150.0)
+	gate_rect.size = Vector2(20.0, 500.0)
 	gate_shape.shape = gate_rect
 	_sector_gate.add_child(gate_shape)
 	var gate_visual := Polygon2D.new()
 	gate_visual.color = Color("#596B4B")
-	gate_visual.polygon = PackedVector2Array([Vector2(-10, -75), Vector2(10, -75), Vector2(10, 75), Vector2(-10, 75)])
+	gate_visual.polygon = PackedVector2Array([Vector2(-10, -250), Vector2(10, -250), Vector2(10, 250), Vector2(-10, 250)])
 	_sector_gate.add_child(gate_visual)
 	add_child(_sector_gate)
 
