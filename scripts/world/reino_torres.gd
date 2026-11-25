@@ -2526,8 +2526,18 @@ func _abrir_menu_servicio_edificio(tipo: String) -> void:
 	interfaz.add_to_group("building_service_ui")
 	if interfaz.has_signal("solicitar_selector_expediciones"):
 		interfaz.connect("solicitar_selector_expediciones", Callable(self, "_abrir_selector_viajes_desde_servicio"))
+	if interfaz.has_signal("solicitar_expedicion_saltus"):
+		interfaz.connect("solicitar_expedicion_saltus", Callable(self, "_iniciar_expedicion_saltus"))
 	get_tree().root.add_child(interfaz)
 	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
+
+
+func _iniciar_expedicion_saltus() -> void:
+	var gestor := get_tree().get_first_node_in_group("zone_manager")
+	if is_instance_valid(gestor) and gestor.has_method("iniciar_expedicion_saltus"):
+		gestor.call("iniciar_expedicion_saltus")
+	else:
+		Events.notification_pushed.emit("No se pudo iniciar la expedición Saltus.")
 
 
 func _abrir_selector_viajes_desde_servicio() -> void:
