@@ -421,6 +421,9 @@ func _abrir_configuracion() -> void:
 
 	login_overlay.visible = false
 	multiplayer_overlay.visible = false
+	var selector_abierto := get_node_or_null("LocalSaveSelector") as Control
+	if selector_abierto != null:
+		selector_abierto.queue_free()
 	_settings_panel = SETTINGS_SCENE.instantiate() as SettingsPanel
 	if _settings_panel == null:
 		push_error("StartMenu: no se pudo crear el panel de configuración.")
@@ -498,6 +501,11 @@ func _iniciar_partida() -> void:
 	_abrir_selector_partidas()
 
 func _abrir_selector_partidas() -> void:
+	# El selector es modal y no debe coexistir con cuenta, multijugador o ajustes.
+	login_overlay.visible = false
+	multiplayer_overlay.visible = false
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		_cerrar_configuracion()
 	if get_node_or_null("LocalSaveSelector") != null:
 		return
 	# La escena pequeña del selector se prepara al cargar el menú, no al pulsar
@@ -569,6 +577,12 @@ func _ajustar_panel_login_a_pantalla() -> void:
 
 
 func _abrir_login() -> void:
+	multiplayer_overlay.visible = false
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		_cerrar_configuracion()
+	var selector_abierto := get_node_or_null("LocalSaveSelector") as Control
+	if selector_abierto != null:
+		selector_abierto.queue_free()
 	login_overlay.visible = true
 
 	_actualizar_panel_cuenta()
@@ -880,6 +894,11 @@ func _on_character_confirmed(config: Dictionary, action: String) -> void:
 # ============================================================
 
 func _abrir_multijugador() -> void:
+	if _settings_panel != null and is_instance_valid(_settings_panel):
+		_cerrar_configuracion()
+	var selector_abierto := get_node_or_null("LocalSaveSelector") as Control
+	if selector_abierto != null:
+		selector_abierto.queue_free()
 	if not GarliaAuth.esta_autenticado():
 		multijugador_estado("Inicia sesión para entrar a servidores. El acceso como invitado se integrará en otra etapa.")
 		return

@@ -4,7 +4,7 @@ class_name ItemIconResolver
 
 const ITEMS_ASSET_ROOT: String = "res://assets/art/items"
 const PROPS_ASSET_ROOT: String = "res://assets/art/props"
-const FURNITURE_ASSET_ROOT: String = "res://assets/art/places/Muebles"
+const FURNITURE_ASSET_ROOT: String = "res://assets/art/kingdom/Torres/Edificios/Muebles"
 
 const EXTENSIONES_IMAGEN: Array[String] = [
 	"png",
@@ -56,10 +56,10 @@ const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
 	preload("res://assets/art/props/Piedra Mediana.png"),
 	preload("res://assets/art/props/Piedra Pequeña.png"),
 	preload("res://assets/art/props/Árbol.png"),
-	preload("res://assets/art/places/Muebles/Silla.png"),
-	preload("res://assets/art/places/Muebles/mesa.png"),
-	preload("res://assets/art/places/Muebles/cofre.png"),
-	preload("res://assets/art/places/Muebles/armario.png")
+	preload("res://assets/art/kingdom/Torres/Edificios/Muebles/Silla.png"),
+	preload("res://assets/art/kingdom/Torres/Edificios/Muebles/mesa.png"),
+	preload("res://assets/art/kingdom/Torres/Edificios/Muebles/cofre.png"),
+	preload("res://assets/art/kingdom/Torres/Edificios/Muebles/armario.png")
 ]
 
 

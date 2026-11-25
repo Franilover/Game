@@ -469,6 +469,8 @@ func _salir_editor_partida() -> void:
 
 
 func _on_create_pressed() -> void:
+	# Mantiene un solo panel activo: la creación cubre temporalmente el selector.
+	visible = false
 	character_creation.z_index = 4000
 	character_creation.open("nueva_partida")
 
@@ -479,6 +481,7 @@ func _on_back_pressed() -> void:
 
 func _on_character_cancelled() -> void:
 	status_label.text = "Creación de personaje cancelada."
+	visible = true
 
 
 func _on_character_confirmed(
