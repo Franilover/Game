@@ -256,9 +256,9 @@ func _crear_grafo_sector() -> void:
 
 
 func _crear_puntos_sector() -> void:
-	_crear_punto_descanso(Vector2(480.0, 408.0))
+	_crear_punto_descanso(Vector2(480.0, 448.0))
 	# Descanso en el suelo principal de Raíces profundas.
-	_crear_punto_descanso(Vector2(2480.0, 936.0))
+	_crear_punto_descanso(Vector2(2480.0, 960.0))
 	var hallazgo := Area2D.new()
 	hallazgo.name = "NucleoDeImpulso"
 	hallazgo.position = Vector2(2600.0, 190.0)
@@ -300,14 +300,17 @@ func _crear_punto_descanso(posicion: Vector2) -> void:
 	descanso.collision_mask = 2
 	var forma := CollisionShape2D.new()
 	var circulo := CircleShape2D.new()
-	circulo.radius = 28.0
+	circulo.radius = 32.0
 	forma.shape = circulo
+	forma.position.y = -20.0
 	descanso.add_child(forma)
 	var sprite := Sprite2D.new()
 	sprite.name = "FlorCheckpointSprite"
 	sprite.texture = load(CHECKPOINT_TEXTURE_PATH) as Texture2D
 	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.position = Vector2(0.0, -8.0)
+	sprite.scale = Vector2(2.0, 2.0)
+	if sprite.texture != null:
+		sprite.position.y = -sprite.texture.get_height() * sprite.scale.y * 0.5
 	descanso.add_child(sprite)
 	if sprite.texture == null:
 		push_error("Saltus: no se pudo cargar " + CHECKPOINT_TEXTURE_PATH)
@@ -548,7 +551,7 @@ func _crear_mecanicas_ambientales() -> void:
 
 	var interruptor := SWITCH_FLOWER_SCRIPT.new() as Area2D
 	interruptor.name = "FlorDetectora_1712"
-	interruptor.position = Vector2(1712.0, 264.0)
+	interruptor.position = Vector2(1712.0, 448.0)
 	add_child(interruptor)
 
 	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
@@ -566,9 +569,9 @@ func _crear_mecanicas_ambientales() -> void:
 
 	# Hongos elásticos: permiten ganar altura y enlazar plataformas alternativas.
 	for posicion in [
-		Vector2(1240.0, 176.0),
-		Vector2(2520.0, 368.0),
-		Vector2(3900.0, 48.0)
+		Vector2(1240.0, 448.0),
+		Vector2(2520.0, 448.0),
+		Vector2(3900.0, 448.0)
 	]:
 		var planta := BOUNCE_FLORA_SCRIPT.new() as Area2D
 		planta.name = "FloraImpulsora_%d" % int(posicion.x)
