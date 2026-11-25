@@ -12,6 +12,7 @@ const TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Section/Flor De
 
 var is_activated: bool = false
 var _sprite: Sprite2D
+var _wave_tween: Tween
 
 
 func _ready() -> void:
@@ -52,6 +53,7 @@ func _al_detectar_cuerpo(body: Node2D) -> void:
 	if is_instance_valid(_sprite):
 		_sprite.modulate = Color(0.78, 1.0, 0.72, 1.0)
 
+	_emitir_onda()
 	activated.emit(self)
 	for target in get_tree().get_nodes_in_group(target_group):
 		if is_instance_valid(target) and target.has_method("activate_from_switch"):
@@ -62,3 +64,23 @@ func reset_switch() -> void:
 	is_activated = false
 	if is_instance_valid(_sprite):
 		_sprite.modulate = Color.WHITE
+
+
+func _emitir_onda() -> void:
+	var onda := Line2D.new()
+	onda.name = "OndaDetectora"
+	onda.width = 3.0
+	onda.default_color = Color(0.72, 1.0, 0.78, 0.95)
+	onda.antialiased = true
+	for indice in range(49):
+		var angulo := TAU * float(indice) / 48.0
+		onda.add_point(Vector2(cos(angulo), sin(angulo)))
+	add_child(onda)
+	onda.position = _sprite.position if is_instance_valid(_sprite) else Vector2.ZERO
+	onda.scale = Vector2.ONE
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_OUT)
+	tween.tween_property(onda, "scale", Vector2(76.0, 76.0), 0.48)
+	tween.tween_property(onda, "modulate:a", 0.0, 0.48)
+	tween.chain().tween_callback(onda.queue_free)
