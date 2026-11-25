@@ -160,12 +160,13 @@ func _crear_estela_dash() -> void:
 	fantasma.flip_h = sprite.flip_h
 	fantasma.flip_v = sprite.flip_v
 	fantasma.centered = sprite.centered
-	fantasma.position = sprite.position
-	fantasma.rotation = sprite.rotation
-	fantasma.scale = sprite.scale
+	fantasma.z_as_relative = false
+	fantasma.global_position = sprite.global_position
+	fantasma.global_rotation = sprite.global_rotation
+	fantasma.global_scale = sprite.global_scale
 	fantasma.modulate = Color(0.72, 1.0, 0.68, 0.48)
-	fantasma.z_index = -1
-	add_child(fantasma)
+	fantasma.z_index = 99
+	get_parent().add_child(fantasma)
 	var tween := create_tween()
 	tween.set_parallel(true)
 	tween.tween_property(fantasma, "modulate:a", 0.0, 0.17)
