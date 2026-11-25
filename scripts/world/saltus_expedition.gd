@@ -182,6 +182,9 @@ func _crear_colision_plataforma(inicio_x: int, fila_y: int, ancho: int) -> void:
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(ancho * TILE_SIZE, 16.0)
 	forma.shape = rect
+	# Colisión de un solo sentido: bloquea al caer desde arriba, permite subir desde abajo.
+	forma.one_way_collision = true
+	forma.one_way_collision_margin = 8.0
 	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, fila_y * TILE_SIZE + 8.0)
 	cuerpo.add_child(forma)
 	add_child(cuerpo)
