@@ -4,59 +4,78 @@ extends EditorScript
 ## Abrir expedicion_saltus.tscn antes de ejecutar este EditorScript.
 
 const SCENE_PATH := "res://scenes/world/expedicion_saltus.tscn"
+const EXPEDITION_SCRIPT_PATH := "res://scripts/world/saltus_expedition.gd"
 
 const CATEGORIES := [
-	"Mapa",
-	"Vegetacion",
-	"Criaturas",
-	"Mecanismos",
-	"PuntosDeControl",
-	"Fondos",
-	"Ambiente",
-	"ElementosTutorial",
-	"ElementosEscena"
+	"Mapa", "Vegetacion", "Criaturas", "Mecanismos", "PuntosDeControl",
+	"Fondos", "Ambiente", "ElementosTutorial", "ElementosEscena"
 ]
 
 
 func _run() -> void:
 	var root := get_editor_interface().get_edited_scene_root()
-	if not (root is SaltusExpedition):
+	if root == null or root.scene_file_path != SCENE_PATH:
 		push_error("Saltus: abre scenes/world/expedicion_saltus.tscn antes de ejecutar este script.")
 		return
-	if root.get("contenido_escena_preconstruido"):
-		push_warning("Saltus: la escena ya está convertida. No vuelvas a ejecutar el constructor porque podrías duplicar contenido.")
+	if bool(root.get("contenido_escena_preconstruido")):
+		push_warning("Saltus: la escena ya está convertida. No vuelvas a ejecutar el constructor.")
 		return
 
-	# Construye una sola vez los nodos iniciales dentro de la escena abierta.
-	root.call("_crear_relleno_fondo")
-	root.call("_crear_terreno")
-	root.call("_crear_puntos_sector")
-	root.call("_crear_fondo_y_parallax")
-	root.call("_crear_arboleda")
-	root.call("_crear_criaturas")
-	root.call("_crear_ambiente")
-	root.call("_crear_mecanicas_ambientales")
-	_materializar_componentes_visuales(root)
+	# La raíz abierta puede ser un PlaceholderScriptInstance aunque el script
+	# tenga @tool. Instanciamos una fábrica real desde el recurso GDScript.
+	var expedition_script := load(EXPEDITION_SCRIPT_PATH) as GDScript
+	if expedition_script == null or not expedition_script.can_instantiate():
+		push_error("Saltus: no se pudo compilar/instanciar saltus_expedition.gd. Revisa los errores de GDScript.")
+		return
+
+	var factory := expedition_script.new() as Node2D
+	if factory == null:
+		push_error("Saltus: no se pudo crear la fábrica temporal del escenario.")
+		return
+	factory.name = "SaltusSceneFactory_TEMP"
+	root.add_child(factory)
+
+	factory.call("_crear_relleno_fondo")
+	factory.call("_crear_terreno")
+	factory.call("_crear_puntos_sector")
+	factory.call("_crear_fondo_y_parallax")
+	factory.call("_crear_arboleda")
+	factory.call("_crear_criaturas")
+	factory.call("_crear_ambiente")
+	factory.call("_crear_mecanicas_ambientales")
+	_materializar_componentes_visuales(factory)
+
+	# El terreno reconstruye su renderer en diferido; dejamos completar ese trabajo.
+	await get_tree().process_frame
+	await get_tree().process_frame
+
+	var generados := factory.get_children().duplicate()
+	for nodo: Node in generados:
+		var transformacion := (nodo as Node2D).global_transform if nodo is Node2D else Transform2D.IDENTITY
+		factory.remove_child(nodo)
+		root.add_child(nodo)
+		if nodo is Node2D:
+			(nodo as Node2D).global_transform = transformacion
+	factory.queue_free()
 
 	_organizar_nodos(root)
 	root.set("contenido_escena_preconstruido", true)
-	root.scene_file_path = SCENE_PATH
 
 	var packed := PackedScene.new()
 	var pack_error := packed.pack(root)
 	if pack_error != OK:
-		push_error("Saltus: no se pudo empaquetar la expedición completa: " + error_string(pack_error))
 		root.set("contenido_escena_preconstruido", false)
+		push_error("Saltus: no se pudo empaquetar la expedición completa: " + error_string(pack_error))
 		return
 
 	var save_error := ResourceSaver.save(packed, SCENE_PATH)
 	if save_error != OK:
-		push_error("Saltus: no se pudo guardar expedicion_saltus.tscn: " + error_string(save_error))
 		root.set("contenido_escena_preconstruido", false)
+		push_error("Saltus: no se pudo guardar expedicion_saltus.tscn: " + error_string(save_error))
 		return
 
 	print("Saltus: expedicion_saltus.tscn ahora contiene terreno, colisiones, fondos, plantas, criaturas, mecanismos, checkpoints y zona del primer jefe.")
-	print("Guarda/recarga la escena en el editor y modifica sus nodos desde el árbol de escenas.")
+	print("Saltus: la escena completa quedó guardada y sus nodos son editables desde el árbol.")
 
 
 func _organizar_nodos(root: Node) -> void:
@@ -105,6 +124,7 @@ func _asignar_owner_recursivo(nodo: Node, root: Node) -> void:
 	nodo.owner = root
 	for hijo: Node in nodo.get_children():
 		_asignar_owner_recursivo(hijo, root)
+
 
 func _materializar_componentes_visuales(root: Node) -> void:
 	for nodo: Node in root.get_children():
