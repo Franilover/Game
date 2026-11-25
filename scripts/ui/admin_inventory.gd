@@ -597,7 +597,7 @@ func _cargar_sprite_personaje_torres(clave: String) -> Texture2D:
 		"res://assets/art/characters/"
 	]
 	for directorio in directorios:
-		var ruta := directorio + nombre + ".png"
+		var ruta: String = str(directorio) + nombre + ".png"
 		if ResourceLoader.exists(ruta):
 			var textura := ResourceLoader.load(ruta) as Texture2D
 			if textura != null:
@@ -611,7 +611,7 @@ func _cargar_sprite_personaje_torres(clave: String) -> Texture2D:
 				continue
 			if archivo.get_basename().to_lower() != nombre.to_lower():
 				continue
-			var ruta_encontrada := directorio + archivo
+			var ruta_encontrada: String = str(directorio) + str(archivo)
 			if ResourceLoader.exists(ruta_encontrada):
 				var textura_encontrada := ResourceLoader.load(ruta_encontrada) as Texture2D
 				if textura_encontrada != null:
