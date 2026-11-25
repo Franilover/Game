@@ -1,3 +1,4 @@
+@tool
 extends Area2D
 class_name SaltusSwitchFlower
 ## Flor sensora: detecta al jugador y activa los mecanismos conectados.
@@ -16,6 +17,8 @@ var _wave_tween: Tween
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	monitoring = true
 	monitorable = false
 	collision_layer = 0
