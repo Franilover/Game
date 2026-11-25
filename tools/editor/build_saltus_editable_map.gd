@@ -20,7 +20,7 @@ const CATEGORIES := [
 
 func _run() -> void:
 	var root := get_editor_interface().get_edited_scene_root()
-	if not root is SaltusExpedition:
+	if not (root is SaltusExpedition):
 		push_error("Saltus: abre scenes/world/expedicion_saltus.tscn antes de ejecutar este script.")
 		return
 	if root.get("contenido_escena_preconstruido"):
@@ -85,11 +85,11 @@ func _categoria_para(nodo: Node) -> String:
 		return "Mapa"
 	if nombre.begins_with("Zlish_") or nombre.begins_with("Flaxis_"):
 		return "Criaturas"
-	if nombre == "PuntoDescanso":
+	if nombre.begins_with("PuntoDescanso"):
 		return "PuntosDeControl"
 	if nombre.begins_with("Parallax") or nombre == "RellenoVerdeFondo":
 		return "Fondos"
-	if nombre == "HojasEnElAire":
+	if nombre.begins_with("HojasEnElAire"):
 		return "Ambiente"
 	if nombre.begins_with("FloraImpulsora") or nombre.begins_with("FlorDetectora"):
 		return "Vegetacion"
