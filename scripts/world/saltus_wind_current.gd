@@ -25,6 +25,8 @@ func _ready() -> void:
 	_crear_indicador()
 
 func _physics_process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	var impulso := direction.normalized() * acceleration * delta
 	for body in get_overlapping_bodies():
 		if body == null or not body.is_in_group(affects_group):
