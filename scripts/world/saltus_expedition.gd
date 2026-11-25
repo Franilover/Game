@@ -7,7 +7,10 @@ const TILESET_TEXTURE_PATH: String = "res://assets/tilesets/Bosque.png"
 const TREE_TEXTURE_PATH: String = "res://assets/art/props/Árbol.png"
 const LEAF_TEXTURE_PATH: String = "res://assets/art/items/Hojas.png"
 const SALTUS_CREATURE_SCRIPT = preload("res://scripts/world/saltus_creature_2d.gd")
-const LEVEL_WIDTH_TILES: int = 120
+const WORLD_GRAPH_SCRIPT = preload("res://scripts/world/saltus_world_graph.gd")
+const ROOM_DEFINITION_SCRIPT = preload("res://scripts/world/saltus_room_definition.gd")
+const WORLD_CONNECTION_SCRIPT = preload("res://scripts/world/saltus_world_connection.gd")
+const LEVEL_WIDTH_TILES: int = 160
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
 @export var iluminacion_escena: Color = Color("#FFFDF2")
@@ -33,6 +36,11 @@ var _terrain_layer: TileMapDual
 var _player: SaltusPlayer
 var _platforms: Array[Dictionary] = []
 var _fondo_cielo: Sprite2D
+var _world_graph: SaltusWorldGraph
+var _ability_flags: Dictionary = {}
+var _current_room_id: StringName = &""
+var _last_rest_position: Vector2 = Vector2(480.0, 408.0)
+var _sector_gate: StaticBody2D
 
 
 func _ready() -> void:
@@ -55,6 +63,8 @@ func _ready() -> void:
 
 	_crear_relleno_fondo()
 	_crear_terreno()
+	_crear_grafo_sector()
+	_crear_puntos_sector()
 	_crear_fondo_y_parallax()
 	_crear_arboleda()
 	_crear_criaturas()
@@ -64,9 +74,17 @@ func _ready() -> void:
 
 
 func _process(_delta: float) -> void:
-	if is_instance_valid(_player) and _player.global_position.y > 900.0:
-		_player.global_position = Vector2(96.0, float(GROUND_TOP * TILE_SIZE - 40))
+	if not is_instance_valid(_player):
+		return
+	if _player.global_position.y > 1500.0:
+		_player.global_position = _last_rest_position
 		_player.velocity = Vector2.ZERO
+		return
+	if is_instance_valid(_world_graph):
+		var room := _world_graph.get_room_at(_player.global_position)
+		if room != null and room.room_id != _current_room_id:
+			_current_room_id = room.room_id
+			_world_graph.discover_room(_current_room_id)
 
 
 func _crear_relleno_fondo() -> void:
@@ -90,7 +108,6 @@ func _crear_terreno() -> void:
 	if textura == null or textura.get_width() < TILE_SIZE * 4 or textura.get_height() < TILE_SIZE * 4:
 		push_error("Saltus: Bosque.png no contiene el atlas 4x4 esperado.")
 		return
-
 	var tile_set := TileSet.new()
 	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
 	tile_set.add_terrain_set()
@@ -99,7 +116,6 @@ func _crear_terreno() -> void:
 	tile_set.set_terrain_name(0, 0, "<any>")
 	tile_set.add_terrain(0)
 	tile_set.set_terrain_name(0, 1, "Bosque")
-
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = textura
 	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
@@ -114,9 +130,8 @@ func _crear_terreno() -> void:
 		for neighbor in CORNER_NEIGHBORS:
 			data.set_terrain_peering_bit(neighbor, 1 if (bits & 1) != 0 else 0)
 			bits >>= 1
-
 	_terrain_layer = TileMapDual.new()
-	_terrain_layer.name = "TerrenoBosque"
+	_terrain_layer.name = "TerrenoSaltus"
 	_terrain_layer.tile_set = tile_set
 	_terrain_layer.z_as_relative = false
 	_terrain_layer.z_index = 0
@@ -124,40 +139,173 @@ func _crear_terreno() -> void:
 	_terrain_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_terrain_layer)
 
-	# El suelo tiene dos cortes que obligan a elegir rutas elevadas o saltar.
-	var tramos_suelo: Array[Vector2i] = [Vector2i(0, 25), Vector2i(30, 62), Vector2i(67, LEVEL_WIDTH_TILES)]
-	for tramo in tramos_suelo:
-		for x in range(tramo.x, tramo.y):
-			for y in range(GROUND_TOP, GROUND_TOP + 6):
+	# Claro central y dos descensos hacia las galerías de Raíces.
+	var suelos: Array[Dictionary] = [
+		{"x": 0, "y": 14, "w": 28, "d": 6},
+		{"x": 34, "y": 14, "w": 22, "d": 6},
+		{"x": 60, "y": 14, "w": 26, "d": 6},
+		{"x": 94, "y": 14, "w": 66, "d": 6},
+		{"x": 28, "y": 29, "w": 18, "d": 6},
+		{"x": 50, "y": 27, "w": 16, "d": 6},
+		{"x": 70, "y": 30, "w": 18, "d": 6},
+	]
+	for suelo in suelos:
+		var sx := int(suelo["x"])
+		var sy := int(suelo["y"])
+		var sw := int(suelo["w"])
+		var sd := int(suelo["d"])
+		for x in range(sx, sx + sw):
+			for y in range(sy, sy + sd):
 				_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_DEFAULT)
-		_crear_colision_suelo(tramo.x, tramo.y - tramo.x)
+		_crear_colision_bloque_solido(sx, sy, sw, sd)
 
-	# Plataformas visuales del mismo atlas original, con colisión unidireccional.
-	for datos in [
-		# Ruta inicial: ascenso por plataformas escalonadas.
-		{"x": 7, "y": 12, "w": 4}, {"x": 13, "y": 10, "w": 4},
-		{"x": 19, "y": 8, "w": 5}, {"x": 25, "y": 11, "w": 4},
-		# Primer corte: puente bajo y ruta superior alternativa.
-		{"x": 25, "y": 12, "w": 5}, {"x": 29, "y": 10, "w": 4},
-		{"x": 35, "y": 8, "w": 5}, {"x": 42, "y": 10, "w": 4},
-		{"x": 48, "y": 12, "w": 5}, {"x": 54, "y": 9, "w": 5},
-		# Zona central: plataformas en zigzag y mirador elevado.
-		{"x": 61, "y": 12, "w": 6}, {"x": 68, "y": 10, "w": 4},
-		{"x": 73, "y": 8, "w": 5}, {"x": 80, "y": 6, "w": 5},
-		{"x": 87, "y": 9, "w": 5}, {"x": 94, "y": 11, "w": 4},
-		# Último tramo: rutas paralelas y descenso hacia la salida.
-		{"x": 100, "y": 8, "w": 5}, {"x": 107, "y": 10, "w": 5},
-		{"x": 113, "y": 12, "w": 5},
-	]:
-		var inicio_x := int(datos["x"])
-		var fila_y := int(datos["y"])
-		var ancho := int(datos["w"])
-		for x in range(inicio_x, inicio_x + ancho):
-			_terrain_layer.set_cell(Vector2i(x, fila_y), 0, TILE_ATLAS_DEFAULT)
-		_crear_colision_plataforma(inicio_x, fila_y, ancho)
-
+	# Arboleda: rutas ascendentes, cruces altos y descensos conectados.
+	var plataformas: Array[Dictionary] = [
+		{"x": 7, "y": 12, "w": 5}, {"x": 14, "y": 10, "w": 5},
+		{"x": 21, "y": 8, "w": 6}, {"x": 29, "y": 6, "w": 6},
+		{"x": 37, "y": 4, "w": 7}, {"x": 46, "y": 6, "w": 6},
+		{"x": 53, "y": 9, "w": 6}, {"x": 63, "y": 12, "w": 7},
+		{"x": 71, "y": 10, "w": 6}, {"x": 78, "y": 7, "w": 7},
+		{"x": 87, "y": 5, "w": 7}, {"x": 97, "y": 3, "w": 7},
+		{"x": 106, "y": 6, "w": 7}, {"x": 116, "y": 9, "w": 7},
+		{"x": 126, "y": 7, "w": 7}, {"x": 137, "y": 4, "w": 8},
+		{"x": 148, "y": 8, "w": 7},
+		{"x": 29, "y": 19, "w": 7}, {"x": 38, "y": 22, "w": 8},
+		{"x": 48, "y": 19, "w": 8}, {"x": 57, "y": 23, "w": 8},
+		{"x": 67, "y": 20, "w": 8}, {"x": 78, "y": 24, "w": 8},
+		{"x": 90, "y": 20, "w": 8},
+	]
+	for plataforma in plataformas:
+		var px := int(plataforma["x"])
+		var py := int(plataforma["y"])
+		var pw := int(plataforma["w"])
+		for x in range(px, px + pw):
+			_terrain_layer.set_cell(Vector2i(x, py), 0, TILE_ATLAS_DEFAULT)
+		_crear_colision_plataforma(px, py, pw)
 	call_deferred("_actualizar_tiles_dual")
 
+
+func _crear_colision_bloque_solido(inicio_x: int, fila_y: int, ancho: int, profundidad: int) -> void:
+	var cuerpo := StaticBody2D.new()
+	cuerpo.name = "Terreno_%d_%d" % [inicio_x, fila_y]
+	cuerpo.collision_layer = 1
+	cuerpo.collision_mask = 0
+	var forma := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(ancho * TILE_SIZE, profundidad * TILE_SIZE)
+	forma.shape = rect
+	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, (fila_y + profundidad * 0.5) * TILE_SIZE)
+	cuerpo.add_child(forma)
+	add_child(cuerpo)
+
+
+func _crear_grafo_sector() -> void:
+	_world_graph = WORLD_GRAPH_SCRIPT.new() as SaltusWorldGraph
+	var claro := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	claro.room_id = &"claro_central"
+	claro.region_id = &"claro"
+	claro.bounds = Rect2(0.0, 300.0, 3000.0, 420.0)
+	claro.tags = PackedStringArray(["inicio", "descanso", "cruce"])
+	var arboleda := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	arboleda.room_id = &"arboleda_vertical"
+	arboleda.region_id = &"arboleda"
+	arboleda.bounds = Rect2(180.0, -1700.0, 4940.0, 2200.0)
+	arboleda.tags = PackedStringArray(["vertical", "copas", "atajos"])
+	var raices := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	raices.room_id = &"raices_profundas"
+	raices.region_id = &"raices"
+	raices.bounds = Rect2(650.0, 650.0, 2300.0, 900.0)
+	raices.tags = PackedStringArray(["subterraneo", "cavernas", "mineral"])
+	_world_graph.rooms = [claro, arboleda, raices]
+	var a := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
+	a.connection_id = &"claro_arboleda"
+	a.room_a = &"claro_central"
+	a.room_b = &"arboleda_vertical"
+	var b := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
+	b.connection_id = &"claro_raices"
+	b.room_a = &"claro_central"
+	b.room_b = &"raices_profundas"
+	var c := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
+	c.connection_id = &"arboleda_raices_impulso"
+	c.room_a = &"arboleda_vertical"
+	c.room_b = &"raices_profundas"
+	c.requirement_type = SaltusWorldConnection.RequirementType.ABILITY
+	c.requirement_key = &"impulso_aereo"
+	_world_graph.connections = [a, b, c]
+	add_child(_world_graph)
+	_world_graph.discover_room(&"claro_central")
+
+
+func _crear_puntos_sector() -> void:
+	_crear_punto_descanso(Vector2(480.0, 408.0))
+	var hallazgo := Area2D.new()
+	hallazgo.name = "NucleoDeImpulso"
+	hallazgo.position = Vector2(2860.0, -430.0)
+	hallazgo.collision_layer = 0
+	hallazgo.collision_mask = 2
+	var forma := CollisionShape2D.new()
+	var circulo := CircleShape2D.new()
+	circulo.radius = 24.0
+	forma.shape = circulo
+	hallazgo.add_child(forma)
+	var visual := Polygon2D.new()
+	visual.color = Color("#B9D7A5")
+	visual.polygon = PackedVector2Array([Vector2(0, -22), Vector2(13, -5), Vector2(8, 18), Vector2(-8, 18), Vector2(-13, -5)])
+	hallazgo.add_child(visual)
+	hallazgo.body_entered.connect(_al_recoger_nucleo.bind(hallazgo))
+	add_child(hallazgo)
+	_sector_gate = StaticBody2D.new()
+	_sector_gate.name = "AtajoSellado"
+	_sector_gate.position = Vector2(3400.0, -390.0)
+	_sector_gate.collision_layer = 1
+	_sector_gate.collision_mask = 0
+	var gate_shape := CollisionShape2D.new()
+	var gate_rect := RectangleShape2D.new()
+	gate_rect.size = Vector2(20.0, 150.0)
+	gate_shape.shape = gate_rect
+	_sector_gate.add_child(gate_shape)
+	var gate_visual := Polygon2D.new()
+	gate_visual.color = Color("#596B4B")
+	gate_visual.polygon = PackedVector2Array([Vector2(-10, -75), Vector2(10, -75), Vector2(10, 75), Vector2(-10, 75)])
+	_sector_gate.add_child(gate_visual)
+	add_child(_sector_gate)
+
+
+func _crear_punto_descanso(posicion: Vector2) -> void:
+	var descanso := Area2D.new()
+	descanso.name = "PuntoDescanso"
+	descanso.position = posicion
+	descanso.collision_layer = 0
+	descanso.collision_mask = 2
+	var forma := CollisionShape2D.new()
+	var circulo := CircleShape2D.new()
+	circulo.radius = 28.0
+	forma.shape = circulo
+	descanso.add_child(forma)
+	var visual := Polygon2D.new()
+	visual.color = Color("#C2B89A")
+	visual.polygon = PackedVector2Array([Vector2(-18, 5), Vector2(-10, -10), Vector2(10, -10), Vector2(18, 5), Vector2(0, 15)])
+	descanso.add_child(visual)
+	descanso.body_entered.connect(_activar_descanso.bind(posicion))
+	add_child(descanso)
+
+
+func _activar_descanso(cuerpo: Node2D, posicion: Vector2) -> void:
+	if cuerpo == _player:
+		_last_rest_position = posicion + Vector2(0.0, -24.0)
+
+
+func _al_recoger_nucleo(cuerpo: Node2D, hallazgo: Area2D) -> void:
+	if cuerpo != _player:
+		return
+	_ability_flags["impulso_aereo"] = true
+	if is_instance_valid(_world_graph):
+		_world_graph.unlock_connection(&"arboleda_raices_impulso")
+	if is_instance_valid(_sector_gate):
+		_sector_gate.queue_free()
+	if is_instance_valid(hallazgo):
+		hallazgo.queue_free()
+	print("Saltus: hallazgo registrado | atajo de Arboleda y Raíces desbloqueado.")
 
 func _crear_colision_suelo(inicio_x: int, ancho: int) -> void:
 	var cuerpo := StaticBody2D.new()
@@ -363,8 +511,8 @@ func _configurar_camara() -> void:
 	# La cámara queda contenida en el rectángulo del mapa y el terreno.
 	camara.limit_left = 0
 	camara.limit_right = LEVEL_WIDTH_TILES * TILE_SIZE
-	camara.limit_top = -120
-	camara.limit_bottom = (GROUND_TOP + 6) * TILE_SIZE
+	camara.limit_top = -1900
+	camara.limit_bottom = 1500
 	camara.limit_smoothed = false
 	camara.position_smoothing_enabled = true
 	camara.position_smoothing_speed = 5.5
