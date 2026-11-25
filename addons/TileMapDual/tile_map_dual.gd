@@ -55,10 +55,10 @@ func _ready() -> void:
 		_display.visible = false
 		_tileset_watcher.atlas_autotiled.connect(_atlas_autotiled)
 		set_process(true)
-	_make_self_invisible(true)
 	else: # Run in-game using signals for better performance
 		changed.connect(_changed, 1)
 		set_process(false)
+	_make_self_invisible(true)
 	# Update full tileset on first instance
 	await get_tree().process_frame
 	_changed()
