@@ -4,7 +4,7 @@ class_name ItemIconResolver
 
 const ITEMS_ASSET_ROOT: String = "res://assets/art/items"
 const PROPS_ASSET_ROOT: String = "res://assets/art/props"
-const FURNITURE_ASSET_ROOT: String = "res://assets/art/places/Muebles"
+const FURNITURE_ASSET_ROOT: String = "res://assets/art/kingdom/Torres/Edificios/Muebles"
 
 const EXTENSIONES_IMAGEN: Array[String] = [
 	"png",
