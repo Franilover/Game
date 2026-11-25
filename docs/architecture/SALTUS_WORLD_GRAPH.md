@@ -15,11 +15,12 @@ La escena `expedicion_saltus.tscn` mantiene una única escena y una sola coorden
 
 - **Claro central:** zona de inicio, descansadero y cruces de superficie.
 - **Arboleda vertical:** ruta escalonada por plataformas, con ascenso hasta las copas y retorno por plataformas inferiores.
-- **Raíces profundas:** galerías bajo el claro, alcanzables mediante los desniveles y plataformas de descenso.
-- **Atajo sellado:** un descenso alternativo desde Arboleda hacia Raíces permanece cerrado hasta recoger el núcleo de exploración en una plataforma elevada; al recogerlo se registra la habilidad de prototipo `impulso_aereo` y se desbloquea la conexión lógica hacia Raíces.
-- **Descanso y caída:** el punto de descanso registra la posición de retorno; caer fuera del límite inferior devuelve al jugador a ese punto.
+- **Raíces profundas:** galerías bajo el claro, accesibles por una caída controlada. Una escalera de plataformas permite regresar a la superficie por otra ruta.
+- **Copa oriental:** extensión elevada al este de Raíces, descubierta al cruzar el paso sellado.
+- **Paso sellado:** una barrera vertical separa Raíces de Copa oriental. El núcleo se encuentra en una plataforma alta de Arboleda; recogerlo abre el paso y registra la habilidad de prototipo `impulso_aereo`.
+- **Descansos y caída:** hay puntos de descanso en Claro y Raíces. Caer fuera del límite inferior devuelve al último punto activado.
 
-La habilidad y el núcleo son contenido de prototipo para validar el flujo de exploración y desbloqueo. Su nombre, comportamiento definitivo y adquisición final siguen sujetos al diseño de habilidades de Saltus.
+El Impulso Aéreo habilita un dash adicional durante el salto. El núcleo y la habilidad son contenido de prototipo para validar exploración y desbloqueos; su nombre, comportamiento definitivo y adquisición siguen sujetos al diseño de habilidades de Saltus.
 
 ## Primera base técnica
 
@@ -41,9 +42,9 @@ La habilidad y el núcleo son contenido de prototipo para validar el flujo de ex
 
 - El terreno y las plataformas se generan en la escena actual; todavía no hay streaming por proximidad.
 - El mapa visual progresivo y su integración con el guardado general aún no están conectados.
-- El núcleo y el atajo validan el flujo de desbloqueo, pero todavía no otorgan una habilidad de movimiento al controlador.
+- El núcleo ya activa el dash aéreo adicional y abre la barrera física; la persistencia de esa habilidad todavía no está conectada al guardado general.
 - El equilibrio de saltos, distancias, colisiones y cámara debe verificarse ejecutando el juego.
 
 ## Siguiente fase
 
-Probar el recorrido completo en Godot: inicio en Claro, ascenso por Arboleda, descenso a Raíces, hallazgo del núcleo, apertura del atajo y retorno por el recorrido original. Ajustar distancias y alturas según el movimiento real antes de ampliar el mundo.
+Probar en Godot el recorrido completo: Claro → Arboleda → Raíces → escalera de retorno; después alcanzar el núcleo en Arboleda, volver a Raíces y abrir el paso hacia Copa oriental. Verificar que el jugador no pueda rodear la barrera por arriba o abajo, y ajustar alturas/distancias antes de ampliar el mundo.
