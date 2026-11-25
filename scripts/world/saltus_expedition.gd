@@ -243,9 +243,17 @@ func _crear_capa_parallax(
 		else textura.get_height() * 0.5
 	)
 	sprite.position = Vector2(x_centro, y_centro)
-	sprite.z_as_relative = false
+	# El sprite debe heredar la profundidad negativa del Parallax2D.
+	# Con z_as_relative=false quedaba en z=0 y perdía el orden de capas.
+	sprite.z_as_relative = true
 	sprite.z_index = 0
 	capa.add_child(sprite)
+	print(
+		"Saltus: fondo cargado | ", nombre,
+		" | tamaño=", textura.get_width(), "x", textura.get_height(),
+		" | posición=", sprite.position,
+		" | z=", capa.z_index
+	)
 	return sprite
 
 
