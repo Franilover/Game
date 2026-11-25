@@ -53,6 +53,7 @@ func _ready() -> void:
 		sprite.z_index = 0
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
+	_crear_relleno_fondo()
 	_crear_terreno()
 	_crear_fondo_y_parallax()
 	_crear_arboleda()
@@ -66,6 +67,22 @@ func _process(_delta: float) -> void:
 	if is_instance_valid(_player) and _player.global_position.y > 900.0:
 		_player.global_position = Vector2(96.0, float(GROUND_TOP * TILE_SIZE - 40))
 		_player.velocity = Vector2.ZERO
+
+
+func _crear_relleno_fondo() -> void:
+	# Relleno sólido detrás del terreno y de todas las capas visuales.
+	var relleno := Polygon2D.new()
+	relleno.name = "RellenoVerdeFondo"
+	relleno.color = Color("#2B5229")
+	relleno.polygon = PackedVector2Array([
+		Vector2(-512.0, -512.0),
+		Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 512.0, -512.0),
+		Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 512.0, 1536.0),
+		Vector2(-512.0, 1536.0)
+	])
+	relleno.z_as_relative = false
+	relleno.z_index = -100
+	add_child(relleno)
 
 
 func _crear_terreno() -> void:
@@ -340,10 +357,12 @@ func _configurar_camara() -> void:
 	camara.zoom = Vector2(1.35, 1.35)
 	camara.make_current()
 	camara.reset_smoothing()
+	# La cámara queda contenida en el rectángulo del mapa y el terreno.
 	camara.limit_left = 0
 	camara.limit_right = LEVEL_WIDTH_TILES * TILE_SIZE
 	camara.limit_top = -120
-	camara.limit_bottom = 820
+	camara.limit_bottom = (GROUND_TOP + 6) * TILE_SIZE
+	camara.limit_smoothed = false
 	camara.position_smoothing_enabled = true
 	camara.position_smoothing_speed = 5.5
 	camara.drag_horizontal_enabled = true
