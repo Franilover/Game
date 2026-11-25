@@ -13,6 +13,7 @@ const WORLD_CONNECTION_SCRIPT = preload("res://scripts/world/saltus_world_connec
 const WIND_CURRENT_SCRIPT = preload("res://scripts/world/saltus_wind_current.gd")
 const BOUNCE_FLORA_SCRIPT = preload("res://scripts/world/saltus_bounce_flora.gd")
 const SWITCH_FLOWER_SCRIPT = preload("res://scripts/world/saltus_switch_flower.gd")
+const SWITCH_GATE_SCRIPT = preload("res://scripts/world/saltus_switch_gate.gd")
 const CHECKPOINT_TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Section/Flor Checkpoint.png"
 const LEVEL_WIDTH_TILES: int = 160
 
@@ -527,11 +528,18 @@ func _crear_ambiente() -> void:
 
 
 func _crear_mecanicas_ambientales() -> void:
-	# Flor detectora: activa señales y mecanismos registrados al detectar al jugador.
+	# Barrera del claro oriental: la flor detectora abre este paso al tocarla.
+	var puerta := SWITCH_GATE_SCRIPT.new() as StaticBody2D
+	puerta.name = "PuertaFlorDetectora"
+	puerta.position = Vector2(1776.0, 250.0)
+	puerta.set("gate_size", Vector2(28.0, 1100.0))
+	add_child(puerta)
+
 	var interruptor := SWITCH_FLOWER_SCRIPT.new() as Area2D
 	interruptor.name = "FlorDetectora_1712"
 	interruptor.position = Vector2(1712.0, 264.0)
 	add_child(interruptor)
+	interruptor.activated.connect(puerta.activate_from_switch)
 
 	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
 	for configuracion in [
