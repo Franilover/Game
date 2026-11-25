@@ -120,7 +120,7 @@ func _crear_ambiente() -> void:
 		hojas.texture = textura_hojas
 		hojas.amount = 9
 		hojas.lifetime = 7.0
-		hojas.emission_shape = CPUParticles2D.EMISSION_SHAPE_BOX
+		hojas.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
 		hojas.emission_box_extents = Vector2(230.0, 105.0)
 		hojas.direction = Vector2(-0.25, 1.0)
 		hojas.spread = 24.0
