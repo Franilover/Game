@@ -4,6 +4,7 @@ class_name SaltusExpedition
 const TILE_SIZE: int = 32
 const TILE_ATLAS_DEFAULT: Vector2i = Vector2i(2, 1)
 const TILESET_TEXTURE_PATH: String = "res://assets/tilesets/Bosque.png"
+const MAP_SCENE_PATH: String = "res://scenes/world/saltus_map_v2.tscn"
 const TREE_TEXTURE_PATH: String = "res://assets/art/props/Árbol.png"
 const LEAF_TEXTURE_PATH: String = "res://assets/art/items/Hojas.png"
 const SALTUS_CREATURE_SCRIPT = preload("res://scripts/world/saltus_creature_2d.gd")
@@ -68,7 +69,7 @@ func _ready() -> void:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
 	_crear_relleno_fondo()
-	_crear_terreno()
+	_cargar_mapa_editable()
 	_crear_grafo_sector()
 	_crear_puntos_sector()
 	_crear_fondo_y_parallax()
@@ -78,6 +79,16 @@ func _ready() -> void:
 	_crear_mecanicas_ambientales()
 	_configurar_camara()
 	print("Saltus V2: mapa vertical conectado | jugador=", _player.global_position)
+
+func _cargar_mapa_editable() -> void:
+	var escena := load(MAP_SCENE_PATH) as PackedScene
+	if escena == null:
+		push_error("Saltus: falta la escena editable %s. Ejecuta tools/editor/build_saltus_editable_map.gd desde Godot." % MAP_SCENE_PATH)
+		return
+	var mapa := escena.instantiate()
+	mapa.name = "MapaSaltus"
+	add_child(mapa)
+
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_player):
