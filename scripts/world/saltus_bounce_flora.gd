@@ -1,5 +1,7 @@
 extends Area2D
 ## Planta elástica reutilizable que impulsa al jugador al tocarla desde arriba.
+
+const TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Section/Flor Saltarina.png"
 signal bounced(body: Node2D)
 
 @export_range(-1200.0, -200.0, 10.0) var bounce_velocity: float = -610.0
@@ -34,19 +36,11 @@ func _al_entrar_en_contacto(body: Node2D) -> void:
 	bounced.emit(body)
 
 func _crear_visual() -> void:
-	var tallo := Line2D.new()
-	tallo.width = 4.0
-	tallo.default_color = Color("#718C4C")
-	tallo.points = PackedVector2Array([Vector2(0.0, 12.0), Vector2(0.0, -9.0)])
-	add_child(tallo)
-	for indice in range(5):
-		var angulo := TAU * float(indice) / 5.0
-		var petalo := Polygon2D.new()
-		petalo.color = Color("#C3D68A")
-		petalo.polygon = PackedVector2Array([
-			Vector2(0.0, -5.0), Vector2(7.0, -17.0),
-			Vector2(0.0, -27.0), Vector2(-7.0, -17.0)
-		])
-		petalo.position = Vector2(cos(angulo) * 9.0, sin(angulo) * 5.0 - 12.0)
-		petalo.rotation = angulo
-		add_child(petalo)
+	var sprite := Sprite2D.new()
+	sprite.name = "FlorSaltarinaSprite"
+	sprite.texture = load(TEXTURE_PATH) as Texture2D
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.position = Vector2(0.0, -10.0)
+	add_child(sprite)
+	if sprite.texture == null:
+		push_error("Saltus: no se pudo cargar " + TEXTURE_PATH)
