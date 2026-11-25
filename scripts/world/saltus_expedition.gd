@@ -28,7 +28,8 @@ func _process(_delta: float) -> void:
 
 
 func _crear_terreno() -> void:
-	var tile_set: TileSet = _crear_tileset_bosque()
+	var tile_set: TileSet = _crear_tileset_bosque(false)
+	var platform_tile_set: TileSet = _crear_tileset_bosque(true)
 	if tile_set == null:
 		return
 
@@ -42,7 +43,7 @@ func _crear_terreno() -> void:
 
 	_platform_layer = TileMapLayer.new()
 	_platform_layer.name = "Plataformas"
-	_platform_layer.tile_set = tile_set
+	_platform_layer.tile_set = platform_tile_set
 	_platform_layer.collision_layer = 1
 	_platform_layer.collision_mask = 1
 	_platform_layer.z_index = -5
@@ -65,7 +66,7 @@ func _crear_terreno() -> void:
 	_pintar_plataforma(84, 9, 4)
 
 
-func _crear_tileset_bosque() -> TileSet:
+func _crear_tileset_bosque(one_way: bool) -> TileSet:
 	var textura: Texture2D = load(TILESET_TEXTURE_PATH) as Texture2D
 	if textura == null:
 		push_error("Saltus: no se pudo cargar el atlas Bosque.png.")
@@ -86,6 +87,8 @@ func _crear_tileset_bosque() -> TileSet:
 		return null
 
 	tile_data.set_collision_polygons_count(0, 1)
+	tile_data.set_collision_polygon_one_way(0, 0, one_way)
+	tile_data.set_collision_polygon_one_way_margin(0, 0, 2.0)
 	tile_data.set_collision_polygon_points(
 		0,
 		0,
@@ -117,8 +120,8 @@ func _crear_ambiente() -> void:
 		hojas.texture = textura_hojas
 		hojas.amount = 9
 		hojas.lifetime = 7.0
-		hojas.emission_shape = CPUParticles2D.EMISSION_SHAPE_RECTANGLE
-		hojas.emission_rect_extents = Vector2(230.0, 105.0)
+		hojas.emission_shape = CPUParticles2D.EMISSION_SHAPE_BOX
+		hojas.emission_box_extents = Vector2(230.0, 105.0)
 		hojas.direction = Vector2(-0.25, 1.0)
 		hojas.spread = 24.0
 		hojas.gravity = Vector2(16.0, 24.0)
