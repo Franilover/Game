@@ -297,6 +297,10 @@ func _input(event: InputEvent) -> void:
 				return
 		_zone_manager.entrar_reino(reino_hogar)
 		return
+	if zona_actual == "expedicion:saltus":
+		if _zone_manager.has_method("salir_expedicion_saltus"):
+			await _zone_manager.call("salir_expedicion_saltus")
+		return
 	if zona_actual.begins_with("expedicion:"):
 		if _zone_manager.has_method("salir_expedicion"):
 			var regreso_expedicion: Variant = await _zone_manager.call("salir_expedicion")
