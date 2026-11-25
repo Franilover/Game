@@ -21,6 +21,8 @@ var _dash_requested: bool = false
 var _dash_time_left: float = 0.0
 var _dash_cooldown_left: float = 0.0
 var _dash_direction: Vector2 = Vector2.RIGHT
+var _air_dash_unlocked: bool = false
+var _air_dash_available: bool = false
 var _elapsed: float = 0.0
 var _idle_texture: Texture2D
 var _walk_texture: Texture2D
@@ -35,6 +37,11 @@ func _ready() -> void:
 		_walk_texture = load(WALK_TEXTURE_PATH) as Texture2D
 		if _idle_texture != null:
 			sprite.texture = _idle_texture
+
+
+func unlock_air_dash() -> void:
+	_air_dash_unlocked = true
+	_air_dash_available = true
 
 
 func _input(event: InputEvent) -> void:
@@ -63,6 +70,8 @@ func _unhandled_input(event: InputEvent) -> void:
 func _physics_process(delta: float) -> void:
 	_elapsed += delta
 	_dash_cooldown_left = maxf(0.0, _dash_cooldown_left - delta)
+	if is_on_floor() and _air_dash_unlocked:
+		_air_dash_available = true
 
 	var direction := Input.get_axis("move_left", "move_right")
 	var aim_vertical := float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
@@ -79,7 +88,9 @@ func _physics_process(delta: float) -> void:
 
 	if _dash_requested:
 		_dash_requested = false
-		if _dash_cooldown_left <= 0.0:
+		if _dash_cooldown_left <= 0.0 and (is_on_floor() or _air_dash_available):
+			if not is_on_floor():
+				_air_dash_available = false
 			if dash_aim.length_squared() > 0.01:
 				_dash_direction = dash_aim
 			elif absf(direction) > 0.01:
