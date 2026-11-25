@@ -558,26 +558,65 @@ func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
 		var visual := WorldData.obtener_configuracion_visual_personaje_game(personaje_id)
 		for campo in ["sprite_path", "portrait_path"]:
 			var ruta := str(visual.get(campo, "")).strip_edges()
-			if ruta.begins_with("res://") and ResourceLoader.exists(ruta):
-				var textura_visual := ResourceLoader.load(ruta) as Texture2D
-				if textura_visual != null:
-					return textura_visual
+			if not ruta.is_empty():
+				# Algunas configuraciones visuales conservan rutas anteriores a la
+				# reorganización de assets. Primero intentamos la ruta registrada.
+				if ruta.begins_with("res://") and ResourceLoader.exists(ruta):
+					var textura_visual := ResourceLoader.load(ruta) as Texture2D
+					if textura_visual != null:
+						return textura_visual
+				# Si la ruta anterior ya no existe, recuperamos el nombre del archivo
+				# y buscamos el sprite equivalente en la carpeta vigente de Torres.
+				var nombre_archivo := ruta.get_file()
+				if not nombre_archivo.is_empty():
+					var textura_legacy := _cargar_sprite_personaje_torres(nombre_archivo.get_basename())
+					if textura_legacy != null:
+						return textura_legacy
+
 	var claves: Array[String] = []
 	for campo in ["sprite_key", "nombre_individual", "nombre_personaje", "nombre_npc", "nombre"]:
 		var clave := str(personaje.get(campo, "")).strip_edges()
 		if not clave.is_empty() and not claves.has(clave):
 			claves.append(clave)
 	for clave in claves:
-		if clave.contains("/") or clave.contains("\\"):
+		var textura := _cargar_sprite_personaje_torres(clave)
+		if textura != null:
+			return textura
+
+	# El sprite base también se movió a la carpeta de personajes de Torres.
+	return _cargar_sprite_personaje_torres("Sprite-0004")
+
+
+func _cargar_sprite_personaje_torres(clave: String) -> Texture2D:
+	var nombre := clave.strip_edges()
+	if nombre.is_empty() or nombre.contains("/") or nombre.contains("\\\\"):
+		return null
+	var directorios := [
+		"res://assets/art/kingdom/Torres/Personajes/",
+		"res://assets/art/OLDcharacters/",
+		"res://assets/art/characters/"
+	]
+	for directorio in directorios:
+		var ruta := directorio + nombre + ".png"
+		if ResourceLoader.exists(ruta):
+			var textura := ResourceLoader.load(ruta) as Texture2D
+			if textura != null:
+				return textura
+		# Los nombres del catálogo pueden variar en mayúsculas/minúsculas.
+		var acceso := DirAccess.open(directorio)
+		if acceso == null:
 			continue
-		for extension in [".png", ".PNG"]:
-			var ruta: String = "res://assets/art/characters/" + clave + str(extension)
-			if ResourceLoader.exists(ruta):
-				var textura := ResourceLoader.load(ruta) as Texture2D
-				if textura != null:
-					return textura
-	var ruta_base := "res://assets/art/characters/Sprite-0004.png"
-	return ResourceLoader.load(ruta_base) as Texture2D if ResourceLoader.exists(ruta_base) else null
+		for archivo in acceso.get_files():
+			if archivo.get_extension().to_lower() != "png":
+				continue
+			if archivo.get_basename().to_lower() != nombre.to_lower():
+				continue
+			var ruta_encontrada := directorio + archivo
+			if ResourceLoader.exists(ruta_encontrada):
+				var textura_encontrada := ResourceLoader.load(ruta_encontrada) as Texture2D
+				if textura_encontrada != null:
+					return textura_encontrada
+	return null
 
 
 func _obtener_grupo_objeto(item: Dictionary) -> String:
