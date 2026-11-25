@@ -36,7 +36,7 @@ var _terrain_layer: TileMapDual
 var _player: SaltusPlayer
 var _platforms: Array[Dictionary] = []
 var _fondo_cielo: Sprite2D
-var _world_graph: SaltusWorldGraph
+var _world_graph: Node
 var _ability_flags: Dictionary = {}
 var _current_room_id: StringName = &""
 var _last_rest_position: Vector2 = Vector2(480.0, 408.0)
@@ -81,7 +81,7 @@ func _process(_delta: float) -> void:
 		_player.velocity = Vector2.ZERO
 		return
 	if is_instance_valid(_world_graph):
-		var room := _world_graph.get_room_at(_player.global_position)
+		var room: Variant = _world_graph.get_room_at(_player.global_position)
 		if room != null and room.room_id != _current_room_id:
 			_current_room_id = room.room_id
 			_world_graph.discover_room(_current_room_id)
@@ -207,41 +207,41 @@ func _crear_colision_bloque_solido(inicio_x: int, fila_y: int, ancho: int, profu
 
 
 func _crear_grafo_sector() -> void:
-	_world_graph = WORLD_GRAPH_SCRIPT.new() as SaltusWorldGraph
-	var claro := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	_world_graph = WORLD_GRAPH_SCRIPT.new()
+	var claro: Variant = ROOM_DEFINITION_SCRIPT.new()
 	claro.room_id = &"claro_central"
 	claro.region_id = &"claro"
 	claro.bounds = Rect2(0.0, 300.0, 3000.0, 420.0)
 	claro.tags = PackedStringArray(["inicio", "descanso", "cruce"])
-	var arboleda := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	var arboleda: Variant = ROOM_DEFINITION_SCRIPT.new()
 	arboleda.room_id = &"arboleda_vertical"
 	arboleda.region_id = &"arboleda"
 	arboleda.bounds = Rect2(180.0, -1700.0, 4940.0, 2200.0)
 	arboleda.tags = PackedStringArray(["vertical", "copas", "atajos"])
-	var raices := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	var raices: Variant = ROOM_DEFINITION_SCRIPT.new()
 	raices.room_id = &"raices_profundas"
 	raices.region_id = &"raices"
 	raices.bounds = Rect2(650.0, 650.0, 2300.0, 900.0)
 	raices.tags = PackedStringArray(["subterraneo", "cavernas", "mineral"])
-	var copa := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	var copa: Variant = ROOM_DEFINITION_SCRIPT.new()
 	copa.room_id = &"copa_oriental"
 	copa.region_id = &"copa"
 	copa.bounds = Rect2(3000.0, 300.0, 2200.0, 500.0)
 	copa.tags = PackedStringArray(["elevado", "bosque", "paso_bloqueado"])
 	_world_graph.rooms = [claro, arboleda, raices, copa]
-	var a := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
+	var a: Variant = WORLD_CONNECTION_SCRIPT.new()
 	a.connection_id = &"claro_arboleda"
 	a.room_a = &"claro_central"
 	a.room_b = &"arboleda_vertical"
-	var b := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
+	var b: Variant = WORLD_CONNECTION_SCRIPT.new()
 	b.connection_id = &"claro_raices"
 	b.room_a = &"claro_central"
 	b.room_b = &"raices_profundas"
-	var c := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
+	var c: Variant = WORLD_CONNECTION_SCRIPT.new()
 	c.connection_id = &"raices_copa_impulso"
 	c.room_a = &"raices_profundas"
 	c.room_b = &"copa_oriental"
-	c.requirement_type = SaltusWorldConnection.RequirementType.ABILITY
+	c.requirement_type = WORLD_CONNECTION_SCRIPT.RequirementType.ABILITY
 	c.requirement_key = &"impulso_aereo"
 	_world_graph.connections = [a, b, c]
 	add_child(_world_graph)
@@ -314,7 +314,7 @@ func _al_recoger_nucleo(cuerpo: Node2D, hallazgo: Area2D) -> void:
 		return
 	_ability_flags["impulso_aereo"] = true
 	if is_instance_valid(_player):
-		_player.unlock_air_dash()
+		_player.call("unlock_air_dash")
 	if is_instance_valid(_world_graph):
 		_world_graph.unlock_connection(&"raices_copa_impulso")
 	if is_instance_valid(_sector_gate):
