@@ -19,6 +19,7 @@ const CHECKPOINT_TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Sect
 const LEVEL_WIDTH_TILES: int = 200
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
+@export var contenido_escena_preconstruido: bool = false
 @export var iluminacion_escena: Color = Color("#FFFDF2")
 const GROUND_TOP: int = 14
 const TILE_SEQUENCE: Array[Vector2i] = [
@@ -57,7 +58,6 @@ func _ready() -> void:
 		return
 
 	_player.visible = true
-	_player.position = Vector2(96.0, 408.0)
 	_player.velocity = Vector2.ZERO
 	_player.z_as_relative = false
 	_player.z_index = 100
@@ -68,26 +68,19 @@ func _ready() -> void:
 		sprite.z_index = 0
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 
-	_crear_relleno_fondo()
-	_cargar_mapa_editable()
+	if not contenido_escena_preconstruido:
+		# Compatibilidad temporal para escenas antiguas aún no convertidas.
+		_crear_relleno_fondo()
+		_crear_terreno()
+		_crear_puntos_sector()
+		_crear_fondo_y_parallax()
+		_crear_arboleda()
+		_crear_criaturas()
+		_crear_ambiente()
+		_crear_mecanicas_ambientales()
 	_crear_grafo_sector()
-	_crear_puntos_sector()
-	_crear_fondo_y_parallax()
-	_crear_arboleda()
-	_crear_criaturas()
-	_crear_ambiente()
-	_crear_mecanicas_ambientales()
 	_configurar_camara()
-	print("Saltus V2: mapa vertical conectado | jugador=", _player.global_position)
-
-func _cargar_mapa_editable() -> void:
-	var escena := load(MAP_SCENE_PATH) as PackedScene
-	if escena == null:
-		push_error("Saltus: falta la escena editable %s. Ejecuta tools/editor/build_saltus_editable_map.gd desde Godot." % MAP_SCENE_PATH)
-		return
-	var mapa := escena.instantiate()
-	mapa.name = "MapaSaltus"
-	add_child(mapa)
+	print("Saltus: escena cargada | contenido preconstruido=", contenido_escena_preconstruido, " | jugador=", _player.global_position)
 
 
 func _process(_delta: float) -> void:
