@@ -1153,10 +1153,8 @@ func _detener_animacion_caminando() -> void:
 	_caminando_frames_totales = 1
 	_caminando_tiempo = 0.0
 	_caminando_textura_base = null
-	if criatura_nombre.strip_edges().to_lower() == "zlish":
-		var sprite := get_node_or_null("Sprite2D") as Sprite2D
-		if sprite != null:
-			sprite.flip_h = false
+	if criatura_nombre.strip_edges().to_lower() == "zlish" and sprite != null:
+		sprite.flip_h = false
 
 
 func _actualizar_animacion_idle_zlish(delta: float) -> void:
