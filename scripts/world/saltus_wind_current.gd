@@ -36,6 +36,11 @@ func _physics_process(delta: float) -> void:
 		body_affected.emit(body)
 
 func _crear_indicador() -> void:
+	if get_node_or_null("IndicadorCorriente") != null:
+		return
+	var indicador := Node2D.new()
+	indicador.name = "IndicadorCorriente"
+	add_child(indicador)
 	for indice in range(3):
 		var linea := Line2D.new()
 		linea.width = 3.0
@@ -47,4 +52,4 @@ func _crear_indicador() -> void:
 			Vector2(72.0, -8.0 + indice * 22.0)
 		])
 		linea.z_index = 3
-		add_child(linea)
+		indicador.add_child(linea)
