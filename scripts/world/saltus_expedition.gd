@@ -36,7 +36,7 @@ var _terrain_layer: TileMapDual
 var _player: SaltusPlayer
 var _platforms: Array[Dictionary] = []
 var _fondo_cielo: Sprite2D
-var _world_graph: Node
+var _world_graph
 var _ability_flags: Dictionary = {}
 var _current_room_id: StringName = &""
 var _last_rest_position: Vector2 = Vector2(480.0, 408.0)
