@@ -10,10 +10,17 @@ const WALK_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sp
 @export var gravity: float = 1100.0
 @export var acceleration: float = 1500.0
 @export var friction: float = 1900.0
+@export var dash_distance: float = 64.0
+@export var dash_duration: float = 0.12
+@export var dash_cooldown: float = 0.8
 
 @onready var sprite: Sprite2D = $Sprite2D
 
 var _jump_requested: bool = false
+var _dash_requested: bool = false
+var _dash_time_left: float = 0.0
+var _dash_cooldown_left: float = 0.0
+var _dash_direction: Vector2 = Vector2.RIGHT
 var _elapsed: float = 0.0
 var _idle_texture: Texture2D
 var _walk_texture: Texture2D
@@ -30,11 +37,15 @@ func _ready() -> void:
 
 
 func _input(event: InputEvent) -> void:
-	# En la expedición 2D, ESPACIO es exclusivamente salto.
-	if event is InputEventKey:
-		var tecla := event as InputEventKey
-		if (tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE) and tecla.pressed and not tecla.echo:
+	if event is not InputEventKey:
+		return
+	var tecla := event as InputEventKey
+	# En Saltus, ESPACIO salta y SHIFT solicita el dash.
+	if tecla.pressed and not tecla.echo:
+		if tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE:
 			_jump_requested = true
+		elif tecla.keycode in [KEY_SHIFT, KEY_SHIFT_L, KEY_SHIFT_R] or tecla.physical_keycode in [KEY_SHIFT, KEY_SHIFT_L, KEY_SHIFT_R]:
+			_dash_requested = true
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -50,7 +61,37 @@ func _unhandled_input(event: InputEvent) -> void:
 
 func _physics_process(delta: float) -> void:
 	_elapsed += delta
+	_dash_cooldown_left = maxf(0.0, _dash_cooldown_left - delta)
+
 	var direction := Input.get_axis("move_left", "move_right")
+	var aim_vertical := float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
+	var dash_aim := Vector2(direction, aim_vertical).normalized()
+
+	if _dash_time_left > 0.0:
+		_dash_time_left = maxf(0.0, _dash_time_left - delta)
+		velocity = _dash_direction * (dash_distance / maxf(dash_duration, 0.01))
+		move_and_slide()
+		if _dash_time_left <= 0.0:
+			velocity = Vector2.ZERO
+		_actualizar_presentacion(direction)
+		return
+
+	if _dash_requested:
+		_dash_requested = false
+		if _dash_cooldown_left <= 0.0:
+			if dash_aim.length_squared() > 0.01:
+				_dash_direction = dash_aim
+			elif absf(direction) > 0.01:
+				_dash_direction = Vector2(signf(direction), 0.0)
+			else:
+				_dash_direction = Vector2.LEFT if sprite != null and sprite.flip_h else Vector2.RIGHT
+			_dash_time_left = dash_duration
+			_dash_cooldown_left = dash_cooldown
+			velocity = _dash_direction * (dash_distance / maxf(dash_duration, 0.01))
+			move_and_slide()
+			_actualizar_presentacion(direction)
+			return
+
 	var speed := move_speed
 	if Input.is_action_pressed("run"):
 		speed *= run_multiplier
