@@ -90,9 +90,9 @@ func can_traverse(
 	match connection.requirement_type:
 		CONNECTION_SCRIPT.RequirementType.NONE:
 			return true
-		SaltusWorldConnection.RequirementType.ABILITY:
+		CONNECTION_SCRIPT.RequirementType.ABILITY:
 			return bool(abilities.get(connection.requirement_key, false))
-		SaltusWorldConnection.RequirementType.WORLD_FLAG:
+		CONNECTION_SCRIPT.RequirementType.WORLD_FLAG:
 			return bool(world_flags.get(connection.requirement_key, false))
 	return false
 
