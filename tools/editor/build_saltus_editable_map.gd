@@ -45,9 +45,12 @@ func _run() -> void:
 	factory.call("_crear_mecanicas_ambientales")
 	_materializar_componentes_visuales(factory)
 
-	# El terreno reconstruye su renderer en diferido; dejamos completar ese trabajo.
-	await get_tree().process_frame
-	await get_tree().process_frame
+	# EditorScript no hereda Node y no dispone de get_tree().
+	# Esperamos desde el SceneTree principal para que se ejecuten los call_deferred del terreno.
+	var scene_tree := Engine.get_main_loop() as SceneTree
+	if scene_tree != null:
+		await scene_tree.process_frame
+		await scene_tree.process_frame
 
 	var generados := factory.get_children().duplicate()
 	for nodo: Node in generados:
