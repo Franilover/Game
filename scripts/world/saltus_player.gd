@@ -1,6 +1,9 @@
 extends CharacterBody2D
 class_name SaltusPlayer
 
+const IDLE_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
+const WALK_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004_Walking_Left.png"
+
 @export var move_speed: float = 190.0
 @export var run_multiplier: float = 1.35
 @export var jump_velocity: float = -420.0
@@ -12,12 +15,18 @@ class_name SaltusPlayer
 
 var _jump_requested: bool = false
 var _elapsed: float = 0.0
+var _idle_texture: Texture2D
+var _walk_texture: Texture2D
 
 
 func _ready() -> void:
 	add_to_group("saltus_player")
 	if sprite != null:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_idle_texture = load(IDLE_TEXTURE_PATH) as Texture2D
+		_walk_texture = load(WALK_TEXTURE_PATH) as Texture2D
+		if _idle_texture != null:
+			sprite.texture = _idle_texture
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -57,7 +66,13 @@ func _actualizar_presentacion(direction: float) -> void:
 	if sprite == null:
 		return
 	if absf(direction) > 0.05:
-		sprite.flip_h = direction < 0.0
+		sprite.flip_h = direction > 0.0
+		if _walk_texture != null:
+			sprite.texture = _walk_texture
+	else:
+		if _idle_texture != null:
+			sprite.texture = _idle_texture
+		sprite.flip_h = false
 	if is_on_floor() and absf(velocity.x) > 18.0:
 		sprite.position.y = -22.0 + sin(_elapsed * 15.0) * 1.3
 	else:
