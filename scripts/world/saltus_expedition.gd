@@ -2,30 +2,32 @@ extends Node2D
 class_name SaltusExpedition
 
 const TILE_SIZE: int = 32
-const TILE_ATLAS_COORDS: Vector2i = Vector2i(2, 1)
+const TILE_ATLAS_DEFAULT: Vector2i = Vector2i(2, 1)
 const TILESET_TEXTURE_PATH: String = "res://assets/tilesets/Bosque.png"
+const TREE_TEXTURE_PATH: String = "res://assets/art/props/Árbol.png"
 const LEAF_TEXTURE_PATH: String = "res://assets/art/items/Hojas.png"
 const LEVEL_WIDTH_TILES: int = 90
 const GROUND_TOP: int = 14
+const TILE_SEQUENCE: Array[Vector2i] = [
+	Vector2i(0, 3), Vector2i(3, 3),
+	Vector2i(0, 2), Vector2i(1, 2),
+	Vector2i(0, 0), Vector2i(3, 2),
+	Vector2i(2, 3), Vector2i(3, 1),
+	Vector2i(1, 3), Vector2i(0, 1),
+	Vector2i(1, 0), Vector2i(2, 2),
+	Vector2i(3, 0), Vector2i(2, 0),
+	Vector2i(1, 1), Vector2i(2, 1),
+]
+const CORNER_NEIGHBORS: Array[TileSet.CellNeighbor] = [
+	TileSet.CELL_NEIGHBOR_TOP_LEFT_CORNER,
+	TileSet.CELL_NEIGHBOR_TOP_RIGHT_CORNER,
+	TileSet.CELL_NEIGHBOR_BOTTOM_LEFT_CORNER,
+	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
+]
 
-var _terrain_layer: TileMapLayer
-var _platform_layer: TileMapLayer
+var _terrain_layer: TileMapDual
 var _player: SaltusPlayer
-
-
-func _ready() -> void:
-	_player = get_node_or_null("Player") as SaltusPlayer
-	if is_instance_valid(_player):
-		_player.visible = true
-		_player.z_index = 3
-		var sprite: Sprite2D = _player.get_node_or_null("Sprite2D") as Sprite2D
-		if is_instance_valid(sprite):
-			sprite.visible = true
-			sprite.z_index = 0
-	_crear_terreno()
-	_crear_ambiente()
-	_configurar_camara()
-	queue_redraw()
+var _platforms: Array[Dictionary] = []
 
 
 func _process(_delta: float) -> void:
@@ -35,85 +37,126 @@ func _process(_delta: float) -> void:
 
 
 func _crear_terreno() -> void:
-	var tile_set: TileSet = _crear_tileset_bosque(false)
-	var platform_tile_set: TileSet = _crear_tileset_bosque(true)
-	if tile_set == null or platform_tile_set == null:
-		push_error("Saltus: no se pudieron preparar los TileSet del terreno.")
+	var textura := load(TILESET_TEXTURE_PATH) as Texture2D
+	if textura == null or textura.get_width() < TILE_SIZE * 4 or textura.get_height() < TILE_SIZE * 4:
+		push_error("Saltus: Bosque.png no contiene el atlas 4x4 esperado.")
 		return
 
-	_terrain_layer = TileMapLayer.new()
-	_terrain_layer.name = "Terreno"
-	_terrain_layer.tile_set = tile_set
-	_terrain_layer.z_index = 0
-	add_child(_terrain_layer)
+	var tile_set := TileSet.new()
+	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
+	tile_set.add_terrain_set()
+	tile_set.set_terrain_set_mode(0, TileSet.TERRAIN_MODE_MATCH_CORNERS)
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 0, "<any>")
+	tile_set.add_terrain(0)
+	tile_set.set_terrain_name(0, 1, "Bosque")
 
-	_platform_layer = TileMapLayer.new()
-	_platform_layer.name = "Plataformas"
-	_platform_layer.tile_set = platform_tile_set
-	_platform_layer.z_index = 1
-	add_child(_platform_layer)
+	var atlas := TileSetAtlasSource.new()
+	atlas.texture = textura
+	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
+	for coords in TILE_SEQUENCE:
+		atlas.create_tile(coords)
+	tile_set.add_source(atlas, 0)
+	for index in range(TILE_SEQUENCE.size()):
+		var data := atlas.get_tile_data(TILE_SEQUENCE[index], 0)
+		data.terrain_set = 0
+		data.terrain = 1
+		var bits := index
+		for neighbor in CORNER_NEIGHBORS:
+			data.set_terrain_peering_bit(neighbor, 1 if (bits & 1) != 0 else 0)
+			bits >>= 1
+
+	_terrain_layer = TileMapDual.new()
+	_terrain_layer.name = "TerrenoBosque"
+	_terrain_layer.tile_set = tile_set
+	_terrain_layer.z_as_relative = false
+	_terrain_layer.z_index = 0
+	_terrain_layer.rendering_quadrant_size = 16
+	_terrain_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	add_child(_terrain_layer)
 
 	for x in range(LEVEL_WIDTH_TILES):
 		for y in range(GROUND_TOP, GROUND_TOP + 6):
-			_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_COORDS)
+			_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_DEFAULT)
+	_crear_colision_suelo()
 
-	# Plataformas escalonadas: dejan varias rutas de salto y descansos.
-	_pintar_plataforma(9, 12, 5)
-	_pintar_plataforma(17, 10, 5)
-	_pintar_plataforma(25, 12, 4)
-	_pintar_plataforma(32, 10, 5)
-	_pintar_plataforma(41, 11, 5)
-	_pintar_plataforma(50, 9, 5)
-	_pintar_plataforma(59, 12, 5)
-	_pintar_plataforma(68, 10, 5)
-	_pintar_plataforma(78, 12, 6)
-	_pintar_plataforma(84, 10, 4)
+	# Plataformas visuales del mismo atlas original, con colisión unidireccional.
+	for datos in [
+		{"x": 9, "y": 12, "w": 5}, {"x": 17, "y": 10, "w": 5},
+		{"x": 25, "y": 12, "w": 4}, {"x": 32, "y": 10, "w": 5},
+		{"x": 41, "y": 11, "w": 5}, {"x": 50, "y": 9, "w": 5},
+		{"x": 59, "y": 12, "w": 5}, {"x": 68, "y": 10, "w": 5},
+		{"x": 78, "y": 12, "w": 6}, {"x": 84, "y": 10, "w": 4},
+	]:
+		var inicio_x := int(datos["x"])
+		var fila_y := int(datos["y"])
+		var ancho := int(datos["w"])
+		for x in range(inicio_x, inicio_x + ancho):
+			_terrain_layer.set_cell(Vector2i(x, fila_y), 0, TILE_ATLAS_DEFAULT)
+		_crear_colision_plataforma(inicio_x, fila_y, ancho)
+
+	call_deferred("_actualizar_tiles_dual")
 
 
-func _crear_tileset_bosque(one_way: bool) -> TileSet:
-	var textura: Texture2D = load(TILESET_TEXTURE_PATH) as Texture2D
+func _crear_colision_suelo() -> void:
+	var cuerpo := StaticBody2D.new()
+	cuerpo.name = "ColisionSuelo"
+	cuerpo.collision_layer = 1
+	cuerpo.collision_mask = 0
+	var forma := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE, 6.0 * TILE_SIZE)
+	forma.shape = rect
+	forma.position = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE * 0.5, (GROUND_TOP + 3.0) * TILE_SIZE)
+	cuerpo.add_child(forma)
+	add_child(cuerpo)
+
+
+func _crear_colision_plataforma(inicio_x: int, fila_y: int, ancho: int) -> void:
+	var cuerpo := StaticBody2D.new()
+	cuerpo.name = "Plataforma_%d_%d" % [inicio_x, fila_y]
+	cuerpo.collision_layer = 1
+	cuerpo.collision_mask = 0
+	cuerpo.one_way_collision = true
+	cuerpo.one_way_collision_margin = 5.0
+	var forma := CollisionShape2D.new()
+	var rect := RectangleShape2D.new()
+	rect.size = Vector2(ancho * TILE_SIZE, 8.0)
+	forma.shape = rect
+	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, fila_y * TILE_SIZE + 4.0)
+	cuerpo.add_child(forma)
+	add_child(cuerpo)
+
+
+func _actualizar_tiles_dual() -> void:
+	if not is_instance_valid(_terrain_layer):
+		return
+	await get_tree().process_frame
+	_terrain_layer.reconstruir_renderer_dual()
+	print("Saltus: TileMapDual bosque | celdas=", _terrain_layer.get_used_cells().size(), " atlas=", TILESET_TEXTURE_PATH)
+
+
+func _finalizar_renderer_terreno() -> void:
+	await get_tree().process_frame
+	if is_instance_valid(_terrain_layer):
+		_terrain_layer.reconstruir_renderer_dual()
+
+
+func _crear_arboleda() -> void:
+	var textura := load(TREE_TEXTURE_PATH) as Texture2D
 	if textura == null:
-		push_error("Saltus: no se pudo cargar el atlas Bosque.png.")
-		return null
-
-	var tile_set: TileSet = TileSet.new()
-	tile_set.tile_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	tile_set.add_physics_layer()
-	tile_set.set_physics_layer_collision_layer(0, 1)
-	tile_set.set_physics_layer_collision_mask(0, 1)
-
-	var atlas: TileSetAtlasSource = TileSetAtlasSource.new()
-	atlas.texture = textura
-	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
-	atlas.create_tile(TILE_ATLAS_COORDS)
-	tile_set.add_source(atlas, 0)
-
-	# El TileData debe configurarse después de añadir su atlas al TileSet,
-	# para que ya disponga de la capa física 0.
-	var tile_data: TileData = atlas.get_tile_data(TILE_ATLAS_COORDS, 0)
-	if tile_data == null:
-		push_error("Saltus: no se pudo preparar el tile sólido del atlas de bosque.")
-		return null
-
-	tile_data.set_collision_polygons_count(0, 1)
-	tile_data.set_collision_polygon_one_way(0, 0, one_way)
-	tile_data.set_collision_polygon_one_way_margin(0, 0, 2.0)
-	tile_data.set_collision_polygon_points(
-		0,
-		0,
-		PackedVector2Array([
-			Vector2(0.0, 0.0),
-			Vector2(32.0, 0.0),
-			Vector2(32.0, 32.0),
-			Vector2(0.0, 32.0)
-		])
-	)
-	return tile_set
-
-
-func _pintar_plataforma(inicio_x: int, fila_y: int, ancho: int) -> void:
-	for x in range(inicio_x, inicio_x + ancho):
-		_platform_layer.set_cell(Vector2i(x, fila_y), 0, TILE_ATLAS_COORDS)
+		push_warning("Saltus: no se pudo cargar el sprite de árbol.")
+		return
+	for index in range(30):
+		var arbol := Sprite2D.new()
+		arbol.name = "Arbol_%02d" % index
+		arbol.texture = textura
+		arbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		arbol.scale = Vector2(3.0, 3.0)
+		arbol.position = Vector2(80.0 + float(index) * 98.0, 385.0 + float((index * 17) % 36))
+		arbol.z_as_relative = false
+		arbol.z_index = -2
+		add_child(arbol)
 
 
 func _crear_ambiente() -> void:
@@ -163,42 +206,3 @@ func _configurar_camara() -> void:
 	camara.drag_horizontal_enabled = true
 	camara.drag_vertical_enabled = false
 	print("Saltus: cámara activa=", camara.is_current(), " jugador=", _player.global_position, " tiles=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0)
-
-
-func _draw() -> void:
-	# Fondo en capas: la profundidad se consigue con siluetas de distinto tono.
-	draw_rect(Rect2(Vector2(-200.0, -500.0), Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 400.0, 1500.0)), Color("#b7c9a0"))
-	draw_colored_polygon(
-		PackedVector2Array([
-			Vector2(-200.0, 360.0), Vector2(250.0, 210.0), Vector2(720.0, 340.0),
-			Vector2(1180.0, 190.0), Vector2(1660.0, 330.0), Vector2(2200.0, 205.0),
-			Vector2(3100.0, 350.0), Vector2(3100.0, 520.0), Vector2(-200.0, 520.0)
-		]),
-		Color("#819b79")
-	)
-	draw_colored_polygon(
-		PackedVector2Array([
-			Vector2(-200.0, 420.0), Vector2(380.0, 300.0), Vector2(920.0, 405.0),
-			Vector2(1450.0, 285.0), Vector2(2050.0, 410.0), Vector2(2650.0, 300.0),
-			Vector2(3100.0, 420.0), Vector2(3100.0, 540.0), Vector2(-200.0, 540.0)
-		]),
-		Color("#526f55")
-	)
-
-	# Troncos y copas de fondo, con separación irregular para evitar un patrón repetido.
-	for index in range(24):
-		var x: float = -70.0 + float(index) * 138.0
-		var alto: float = 95.0 + float((index * 37) % 75)
-		var ancho: float = 28.0 + float((index * 13) % 22)
-		var base_y: float = 445.0 + float((index * 19) % 28)
-		var tono: Color = Color("#344f42") if index % 2 == 0 else Color("#3d5c49")
-		draw_rect(Rect2(Vector2(x, base_y - alto * 0.35), Vector2(ancho * 0.28, alto)), Color("#5b4938"))
-		draw_circle(Vector2(x + ancho * 0.14, base_y - alto), ancho * 0.8, tono)
-		draw_circle(Vector2(x - ancho * 0.25, base_y - alto * 0.72), ancho * 0.58, tono.lightened(0.08))
-		draw_circle(Vector2(x + ancho * 0.52, base_y - alto * 0.68), ancho * 0.62, tono.darkened(0.06))
-
-	# Pequeños puntos de luz entre los árboles.
-	for index in range(18):
-		var x: float = 90.0 + float((index * 173) % 2700)
-		var y: float = 125.0 + float((index * 61) % 245)
-		draw_circle(Vector2(x, y), 2.0, Color(0.93, 0.91, 0.58, 0.52))
