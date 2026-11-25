@@ -56,6 +56,8 @@ func _ready() -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if Engine.is_editor_hint():
+		return
 	_animation_time += delta
 	if especie == "Zlish":
 		_procesar_zlish(delta)
