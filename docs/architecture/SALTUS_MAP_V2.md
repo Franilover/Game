@@ -10,9 +10,9 @@ Sustituir la distribución horizontal anterior por un recorrido continuo, vertic
 |---|---:|---|
 | Entrada y claro | x 0–1050, y 0–700 | Inicio, salto y lectura del terreno |
 | Sendero de parkour | x 850–1950, y 0–700 | Plataformas y primer uso obligatorio del dash para cruzar el gran hueco |
-| Arboleda vertical | x 1850–4450, y -2300–700 | Ascenso principal, ruta alta alternativa y descenso |
+| Arboleda vertical | x 1850–4450, y -850–700 | Ascenso principal, ruta alta alternativa y descenso |
 | Raíces profundas | x 1200–4200, y 650–1350 | Recorrido inferior con escalera de retorno |
-| Cruce de copas | x 3600–5100, y -1700–500 | Corrientes, plataformas elevadas y conexión hacia la salida |
+| Cruce de copas | x 3600–5100, y -850–500 | Corrientes, plataformas elevadas y conexión hacia la salida |
 | Claro del primer jefe | x 5000–6400, y 0–700 | Aproximación y arena vacía para diseñar el jefe posteriormente |
 
 ## Circuitos y retornos
@@ -20,7 +20,7 @@ Sustituir la distribución horizontal anterior por un recorrido continuo, vertic
 - Entrada → sendero → arboleda → copas → claro del jefe.
 - Sendero → raíces profundas → copas.
 - Arboleda ↔ raíces profundas mediante una conexión lateral.
-- La ruta superior de la arboleda vuelve a enlazar con las plataformas de avance.
+- La ruta superior de la arboleda asciende hasta una cresta de copas a más de 500 px sobre el suelo y desciende por otra vertiente.
 - Las raíces tienen una escalera de plataformas que permite regresar al nivel principal.
 - Todos los enlaces del grafo son bidireccionales y no exigen habilidades futuras.
 
