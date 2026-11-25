@@ -185,64 +185,68 @@ func _finalizar_renderer_terreno() -> void:
 
 
 func _crear_fondo_y_parallax() -> void:
-	# Cielo verdoso en degradado, colocado detrás de todos los elementos.
-	var gradiente := Gradient.new()
-	gradiente.colors = PackedColorArray([
-		Color("#8EAE86"),
-		Color("#C2D2A0"),
-		Color("#E0D9A8")
-	])
-	gradiente.offsets = PackedFloat32Array([0.0, 0.56, 1.0])
-	var textura_cielo := GradientTexture2D.new()
-	textura_cielo.gradient = gradiente
-	textura_cielo.width = 512
-	textura_cielo.height = 320
-	textura_cielo.fill_from = Vector2(0.5, 0.0)
-	textura_cielo.fill_to = Vector2(0.5, 1.0)
-	_fondo_cielo = Sprite2D.new()
-	_fondo_cielo.name = "CieloVerdoso"
-	_fondo_cielo.texture = textura_cielo
-	_fondo_cielo.position = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE * 0.5, 115.0)
-	_fondo_cielo.scale = Vector2(8.0, 2.2)
-	_fondo_cielo.z_as_relative = false
-	_fondo_cielo.z_index = -30
-	add_child(_fondo_cielo)
+	# El cielo y las montañas usan los fondos dibujados para Saltus.
+	_fondo_cielo = _crear_capa_parallax(
+		"Cielo", "res://assets/art/kingdom/Saltus/2D Section/Cielo.png",
+		0.06, -30, false
+	)
+	_crear_capa_parallax(
+		"Montanas", "res://assets/art/kingdom/Saltus/2D Section/Montaña.png",
+		0.12, -24, true
+	)
 
 
 func _crear_arboleda() -> void:
-	var textura := load(TREE_TEXTURE_PATH) as Texture2D
-	if textura == null:
-		push_warning("Saltus: no se pudo cargar el sprite de árbol.")
-		return
+	# Cada bosque es una capa independiente; se conserva su tamaño original.
+	_crear_capa_parallax(
+		"BosqueLejano", "res://assets/art/kingdom/Saltus/2D Section/Bosque lejano.png",
+		0.22, -22, true
+	)
+	_crear_capa_parallax(
+		"BosqueMedio", "res://assets/art/kingdom/Saltus/2D Section/BOSQUE medio.png",
+		0.48, -12, true
+	)
+	_crear_capa_parallax(
+		"BosqueCercano", "res://assets/art/kingdom/Saltus/2D Section/Bosque cerca.png",
+		0.78, -4, true
+	)
 
-	var capas := [
-		{"nombre": "ArboledaLejana", "profundidad": -22, "parallax": 0.22, "escala_min": 0.75, "escala_max": 1.15, "y": 230.0, "cantidad": 30, "alpha": 0.68},
-		{"nombre": "ArboledaMedia", "profundidad": -12, "parallax": 0.48, "escala_min": 1.25, "escala_max": 2.0, "y": 310.0, "cantidad": 25, "alpha": 0.86},
-		{"nombre": "ArboledaCercana", "profundidad": -4, "parallax": 0.78, "escala_min": 2.1, "escala_max": 3.2, "y": 365.0, "cantidad": 22, "alpha": 1.0}
-	]
-	var rng := RandomNumberGenerator.new()
-	rng.seed = 731942
-	for capa_datos in capas:
-		var capa := Parallax2D.new()
-		capa.name = str(capa_datos["nombre"])
-		capa.scroll_scale = Vector2(float(capa_datos["parallax"]), 1.0)
-		capa.repeat_size = Vector2(LEVEL_WIDTH_TILES * TILE_SIZE, 0.0)
-		capa.z_as_relative = false
-		capa.z_index = int(capa_datos["profundidad"])
-		add_child(capa)
-		for index in range(int(capa_datos["cantidad"])):
-			var arbol := Sprite2D.new()
-			arbol.name = "Arbol_%02d" % index
-			arbol.texture = textura
-			arbol.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-			var escala := rng.randf_range(float(capa_datos["escala_min"]), float(capa_datos["escala_max"]))
-			arbol.scale = Vector2.ONE * escala
-			arbol.position = Vector2(
-				rng.randf_range(0.0, LEVEL_WIDTH_TILES * TILE_SIZE),
-				float(capa_datos["y"]) + rng.randf_range(-24.0, 28.0)
-			)
-			arbol.modulate = Color(1.0, 1.0, 1.0, float(capa_datos["alpha"]))
-			capa.add_child(arbol)
+
+func _crear_capa_parallax(
+	nombre: String,
+	ruta_textura: String,
+	velocidad: float,
+	profundidad: int,
+	alinear_suelo: bool
+) -> Sprite2D:
+	var textura := load(ruta_textura) as Texture2D
+	if textura == null:
+		push_error("Saltus: no se pudo cargar la capa de fondo: " + ruta_textura)
+		return null
+
+	var capa := Parallax2D.new()
+	capa.name = "Parallax" + nombre
+	capa.scroll_scale = Vector2(velocidad, 1.0)
+	capa.repeat_size = Vector2(textura.get_width(), 0.0)
+	capa.z_as_relative = false
+	capa.z_index = profundidad
+	add_child(capa)
+
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = textura
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	var x_centro := textura.get_width() * 0.5
+	var y_centro := (
+		float(GROUND_TOP * TILE_SIZE) - textura.get_height() * 0.5
+		if alinear_suelo
+		else textura.get_height() * 0.5
+	)
+	sprite.position = Vector2(x_centro, y_centro)
+	sprite.z_as_relative = false
+	sprite.z_index = 0
+	capa.add_child(sprite)
+	return sprite
 
 
 func _crear_criaturas() -> void:
