@@ -175,7 +175,7 @@ func _crear_terreno() -> void:
 		{"x": 29, "y": 19, "w": 7}, {"x": 38, "y": 22, "w": 8},
 		# Escalera de retorno: permite salir de Raíces sin depender del Impulso Aéreo.
 		{"x": 70, "y": 28, "w": 5}, {"x": 74, "y": 26, "w": 5},
-		{"x": 78, "y": 24, "w": 5}, {"x": 81, "y": 22, "w": 5},
+		{"x": 81, "y": 22, "w": 5},
 		{"x": 84, "y": 20, "w": 5}, {"x": 87, "y": 18, "w": 5},
 		{"x": 90, "y": 16, "w": 5},
 		{"x": 48, "y": 19, "w": 8}, {"x": 57, "y": 23, "w": 8},
@@ -223,7 +223,12 @@ func _crear_grafo_sector() -> void:
 	raices.region_id = &"raices"
 	raices.bounds = Rect2(650.0, 650.0, 2300.0, 900.0)
 	raices.tags = PackedStringArray(["subterraneo", "cavernas", "mineral"])
-	_world_graph.rooms = [claro, arboleda, raices]
+	var copa := ROOM_DEFINITION_SCRIPT.new() as SaltusRoomDefinition
+	copa.room_id = &"copa_oriental"
+	copa.region_id = &"copa"
+	copa.bounds = Rect2(3000.0, 300.0, 2200.0, 500.0)
+	copa.tags = PackedStringArray(["elevado", "bosque", "paso_bloqueado"])
+	_world_graph.rooms = [claro, arboleda, raices, copa]
 	var a := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
 	a.connection_id = &"claro_arboleda"
 	a.room_a = &"claro_central"
@@ -233,9 +238,9 @@ func _crear_grafo_sector() -> void:
 	b.room_a = &"claro_central"
 	b.room_b = &"raices_profundas"
 	var c := WORLD_CONNECTION_SCRIPT.new() as SaltusWorldConnection
-	c.connection_id = &"arboleda_raices_impulso"
-	c.room_a = &"arboleda_vertical"
-	c.room_b = &"raices_profundas"
+	c.connection_id = &"raices_copa_impulso"
+	c.room_a = &"raices_profundas"
+	c.room_b = &"copa_oriental"
 	c.requirement_type = SaltusWorldConnection.RequirementType.ABILITY
 	c.requirement_key = &"impulso_aereo"
 	_world_graph.connections = [a, b, c]
@@ -265,17 +270,17 @@ func _crear_puntos_sector() -> void:
 	add_child(hallazgo)
 	_sector_gate = StaticBody2D.new()
 	_sector_gate.name = "AtajoSellado"
-	_sector_gate.position = Vector2(2880.0, 760.0)
+	_sector_gate.position = Vector2(2880.0, 600.0)
 	_sector_gate.collision_layer = 1
 	_sector_gate.collision_mask = 0
 	var gate_shape := CollisionShape2D.new()
 	var gate_rect := RectangleShape2D.new()
-	gate_rect.size = Vector2(256.0, 20.0)
+	gate_rect.size = Vector2(20.0, 500.0)
 	gate_shape.shape = gate_rect
 	_sector_gate.add_child(gate_shape)
 	var gate_visual := Polygon2D.new()
 	gate_visual.color = Color("#596B4B")
-	gate_visual.polygon = PackedVector2Array([Vector2(-128, -10), Vector2(128, -10), Vector2(128, 10), Vector2(-128, 10)])
+	gate_visual.polygon = PackedVector2Array([Vector2(-10, -250), Vector2(10, -250), Vector2(10, 250), Vector2(-10, 250)])
 	_sector_gate.add_child(gate_visual)
 	add_child(_sector_gate)
 
@@ -311,7 +316,7 @@ func _al_recoger_nucleo(cuerpo: Node2D, hallazgo: Area2D) -> void:
 	if is_instance_valid(_player):
 		_player.unlock_air_dash()
 	if is_instance_valid(_world_graph):
-		_world_graph.unlock_connection(&"arboleda_raices_impulso")
+		_world_graph.unlock_connection(&"raices_copa_impulso")
 	if is_instance_valid(_sector_gate):
 		_sector_gate.queue_free()
 	if is_instance_valid(hallazgo):
