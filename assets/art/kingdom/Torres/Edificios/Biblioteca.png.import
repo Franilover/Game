@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://do8mowb7qt0ba"
-path="res://.godot/imported/Biblioteca.png-cf3947186d208d642457b78b39a515d2.ctex"
+path="res://.godot/imported/Biblioteca.png-1f6bfbb3984fa741cf9bc4a1fc4d2fd4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Biblioteca.png"
-dest_files=["res://.godot/imported/Biblioteca.png-cf3947186d208d642457b78b39a515d2.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Biblioteca.png"
+dest_files=["res://.godot/imported/Biblioteca.png-1f6bfbb3984fa741cf9bc4a1fc4d2fd4.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bwsr110vds2qk"
-path="res://.godot/imported/Cuadro cuadrado.png-05a0c7591bd4574d24ceade2d65eccba.ctex"
+path="res://.godot/imported/Cuadro cuadrado.png-bf8a81a8fd9e08b04f73ffa04258be54.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/Cuadro cuadrado.png"
-dest_files=["res://.godot/imported/Cuadro cuadrado.png-05a0c7591bd4574d24ceade2d65eccba.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/Cuadro cuadrado.png"
+dest_files=["res://.godot/imported/Cuadro cuadrado.png-bf8a81a8fd9e08b04f73ffa04258be54.ctex"]
 
 [params]
 

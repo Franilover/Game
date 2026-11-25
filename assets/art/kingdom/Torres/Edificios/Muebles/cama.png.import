@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b2atvjwch00ru"
-path="res://.godot/imported/cama.png-e527bbb2c798a6ce4c9dfbb5e1aff527.ctex"
+path="res://.godot/imported/cama.png-f288d6cd8eb3618ccebea1a2411f8ad7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/cama.png"
-dest_files=["res://.godot/imported/cama.png-e527bbb2c798a6ce4c9dfbb5e1aff527.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/cama.png"
+dest_files=["res://.godot/imported/cama.png-f288d6cd8eb3618ccebea1a2411f8ad7.ctex"]
 
 [params]
 

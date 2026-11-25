@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bwqv3kfqmka21"
-path="res://.godot/imported/tunic.png-7ebc1a10c22154294a56fc1584b6df7b.ctex"
+path="res://.godot/imported/tunic.png-106f78e60e82545febef34644b9024f8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/customization/shirts/tunic.png"
-dest_files=["res://.godot/imported/tunic.png-7ebc1a10c22154294a56fc1584b6df7b.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/customization/shirts/tunic.png"
+dest_files=["res://.godot/imported/tunic.png-106f78e60e82545febef34644b9024f8.ctex"]
 
 [params]
 

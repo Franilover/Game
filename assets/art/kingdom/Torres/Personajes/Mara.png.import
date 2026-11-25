@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://hljrgvb57012"
-path="res://.godot/imported/Mara.png-28ef1b6c7603671fabac4d99e843d1e7.ctex"
+path="res://.godot/imported/Mara.png-5093b8d3e9904974d99dec0612c984cc.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Mara.png"
-dest_files=["res://.godot/imported/Mara.png-28ef1b6c7603671fabac4d99e843d1e7.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Mara.png"
+dest_files=["res://.godot/imported/Mara.png-5093b8d3e9904974d99dec0612c984cc.ctex"]
 
 [params]
 

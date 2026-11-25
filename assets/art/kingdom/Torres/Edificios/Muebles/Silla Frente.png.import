@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cliqpl1fe3gbt"
-path="res://.godot/imported/Silla Frente.png-a777e51d214d14f4604c0c0bd713633f.ctex"
+path="res://.godot/imported/Silla Frente.png-581665a8bc85538f76c362ac06cbc04e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/Silla Frente.png"
-dest_files=["res://.godot/imported/Silla Frente.png-a777e51d214d14f4604c0c0bd713633f.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/Silla Frente.png"
+dest_files=["res://.godot/imported/Silla Frente.png-581665a8bc85538f76c362ac06cbc04e.ctex"]
 
 [params]
 

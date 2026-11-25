@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bobsbo16o0x7f"
-path="res://.godot/imported/Brunal_Walking_Back.png-27416d15569e0da470fd0c8d9cfc4181.ctex"
+path="res://.godot/imported/Brunal_Walking_Back.png-1acc336e9fd8654cfd71d6bed8c7721e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Brunal_Walking_Back.png"
-dest_files=["res://.godot/imported/Brunal_Walking_Back.png-27416d15569e0da470fd0c8d9cfc4181.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Brunal_Walking_Back.png"
+dest_files=["res://.godot/imported/Brunal_Walking_Back.png-1acc336e9fd8654cfd71d6bed8c7721e.ctex"]
 
 [params]
 

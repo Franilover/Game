@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://lfwosupnb51h"
-path="res://.godot/imported/Aurora.png-dacd042ac3129ea6289cf8aa57c8f10b.ctex"
+path="res://.godot/imported/Aurora.png-03e6dac34189725d4adc3a38d552262e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/skins/Aurora.png"
-dest_files=["res://.godot/imported/Aurora.png-dacd042ac3129ea6289cf8aa57c8f10b.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/skins/Aurora.png"
+dest_files=["res://.godot/imported/Aurora.png-03e6dac34189725d4adc3a38d552262e.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://mp46yeh2r0go"
-path="res://.godot/imported/Poste.png-76c407f2bef507db802c16c288a6c16e.ctex"
+path="res://.godot/imported/Poste.png-e2d7d6fe9d4362e8b7c051299d97ca82.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Poste.png"
-dest_files=["res://.godot/imported/Poste.png-76c407f2bef507db802c16c288a6c16e.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Poste.png"
+dest_files=["res://.godot/imported/Poste.png-e2d7d6fe9d4362e8b7c051299d97ca82.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://ctxwymjva8slo"
-path="res://.godot/imported/Alfareria.png-13fc2822c8a09a665a284753fe1052b1.ctex"
+path="res://.godot/imported/Alfareria.png-49f4fe37fc03f9b2ce2d116864c67f72.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Alfareria.png"
-dest_files=["res://.godot/imported/Alfareria.png-13fc2822c8a09a665a284753fe1052b1.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Alfareria.png"
+dest_files=["res://.godot/imported/Alfareria.png-49f4fe37fc03f9b2ce2d116864c67f72.ctex"]
 
 [params]
 

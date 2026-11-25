@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://va6r63hx32e1"
-path="res://.godot/imported/Posada.png-2ec800a8054a1d6a758013f74ce117e4.ctex"
+path="res://.godot/imported/Posada.png-5f769a55080194da2036aa8b8178cdb4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Posada.png"
-dest_files=["res://.godot/imported/Posada.png-2ec800a8054a1d6a758013f74ce117e4.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Posada.png"
+dest_files=["res://.godot/imported/Posada.png-5f769a55080194da2036aa8b8178cdb4.ctex"]
 
 [params]
 

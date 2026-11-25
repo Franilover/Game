@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b75fyjlrugwwp"
-path="res://.godot/imported/Liam.png-e207cc6a93aa7c511c6cf34d5034c9ea.ctex"
+path="res://.godot/imported/Liam.png-3707fca94c98d84dd0c2358fc37db148.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/skins/Liam.png"
-dest_files=["res://.godot/imported/Liam.png-e207cc6a93aa7c511c6cf34d5034c9ea.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/skins/Liam.png"
+dest_files=["res://.godot/imported/Liam.png-3707fca94c98d84dd0c2358fc37db148.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://tpm7y58ppu7n"
-path="res://.godot/imported/mesa platos.png-032c5ee521e87327e012335b23136054.ctex"
+path="res://.godot/imported/mesa platos.png-34deca652c636856d316069a83fb7dec.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/mesa platos.png"
-dest_files=["res://.godot/imported/mesa platos.png-032c5ee521e87327e012335b23136054.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/mesa platos.png"
+dest_files=["res://.godot/imported/mesa platos.png-34deca652c636856d316069a83fb7dec.ctex"]
 
 [params]
 

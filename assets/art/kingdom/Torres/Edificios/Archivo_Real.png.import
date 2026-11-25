@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://sktk4fpcs1wx"
-path="res://.godot/imported/Archivo_Real.png-02bf9c46cd699c40fe2c2d8c19d72746.ctex"
+path="res://.godot/imported/Archivo_Real.png-0f93ec0c0c273dafb74f759d86d136e6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Archivo_Real.png"
-dest_files=["res://.godot/imported/Archivo_Real.png-02bf9c46cd699c40fe2c2d8c19d72746.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Archivo_Real.png"
+dest_files=["res://.godot/imported/Archivo_Real.png-0f93ec0c0c273dafb74f759d86d136e6.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cbmsdgs7e0jxi"
-path="res://.godot/imported/Silla Back.png-1c11dedaa01bc327ce144b5439415b93.ctex"
+path="res://.godot/imported/Silla Back.png-f00daa3d312d5e323797024cab3b044a.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/Silla Back.png"
-dest_files=["res://.godot/imported/Silla Back.png-1c11dedaa01bc327ce144b5439415b93.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/Silla Back.png"
+dest_files=["res://.godot/imported/Silla Back.png-f00daa3d312d5e323797024cab3b044a.ctex"]
 
 [params]
 

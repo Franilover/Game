@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://crse2qx01oltb"
-path="res://.godot/imported/Forja.png-9044895cfe1879c2505ca841faf81c3a.ctex"
+path="res://.godot/imported/Forja.png-f137bc8ae1f148d42061f9958fecfa15.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/art/kingdom/Froslia/Edificios/Forja.png"
-dest_files=["res://.godot/imported/Forja.png-9044895cfe1879c2505ca841faf81c3a.ctex"]
+dest_files=["res://.godot/imported/Forja.png-f137bc8ae1f148d42061f9958fecfa15.ctex"]
 
 [params]
 

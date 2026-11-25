@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://crau8csyabfro"
-path="res://.godot/imported/Sprite-0004.png-aeaa9ea63b17afa7ee27257ef39b2083.ctex"
+path="res://.godot/imported/Sprite-0004.png-7625a3b03fad29711be041404540c704.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Sprite-0004.png"
-dest_files=["res://.godot/imported/Sprite-0004.png-aeaa9ea63b17afa7ee27257ef39b2083.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
+dest_files=["res://.godot/imported/Sprite-0004.png-7625a3b03fad29711be041404540c704.ctex"]
 
 [params]
 

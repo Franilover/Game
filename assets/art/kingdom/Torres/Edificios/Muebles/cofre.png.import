@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bj6r53rl3egry"
-path="res://.godot/imported/cofre.png-35267a1c7cfb43f98345bddc379aeda6.ctex"
+path="res://.godot/imported/cofre.png-9dbe63ca9c98ea7ac56539a94c3be2cd.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/cofre.png"
-dest_files=["res://.godot/imported/cofre.png-35267a1c7cfb43f98345bddc379aeda6.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/cofre.png"
+dest_files=["res://.godot/imported/cofre.png-9dbe63ca9c98ea7ac56539a94c3be2cd.ctex"]
 
 [params]
 

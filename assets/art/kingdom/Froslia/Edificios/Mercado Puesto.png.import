@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dcpq1ggfc4app"
-path="res://.godot/imported/Mercado Puesto.png-e8bc01f4bc4696bab366b92b6349b4d0.ctex"
+path="res://.godot/imported/Mercado Puesto.png-3e1998690c7136dfd8059ac2add31d73.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/art/kingdom/Froslia/Edificios/Mercado Puesto.png"
-dest_files=["res://.godot/imported/Mercado Puesto.png-e8bc01f4bc4696bab366b92b6349b4d0.ctex"]
+dest_files=["res://.godot/imported/Mercado Puesto.png-3e1998690c7136dfd8059ac2add31d73.ctex"]
 
 [params]
 

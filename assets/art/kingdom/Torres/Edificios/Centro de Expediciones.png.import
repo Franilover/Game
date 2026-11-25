@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://louedctutcmg"
-path="res://.godot/imported/Centro de Expediciones.png-ead12428b26451583bdaa6525dfeb219.ctex"
+path="res://.godot/imported/Centro de Expediciones.png-953cef63287b53d6949021b94e29d5e6.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Centro de Expediciones.png"
-dest_files=["res://.godot/imported/Centro de Expediciones.png-ead12428b26451583bdaa6525dfeb219.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Centro de Expediciones.png"
+dest_files=["res://.godot/imported/Centro de Expediciones.png-953cef63287b53d6949021b94e29d5e6.ctex"]
 
 [params]
 

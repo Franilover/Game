@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://xbj5r2qd0os1"
-path="res://.godot/imported/Casa_de_Comercio.png-eca4a2f1d1e61608df8498f47677fbac.ctex"
+path="res://.godot/imported/Casa_de_Comercio.png-58090f2aa185caf8c04620383748c4e3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Casa_de_Comercio.png"
-dest_files=["res://.godot/imported/Casa_de_Comercio.png-eca4a2f1d1e61608df8498f47677fbac.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Casa_de_Comercio.png"
+dest_files=["res://.godot/imported/Casa_de_Comercio.png-58090f2aa185caf8c04620383748c4e3.ctex"]
 
 [params]
 

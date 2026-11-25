@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dbal1i40st347"
-path="res://.godot/imported/Almacen_Publico.png-c6937c2b766d5390b67d44c6f91eac69.ctex"
+path="res://.godot/imported/Almacen_Publico.png-a310763060dabed0fc8f29f41693ce1c.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Almacen_Publico.png"
-dest_files=["res://.godot/imported/Almacen_Publico.png-c6937c2b766d5390b67d44c6f91eac69.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Almacen_Publico.png"
+dest_files=["res://.godot/imported/Almacen_Publico.png-a310763060dabed0fc8f29f41693ce1c.ctex"]
 
 [params]
 

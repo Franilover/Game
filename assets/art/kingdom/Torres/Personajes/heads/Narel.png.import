@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://vaaw31wi26pq"
-path="res://.godot/imported/Narel.png-0dbe5ac9443a3ac01bc2ba36395a9738.ctex"
+path="res://.godot/imported/Narel.png-570455322b124edfdeff90d4e87e9e89.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/heads/Narel.png"
-dest_files=["res://.godot/imported/Narel.png-0dbe5ac9443a3ac01bc2ba36395a9738.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/heads/Narel.png"
+dest_files=["res://.godot/imported/Narel.png-570455322b124edfdeff90d4e87e9e89.ctex"]
 
 [params]
 

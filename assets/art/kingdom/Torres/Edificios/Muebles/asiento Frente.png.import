@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://igwalk4f2ejn"
-path="res://.godot/imported/asiento Frente.png-45fc3ce6af7cf92418ce31eebd5a2825.ctex"
+path="res://.godot/imported/asiento Frente.png-d30aac2feec12edc5108dda4e1754559.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/asiento Frente.png"
-dest_files=["res://.godot/imported/asiento Frente.png-45fc3ce6af7cf92418ce31eebd5a2825.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/asiento Frente.png"
+dest_files=["res://.godot/imported/asiento Frente.png-d30aac2feec12edc5108dda4e1754559.ctex"]
 
 [params]
 

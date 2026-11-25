@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dxh6rdt0o3p5d"
-path="res://.godot/imported/Nima.png-1b5e2d74e2ddd7fc32aafd972f6f99df.ctex"
+path="res://.godot/imported/Nima.png-ea6dae3b4a64ae36301512878288dd58.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/heads/Nima.png"
-dest_files=["res://.godot/imported/Nima.png-1b5e2d74e2ddd7fc32aafd972f6f99df.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/heads/Nima.png"
+dest_files=["res://.godot/imported/Nima.png-ea6dae3b4a64ae36301512878288dd58.ctex"]
 
 [params]
 

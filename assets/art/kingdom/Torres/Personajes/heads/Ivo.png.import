@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dquf8fbd52x6d"
-path="res://.godot/imported/Ivo.png-48fd7dfa2bc53e5da36f1c7ff6358280.ctex"
+path="res://.godot/imported/Ivo.png-8938550ac12f396a8f572d92d4e696d3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/heads/Ivo.png"
-dest_files=["res://.godot/imported/Ivo.png-48fd7dfa2bc53e5da36f1c7ff6358280.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/heads/Ivo.png"
+dest_files=["res://.godot/imported/Ivo.png-8938550ac12f396a8f572d92d4e696d3.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://8dir2bmswtya"
-path="res://.godot/imported/calendario.svg-165cd5bf5ec011c139762f718571400a.ctex"
+path="res://.godot/imported/calendario.svg-cf892bce76799439b13cc2ca209f2b40.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/calendario.svg"
-dest_files=["res://.godot/imported/calendario.svg-165cd5bf5ec011c139762f718571400a.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/calendario.svg"
+dest_files=["res://.godot/imported/calendario.svg-cf892bce76799439b13cc2ca209f2b40.ctex"]
 
 [params]
 

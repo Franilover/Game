@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://da4061gdhouca"
-path="res://.godot/imported/Liam_Walking_Left.png-460727123c7aa9a8d136d2e2b67bf323.ctex"
+path="res://.godot/imported/Liam_Walking_Left.png-3b6a488b1bfbe722b858efce678bbf4d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Liam_Walking_Left.png"
-dest_files=["res://.godot/imported/Liam_Walking_Left.png-460727123c7aa9a8d136d2e2b67bf323.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Liam_Walking_Left.png"
+dest_files=["res://.godot/imported/Liam_Walking_Left.png-3b6a488b1bfbe722b858efce678bbf4d.ctex"]
 
 [params]
 

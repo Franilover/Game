@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b4hhwhmu7uyoo"
-path="res://.godot/imported/Cuadro rectangular.png-43ed21698399b4b52dd73791a768a840.ctex"
+path="res://.godot/imported/Cuadro rectangular.png-fa71eb16276aa49a0bc2f8af2ddb72a1.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/Cuadro rectangular.png"
-dest_files=["res://.godot/imported/Cuadro rectangular.png-43ed21698399b4b52dd73791a768a840.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/Cuadro rectangular.png"
+dest_files=["res://.godot/imported/Cuadro rectangular.png-fa71eb16276aa49a0bc2f8af2ddb72a1.ctex"]
 
 [params]
 

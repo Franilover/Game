@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://16ofeofya1i4"
-path="res://.godot/imported/Clinica.png-e9314d969ab781441e8c4cc37d5bdbd9.ctex"
+path="res://.godot/imported/Clinica.png-281a0040cdc40f52ae3512400eb99490.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Clinica.png"
-dest_files=["res://.godot/imported/Clinica.png-e9314d969ab781441e8c4cc37d5bdbd9.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Clinica.png"
+dest_files=["res://.godot/imported/Clinica.png-281a0040cdc40f52ae3512400eb99490.ctex"]
 
 [params]
 

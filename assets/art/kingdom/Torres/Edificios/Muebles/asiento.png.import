@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://1nnp7cpock43"
-path="res://.godot/imported/asiento.png-02274307f45876b79bd2740322fb9cd7.ctex"
+path="res://.godot/imported/asiento.png-40b717116d60657849cb74981f1e074e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/asiento.png"
-dest_files=["res://.godot/imported/asiento.png-02274307f45876b79bd2740322fb9cd7.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/asiento.png"
+dest_files=["res://.godot/imported/asiento.png-40b717116d60657849cb74981f1e074e.ctex"]
 
 [params]
 

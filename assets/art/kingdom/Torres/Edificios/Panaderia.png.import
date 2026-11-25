@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://byttasxwnaifp"
-path="res://.godot/imported/Panaderia.png-25209bd6ea6772d595c5ecb0f007f19e.ctex"
+path="res://.godot/imported/Panaderia.png-1b1928a67eea6aba060360890c0968f3.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Panaderia.png"
-dest_files=["res://.godot/imported/Panaderia.png-25209bd6ea6772d595c5ecb0f007f19e.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Panaderia.png"
+dest_files=["res://.godot/imported/Panaderia.png-1b1928a67eea6aba060360890c0968f3.ctex"]
 
 [params]
 

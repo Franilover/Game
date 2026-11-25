@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://dm6jh6t31xxok"
-path="res://.godot/imported/Abel.png-1db65b0bbe8a78eff590e8a43a6b6849.ctex"
+uid="uid://dq5f6o4n4u1l4"
+path="res://.godot/imported/Zlish Izquierda.png-b462a5267f951273932005234bdbf166.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/OLDcharacters/skins/Abel.png"
-dest_files=["res://.godot/imported/Abel.png-1db65b0bbe8a78eff590e8a43a6b6849.ctex"]
+source_file="res://assets/art/creatures/Zlish/Zlish Izquierda.png"
+dest_files=["res://.godot/imported/Zlish Izquierda.png-b462a5267f951273932005234bdbf166.ctex"]
 
 [params]
 

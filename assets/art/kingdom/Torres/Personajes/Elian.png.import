@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d1v7t1rd1b4jl"
-path="res://.godot/imported/Elian.png-11673d46672e166a74fda3298e9c5b95.ctex"
+path="res://.godot/imported/Elian.png-0c6cff21893e2877fe167554a2149e56.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Elian.png"
-dest_files=["res://.godot/imported/Elian.png-11673d46672e166a74fda3298e9c5b95.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Elian.png"
+dest_files=["res://.godot/imported/Elian.png-0c6cff21893e2877fe167554a2149e56.ctex"]
 
 [params]
 

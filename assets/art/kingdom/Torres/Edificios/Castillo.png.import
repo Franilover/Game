@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://d0a5v42c67j5s"
-path="res://.godot/imported/Castillo.png-9110a24e7ba75a9743cf1a5f44208039.ctex"
+path="res://.godot/imported/Castillo.png-13b8234ca7d9d2b1944b2f24c5541c3e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Castillo.png"
-dest_files=["res://.godot/imported/Castillo.png-9110a24e7ba75a9743cf1a5f44208039.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Castillo.png"
+dest_files=["res://.godot/imported/Castillo.png-13b8234ca7d9d2b1944b2f24c5541c3e.ctex"]
 
 [params]
 

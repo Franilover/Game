@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://odkcn3tdjayy"
-path="res://.godot/imported/BASEbkup.png-2a37b49dce10ed8e161ece28ca563809.ctex"
+path="res://.godot/imported/BASEbkup.png-f0b51c9d23222ccf074fe78791a8a65e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/BASEbkup.png"
-dest_files=["res://.godot/imported/BASEbkup.png-2a37b49dce10ed8e161ece28ca563809.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/BASEbkup.png"
+dest_files=["res://.godot/imported/BASEbkup.png-f0b51c9d23222ccf074fe78791a8a65e.ctex"]
 
 [params]
 

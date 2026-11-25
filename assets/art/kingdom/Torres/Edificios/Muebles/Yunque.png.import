@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bwjnhtegni050"
-path="res://.godot/imported/Yunque.png-b9ff069dc42e9b37dc1881ce389cc1d4.ctex"
+path="res://.godot/imported/Yunque.png-cbd91cc2e143dc2031ddb8a5fcdc18cb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/Yunque.png"
-dest_files=["res://.godot/imported/Yunque.png-b9ff069dc42e9b37dc1881ce389cc1d4.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/Yunque.png"
+dest_files=["res://.godot/imported/Yunque.png-cbd91cc2e143dc2031ddb8a5fcdc18cb.ctex"]
 
 [params]
 

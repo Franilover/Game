@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://be8hvdr1gx1gp"
-path="res://.godot/imported/Abel_Walking_Left.png-6ac69578d3edf87cc1bfb2e39bbf6bac.ctex"
+path="res://.godot/imported/Abel_Walking_Left.png-7bbef648872ff1ffa794fd9fee49731f.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Abel_Walking_Left.png"
-dest_files=["res://.godot/imported/Abel_Walking_Left.png-6ac69578d3edf87cc1bfb2e39bbf6bac.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Abel_Walking_Left.png"
+dest_files=["res://.godot/imported/Abel_Walking_Left.png-7bbef648872ff1ffa794fd9fee49731f.ctex"]
 
 [params]
 

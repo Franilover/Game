@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://de1qervgkjadt"
-path="res://.godot/imported/Clinica.png-e8f83d51f3e1e17d47166bbf4beac377.ctex"
+path="res://.godot/imported/Clinica.png-b1a326f7b6f88d99ffc5511d9e0193ba.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/art/kingdom/Froslia/Edificios/Clinica.png"
-dest_files=["res://.godot/imported/Clinica.png-e8f83d51f3e1e17d47166bbf4beac377.ctex"]
+dest_files=["res://.godot/imported/Clinica.png-b1a326f7b6f88d99ffc5511d9e0193ba.ctex"]
 
 [params]
 

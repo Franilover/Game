@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b0b6cqwwotl78"
-path="res://.godot/imported/efectosbase.png-aca61e9e45244eca2b037bf9b5d07bfa.ctex"
+path="res://.godot/imported/efectosbase.png-1c6c87c2659202431683522fb6116e43.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/efectosbase.png"
-dest_files=["res://.godot/imported/efectosbase.png-aca61e9e45244eca2b037bf9b5d07bfa.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/efectosbase.png"
+dest_files=["res://.godot/imported/efectosbase.png-1c6c87c2659202431683522fb6116e43.ctex"]
 
 [params]
 

@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cyy2nynpkkbf0"
-path="res://.godot/imported/Saira.png-8422db48f43054a22e696d70a32c440c.ctex"
+path="res://.godot/imported/Saira.png-1e0c49e9e1b4e279fc366790b2fcc34d.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Saira.png"
-dest_files=["res://.godot/imported/Saira.png-8422db48f43054a22e696d70a32c440c.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Saira.png"
+dest_files=["res://.godot/imported/Saira.png-1e0c49e9e1b4e279fc366790b2fcc34d.ctex"]
 
 [params]
 

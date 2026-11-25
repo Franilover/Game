@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://i8qwo1i4cxw"
-path="res://.godot/imported/2 Front.png-21c49c58b59fa5e173564ec7069b20ae.ctex"
+path="res://.godot/imported/2 Front.png-0daceab53a61712c3074d0c7845a77eb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/customization/hair/2 Front.png"
-dest_files=["res://.godot/imported/2 Front.png-21c49c58b59fa5e173564ec7069b20ae.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/customization/hair/2 Front.png"
+dest_files=["res://.godot/imported/2 Front.png-0daceab53a61712c3074d0c7845a77eb.ctex"]
 
 [params]
 

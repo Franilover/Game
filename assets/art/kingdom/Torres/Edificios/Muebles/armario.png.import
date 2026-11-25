@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://18gu30wm1xav"
-path="res://.godot/imported/armario.png-349da0d10b4dcd5dc6308b288a9e296b.ctex"
+path="res://.godot/imported/armario.png-a829417ce77a214693e107f3c323c630.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/armario.png"
-dest_files=["res://.godot/imported/armario.png-349da0d10b4dcd5dc6308b288a9e296b.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/armario.png"
+dest_files=["res://.godot/imported/armario.png-a829417ce77a214693e107f3c323c630.ctex"]
 
 [params]
 

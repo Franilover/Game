@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cjbhovjyrp1yg"
-path="res://.godot/imported/horno.png-44e47b6a5127f62713242ad8ff83c2c5.ctex"
+path="res://.godot/imported/horno.png-72ae9555f9c8f94d152163c0e537b195.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/horno.png"
-dest_files=["res://.godot/imported/horno.png-44e47b6a5127f62713242ad8ff83c2c5.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/horno.png"
+dest_files=["res://.godot/imported/horno.png-72ae9555f9c8f94d152163c0e537b195.ctex"]
 
 [params]
 

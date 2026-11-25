@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bfnja3n8373lh"
-path="res://.godot/imported/Casa_del_Consejo.png-88c76e0ed909eda1d7537f0985933714.ctex"
+path="res://.godot/imported/Casa_del_Consejo.png-336f4950d50774d363a7074c19eac173.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Casa_del_Consejo.png"
-dest_files=["res://.godot/imported/Casa_del_Consejo.png-88c76e0ed909eda1d7537f0985933714.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Casa_del_Consejo.png"
+dest_files=["res://.godot/imported/Casa_del_Consejo.png-336f4950d50774d363a7074c19eac173.ctex"]
 
 [params]
 

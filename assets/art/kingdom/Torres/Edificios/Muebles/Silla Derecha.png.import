@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b23g5wrm34gf6"
-path="res://.godot/imported/Silla Derecha.png-f90a2eeb33b33f6370e9892c73dc5345.ctex"
+path="res://.godot/imported/Silla Derecha.png-cb0821a5cb3c90debb75b2861502d64e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/Silla Derecha.png"
-dest_files=["res://.godot/imported/Silla Derecha.png-f90a2eeb33b33f6370e9892c73dc5345.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/Silla Derecha.png"
+dest_files=["res://.godot/imported/Silla Derecha.png-cb0821a5cb3c90debb75b2861502d64e.ctex"]
 
 [params]
 

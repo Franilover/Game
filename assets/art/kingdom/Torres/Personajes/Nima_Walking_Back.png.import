@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b3v4p3l63gksv"
-path="res://.godot/imported/Nima_Walking_Back.png-893e3074b999a81afd606ff82208a55a.ctex"
+path="res://.godot/imported/Nima_Walking_Back.png-b5fb7546d35c6642b386b7936fbaab11.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Nima_Walking_Back.png"
-dest_files=["res://.godot/imported/Nima_Walking_Back.png-893e3074b999a81afd606ff82208a55a.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Nima_Walking_Back.png"
+dest_files=["res://.godot/imported/Nima_Walking_Back.png-b5fb7546d35c6642b386b7936fbaab11.ctex"]
 
 [params]
 

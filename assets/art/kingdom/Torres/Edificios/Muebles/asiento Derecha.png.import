@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://2uq2k2o86xjw"
-path="res://.godot/imported/asiento Derecha.png-b6d2c27bd251c587e98cefd26ab915fe.ctex"
+path="res://.godot/imported/asiento Derecha.png-9f9c66657272f4e7a8630f3f19347027.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/asiento Derecha.png"
-dest_files=["res://.godot/imported/asiento Derecha.png-b6d2c27bd251c587e98cefd26ab915fe.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/asiento Derecha.png"
+dest_files=["res://.godot/imported/asiento Derecha.png-9f9c66657272f4e7a8630f3f19347027.ctex"]
 
 [params]
 

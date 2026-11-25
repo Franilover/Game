@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://dv15rwrv4os2u"
-path="res://.godot/imported/Abel.png-7fab429519cbf2cb407bbbd12c67d136.ctex"
+path="res://.godot/imported/Abel.png-19600db2f82f0623202eacd4cdbc56fb.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Abel.png"
-dest_files=["res://.godot/imported/Abel.png-7fab429519cbf2cb407bbbd12c67d136.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Abel.png"
+dest_files=["res://.godot/imported/Abel.png-19600db2f82f0623202eacd4cdbc56fb.ctex"]
 
 [params]
 

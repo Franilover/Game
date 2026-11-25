@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://cmnasrao25qvk"
-path="res://.godot/imported/Taberna.png-a6019f314df756b662bb341b54204d20.ctex"
+path="res://.godot/imported/Taberna.png-cd0428338906cb7e6a03d75a0d43343e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Taberna.png"
-dest_files=["res://.godot/imported/Taberna.png-a6019f314df756b662bb341b54204d20.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Taberna.png"
+dest_files=["res://.godot/imported/Taberna.png-cd0428338906cb7e6a03d75a0d43343e.ctex"]
 
 [params]
 

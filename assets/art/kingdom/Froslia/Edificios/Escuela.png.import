@@ -3,7 +3,7 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://bmxlm4w8n5p4v"
-path="res://.godot/imported/Escuela.png-293225eadc255e45dc2463e398dc1dbc.ctex"
+path="res://.godot/imported/Escuela.png-40a0b87138a78b6b9b2f307d9446ef17.ctex"
 metadata={
 "vram_texture": false
 }
@@ -11,7 +11,7 @@ metadata={
 [deps]
 
 source_file="res://assets/art/kingdom/Froslia/Edificios/Escuela.png"
-dest_files=["res://.godot/imported/Escuela.png-293225eadc255e45dc2463e398dc1dbc.ctex"]
+dest_files=["res://.godot/imported/Escuela.png-40a0b87138a78b6b9b2f307d9446ef17.ctex"]
 
 [params]
 

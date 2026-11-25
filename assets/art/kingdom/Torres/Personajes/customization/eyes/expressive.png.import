@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b0ajpge6r64vw"
-path="res://.godot/imported/expressive.png-298f8a4cc4a58a220a633c0df2c5b87b.ctex"
+path="res://.godot/imported/expressive.png-88bc5a9dcb923f4f18f77699e81a0532.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/customization/eyes/expressive.png"
-dest_files=["res://.godot/imported/expressive.png-298f8a4cc4a58a220a633c0df2c5b87b.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/customization/eyes/expressive.png"
+dest_files=["res://.godot/imported/expressive.png-88bc5a9dcb923f4f18f77699e81a0532.ctex"]
 
 [params]
 

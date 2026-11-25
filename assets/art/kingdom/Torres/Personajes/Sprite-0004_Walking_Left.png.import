@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://c24m7icfxasb5"
-path="res://.godot/imported/Sprite-0004_Walking_Left.png-dbd41093c78d59ba97de43cfeeb8e0a0.ctex"
+path="res://.godot/imported/Sprite-0004_Walking_Left.png-9da23bb6998c12cf4265284d141712d4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/characters/Sprite-0004_Walking_Left.png"
-dest_files=["res://.godot/imported/Sprite-0004_Walking_Left.png-dbd41093c78d59ba97de43cfeeb8e0a0.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/Sprite-0004_Walking_Left.png"
+dest_files=["res://.godot/imported/Sprite-0004_Walking_Left.png-9da23bb6998c12cf4265284d141712d4.ctex"]
 
 [params]
 

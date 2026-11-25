@@ -3,15 +3,15 @@
 importer="texture"
 type="CompressedTexture2D"
 uid="uid://b2rtfk6bqukb"
-path="res://.godot/imported/mesa con flores.png-b337f3256a270a523ded1e6afe1473a8.ctex"
+path="res://.godot/imported/mesa con flores.png-158314e14266764566a9d881addc80f8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/places/Muebles/mesa con flores.png"
-dest_files=["res://.godot/imported/mesa con flores.png-b337f3256a270a523ded1e6afe1473a8.ctex"]
+source_file="res://assets/art/kingdom/Torres/Edificios/Muebles/mesa con flores.png"
+dest_files=["res://.godot/imported/mesa con flores.png-158314e14266764566a9d881addc80f8.ctex"]
 
 [params]
 
