@@ -105,7 +105,7 @@ func get_destination(
 ) -> StringName:
 	if not can_traverse(connection_id, from_room_id, abilities, world_flags):
 		return &""
-	var connection := _get_connection(connection_id)
+	var connection: Variant = _get_connection(connection_id)
 	if connection == null:
 		return &""
 	return connection.get_destination_from(from_room_id)
