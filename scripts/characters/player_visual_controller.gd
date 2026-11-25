@@ -11,9 +11,9 @@ var facing_marker: Control = null
 var animation_player: AnimationPlayer = null
 var sprite: Sprite2D = null
 
-const SPRITE_IDLE_PATH := "res://assets/art/characters/Sprite-0004.png"
-const SPRITE_WALK_LEFT_PATH := "res://assets/art/characters/Sprite-0004_Walking_Left.png"
-const SPRITE_WALK_BACK_PATH := "res://assets/art/characters/Sprite-0004_Walking_Back.png"
+const SPRITE_IDLE_PATH := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
+const SPRITE_WALK_LEFT_PATH := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004_Walking_Left.png"
+const SPRITE_WALK_BACK_PATH := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004_Walking_Back.png"
 
 var sprite_idle: Texture2D = null
 var sprite_walk_left: Texture2D = null
@@ -42,10 +42,9 @@ func configurar(
 
 
 func _cargar_textura_importada(ruta: String) -> Texture2D:
-	var textura := ResourceLoader.load(ruta) as Texture2D
-	if textura == null:
-		push_error("PlayerVisualController: no se pudo cargar la textura importada %s." % ruta)
-	return textura
+	if not ResourceLoader.exists(ruta):
+		return null
+	return ResourceLoader.load(ruta) as Texture2D
 
 
 func actualizar_direccion(facing: Vector2) -> void:
