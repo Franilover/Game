@@ -63,6 +63,10 @@ func _run() -> void:
 	factory.free()
 
 	_organizar_nodos(root)
+	# Garantiza que todos los nodos del escenario pertenezcan a esta escena.
+	# Sin owner, Godot los muestra pero no permite editarlos como parte del .tscn.
+	for hijo: Node in root.get_children():
+		_asignar_owner_recursivo(hijo, root)
 	root.set("contenido_escena_preconstruido", true)
 
 	var packed := PackedScene.new()
