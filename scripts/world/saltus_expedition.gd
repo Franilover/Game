@@ -16,7 +16,12 @@ var _player: SaltusPlayer
 func _ready() -> void:
 	_player = get_node_or_null("Player") as SaltusPlayer
 	if is_instance_valid(_player):
+		_player.visible = true
 		_player.z_index = 3
+		var sprite: Sprite2D = _player.get_node_or_null("Sprite2D") as Sprite2D
+		if is_instance_valid(sprite):
+			sprite.visible = true
+			sprite.z_index = 0
 	_crear_terreno()
 	_crear_ambiente()
 	_configurar_camara()
@@ -145,6 +150,10 @@ func _configurar_camara() -> void:
 	var camara: Camera2D = _player.get_node_or_null("Camera2D") as Camera2D
 	if camara == null:
 		return
+	camara.enabled = true
+	camara.global_position = _player.global_position + Vector2(0.0, -35.0)
+	camara.make_current()
+	camara.reset_smoothing()
 	camara.limit_left = 0
 	camara.limit_right = LEVEL_WIDTH_TILES * TILE_SIZE
 	camara.limit_top = -120
@@ -153,6 +162,7 @@ func _configurar_camara() -> void:
 	camara.position_smoothing_speed = 5.5
 	camara.drag_horizontal_enabled = true
 	camara.drag_vertical_enabled = false
+	print("Saltus: cámara activa=", camara.is_current(), " jugador=", _player.global_position, " tiles=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0)
 
 
 func _draw() -> void:
