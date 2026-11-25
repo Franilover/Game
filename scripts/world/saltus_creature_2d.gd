@@ -91,7 +91,7 @@ func _procesar_flaxis(delta: float) -> void:
 		var distancia := global_position.distance_to(_target.global_position)
 		if distancia <= detection_range:
 			destino = _target.global_position + Vector2(0.0, -12.0)
-			if distancia <= detection_range * 0.72 and _attack_cooldown_left <= 0.0 and _windup_left <= 0.0 and _lunge_left <= 0.0:
+			if distancia <= minf(detection_range * 0.72, 68.0) and _attack_cooldown_left <= 0.0 and _windup_left <= 0.0 and _lunge_left <= 0.0:
 				_iniciar_ataque(destino)
 	if _windup_left > 0.0:
 		_windup_left = maxf(0.0, _windup_left - delta)
