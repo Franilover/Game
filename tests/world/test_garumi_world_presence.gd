@@ -124,9 +124,10 @@ func _run() -> void:
 	_expect(int(diagnostico.get("catalogo", 0)) == 1, "El diagnóstico debe contar el catálogo validado.")
 
 	var spawner: Node = SPAWNER_SCRIPT.new()
-	_expect(bool(spawner.get("mostrar_prototipo_garumi_en_debug_sin_catalogo")), "El prototipo debe volver a estar visible por defecto mientras el catálogo canónico esté vacío.")
-	_expect(is_equal_approx(float(spawner.get("probabilidad_prototipo_garumi_debug")), 1.0), "La probabilidad del prototipo debe ser 100% en los chunks de depuración válidos para evitar que parezca que no hay Garumis.")
-	_expect(str(spawner.get("garumi_original_id_habilitado")) == "24f86486-aced-4a23-bd1b-f025561a8aa3" and int(spawner.get("garumi_generacion_habilitada")) == 1, "La configuración de depuración debe reflejar sólo la línea de Orumi, generación 1.")
+	_expect(not bool(spawner.call("permite_spawn_procedural_garumis")), "Los Garumis nunca deben aparecer por el spawner procedural.")
+	var rng_sin_spawn := RandomNumberGenerator.new()
+	var garumis_procedurales: Array = spawner.call("_preparar_datos_garumis_en_chunk", Vector2i.ZERO, rng_sin_spawn)
+	_expect(garumis_procedurales.is_empty(), "El pipeline DATA debe devolver cero Garumis aunque haya catálogo o modo DEBUG.")
 	spawner.free()
 
 	var rules: Node = SPAWN_RULES_SCRIPT.new()

@@ -93,3 +93,12 @@ El prototipo guarda y restaura su marcador de depuración, nombre, asset key y h
 2. Leer la salida de la prueba y el primer error de compilación de Godot, corregirlo y volver a ejecutar la misma prueba.
 3. Verificar una transición DATA → FULL → DATA → FULL, comprobando que el Garumi conserva identidad, sprite, posición/contexto y no se duplica.
 4. La autorización actual cubre únicamente Oruvan para esta prueba. No modificar ni canonizar otros Garumis sin nueva decisión.
+
+
+## GP-09 — Aparición manual de Garumis
+
+- Se deshabilitó la generación procedural de Garumis en todos los chunks y el fallback visual DEBUG.
+- El pipeline DATA ya no añade registros Garumi a los datos de criaturas.
+- La presencia queda bajo control del diseño de niveles: instanciar escenas concretas desde `scenes/garumis/` en la escena del mundo correspondiente.
+- Las reglas ecológicas y el catálogo siguen disponibles como datos; no activan apariciones automáticas.
+- Prueba añadida: el spawner declara deshabilitada la aparición procedural y el preparador DATA devuelve una lista vacía.

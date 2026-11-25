@@ -5,15 +5,8 @@ class_name WorldEntitySpawner
 @export_category("Aparición de criaturas")
 @export var max_creatures_per_chunk: int = 5
 
-@export_category("Aparición de Garumis")
-@export_range(0, 4, 1) var max_garumis_per_chunk: int = 1
-@export_range(0.0, 1.0, 0.01) var garumi_spawn_probability_per_chunk: float = 0.15
-@export var mostrar_prototipo_garumi_en_debug_sin_catalogo: bool = true
-@export_range(0.0, 1.0, 0.05) var probabilidad_prototipo_garumi_debug: float = 1.0
-## Fase inicial: únicamente Garumis normales de la primera generación de Orumi.
-## ID de public.garumi_originales confirmado por consulta de sólo lectura.
-@export var garumi_original_id_habilitado: String = "24f86486-aced-4a23-bd1b-f025561a8aa3"
-@export_range(1, 100, 1) var garumi_generacion_habilitada: int = 1
+## Los Garumis sólo aparecen cuando una escena los instancia manualmente.
+## El spawner procedural no genera Garumis, ni siquiera en builds de depuración.
 
 var _terrain: WorldTerrain
 var _entity_manager: WorldEntityManager = null
@@ -32,8 +25,6 @@ var _chunk_full_activo: Vector2i = Vector2i(999999, 999999)
 var _props_por_bioma: Dictionary = {}
 var _asset_path_por_prop: Dictionary = {}
 var _data_context_por_chunk: Dictionary = {}
-var _garumis_catalogo_cache: Array[Dictionary] = []
-var _garumis_catalogo_cache_valido: bool = false
 const MAX_DATA_CONTEXT_CHUNKS: int = 64
 
 # Diagnóstico universal del pipeline de entidades. No decide el spawn;
@@ -70,8 +61,6 @@ func configurar(
 	_props_por_bioma.clear()
 	_asset_path_por_prop.clear()
 	_data_context_por_chunk.clear()
-	_garumis_catalogo_cache.clear()
-	_garumis_catalogo_cache_valido = false
 	if _world_data != null:
 		if not _world_data.mundo_listo.is_connected(_al_catalogo_props_actualizado):
 			_world_data.mundo_listo.connect(_al_catalogo_props_actualizado)
@@ -90,18 +79,11 @@ func configurar(
 
 
 func _al_catalogo_props_actualizado() -> void:
-	_garumis_catalogo_cache.clear()
-	_garumis_catalogo_cache_valido = false
 	_actualizar_catalogo_props()
 
 
-func _obtener_catalogo_garumis_cacheado() -> Array[Dictionary]:
-	if not _garumis_catalogo_cache_valido:
-		_garumis_catalogo_cache.clear()
-		if _world_data != null and is_instance_valid(_world_data):
-			_garumis_catalogo_cache = _world_data.obtener_garumis_game()
-		_garumis_catalogo_cache_valido = true
-	return _garumis_catalogo_cache
+func permite_spawn_procedural_garumis() -> bool:
+	return false
 
 
 func _actualizar_catalogo_props() -> void:
@@ -463,157 +445,19 @@ func preparar_datos_criaturas_chunk(chunk_coord: Vector2i) -> void:
 	# DATA LOD prepara también Garumis; de lo contrario, al entrar a FULL,
 	# el materializador devolvería los datos de criaturas normales y nunca
 	# ejecutaría el spawner de fallback.
-	var datos_garumis: Array[Dictionary] = await _preparar_datos_garumis_en_chunk(chunk_coord, rng)
-	for garumi_dato in datos_garumis:
-		datos.append(garumi_dato)
 
 	_entity_manager.reemplazar_datos_chunk(chunk_coord, "criaturas", datos)
 
 
 func _preparar_datos_garumis_en_chunk(
-	chunk_coord: Vector2i,
-	rng: RandomNumberGenerator
+	_chunk_coord: Vector2i,
+	_rng: RandomNumberGenerator
 ) -> Array[Dictionary]:
-	var resultado: Array[Dictionary] = []
-	if _terrain == null or _world_data == null or _spawn_rules == null:
-		return resultado
-	if max_garumis_per_chunk <= 0:
-		return resultado
+	# Los Garumis se colocan como instancias de escena (por ejemplo,
+	# scenes/garumis/daruka.tscn) dentro del nivel correspondiente.
+	# No se generan desde el catálogo ecológico ni desde el fallback DEBUG.
+	return []
 
-	var catalogo := _obtener_catalogo_garumis_cacheado()
-	if catalogo.is_empty():
-		return await _preparar_datos_garumi_debug(chunk_coord, rng)
-
-	var candidatos_probables: Array[Dictionary] = []
-	for indice_garumi in range(catalogo.size()):
-		# Filtrar el catálogo en lotes: ceder cada frame por registro alarga
-		# innecesariamente DATA cuando el catálogo contiene muchos Garumis.
-		if indice_garumi > 0 and indice_garumi % 8 == 0:
-			await get_tree().process_frame
-		var garumi: Dictionary = catalogo[indice_garumi]
-		var garumi_id := str(garumi.get("id", "")).strip_edges()
-		var garumi_nombre := str(garumi.get("nombre", "")).strip_edges()
-		if garumi_id.is_empty() or garumi_nombre.is_empty():
-			continue
-		if not _spawn_rules.garumi_cumple_filtro_generacional(
-			garumi,
-			garumi_original_id_habilitado,
-			garumi_generacion_habilitada
-		):
-			continue
-		var probabilidad := _spawn_rules.obtener_probabilidad_spawn_garumi(
-			garumi,
-			garumi_spawn_probability_per_chunk
-		)
-		if probabilidad <= 0.0 or rng.randf() > probabilidad:
-			continue
-		candidatos_probables.append(garumi)
-
-	if candidatos_probables.is_empty():
-		return resultado
-
-	var elegidos: Dictionary = {}
-	for slot in range(max_garumis_per_chunk):
-		for intento in range(32):
-			if intento % 4 == 0:
-				await get_tree().process_frame
-			var tile := Vector2i(
-				chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
-				chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
-			)
-			var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
-			if not bool(contexto.get("walkable", false)):
-				continue
-			var bioma_variant: Variant = contexto.get("bioma", {})
-			var ecosistema_variant: Variant = contexto.get("ecosistema", {})
-			var habitats_variant: Variant = contexto.get("habitats", [])
-			if not bioma_variant is Dictionary or not ecosistema_variant is Dictionary or not habitats_variant is Array:
-				continue
-			var bioma := bioma_variant as Dictionary
-			var ecosistema := ecosistema_variant as Dictionary
-			var habitats := habitats_variant as Array
-			if bioma.is_empty() or ecosistema.is_empty():
-				continue
-
-			var validos: Array[Dictionary] = []
-			for garumi in candidatos_probables:
-				var garumi_id := str(garumi.get("id", "")).strip_edges()
-				if garumi_id.is_empty() or elegidos.has(garumi_id):
-					continue
-				if not _spawn_rules.garumi_puede_aparecer(garumi, bioma, ecosistema, habitats):
-					continue
-				validos.append(garumi)
-			if validos.is_empty():
-				continue
-
-			var elegido := _spawn_rules.elegir_garumi(validos, rng)
-			if elegido.is_empty():
-				continue
-			var garumi_id := str(elegido.get("id", "")).strip_edges()
-			if garumi_id.is_empty():
-				continue
-			var registro := elegido
-			registro["criatura_id"] = garumi_id
-			registro["categoria_entidad"] = "garumi"
-			registro["asset_key"] = str(registro.get("asset_key", registro.get("nombre", "")))
-			var aparicion_variant: Variant = registro.get("aparicion", {})
-			var aparicion: Dictionary = aparicion_variant if aparicion_variant is Dictionary else {}
-			registro["habitat_clave"] = str(aparicion.get("habitat_clave", "general")).strip_edges().to_lower()
-			registro["runtime_instance_key"] = "garumi:" + str(slot) + ":" + garumi_id
-			registro["chunk"] = chunk_coord
-			registro["position"] = Vector2(
-				(float(tile.x) + 0.5) * _terrain.tile_size,
-				(float(tile.y) + 0.5) * _terrain.tile_size
-			)
-			resultado.append(registro)
-			elegidos[garumi_id] = true
-			break
-	return resultado
-
-
-func _preparar_datos_garumi_debug(
-	chunk_coord: Vector2i,
-	rng: RandomNumberGenerator
-) -> Array[Dictionary]:
-	var resultado: Array[Dictionary] = []
-	if not mostrar_prototipo_garumi_en_debug_sin_catalogo or not OS.is_debug_build():
-		return resultado
-	if max_garumis_per_chunk <= 0:
-		return resultado
-	if rng.randf() > clampf(probabilidad_prototipo_garumi_debug, 0.0, 1.0):
-		return resultado
-	for _intento in range(32):
-		if _intento % 4 == 0:
-			await get_tree().process_frame
-		var tile := Vector2i(
-			chunk_coord.x * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1),
-			chunk_coord.y * _terrain.chunk_size_tiles + rng.randi_range(0, _terrain.chunk_size_tiles - 1)
-		)
-		var contexto := _obtener_contexto_data_cacheado(chunk_coord, tile)
-		if not bool(contexto.get("walkable", false)):
-			continue
-		var id_instancia := "garumi:debug:%d:%d" % [chunk_coord.x, chunk_coord.y]
-		resultado.append({
-			"id": "__garumi_debug_preview__",
-			"criatura_id": "__garumi_debug_preview__",
-			"nombre": "Oruvan (prueba visual DEBUG sin catálogo)",
-			"categoria_garumi": "normal",
-			"original_id": garumi_original_id_habilitado,
-			"numero_origen": garumi_generacion_habilitada,
-			"asset_key": "Oruvan",
-			"categoria_entidad": "garumi",
-			"garumi_debug_preview": true,
-			"habitat_clave": "general",
-			"aparicion": {"habitat_clave": "general"},
-			"runtime_instance_key": id_instancia,
-			"chunk": chunk_coord,
-			"position": Vector2(
-				(float(tile.x) + 0.5) * _terrain.tile_size,
-				(float(tile.y) + 0.5) * _terrain.tile_size
-			)
-		})
-		return resultado
-	return resultado
 
 func preparar_datos_props_chunk(chunk_coord: Vector2i) -> void:
 	if _entity_manager == null or _terrain == null or _world_data == null or _spawn_rules == null:
