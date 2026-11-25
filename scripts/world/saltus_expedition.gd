@@ -172,7 +172,7 @@ func _crear_terreno() -> void:
 		{"x": 16, "y": 11, "w": 4}, {"x": 23, "y": 12, "w": 4},
 		{"x": 27, "y": 12, "w": 4}, {"x": 33, "y": 11, "w": 5},
 		{"x": 39, "y": 9, "w": 5}, {"x": 46, "y": 10, "w": 5},
-		{"x": 52, "y": 12, "w": 5}, {"x": 57, "y": 11, "w": 5},
+		{"x": 52, "y": 12, "w": 3},
 		# Arboleda: ascenso principal y ruta superior de retorno.
 		{"x": 63, "y": 12, "w": 5}, {"x": 68, "y": 10, "w": 5},
 		{"x": 73, "y": 8, "w": 5}, {"x": 78, "y": 6, "w": 5},
@@ -235,7 +235,7 @@ func _crear_grafo_sector() -> void:
 	var definiciones: Array[Dictionary] = [
 		{"id": &"entrada_claro", "region": &"entrada", "bounds": Rect2(0.0, 0.0, 1050.0, 700.0), "tags": ["inicio", "tutorial"]},
 		{"id": &"sendero_parkour", "region": &"sendero", "bounds": Rect2(850.0, 0.0, 1100.0, 700.0), "tags": ["salto", "dash", "combate"]},
-		{"id": &"arboleda_vertical", "region": &"arboleda", "bounds": Rect2(1850.0, -2300.0, 2600.0, 1900.0), "tags": ["vertical", "ramas", "rutas_altas"]},
+		{"id": &"arboleda_vertical", "region": &"arboleda", "bounds": Rect2(1850.0, -2300.0, 2600.0, 3000.0), "tags": ["vertical", "ramas", "rutas_altas"]},
 		{"id": &"raices_profundas", "region": &"raices", "bounds": Rect2(1200.0, 650.0, 3000.0, 700.0), "tags": ["subterraneo", "cavernas", "retorno"]},
 		{"id": &"cruce_copas", "region": &"copas", "bounds": Rect2(3600.0, -1700.0, 1500.0, 2200.0), "tags": ["altura", "atajos", "detectora"]},
 		{"id": &"claro_jefe", "region": &"jefe", "bounds": Rect2(5000.0, 0.0, 1400.0, 700.0), "tags": ["arena", "encuentro"]},
@@ -272,10 +272,17 @@ func _crear_grafo_sector() -> void:
 
 func _crear_puntos_sector() -> void:
 	_crear_punto_descanso(Vector2(96.0, 448.0))
-	_crear_punto_descanso(Vector2(1760.0, 448.0))
-	_crear_punto_descanso(Vector2(2240.0, 896.0))
-	_crear_punto_descanso(Vector2(4384.0, -128.0))
+	_crear_punto_descanso(Vector2(2016.0, 448.0))
+	_crear_punto_descanso(Vector2(2400.0, 960.0))
+	_crear_punto_descanso(Vector2(4480.0, 320.0))
 	_crear_punto_descanso(Vector2(5344.0, 448.0))
+
+	# Indicaciones breves integradas en el recorrido para enseñar cada acción.
+	_crear_indicacion_tutorial("SALTA", Vector2(320.0, 330.0))
+	_crear_indicacion_tutorial("PARKOUR", Vector2(1040.0, 300.0))
+	_crear_indicacion_tutorial("DASH", Vector2(1710.0, 300.0))
+	_crear_indicacion_tutorial("FLOR DETECTORA", Vector2(1632.0, 365.0))
+	_crear_indicacion_tutorial("CRIATURAS", Vector2(2500.0, 300.0))
 
 	# Zona de jefe: arena despejada y delimitada; el encuentro se añadirá después.
 	var arena := Node2D.new()
@@ -290,6 +297,21 @@ func _crear_puntos_sector() -> void:
 	])
 	arena.add_child(marca)
 	add_child(arena)
+
+func _crear_indicacion_tutorial(texto: String, posicion: Vector2) -> void:
+	var etiqueta := Label.new()
+	etiqueta.name = "Indicacion_" + texto.replace(" ", "_")
+	etiqueta.text = texto
+	etiqueta.position = posicion
+	etiqueta.z_as_relative = false
+	etiqueta.z_index = 150
+	etiqueta.add_theme_font_size_override("font_size", 14)
+	etiqueta.add_theme_color_override("font_color", Color("#F1E8C8"))
+	etiqueta.add_theme_color_override("font_outline_color", Color("#263A24"))
+	etiqueta.add_theme_constant_override("outline_size", 5)
+	etiqueta.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	add_child(etiqueta)
+
 
 func _crear_punto_descanso(posicion: Vector2) -> void:
 	var descanso := Area2D.new()
@@ -469,7 +491,7 @@ func _crear_capa_parallax(
 
 func _crear_criaturas() -> void:
 	# Primeros Zlish: visibles y espaciados para presentar el combate sin saturar.
-	for posicion in [Vector2(1280.0, 400.0), Vector2(1580.0, 400.0), Vector2(2460.0, 400.0), Vector2(3000.0, 848.0)]:
+	for posicion in [Vector2(1280.0, 400.0), Vector2(1580.0, 400.0), Vector2(2460.0, 400.0), Vector2(3000.0, 920.0)]:
 		var zlish := _crear_criatura("Zlish", posicion)
 		zlish.patrol_range = 105.0
 		zlish.jump_interval_min = 2.0
