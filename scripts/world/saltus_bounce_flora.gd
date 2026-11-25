@@ -40,14 +40,16 @@ func _al_entrar_en_contacto(body: Node2D) -> void:
 	_animar_compresion()
 
 func _crear_visual() -> void:
-	_sprite = Sprite2D.new()
-	_sprite.name = "FlorSaltarinaSprite"
-	_sprite.texture = load(TEXTURE_PATH) as Texture2D
-	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	_sprite.scale = Vector2(2.0, 2.0)
-	if _sprite.texture != null:
-		_sprite.position.y = -_sprite.texture.get_height() * _sprite.scale.y * 0.5
-	add_child(_sprite)
+	_sprite = get_node_or_null("FlorSaltarinaSprite") as Sprite2D
+	if _sprite == null:
+		_sprite = Sprite2D.new()
+		_sprite.name = "FlorSaltarinaSprite"
+		_sprite.texture = load(TEXTURE_PATH) as Texture2D
+		_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		_sprite.scale = Vector2(2.0, 2.0)
+		if _sprite.texture != null:
+			_sprite.position.y = -_sprite.texture.get_height() * _sprite.scale.y * 0.5
+		add_child(_sprite)
 	if _sprite.texture == null:
 		push_error("Saltus: no se pudo cargar " + TEXTURE_PATH)
 
