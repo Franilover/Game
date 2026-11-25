@@ -485,6 +485,19 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 	_world_entity_spawner = null
 	if tipo == "expedicion:saltus":
 		_activar_camara_saltus(_zona)
+		if is_instance_valid(_world_atmosphere):
+			_world_atmosphere.bloquear_tiempo()
+			var color_luz: Color = _zona.get("iluminacion_escena") if _zona.get("iluminacion_escena") is Color else Color("#FFFDF2")
+			_world_atmosphere.establecer_iluminacion_fija(color_luz)
+		if is_instance_valid(_world_climate_visuals):
+			var clima_escena := str(_zona.get("clima_escena"))
+			_world_climate_visuals.establecer_clima_fijo(clima_escena)
+	else:
+		if is_instance_valid(_world_atmosphere):
+			_world_atmosphere.desbloquear_tiempo()
+			_world_atmosphere.restablecer_iluminacion_dinamica()
+		if is_instance_valid(_world_climate_visuals):
+			_world_climate_visuals.restablecer_clima_dinamico()
 	else:
 		_actualizar_limites_camara_zona(tipo)
 	if is_instance_valid(_world_climate_visuals):
