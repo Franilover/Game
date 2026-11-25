@@ -12,6 +12,8 @@ const ROOM_DEFINITION_SCRIPT = preload("res://scripts/world/saltus_room_definiti
 const WORLD_CONNECTION_SCRIPT = preload("res://scripts/world/saltus_world_connection.gd")
 const WIND_CURRENT_SCRIPT = preload("res://scripts/world/saltus_wind_current.gd")
 const BOUNCE_FLORA_SCRIPT = preload("res://scripts/world/saltus_bounce_flora.gd")
+const SWITCH_FLOWER_SCRIPT = preload("res://scripts/world/saltus_switch_flower.gd")
+const CHECKPOINT_TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Section/Flor Checkpoint.png"
 const LEVEL_WIDTH_TILES: int = 160
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
@@ -299,17 +301,25 @@ func _crear_punto_descanso(posicion: Vector2) -> void:
 	circulo.radius = 28.0
 	forma.shape = circulo
 	descanso.add_child(forma)
-	var visual := Polygon2D.new()
-	visual.color = Color("#C2B89A")
-	visual.polygon = PackedVector2Array([Vector2(-18, 5), Vector2(-10, -10), Vector2(10, -10), Vector2(18, 5), Vector2(0, 15)])
-	descanso.add_child(visual)
+	var sprite := Sprite2D.new()
+	sprite.name = "FlorCheckpointSprite"
+	sprite.texture = load(CHECKPOINT_TEXTURE_PATH) as Texture2D
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.position = Vector2(0.0, -8.0)
+	descanso.add_child(sprite)
+	if sprite.texture == null:
+		push_error("Saltus: no se pudo cargar " + CHECKPOINT_TEXTURE_PATH)
 	descanso.body_entered.connect(_activar_descanso.bind(posicion))
 	add_child(descanso)
 
 
 func _activar_descanso(cuerpo: Node2D, posicion: Vector2) -> void:
-	if cuerpo == _player:
-		_last_rest_position = posicion + Vector2(0.0, -24.0)
+	if cuerpo != _player:
+		return
+	var nuevo_punto := posicion + Vector2(0.0, -24.0)
+	if _last_rest_position.distance_squared_to(nuevo_punto) > 4.0:
+		_last_rest_position = nuevo_punto
+		print("Saltus: checkpoint activado en ", _last_rest_position)
 
 
 func _al_recoger_nucleo(cuerpo: Node2D, hallazgo: Area2D) -> void:
@@ -517,6 +527,12 @@ func _crear_ambiente() -> void:
 
 
 func _crear_mecanicas_ambientales() -> void:
+	# Flor detectora: activa señales y mecanismos registrados al detectar al jugador.
+	var interruptor := SWITCH_FLOWER_SCRIPT.new() as Area2D
+	interruptor.name = "FlorDetectora_1712"
+	interruptor.position = Vector2(1712.0, 264.0)
+	add_child(interruptor)
+
 	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
 	for configuracion in [
 		{"posicion": Vector2(1680.0, 180.0), "direccion": Vector2(-0.12, -1.0), "fuerza": 560.0},
