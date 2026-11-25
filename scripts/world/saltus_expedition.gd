@@ -45,6 +45,7 @@ var _world_graph
 var _ability_flags: Dictionary = {}
 var _current_room_id: StringName = &""
 var _last_rest_position: Vector2 = Vector2(480.0, 408.0)
+var _active_checkpoint: Area2D
 var _sector_gate: StaticBody2D
 
 
@@ -310,17 +311,27 @@ func _crear_punto_descanso(posicion: Vector2) -> void:
 	descanso.add_child(sprite)
 	if sprite.texture == null:
 		push_error("Saltus: no se pudo cargar " + CHECKPOINT_TEXTURE_PATH)
-	descanso.body_entered.connect(_activar_descanso.bind(posicion))
+	descanso.body_entered.connect(_activar_descanso.bind(posicion, descanso))
 	add_child(descanso)
 
 
-func _activar_descanso(cuerpo: Node2D, posicion: Vector2) -> void:
+func _activar_descanso(cuerpo: Node2D, posicion: Vector2, checkpoint: Area2D) -> void:
 	if cuerpo != _player:
 		return
 	var nuevo_punto := posicion + Vector2(0.0, -24.0)
-	if _last_rest_position.distance_squared_to(nuevo_punto) > 4.0:
-		_last_rest_position = nuevo_punto
-		print("Saltus: checkpoint activado en ", _last_rest_position)
+	if _last_rest_position.distance_squared_to(nuevo_punto) <= 4.0:
+		return
+
+	_last_rest_position = nuevo_punto
+	if is_instance_valid(_active_checkpoint):
+		var anterior := _active_checkpoint.get_node_or_null("FlorCheckpointSprite") as Sprite2D
+		if is_instance_valid(anterior):
+			anterior.modulate = Color.WHITE
+	_active_checkpoint = checkpoint
+	var sprite_actual := checkpoint.get_node_or_null("FlorCheckpointSprite") as Sprite2D
+	if is_instance_valid(sprite_actual):
+		sprite_actual.modulate = Color(0.72, 1.0, 0.68, 1.0)
+	print("Saltus: checkpoint activado en ", _last_rest_position)
 
 
 func _al_recoger_nucleo(cuerpo: Node2D, hallazgo: Area2D) -> void:
@@ -539,7 +550,7 @@ func _crear_mecanicas_ambientales() -> void:
 	interruptor.name = "FlorDetectora_1712"
 	interruptor.position = Vector2(1712.0, 264.0)
 	add_child(interruptor)
-	interruptor.activated.connect(puerta.activate_from_switch)
+	interruptor.activated.connect(Callable(puerta, "activate_from_switch"))
 
 	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
 	for configuracion in [
