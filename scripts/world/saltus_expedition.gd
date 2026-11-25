@@ -322,10 +322,8 @@ func _activar_descanso(cuerpo: Node2D, posicion: Vector2, checkpoint: Area2D) ->
 	if cuerpo != _player:
 		return
 	var nuevo_punto := posicion + Vector2(0.0, -24.0)
-	if _last_rest_position.distance_squared_to(nuevo_punto) <= 4.0:
-		return
-
-	_last_rest_position = nuevo_punto
+	if _last_rest_position.distance_squared_to(nuevo_punto) > 4.0:
+		_last_rest_position = nuevo_punto
 	if is_instance_valid(_active_checkpoint):
 		var anterior := _active_checkpoint.get_node_or_null("FlorCheckpointSprite") as Sprite2D
 		if is_instance_valid(anterior):
@@ -334,6 +332,7 @@ func _activar_descanso(cuerpo: Node2D, posicion: Vector2, checkpoint: Area2D) ->
 	var sprite_actual := checkpoint.get_node_or_null("FlorCheckpointSprite") as Sprite2D
 	if is_instance_valid(sprite_actual):
 		sprite_actual.modulate = Color(0.72, 1.0, 0.68, 1.0)
+		_animar_activacion_checkpoint(checkpoint, sprite_actual)
 	print("Saltus: checkpoint activado en ", _last_rest_position)
 
 
@@ -601,3 +600,27 @@ func _configurar_camara() -> void:
 	camara.drag_horizontal_enabled = true
 	camara.drag_vertical_enabled = false
 	print("Saltus: cámara activa=", camara.is_current(), " jugador=", _player.global_position, " tiles=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0)
+
+
+func _animar_activacion_checkpoint(checkpoint: Area2D, sprite: Sprite2D) -> void:
+	var onda := Line2D.new()
+	onda.name = "OndaCheckpoint"
+	onda.width = 3.5
+	onda.default_color = Color(1.0, 0.82, 0.22, 0.95)
+	onda.antialiased = true
+	for indice in range(49):
+		var angulo := TAU * float(indice) / 48.0
+		onda.add_point(Vector2(cos(angulo), sin(angulo)))
+	checkpoint.add_child(onda)
+	onda.position = sprite.position
+	onda.scale = Vector2(3.8, 3.8)
+	var onda_tween := create_tween()
+	onda_tween.set_parallel(true)
+	onda_tween.set_trans(Tween.TRANS_CUBIC).set_ease(Tween.EASE_IN)
+	onda_tween.tween_property(onda, "scale", Vector2(0.12, 0.12), 0.58)
+	onda_tween.tween_property(onda, "modulate:a", 0.0, 0.58)
+	onda_tween.chain().tween_callback(onda.queue_free)
+	var brillo := create_tween()
+	brillo.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_OUT)
+	brillo.tween_property(sprite, "modulate", Color(1.0, 0.96, 0.58, 1.0), 0.12)
+	brillo.tween_property(sprite, "modulate", Color(0.72, 1.0, 0.68, 1.0), 0.3)
