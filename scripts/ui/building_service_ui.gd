@@ -42,6 +42,7 @@ var _seccion_biblioteca := "criaturas"
 var _seccion_expedicion := "primera_expedicion"
 var _seccion_clinica := "basico"
 signal solicitar_selector_expediciones
+signal solicitar_expedicion_saltus
 
 
 func configurar(tipo: String, inventario: InventoryController, world_items: GarliaWorldItems, jugador: Node = null) -> void:
@@ -1058,6 +1059,7 @@ func _construir_centro_expediciones() -> void:
 	var grupo_selector := ButtonGroup.new()
 	var detalle := layout["detail_content"] as VBoxContainer
 	_agregar_opcion_selector(lista, "Primera\nexpedición", _seccion_expedicion == "primera_expedicion", _seleccionar_seccion_expedicion.bind("primera_expedicion", detalle), grupo_selector)
+	_agregar_opcion_selector(lista, "Saltus", _seccion_expedicion == "saltus", _seleccionar_seccion_expedicion.bind("saltus", detalle), grupo_selector)
 	_agregar_opcion_selector(lista, "Rutas\ny destinos", _seccion_expedicion == "rutas", _seleccionar_seccion_expedicion.bind("rutas", detalle), grupo_selector)
 	_agregar_opcion_selector(lista, "Bitácora", _seccion_expedicion == "bitacora", _seleccionar_seccion_expedicion.bind("bitacora", detalle), grupo_selector)
 	_mostrar_detalle_expedicion(_seccion_expedicion, detalle)
@@ -1079,6 +1081,10 @@ func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 			estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 			detalle.add_child(estado)
 			_agregar_boton_detalle(detalle, "Ver destinos y salir", _emitir_solicitud_selector_expediciones, finalizada)
+		"saltus":
+			_agregar_titulo_detalle(detalle, "Saltus")
+			_agregar_texto_detalle(detalle, "Expedición lateral de plataformas. Explora el bosque y sus alturas.")
+			_agregar_boton_detalle(detalle, "Entrar a Saltus", _emitir_solicitud_expedicion_saltus)
 		"rutas":
 			_agregar_titulo_detalle(detalle, "Rutas y destinos")
 			var destinos := Label.new()
@@ -1260,6 +1266,10 @@ func _aplicar_tratamiento_clinica(completo: bool) -> void:
 
 func _emitir_solicitud_selector_expediciones() -> void:
 	solicitar_selector_expediciones.emit()
+
+
+func _emitir_solicitud_expedicion_saltus() -> void:
+	solicitar_expedicion_saltus.emit()
 
 
 func _primera_expedicion_finalizada() -> bool:
