@@ -17,7 +17,7 @@ func _ready() -> void:
 	_player = get_node_or_null("Player") as SaltusPlayer
 	_crear_terreno()
 	_crear_ambiente()
-	_configurar_cam​​ara()
+	_configurar_camara()
 	queue_redraw()
 
 
