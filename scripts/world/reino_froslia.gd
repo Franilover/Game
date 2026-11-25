@@ -227,7 +227,7 @@ func _puede_interactuar_edificio(jugador: Node) -> bool:
 	return is_instance_valid(jugador) and jugador.is_in_group("player")
 
 
-func _abrir_menu_servicio_edificio(tipo: String, _jugador: Node) -> void:
+func _abrir_menu_servicio_edificio(_jugador: Node, tipo: String) -> void:
 	if get_tree().get_first_node_in_group("building_service_ui") != null:
 		return
 	var sistema := get_tree().get_first_node_in_group("interaction_system")
