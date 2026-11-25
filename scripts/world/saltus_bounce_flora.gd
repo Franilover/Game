@@ -1,3 +1,4 @@
+@tool
 extends Area2D
 ## Planta elástica reutilizable que impulsa al jugador al tocarla desde arriba.
 
@@ -11,6 +12,8 @@ var _bounce_tween: Tween
 @export var affects_group: StringName = &"saltus_player"
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	monitoring = true
 	monitorable = false
 	collision_layer = 0
