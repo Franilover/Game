@@ -21,8 +21,8 @@ var _dash_requested: bool = false
 var _dash_time_left: float = 0.0
 var _dash_cooldown_left: float = 0.0
 var _dash_direction: Vector2 = Vector2.RIGHT
-var _air_dash_unlocked: bool = false
-var _air_dash_available: bool = false
+var _air_dash_unlocked: bool = true
+var _air_dash_available: bool = true
 var _elapsed: float = 0.0
 var _idle_texture: Texture2D
 var _walk_texture: Texture2D
@@ -74,7 +74,7 @@ func _physics_process(delta: float) -> void:
 		_air_dash_available = true
 
 	var direction := Input.get_axis("move_left", "move_right")
-	var aim_vertical := float(Input.is_key_pressed(KEY_S)) - float(Input.is_key_pressed(KEY_W))
+	var aim_vertical := Input.get_axis("move_up", "move_down")
 	var dash_aim := Vector2(direction, aim_vertical).normalized()
 
 	if _dash_time_left > 0.0:
