@@ -24,6 +24,7 @@ var _dash_direction: Vector2 = Vector2.RIGHT
 var _air_dash_unlocked: bool = true
 var _air_dash_available: bool = true
 var _elapsed: float = 0.0
+var _dash_ghost_timer: float = 0.0
 var _idle_texture: Texture2D
 var _walk_texture: Texture2D
 
@@ -79,6 +80,10 @@ func _physics_process(delta: float) -> void:
 
 	if _dash_time_left > 0.0:
 		_dash_time_left = maxf(0.0, _dash_time_left - delta)
+		_dash_ghost_timer -= delta
+		if _dash_ghost_timer <= 0.0:
+			_crear_estela_dash()
+			_dash_ghost_timer = 0.035
 		velocity = _dash_direction * (dash_distance / maxf(dash_duration, 0.01))
 		move_and_slide()
 		if _dash_time_left <= 0.0:
@@ -98,6 +103,8 @@ func _physics_process(delta: float) -> void:
 			else:
 				_dash_direction = Vector2.LEFT if sprite != null and sprite.flip_h else Vector2.RIGHT
 			_dash_time_left = dash_duration
+			_dash_ghost_timer = 0.0
+			_crear_estela_dash()
 			_dash_cooldown_left = dash_cooldown
 			velocity = _dash_direction * (dash_distance / maxf(dash_duration, 0.01))
 			move_and_slide()
@@ -142,3 +149,25 @@ func _actualizar_presentacion(direction: float) -> void:
 		sprite.position.y = -22.0 + sin(_elapsed * 15.0) * 1.3
 	else:
 		sprite.position.y = move_toward(sprite.position.y, -22.0, 1.0)
+
+
+func _crear_estela_dash() -> void:
+	if sprite == null or sprite.texture == null:
+		return
+	var fantasma := Sprite2D.new()
+	fantasma.texture = sprite.texture
+	fantasma.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	fantasma.flip_h = sprite.flip_h
+	fantasma.flip_v = sprite.flip_v
+	fantasma.centered = sprite.centered
+	fantasma.position = sprite.position
+	fantasma.rotation = sprite.rotation
+	fantasma.scale = sprite.scale
+	fantasma.modulate = Color(0.72, 1.0, 0.68, 0.48)
+	fantasma.z_index = -1
+	add_child(fantasma)
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(fantasma, "modulate:a", 0.0, 0.17)
+	tween.tween_property(fantasma, "scale", sprite.scale * 0.92, 0.17)
+	tween.chain().tween_callback(fantasma.queue_free)
