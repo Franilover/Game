@@ -15,7 +15,7 @@ const BOUNCE_FLORA_SCRIPT = preload("res://scripts/world/saltus_bounce_flora.gd"
 const SWITCH_FLOWER_SCRIPT = preload("res://scripts/world/saltus_switch_flower.gd")
 const SWITCH_GATE_SCRIPT = preload("res://scripts/world/saltus_switch_gate.gd")
 const CHECKPOINT_TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Section/Flor Checkpoint.png"
-const LEVEL_WIDTH_TILES: int = 160
+const LEVEL_WIDTH_TILES: int = 200
 
 @export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
 @export var iluminacion_escena: Color = Color("#FFFDF2")
@@ -56,7 +56,7 @@ func _ready() -> void:
 		return
 
 	_player.visible = true
-	_player.position = Vector2(96.0, float(GROUND_TOP * TILE_SIZE - 40))
+	_player.position = Vector2(96.0, 408.0)
 	_player.velocity = Vector2.ZERO
 	_player.z_as_relative = false
 	_player.z_index = 100
@@ -77,8 +77,7 @@ func _ready() -> void:
 	_crear_ambiente()
 	_crear_mecanicas_ambientales()
 	_configurar_camara()
-	print("Saltus: inicializado | terreno=", is_instance_valid(_terrain_layer), " | celdas=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0, " | jugador=", _player.global_position)
-
+	print("Saltus V2: mapa vertical conectado | jugador=", _player.global_position)
 
 func _process(_delta: float) -> void:
 	if not is_instance_valid(_player):
@@ -95,20 +94,18 @@ func _process(_delta: float) -> void:
 
 
 func _crear_relleno_fondo() -> void:
-	# Relleno sólido detrás del terreno y de todas las capas visuales.
 	var relleno := Polygon2D.new()
 	relleno.name = "RellenoVerdeFondo"
 	relleno.color = Color("#2B5229")
 	relleno.polygon = PackedVector2Array([
-		Vector2(-512.0, -512.0),
-		Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 512.0, -512.0),
-		Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 512.0, 1536.0),
-		Vector2(-512.0, 1536.0)
+		Vector2(-512.0, -2800.0),
+		Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 512.0, -2800.0),
+		Vector2(LEVEL_WIDTH_TILES * TILE_SIZE + 512.0, 1600.0),
+		Vector2(-512.0, 1600.0)
 	])
 	relleno.z_as_relative = false
 	relleno.z_index = -100
 	add_child(relleno)
-
 
 func _crear_terreno() -> void:
 	var textura := load(TILESET_TEXTURE_PATH) as Texture2D
@@ -138,7 +135,7 @@ func _crear_terreno() -> void:
 			data.set_terrain_peering_bit(neighbor, 1 if (bits & 1) != 0 else 0)
 			bits >>= 1
 	_terrain_layer = TileMapDual.new()
-	_terrain_layer.name = "TerrenoSaltus"
+	_terrain_layer.name = "TerrenoSaltusV2"
 	_terrain_layer.tile_set = tile_set
 	_terrain_layer.z_as_relative = false
 	_terrain_layer.z_index = 0
@@ -146,15 +143,18 @@ func _crear_terreno() -> void:
 	_terrain_layer.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	add_child(_terrain_layer)
 
-	# Claro central y dos descensos hacia las galerías de Raíces.
+	# Pisos independientes: entrada, claro, galerías inferiores y arena final.
 	var suelos: Array[Dictionary] = [
-		{"x": 0, "y": 14, "w": 28, "d": 6},
-		{"x": 34, "y": 14, "w": 22, "d": 6},
-		{"x": 60, "y": 14, "w": 26, "d": 6},
-		{"x": 94, "y": 14, "w": 66, "d": 6},
-		{"x": 28, "y": 29, "w": 18, "d": 6},
-		{"x": 50, "y": 27, "w": 16, "d": 6},
-		{"x": 70, "y": 30, "w": 18, "d": 6},
+		{"x": 0, "y": 14, "w": 24, "d": 6},
+		{"x": 30, "y": 14, "w": 25, "d": 6},
+		{"x": 61, "y": 14, "w": 24, "d": 6},
+		{"x": 91, "y": 14, "w": 28, "d": 6},
+		{"x": 126, "y": 14, "w": 24, "d": 6},
+		{"x": 158, "y": 14, "w": 42, "d": 6},
+		{"x": 43, "y": 28, "w": 23, "d": 6},
+		{"x": 72, "y": 30, "w": 25, "d": 6},
+		{"x": 103, "y": 27, "w": 23, "d": 6},
+		{"x": 132, "y": 29, "w": 18, "d": 6}
 	]
 	for suelo in suelos:
 		var sx := int(suelo["x"])
@@ -166,28 +166,46 @@ func _crear_terreno() -> void:
 				_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_DEFAULT)
 		_crear_colision_bloque_solido(sx, sy, sw, sd)
 
-	# Arboleda: rutas ascendentes, cruces altos y descensos conectados.
+	# Rutas de enseñanza: saltos cortos, un hueco de dash y parkour escalonado.
 	var plataformas: Array[Dictionary] = [
-		{"x": 7, "y": 12, "w": 5}, {"x": 14, "y": 10, "w": 5},
-		{"x": 21, "y": 8, "w": 6}, {"x": 29, "y": 6, "w": 6},
-		{"x": 37, "y": 4, "w": 7}, {"x": 46, "y": 6, "w": 6},
-		{"x": 53, "y": 9, "w": 6}, {"x": 63, "y": 12, "w": 7},
-		{"x": 71, "y": 10, "w": 6}, {"x": 78, "y": 7, "w": 7},
-		{"x": 87, "y": 5, "w": 7}, {"x": 97, "y": 3, "w": 7},
-		{"x": 106, "y": 6, "w": 7}, {"x": 112, "y": 4, "w": 7},
-		{"x": 118, "y": 2, "w": 7}, {"x": 124, "y": 0, "w": 7},
-		{"x": 130, "y": -2, "w": 7}, {"x": 136, "y": -4, "w": 7},
-		{"x": 142, "y": -6, "w": 7}, {"x": 148, "y": -8, "w": 7},
-		{"x": 154, "y": -10, "w": 6},
-		{"x": 29, "y": 19, "w": 7}, {"x": 38, "y": 22, "w": 8},
-		# Escalera de retorno: permite salir de Raíces sin depender del Impulso Aéreo.
-		{"x": 70, "y": 28, "w": 5}, {"x": 74, "y": 26, "w": 5},
-		{"x": 81, "y": 22, "w": 5},
-		{"x": 84, "y": 20, "w": 5}, {"x": 87, "y": 18, "w": 5},
-		{"x": 90, "y": 16, "w": 5},
-		{"x": 48, "y": 19, "w": 8}, {"x": 57, "y": 23, "w": 8},
-		{"x": 67, "y": 20, "w": 8}, {"x": 78, "y": 24, "w": 8},
-		{"x": 90, "y": 20, "w": 8},
+		{"x": 4, "y": 12, "w": 4}, {"x": 10, "y": 10, "w": 4},
+		{"x": 16, "y": 11, "w": 4}, {"x": 23, "y": 12, "w": 4},
+		{"x": 27, "y": 12, "w": 4}, {"x": 33, "y": 11, "w": 5},
+		{"x": 39, "y": 9, "w": 5}, {"x": 46, "y": 10, "w": 5},
+		{"x": 52, "y": 12, "w": 5}, {"x": 57, "y": 11, "w": 5},
+		# Arboleda: ascenso principal y ruta superior de retorno.
+		{"x": 63, "y": 12, "w": 5}, {"x": 68, "y": 10, "w": 5},
+		{"x": 73, "y": 8, "w": 5}, {"x": 78, "y": 6, "w": 5},
+		{"x": 83, "y": 4, "w": 5}, {"x": 88, "y": 2, "w": 5},
+		{"x": 93, "y": 0, "w": 6}, {"x": 99, "y": -2, "w": 6},
+		{"x": 105, "y": -4, "w": 6}, {"x": 111, "y": -2, "w": 6},
+		{"x": 117, "y": 0, "w": 6}, {"x": 123, "y": 2, "w": 6},
+		{"x": 129, "y": 4, "w": 6}, {"x": 135, "y": 6, "w": 6},
+		# Ruta alta alternativa: cruza por encima de la arboleda y vuelve al claro.
+		{"x": 70, "y": 3, "w": 5}, {"x": 76, "y": 1, "w": 5},
+		{"x": 82, "y": -1, "w": 5}, {"x": 89, "y": -3, "w": 5},
+		{"x": 96, "y": -5, "w": 5}, {"x": 103, "y": -7, "w": 5},
+		{"x": 110, "y": -6, "w": 5}, {"x": 117, "y": -4, "w": 5},
+		{"x": 124, "y": -2, "w": 5},
+		# Descenso hacia Raíces profundas.
+		{"x": 39, "y": 18, "w": 5}, {"x": 44, "y": 21, "w": 5},
+		{"x": 49, "y": 24, "w": 5}, {"x": 55, "y": 26, "w": 5},
+		{"x": 61, "y": 27, "w": 5}, {"x": 67, "y": 28, "w": 5},
+		# Escalera de regreso desde el subsuelo: peldaños alternados y alcanzables.
+		{"x": 66, "y": 26, "w": 4}, {"x": 70, "y": 24, "w": 4},
+		{"x": 74, "y": 22, "w": 4}, {"x": 78, "y": 20, "w": 4},
+		{"x": 82, "y": 18, "w": 4}, {"x": 86, "y": 16, "w": 4},
+		{"x": 90, "y": 14, "w": 4},
+		# Galerías inferiores: recorrido transversal y dos salidas.
+		{"x": 78, "y": 27, "w": 6}, {"x": 86, "y": 25, "w": 6},
+		{"x": 94, "y": 23, "w": 6}, {"x": 101, "y": 21, "w": 6},
+		{"x": 108, "y": 19, "w": 6}, {"x": 115, "y": 17, "w": 6},
+		{"x": 122, "y": 15, "w": 6}, {"x": 129, "y": 13, "w": 5},
+		# Cruce de copas y conexión con la zona del jefe.
+		{"x": 140, "y": 10, "w": 5}, {"x": 146, "y": 7, "w": 5},
+		{"x": 151, "y": 10, "w": 5}, {"x": 158, "y": 12, "w": 5},
+		{"x": 166, "y": 11, "w": 5}, {"x": 174, "y": 9, "w": 5},
+		{"x": 182, "y": 11, "w": 5}, {"x": 190, "y": 12, "w": 5}
 	]
 	for plataforma in plataformas:
 		var px := int(plataforma["x"])
@@ -197,7 +215,6 @@ func _crear_terreno() -> void:
 			_terrain_layer.set_cell(Vector2i(x, py), 0, TILE_ATLAS_DEFAULT)
 		_crear_colision_plataforma(px, py, pw)
 	call_deferred("_actualizar_tiles_dual")
-
 
 func _crear_colision_bloque_solido(inicio_x: int, fila_y: int, ancho: int, profundidad: int) -> void:
 	var cuerpo := StaticBody2D.new()
@@ -215,82 +232,64 @@ func _crear_colision_bloque_solido(inicio_x: int, fila_y: int, ancho: int, profu
 
 func _crear_grafo_sector() -> void:
 	_world_graph = WORLD_GRAPH_SCRIPT.new()
-	var claro: Variant = ROOM_DEFINITION_SCRIPT.new()
-	claro.room_id = &"claro_central"
-	claro.region_id = &"claro"
-	claro.bounds = Rect2(0.0, 300.0, 3000.0, 420.0)
-	claro.tags = PackedStringArray(["inicio", "descanso", "cruce"])
-	var arboleda: Variant = ROOM_DEFINITION_SCRIPT.new()
-	arboleda.room_id = &"arboleda_vertical"
-	arboleda.region_id = &"arboleda"
-	arboleda.bounds = Rect2(180.0, -1700.0, 4940.0, 2200.0)
-	arboleda.tags = PackedStringArray(["vertical", "copas", "atajos"])
-	var raices: Variant = ROOM_DEFINITION_SCRIPT.new()
-	raices.room_id = &"raices_profundas"
-	raices.region_id = &"raices"
-	raices.bounds = Rect2(650.0, 650.0, 2300.0, 900.0)
-	raices.tags = PackedStringArray(["subterraneo", "cavernas", "mineral"])
-	var copa: Variant = ROOM_DEFINITION_SCRIPT.new()
-	copa.room_id = &"copa_oriental"
-	copa.region_id = &"copa"
-	copa.bounds = Rect2(3000.0, 300.0, 2200.0, 500.0)
-	copa.tags = PackedStringArray(["elevado", "bosque", "paso_bloqueado"])
-	_world_graph.rooms = [claro, arboleda, raices, copa]
-	var a: Variant = WORLD_CONNECTION_SCRIPT.new()
-	a.connection_id = &"claro_arboleda"
-	a.room_a = &"claro_central"
-	a.room_b = &"arboleda_vertical"
-	var b: Variant = WORLD_CONNECTION_SCRIPT.new()
-	b.connection_id = &"claro_raices"
-	b.room_a = &"claro_central"
-	b.room_b = &"raices_profundas"
-	var c: Variant = WORLD_CONNECTION_SCRIPT.new()
-	c.connection_id = &"raices_copa_impulso"
-	c.room_a = &"raices_profundas"
-	c.room_b = &"copa_oriental"
-	c.requirement_type = WORLD_CONNECTION_SCRIPT.RequirementType.ABILITY
-	c.requirement_key = &"impulso_aereo"
-	_world_graph.connections = [a, b, c]
-	add_child(_world_graph)
-	_world_graph.discover_room(&"claro_central")
+	var definiciones: Array[Dictionary] = [
+		{"id": &"entrada_claro", "region": &"entrada", "bounds": Rect2(0.0, 0.0, 1050.0, 700.0), "tags": ["inicio", "tutorial"]},
+		{"id": &"sendero_parkour", "region": &"sendero", "bounds": Rect2(850.0, 0.0, 1100.0, 700.0), "tags": ["salto", "dash", "combate"]},
+		{"id": &"arboleda_vertical", "region": &"arboleda", "bounds": Rect2(1850.0, -2300.0, 2600.0, 1900.0), "tags": ["vertical", "ramas", "rutas_altas"]},
+		{"id": &"raices_profundas", "region": &"raices", "bounds": Rect2(1200.0, 650.0, 3000.0, 700.0), "tags": ["subterraneo", "cavernas", "retorno"]},
+		{"id": &"cruce_copas", "region": &"copas", "bounds": Rect2(3600.0, -1700.0, 1500.0, 2200.0), "tags": ["altura", "atajos", "detectora"]},
+		{"id": &"claro_jefe", "region": &"jefe", "bounds": Rect2(5000.0, 0.0, 1400.0, 700.0), "tags": ["arena", "encuentro"]},
+	]
+	var rooms: Array = []
+	for definicion in definiciones:
+		var room: Variant = ROOM_DEFINITION_SCRIPT.new()
+		room.room_id = definicion["id"]
+		room.region_id = definicion["region"]
+		room.bounds = definicion["bounds"]
+		room.tags = PackedStringArray(definicion["tags"])
+		rooms.append(room)
+	_world_graph.rooms = rooms
 
+	var enlaces: Array[Array] = [
+		[&"entrada_sendero", &"entrada_claro", &"sendero_parkour"],
+		[&"sendero_arboleda", &"sendero_parkour", &"arboleda_vertical"],
+		[&"sendero_raices", &"sendero_parkour", &"raices_profundas"],
+		[&"arboleda_copas", &"arboleda_vertical", &"cruce_copas"],
+		[&"raices_copas", &"raices_profundas", &"cruce_copas"],
+		[&"copas_jefe", &"cruce_copas", &"claro_jefe"],
+		[&"arboleda_raices", &"arboleda_vertical", &"raices_profundas"],
+	]
+	var connections: Array = []
+	for enlace in enlaces:
+		var connection: Variant = WORLD_CONNECTION_SCRIPT.new()
+		connection.connection_id = enlace[0]
+		connection.room_a = enlace[1]
+		connection.room_b = enlace[2]
+		connections.append(connection)
+	_world_graph.connections = connections
+	add_child(_world_graph)
+	_world_graph.discover_room(&"entrada_claro")
 
 func _crear_puntos_sector() -> void:
-	_crear_punto_descanso(Vector2(480.0, 448.0))
-	# Descanso en el suelo principal de Raíces profundas.
-	_crear_punto_descanso(Vector2(2480.0, 960.0))
-	var hallazgo := Area2D.new()
-	hallazgo.name = "NucleoDeImpulso"
-	hallazgo.position = Vector2(2600.0, 190.0)
-	hallazgo.collision_layer = 0
-	hallazgo.collision_mask = 2
-	var forma := CollisionShape2D.new()
-	var circulo := CircleShape2D.new()
-	circulo.radius = 24.0
-	forma.shape = circulo
-	hallazgo.add_child(forma)
-	var visual := Polygon2D.new()
-	visual.color = Color("#B9D7A5")
-	visual.polygon = PackedVector2Array([Vector2(0, -22), Vector2(13, -5), Vector2(8, 18), Vector2(-8, 18), Vector2(-13, -5)])
-	hallazgo.add_child(visual)
-	hallazgo.body_entered.connect(_al_recoger_nucleo.bind(hallazgo))
-	add_child(hallazgo)
-	_sector_gate = StaticBody2D.new()
-	_sector_gate.name = "AtajoSellado"
-	_sector_gate.position = Vector2(2880.0, 600.0)
-	_sector_gate.collision_layer = 1
-	_sector_gate.collision_mask = 0
-	var gate_shape := CollisionShape2D.new()
-	var gate_rect := RectangleShape2D.new()
-	gate_rect.size = Vector2(20.0, 1100.0)
-	gate_shape.shape = gate_rect
-	_sector_gate.add_child(gate_shape)
-	var gate_visual := Polygon2D.new()
-	gate_visual.color = Color("#596B4B")
-	gate_visual.polygon = PackedVector2Array([Vector2(-10, -550), Vector2(10, -550), Vector2(10, 550), Vector2(-10, 550)])
-	_sector_gate.add_child(gate_visual)
-	add_child(_sector_gate)
+	_crear_punto_descanso(Vector2(96.0, 448.0))
+	_crear_punto_descanso(Vector2(1760.0, 448.0))
+	_crear_punto_descanso(Vector2(2240.0, 896.0))
+	_crear_punto_descanso(Vector2(4384.0, -128.0))
+	_crear_punto_descanso(Vector2(5344.0, 448.0))
 
+	# Zona de jefe: arena despejada y delimitada; el encuentro se añadirá después.
+	var arena := Node2D.new()
+	arena.name = "ZonaPrimerJefe"
+	arena.position = Vector2(5600.0, 448.0)
+	var marca := Polygon2D.new()
+	marca.name = "MarcaArena"
+	marca.color = Color(0.72, 0.78, 0.56, 0.14)
+	marca.polygon = PackedVector2Array([
+		Vector2(-250.0, -8.0), Vector2(250.0, -8.0),
+		Vector2(220.0, -190.0), Vector2(-220.0, -190.0)
+	])
+	arena.add_child(marca)
+	add_child(arena)
 
 func _crear_punto_descanso(posicion: Vector2) -> void:
 	var descanso := Area2D.new()
@@ -469,19 +468,18 @@ func _crear_capa_parallax(
 
 
 func _crear_criaturas() -> void:
-	# Zlish recorre tramos de suelo y plataformas, saltando de forma periódica.
-	for posicion in [Vector2(620.0, 400.0), Vector2(1460.0, 336.0), Vector2(2480.0, 400.0)]:
+	# Primeros Zlish: visibles y espaciados para presentar el combate sin saturar.
+	for posicion in [Vector2(1280.0, 400.0), Vector2(1580.0, 400.0), Vector2(2460.0, 400.0), Vector2(3000.0, 848.0)]:
 		var zlish := _crear_criatura("Zlish", posicion)
-		zlish.patrol_range = 145.0
-		zlish.jump_interval_min = 1.8
-		zlish.jump_interval_max = 3.8
-	# Flaxis patrulla en altura y detecta al jugador para lanzarse en picada.
-	for posicion in [Vector2(1040.0, 220.0), Vector2(2180.0, 190.0), Vector2(3300.0, 240.0)]:
+		zlish.patrol_range = 105.0
+		zlish.jump_interval_min = 2.0
+		zlish.jump_interval_max = 4.0
+	# Flaxis aparece después, en las rutas elevadas.
+	for posicion in [Vector2(2720.0, -120.0), Vector2(3520.0, -280.0), Vector2(4250.0, -420.0)]:
 		var flaxis := _crear_criatura("Flaxis", posicion)
-		flaxis.detection_range = 235.0
-		flaxis.flight_speed = 105.0
+		flaxis.detection_range = 220.0
+		flaxis.flight_speed = 100.0
 		flaxis.attack_damage = 8
-
 
 func _crear_criatura(especie: String, posicion: Vector2) -> SaltusCreature2D:
 	var criatura := SALTUS_CREATURE_SCRIPT.new() as SaltusCreature2D
@@ -541,23 +539,35 @@ func _crear_ambiente() -> void:
 
 
 func _crear_mecanicas_ambientales() -> void:
-	# Barrera del claro oriental: la flor detectora abre este paso al tocarla.
+	# Detectora: enseña a activar mecanismos y abre un atajo entre dos plataformas.
 	var puerta := SWITCH_GATE_SCRIPT.new() as StaticBody2D
 	puerta.name = "PuertaFlorDetectora"
-	puerta.position = Vector2(1776.0, 250.0)
-	puerta.set("gate_size", Vector2(28.0, 1100.0))
+	puerta.position = Vector2(1696.0, 248.0)
+	puerta.set("gate_size", Vector2(24.0, 420.0))
 	add_child(puerta)
+	var detectora := SWITCH_FLOWER_SCRIPT.new() as Area2D
+	detectora.name = "FlorDetectora_Tutorial"
+	detectora.position = Vector2(1632.0, 448.0)
+	add_child(detectora)
 
-	var interruptor := SWITCH_FLOWER_SCRIPT.new() as Area2D
-	interruptor.name = "FlorDetectora_1712"
-	interruptor.position = Vector2(1712.0, 448.0)
-	add_child(interruptor)
+	# Flores saltarinas colocadas en cruces: ayudan a explorar rutas verticales.
+	for posicion in [
+		Vector2(1184.0, 448.0),
+		Vector2(2080.0, 896.0),
+		Vector2(3104.0, 960.0),
+		Vector2(4032.0, -128.0),
+		Vector2(4704.0, 448.0)
+	]:
+		var planta := BOUNCE_FLORA_SCRIPT.new() as Area2D
+		planta.name = "FloraImpulsora_%d" % int(posicion.x)
+		planta.position = posicion
+		add_child(planta)
 
-	# Corrientes ascendentes que ayudan a recorrer las rutas altas de Arboleda.
+	# Corrientes de aire en la parte alta para conectar las rutas de las copas.
 	for configuracion in [
-		{"posicion": Vector2(1680.0, 180.0), "direccion": Vector2(-0.12, -1.0), "fuerza": 560.0},
-		{"posicion": Vector2(3020.0, 40.0), "direccion": Vector2(0.55, -0.85), "fuerza": 490.0},
-		{"posicion": Vector2(4380.0, -170.0), "direccion": Vector2(0.1, -1.0), "fuerza": 620.0}
+		{"posicion": Vector2(2700.0, -180.0), "direccion": Vector2(-0.15, -1.0), "fuerza": 500.0},
+		{"posicion": Vector2(3550.0, -460.0), "direccion": Vector2(0.45, -0.9), "fuerza": 540.0},
+		{"posicion": Vector2(4380.0, -520.0), "direccion": Vector2(0.1, -1.0), "fuerza": 570.0}
 	]:
 		var corriente := WIND_CURRENT_SCRIPT.new() as Area2D
 		corriente.name = "CorrienteAerea_%d" % int(configuracion["posicion"].x)
@@ -565,18 +575,6 @@ func _crear_mecanicas_ambientales() -> void:
 		corriente.set("direction", configuracion["direccion"])
 		corriente.set("acceleration", float(configuracion["fuerza"]))
 		add_child(corriente)
-
-	# Hongos elásticos: permiten ganar altura y enlazar plataformas alternativas.
-	for posicion in [
-		Vector2(1240.0, 448.0),
-		Vector2(2520.0, 448.0),
-		Vector2(3900.0, 448.0)
-	]:
-		var planta := BOUNCE_FLORA_SCRIPT.new() as Area2D
-		planta.name = "FloraImpulsora_%d" % int(posicion.x)
-		planta.position = posicion
-		add_child(planta)
-
 
 func _configurar_camara() -> void:
 	if not is_instance_valid(_player):
@@ -589,18 +587,18 @@ func _configurar_camara() -> void:
 	camara.zoom = Vector2(1.35, 1.35)
 	camara.make_current()
 	camara.reset_smoothing()
-	# La cámara queda contenida en el rectángulo del mapa y el terreno.
 	camara.limit_left = 0
 	camara.limit_right = LEVEL_WIDTH_TILES * TILE_SIZE
-	camara.limit_top = -1900
-	camara.limit_bottom = 1500
+	camara.limit_top = -2600
+	camara.limit_bottom = 1600
 	camara.limit_smoothed = false
 	camara.position_smoothing_enabled = true
 	camara.position_smoothing_speed = 5.5
 	camara.drag_horizontal_enabled = true
-	camara.drag_vertical_enabled = false
-	print("Saltus: cámara activa=", camara.is_current(), " jugador=", _player.global_position, " tiles=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0)
-
+	camara.drag_vertical_enabled = true
+	camara.drag_top_margin = 0.18
+	camara.drag_bottom_margin = 0.18
+	print("Saltus V2: cámara vertical activa | límites=", camara.limit_left, ",", camara.limit_top, " -> ", camara.limit_right, ",", camara.limit_bottom)
 
 func _animar_activacion_checkpoint(checkpoint: Area2D, sprite: Sprite2D) -> void:
 	var onda := Line2D.new()
