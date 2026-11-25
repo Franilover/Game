@@ -57,7 +57,9 @@ func get_discovered_room_ids() -> Array[StringName]:
 
 func get_connections_for_room(
 	room_id: StringName,
-	include_locked: bool = true
+	include_locked: bool = true,
+	abilities: Dictionary = {},
+	world_flags: Dictionary = {}
 ) -> Array[SaltusWorldConnection]:
 	var result: Array[SaltusWorldConnection] = []
 	for connection in connections:
@@ -65,7 +67,7 @@ func get_connections_for_room(
 			continue
 		if not connection.allows_departure_from(room_id):
 			continue
-		if include_locked or _unlocked_connections.has(connection.connection_id):
+		if include_locked or can_traverse(connection.connection_id, room_id, abilities, world_flags):
 			result.append(connection)
 	return result
 
