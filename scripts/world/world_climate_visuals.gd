@@ -58,6 +58,8 @@ var _textura_lluvia: Texture2D
 var _textura_nieve: Texture2D
 var _ultimo_tipo_clima: String = ""
 var _climate_profile_id: String = ""
+var _clima_fijo_activo: bool = false
+var _clima_fijo_tipo: String = "despejado"
 
 
 func _ready() -> void:
@@ -146,6 +148,17 @@ func _actualizar_area_particulas() -> void:
 
 
 func _obtener_estado_climatico() -> Dictionary:
+	if _clima_fijo_activo:
+		var perfiles := {
+			"despejado": {"precipitacion": 0.0, "visibilidad": 1.0, "viento": 0.12},
+			"nublado": {"precipitacion": 0.0, "visibilidad": 0.88, "viento": 0.22},
+			"lluvia": {"precipitacion": 0.72, "visibilidad": 0.72, "viento": 0.42},
+			"tormenta": {"precipitacion": 1.0, "visibilidad": 0.48, "viento": 0.88},
+			"niebla": {"precipitacion": 0.0, "visibilidad": 0.28, "viento": 0.04},
+			"nieve": {"precipitacion": 0.68, "visibilidad": 0.66, "viento": 0.30}
+		}
+		var perfil: Dictionary = perfiles.get(_clima_fijo_tipo, perfiles["despejado"])
+		return {"clima": {"tipo": _clima_fijo_tipo, "intensidad": 1.0, "precipitacion": perfil["precipitacion"], "visibilidad": perfil["visibilidad"], "viento": perfil["viento"]}}
 	if _climate_system == null or not is_instance_valid(_climate_system):
 		return {}
 	if is_instance_valid(_player) and _climate_system.has_method("obtener_estado_para_posicion"):
@@ -208,3 +221,16 @@ func _actualizar_particulas(clima: Dictionary) -> void:
 		_material_particulas.scale_min = 0.7
 		_material_particulas.scale_max = 1.15
 	_particulas.emitting = true
+
+
+## Fija el clima mientras esta escena permanezca activa.
+func establecer_clima_fijo(tipo: String) -> void:
+	var tipos_validos := ["despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve"]
+	_clima_fijo_tipo = tipo if tipo in tipos_validos else "despejado"
+	_clima_fijo_activo = true
+	_actualizar_efectos()
+
+
+func restablecer_clima_dinamico() -> void:
+	_clima_fijo_activo = false
+	_actualizar_efectos()
