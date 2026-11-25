@@ -589,7 +589,7 @@ func _obtener_sprite_aldeano(personaje: Dictionary) -> Texture2D:
 
 func _cargar_sprite_personaje_torres(clave: String) -> Texture2D:
 	var nombre := clave.strip_edges()
-	if nombre.is_empty() or nombre.contains("/") or nombre.contains("\\\\"):
+	if nombre.is_empty() or nombre.contains("/") or nombre.contains("\\"):
 		return null
 	var directorios := [
 		"res://assets/art/kingdom/Torres/Personajes/",
