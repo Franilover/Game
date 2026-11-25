@@ -29,6 +29,14 @@ func _ready() -> void:
 			sprite.texture = _idle_texture
 
 
+func _input(event: InputEvent) -> void:
+	# En la expedición 2D, ESPACIO es exclusivamente salto.
+	if event is InputEventKey:
+		var tecla := event as InputEventKey
+		if (tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE) and tecla.pressed and not tecla.echo:
+			_jump_requested = true
+
+
 func _unhandled_input(event: InputEvent) -> void:
 	if event is InputEventKey:
 		var key := event as InputEventKey
