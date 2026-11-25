@@ -36,6 +36,7 @@ func _run() -> void:
 	root.call("_crear_criaturas")
 	root.call("_crear_ambiente")
 	root.call("_crear_mecanicas_ambientales")
+	_materializar_componentes_visuales(root)
 
 	_organizar_nodos(root)
 	root.set("contenido_escena_preconstruido", true)
@@ -104,3 +105,70 @@ func _asignar_owner_recursivo(nodo: Node, root: Node) -> void:
 	nodo.owner = root
 	for hijo: Node in nodo.get_children():
 		_asignar_owner_recursivo(hijo, root)
+
+func _materializar_componentes_visuales(root: Node) -> void:
+	for nodo: Node in root.get_children():
+		if nodo.name.begins_with("FloraImpulsora"):
+			_agregar_circulo(nodo, 22.0, Vector2(0.0, -12.0))
+			_agregar_sprite(nodo, "FlorSaltarinaSprite", "res://assets/art/kingdom/Saltus/2D Section/Flor Saltarina.png")
+		elif nodo.name.begins_with("FlorDetectora"):
+			_agregar_circulo(nodo, 28.0, Vector2(0.0, -16.0))
+			_agregar_sprite(nodo, "Sprite2D", "res://assets/art/kingdom/Saltus/2D Section/Flor Detectora.png")
+		elif nodo.name == "PuertaFlorDetectora":
+			var tamano: Vector2 = nodo.get("gate_size")
+			var colision := CollisionShape2D.new()
+			var rectangulo := RectangleShape2D.new()
+			rectangulo.size = tamano
+			colision.shape = rectangulo
+			nodo.add_child(colision)
+			var visual := Polygon2D.new()
+			visual.name = "Visual"
+			visual.polygon = PackedVector2Array([
+				Vector2(-tamano.x * 0.5, -tamano.y * 0.5),
+				Vector2(tamano.x * 0.5, -tamano.y * 0.5),
+				Vector2(tamano.x * 0.5, tamano.y * 0.5),
+				Vector2(-tamano.x * 0.5, tamano.y * 0.5)
+			])
+			visual.color = nodo.get("gate_color")
+			nodo.add_child(visual)
+		elif nodo.name.begins_with("CorrienteAerea"):
+			var colision := CollisionShape2D.new()
+			var rectangulo := RectangleShape2D.new()
+			rectangulo.size = Vector2(280.0, 190.0)
+			colision.shape = rectangulo
+			nodo.add_child(colision)
+			var indicador := Node2D.new()
+			indicador.name = "IndicadorCorriente"
+			nodo.add_child(indicador)
+			for indice in range(3):
+				var linea := Line2D.new()
+				linea.width = 3.0
+				linea.default_color = Color(0.78, 0.88, 0.66, 0.52)
+				linea.points = PackedVector2Array([
+					Vector2(-72.0, 30.0 + indice * 22.0),
+					Vector2(-24.0, 8.0 + indice * 22.0),
+					Vector2(24.0, 14.0 + indice * 22.0),
+					Vector2(72.0, -8.0 + indice * 22.0)
+				])
+				linea.z_index = 3
+				indicador.add_child(linea)
+
+
+func _agregar_circulo(parent: Node, radio: float, posicion: Vector2) -> void:
+	var colision := CollisionShape2D.new()
+	var circulo := CircleShape2D.new()
+	circulo.radius = radio
+	colision.shape = circulo
+	colision.position = posicion
+	parent.add_child(colision)
+
+
+func _agregar_sprite(parent: Node, nombre: String, ruta: String) -> void:
+	var sprite := Sprite2D.new()
+	sprite.name = nombre
+	sprite.texture = load(ruta) as Texture2D
+	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	sprite.scale = Vector2(2.0, 2.0)
+	if sprite.texture != null:
+		sprite.position.y = -sprite.texture.get_height() * sprite.scale.y * 0.5
+	parent.add_child(sprite)
