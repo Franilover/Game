@@ -21,9 +21,9 @@ const NEIGHBORS: Array[TileSet.CellNeighbor] = [
 	TileSet.CELL_NEIGHBOR_BOTTOM_RIGHT_CORNER,
 ]
 const BUILDINGS: Array[Dictionary] = [
-	{"name": "Centro de Expediciones", "path": "res://assets/art/kingdom/Froslia/Centro de Expediciones.png", "position": Vector2(-320.0, -240.0), "target_size": Vector2(136.0, 120.0)},
-	{"name": "Escuela", "path": "res://assets/art/kingdom/Froslia/Escuela.png", "position": Vector2(0.0, -400.0), "target_size": Vector2(132.0, 112.0)},
-	{"name": "Cuartel de la Guardia", "path": "res://assets/art/kingdom/Froslia/Cuartel_de_la_Guardia.png", "position": Vector2(320.0, -240.0), "target_size": Vector2(132.0, 112.0)},
+	{"name": "Centro de Expediciones", "path": "res://assets/art/kingdom/Froslia/Edificios/Centro de Expediciones.png", "position": Vector2(-320.0, -240.0), "target_size": Vector2(136.0, 120.0)},
+	{"name": "Escuela", "path": "res://assets/art/kingdom/Froslia/Edificios/Escuela.png", "position": Vector2(0.0, -400.0), "target_size": Vector2(132.0, 112.0)},
+	{"name": "Cuartel de la Guardia", "path": "res://assets/art/kingdom/Froslia/Edificios/Cuartel_de_la_Guardia.png", "position": Vector2(320.0, -240.0), "target_size": Vector2(132.0, 112.0)},
 ]
 
 var _terrain_layers: Array[TileMapDual] = []

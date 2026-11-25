@@ -3,7 +3,7 @@ extends ColorRect
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const APPEARANCE_PREVIEW_SCENE = preload("res://scenes/ui/character_appearance_preview.tscn")
 const APPEARANCE_OPTION_ROW_SCENE = preload("res://scenes/ui/character_appearance_option_row.tscn")
-const BASE_CHARACTER_TEXTURE = preload("res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png")
+const BASE_CHARACTER_TEXTURE = preload("res://assets/art/characters/Sprite-0004.png")
 
 signal confirmed(config: Dictionary, action: String)
 signal cancelled
