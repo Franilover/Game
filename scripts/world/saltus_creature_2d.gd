@@ -1,3 +1,4 @@
+@tool
 extends CharacterBody2D
 class_name SaltusCreature2D
 
@@ -39,6 +40,8 @@ var _flaxis_phase: float = 0.0
 
 
 func _ready() -> void:
+	if Engine.is_editor_hint():
+		return
 	_rng.randomize()
 	_home_x = global_position.x
 	_flaxis_hover_origin = global_position
