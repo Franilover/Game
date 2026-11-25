@@ -30,6 +30,31 @@ var _player: SaltusPlayer
 var _platforms: Array[Dictionary] = []
 
 
+func _ready() -> void:
+	_player = get_node_or_null("Player") as SaltusPlayer
+	if not is_instance_valid(_player):
+		push_error("Saltus: no se encontró el nodo Player.")
+		return
+
+	_player.visible = true
+	_player.position = Vector2(96.0, float(GROUND_TOP * TILE_SIZE - 40))
+	_player.velocity = Vector2.ZERO
+	_player.z_as_relative = false
+	_player.z_index = 100
+	var sprite := _player.get_node_or_null("Sprite2D") as Sprite2D
+	if is_instance_valid(sprite):
+		sprite.visible = true
+		sprite.z_as_relative = true
+		sprite.z_index = 0
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+
+	_crear_terreno()
+	_crear_arboleda()
+	_crear_ambiente()
+	_configurar_camara()
+	print("Saltus: inicializado | terreno=", is_instance_valid(_terrain_layer), " | celdas=", _terrain_layer.get_used_cells().size() if is_instance_valid(_terrain_layer) else 0, " | jugador=", _player.global_position)
+
+
 func _process(_delta: float) -> void:
 	if is_instance_valid(_player) and _player.global_position.y > 900.0:
 		_player.global_position = Vector2(96.0, float(GROUND_TOP * TILE_SIZE - 40))
