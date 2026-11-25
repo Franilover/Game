@@ -4,6 +4,9 @@ extends Area2D
 const TEXTURE_PATH: String = "res://assets/art/kingdom/Saltus/2D Section/Flor Saltarina.png"
 signal bounced(body: Node2D)
 
+var _sprite: Sprite2D
+var _bounce_tween: Tween
+
 @export_range(-1200.0, -200.0, 10.0) var bounce_velocity: float = -610.0
 @export var affects_group: StringName = &"saltus_player"
 
@@ -34,15 +37,36 @@ func _al_entrar_en_contacto(body: Node2D) -> void:
 	velocidad.y = bounce_velocity
 	body.set("velocity", velocidad)
 	bounced.emit(body)
+	_animar_compresion()
 
 func _crear_visual() -> void:
-	var sprite := Sprite2D.new()
-	sprite.name = "FlorSaltarinaSprite"
-	sprite.texture = load(TEXTURE_PATH) as Texture2D
-	sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-	sprite.scale = Vector2(2.0, 2.0)
-	if sprite.texture != null:
-		sprite.position.y = -sprite.texture.get_height() * sprite.scale.y * 0.5
-	add_child(sprite)
-	if sprite.texture == null:
+	 _sprite = Sprite2D.new()
+	_sprite.name = "FlorSaltarinaSprite"
+	_sprite.texture = load(TEXTURE_PATH) as Texture2D
+	_sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite.scale = Vector2(2.0, 2.0)
+	if _sprite.texture != null:
+		_sprite.position.y = -_sprite.texture.get_height() * _sprite.scale.y * 0.5
+	add_child(_sprite)
+	if _sprite.texture == null:
 		push_error("Saltus: no se pudo cargar " + TEXTURE_PATH)
+
+
+func _animar_compresion() -> void:
+	if not is_instance_valid(_sprite) or _sprite.texture == null:
+		return
+	if _bounce_tween != null and _bounce_tween.is_running():
+		_bounce_tween.kill()
+	var base := Vector2(2.0, 2.0)
+	var altura := float(_sprite.texture.get_height())
+	_bounce_tween = create_tween()
+	_bounce_tween.set_trans(Tween.TRANS_BACK)
+	_bounce_tween.set_ease(Tween.EASE_OUT)
+	_bounce_tween.tween_property(_sprite, "scale", Vector2(2.35, 1.45), 0.09)
+	_bounce_tween.parallel().tween_property(_sprite, "position:y", -altura * 1.45, 0.09)
+	_bounce_tween.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	_bounce_tween.tween_property(_sprite, "scale", Vector2(1.72, 2.55), 0.13)
+	_bounce_tween.parallel().tween_property(_sprite, "position:y", -altura * 2.55, 0.13)
+	_bounce_tween.set_trans(Tween.TRANS_ELASTIC).set_ease(Tween.EASE_OUT)
+	_bounce_tween.tween_property(_sprite, "scale", base, 0.28)
+	_bounce_tween.parallel().tween_property(_sprite, "position:y", -altura * 2.0, 0.28)
