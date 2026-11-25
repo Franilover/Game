@@ -19,20 +19,9 @@
 - El prototipo automático de depuración quedó deshabilitado y retirado del pipeline. Los Garumis sólo se ven si una escena del nivel instancia explícitamente su escena correspondiente.
 - Al iniciar el mundo se imprimen cantidades de catálogo, registros con aparición y sprites disponibles; al materializar una instancia aparece su ID/nombre y el estado del sprite.
 
-### Disponibilidad visual en depuración (corrección inmediata)
+### Aparición controlada por escenas
 
-La vista de depuración utiliza `asset_key = Oruvan` y probabilidad de prueba 1.0 si el catálogo sigue vacío, bajo `OS.is_debug_build()`. Tras la integración, el registro canónico de Oruvan usa el mismo `Oruvan.svg` desde `garumis_game`. El dibujo actual sigue siendo provisional y no debe interpretarse como el diseño visual definitivo.
-
-### Fase de aparición activa: generación 1 de Orumi
-
-- Sólo se admite `categoria_garumi = "normal"`.
-- `original_id` debe coincidir con el ID de Orumi en `public.garumi_originales`: `24f86486-aced-4a23-bd1b-f025561a8aa3`.
-- `numero_origen` debe ser exactamente `1`; generaciones posteriores quedan fuera.
-- Si el registro trae `estado_documentacion`, debe ser `aprobado` o `canon`. Si ese campo falta en el snapshot, el exportador debe filtrar los estados no aprobados antes de emitir `garumis_game`.
-- Orumi y Varum/Nyru no se generan como entidades: son Originales. Los descendientes de los otros dos linajes también quedan fuera.
-- La consulta identificó a **Oruvan** como descendiente normal de primera generación de Orumi (ID `4a409bba-fc4a-4b58-931f-9af1a6831710`). Para esta prueba se marcó como `canon`; el RPC lo suministra únicamente para el filtro de Orumi generación 1.
-
-La configuración vive en `WorldEntitySpawner`: `garumi_original_id_habilitado` y `garumi_generacion_habilitada`. Los filtros se prueban en `tests/world/test_garumi_world_presence.gd`. Esta selección no modifica los registros de Supabase.
+El catálogo `garumis_game` conserva los datos canónicos y ecológicos, pero ya no decide apariciones automáticas. Para incluir un Garumi en un mapa, instancia su escena concreta desde `scenes/garumis/` dentro de la escena del nivel. El fallback de depuración también está deshabilitado.
 
 ### Contrato de datos esperado por Godot
 
