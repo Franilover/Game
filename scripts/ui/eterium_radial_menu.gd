@@ -90,6 +90,27 @@ func _input(event: InputEvent) -> void:
 		return
 	var tecla := event as InputEventKey
 	var es_espacio := tecla.keycode == KEY_SPACE or tecla.physical_keycode == KEY_SPACE
+
+	# En Saltus, ESPACIO queda libre para saltar. H concentra Eterium y
+	# CTRL+H activa el minijuego de curación por pulsaciones.
+	if _esta_en_saltus():
+		if es_espacio:
+			return
+		var es_h := tecla.keycode == KEY_H or tecla.physical_keycode == KEY_H
+		if not es_h:
+			return
+		if tecla.pressed:
+			if tecla.ctrl_pressed:
+				if _estado_minijuego != "curacion":
+					_iniciar_minijuego_curacion()
+				if _estado_minijuego == "curacion":
+					_registrar_toque_curacion()
+			elif not tecla.echo:
+				_al_presionar_espacio()
+		else:
+			_al_soltar_espacio()
+		get_viewport().set_input_as_handled()
+		return
 	if es_espacio:
 		if tecla.pressed and not tecla.echo:
 			if _estado_minijuego == "curacion":
@@ -125,6 +146,11 @@ func _input(event: InputEvent) -> void:
 			get_viewport().set_input_as_handled()
 
 
+func _esta_en_saltus() -> bool:
+	var gestor := get_tree().get_first_node_in_group("zone_manager")
+	return is_instance_valid(gestor) and gestor.has_method("obtener_tipo_actual") and str(gestor.call("obtener_tipo_actual")) == "expedicion:saltus"
+
+
 func _process(delta: float) -> void:
 	# También conserva el botón de concentración del mando (stick derecho).
 	var concentracion_mantenida := Input.is_action_pressed("focus")
@@ -141,7 +167,7 @@ func _process(delta: float) -> void:
 	if _estado_minijuego == "concentracion" and _espacio_pulsado:
 		_tiempo_sostenido += delta
 		_minijuego_barra.value = minf(100.0, _tiempo_sostenido / TIEMPO_CONCENTRACION * 100.0)
-		_actualizar_panel_minijuego("CONCENTRANDO", "Mantén ESPACIO para recuperar Eterium.")
+		_actualizar_panel_minijuego("CONCENTRANDO", "Mantén %s para recuperar Eterium." % ("H" if _esta_en_saltus() else "ESPACIO"))
 		if _tiempo_sostenido >= TIEMPO_CONCENTRACION:
 			_completar_meditacion()
 	_actualizar_indicador_tiempo()
@@ -209,7 +235,7 @@ func _iniciar_minijuego_curacion() -> void:
 	_tiempo_minijuego = DURACION_CURACION
 	_toques_curacion = 0
 	_mostrar_minijuego()
-	_actualizar_panel_minijuego("Curación · 0/%d" % TOQUES_CURACION_NECESARIOS, "Pulsa ESPACIO tantas veces como puedas durante 5 segundos.")
+	_actualizar_panel_minijuego("Curación · 0/%d" % TOQUES_CURACION_NECESARIOS, "Pulsa %s tantas veces como puedas durante 5 segundos." % ("H" if _esta_en_saltus() else "ESPACIO"))
 	_minijuego_barra.value = 0.0
 	_minijuego_tiempo.visible = true
 	_minijuego_tiempo.value = 100.0
@@ -222,7 +248,7 @@ func _registrar_toque_curacion() -> void:
 	_minijuego_barra.value = float(_toques_curacion) / float(TOQUES_CURACION_NECESARIOS) * 100.0
 	_actualizar_panel_minijuego(
 		"Curación · %d/%d" % [_toques_curacion, TOQUES_CURACION_NECESARIOS],
-		"Pulsa ESPACIO hasta completar la barra."
+		"Pulsa %s hasta completar la barra." % ("H" if _esta_en_saltus() else "ESPACIO")
 	)
 	if _toques_curacion >= TOQUES_CURACION_NECESARIOS:
 		_completar_curacion()
