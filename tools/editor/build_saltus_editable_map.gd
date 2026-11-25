@@ -18,7 +18,20 @@ func _run() -> void:
 		push_error("Saltus: abre scenes/world/expedicion_saltus.tscn antes de ejecutar este script.")
 		return
 	if bool(root.get("contenido_escena_preconstruido")):
-		push_warning("Saltus: la escena ya está convertida. No vuelvas a ejecutar el constructor.")
+		# La escena ya existe: repara los propietarios para habilitar su edición
+		# sin regenerar ni duplicar plantas, criaturas, terreno o mecanismos.
+		for hijo: Node in root.get_children():
+			_asignar_owner_recursivo(hijo, root)
+		var escena_existente := PackedScene.new()
+		var error_pack := escena_existente.pack(root)
+		if error_pack != OK:
+			push_error("Saltus: no se pudo preparar la escena para edición: " + error_string(error_pack))
+			return
+		var error_guardado := ResourceSaver.save(escena_existente, SCENE_PATH)
+		if error_guardado != OK:
+			push_error("Saltus: no se pudo guardar la escena editable: " + error_string(error_guardado))
+			return
+		print("Saltus: propietarios reparados. Flores, bloques, criaturas y mecanismos ya pertenecen a la escena y pueden editarse.")
 		return
 
 	# La raíz abierta puede ser un PlaceholderScriptInstance aunque el script
