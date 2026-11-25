@@ -49,10 +49,13 @@ func _ready() -> void:
 	_tileset_watcher = TileSetWatcher.new(tile_set)
 	_display = Display.new(self, _tileset_watcher)
 	add_child(_display)
-	_make_self_invisible(true)
 	if Engine.is_editor_hint():
+		# En el editor mostramos la capa fuente para poder pintar/borrar celdas.
+		# La capa Dual es una representación calculada y no debe interceptar la edición.
+		_display.visible = false
 		_tileset_watcher.atlas_autotiled.connect(_atlas_autotiled)
 		set_process(true)
+	_make_self_invisible(true)
 	else: # Run in-game using signals for better performance
 		changed.connect(_changed, 1)
 		set_process(false)
@@ -119,6 +122,14 @@ func _atlas_autotiled(source_id: int, atlas: TileSetAtlasSource):
 ##[br] The main tiles don't need to be seen. Only the DisplayLayers should be visible.
 ##[br] Called every frame, and functions a lot like TileSetWatcher.
 func _make_self_invisible(startup: bool = false) -> void:
+	# El editor debe mostrar las celdas fuente para permitir pintar y borrar.
+	# En runtime se conserva el material fantasma y el renderer Dual habitual.
+	if Engine.is_editor_hint():
+		material = null
+		if is_instance_valid(_display):
+			_display.visible = false
+		return
+
 	# If user has set a material in the original slot, inform the user
 	if material != _ghost_material:
 		if not startup and Engine.is_editor_hint():
