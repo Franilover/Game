@@ -1024,7 +1024,7 @@ func _seleccionar_registro_dialogo(indice: int) -> void:
 func _mostrar_detalle_aldeano() -> void:
 	var nombre := str(_seleccion.get("nombre", "Personaje"))
 	var personaje_id := str(_seleccion.get("id", ""))
-	var npc := _buscar_npc_aldeano(personaje_id, nombre)
+	var npc: Creature = _buscar_npc_aldeano(personaje_id, nombre)
 	var retrato := TextureRect.new()
 	retrato.custom_minimum_size = Vector2(120, 120)
 	retrato.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -1278,7 +1278,7 @@ func _mostrar_lineas_escena_admin(titulo: String, valor: Variant) -> void:
 		var hablante := _nombre_con_inicial_mayuscula(str(linea.get("npc", "")))
 		var fila := HBoxContainer.new()
 		fila.add_theme_constant_override("separation", 6)
-		var npc := _buscar_npc_aldeano("", str(linea.get("npc", "")))
+		var npc: Creature = _buscar_npc_aldeano("", str(linea.get("npc", "")))
 		if is_instance_valid(npc):
 			var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 			if is_instance_valid(sprite) and is_instance_valid(sprite.texture):
@@ -1309,8 +1309,8 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 		return
 	var nombre_a := str(escena.get("npc_a", ""))
 	var nombre_b := str(escena.get("npc_b", ""))
-	var npc_a := _buscar_npc_aldeano("", nombre_a)
-	var npc_b := _buscar_npc_aldeano("", nombre_b)
+	var npc_a: Creature = _buscar_npc_aldeano("", nombre_a)
+	var npc_b: Creature = _buscar_npc_aldeano("", nombre_b)
 	if npc_a == null or npc_b == null:
 		_estado.text = "Ambos NPC deben estar presentes en la zona actual."
 		return
@@ -1321,9 +1321,9 @@ func _ver_escena_admin(escena: Dictionary) -> void:
 	# queda completamente visible y el jugador no conserva el foco de la UI.
 	if is_instance_valid(_inventario) and _inventario.has_method("cerrar"):
 		_inventario.cerrar()
-	var centro := (npc_a.global_position + npc_b.global_position) * 0.5
+	var centro: Vector2 = (npc_a.global_position + npc_b.global_position) * 0.5
 	var camara := get_viewport().get_camera_2d()
-	var distancia := npc_a.global_position.distance_to(npc_b.global_position)
+	var distancia: float = npc_a.global_position.distance_to(npc_b.global_position)
 	# Ajustar el encuadre para que ambos personajes y el espacio entre ellos
 	# queden visibles, incluso cuando la escena ocurre dentro de un edificio.
 	var zoom := clampf(2.35 - distancia / 420.0, 1.25, 2.35)
@@ -1628,7 +1628,7 @@ func _buscar_npc_aldeano(personaje_id: String, nombre: String) -> Creature:
 	for npc_variant in get_tree().get_nodes_in_group("torres_game_npc"):
 		if not npc_variant is Creature or not is_instance_valid(npc_variant):
 			continue
-		var npc := npc_variant as Creature
+		var npc: Creature = npc_variant as Creature
 		if not personaje_id.is_empty() and str(npc.datos.get("personaje_game_id", "")) == personaje_id:
 			return npc
 		if str(npc.get_nombre_visual()).strip_edges().to_lower() == nombre.strip_edges().to_lower():
@@ -1659,7 +1659,7 @@ func _guardar_relacion_aldeano() -> void:
 func _teletransportar_a_aldeano() -> void:
 	if not _es_admin() or _seleccion.is_empty():
 		return
-	var npc := _buscar_npc_aldeano(str(_seleccion.get("id", "")), str(_seleccion.get("nombre", "")))
+	var npc: Creature = _buscar_npc_aldeano(str(_seleccion.get("id", "")), str(_seleccion.get("nombre", "")))
 	if npc == null:
 		_estado.text = "El personaje no está presente en esta zona."
 		return
