@@ -34,6 +34,10 @@ func _unhandled_input(event: InputEvent) -> void:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo and (key.keycode == KEY_SPACE or key.physical_keycode == KEY_SPACE):
 			_jump_requested = true
+		elif key.pressed and not key.echo and (key.keycode == KEY_E or key.physical_keycode == KEY_E):
+			var gestor := get_tree().get_first_node_in_group("zone_manager")
+			if is_instance_valid(gestor) and gestor.has_method("salir_expedicion_saltus"):
+				gestor.call("salir_expedicion_saltus")
 
 
 func _physics_process(delta: float) -> void:
