@@ -56,7 +56,8 @@ func _run() -> void:
 		root.add_child(nodo)
 		if nodo is Node2D:
 			(nodo as Node2D).global_transform = transformacion
-	factory.queue_free()
+	root.remove_child(factory)
+	factory.free()
 
 	_organizar_nodos(root)
 	root.set("contenido_escena_preconstruido", true)
