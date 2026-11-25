@@ -260,10 +260,9 @@ func _crear_criaturas() -> void:
 		flaxis.attack_damage = 8
 
 
-func _crear_criatura(especie: String, posicion: Vector2) -> Node2D:
-	var criatura := CharacterBody2D.new()
+func _crear_criatura(especie: String, posicion: Vector2) -> SaltusCreature2D:
+	var criatura := SALTUS_CREATURE_SCRIPT.new() as SaltusCreature2D
 	criatura.name = "%s_%d" % [especie, int(posicion.x)]
-	criatura.set_script(SALTUS_CREATURE_SCRIPT)
 	criatura.especie = especie
 	criatura.position = posicion
 	criatura.z_as_relative = false
