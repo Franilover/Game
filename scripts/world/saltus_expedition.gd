@@ -7,6 +7,9 @@ const TILESET_TEXTURE_PATH: String = "res://assets/tilesets/Bosque.png"
 const TREE_TEXTURE_PATH: String = "res://assets/art/props/Árbol.png"
 const LEAF_TEXTURE_PATH: String = "res://assets/art/items/Hojas.png"
 const LEVEL_WIDTH_TILES: int = 120
+
+@export_enum("despejado", "nublado", "lluvia", "tormenta", "niebla", "nieve") var clima_escena: String = "despejado"
+@export var iluminacion_escena: Color = Color("#FFFDF2")
 const GROUND_TOP: int = 14
 const TILE_SEQUENCE: Array[Vector2i] = [
 	Vector2i(0, 3), Vector2i(3, 3),
