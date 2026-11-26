@@ -179,6 +179,13 @@ func _crear_terreno() -> void:
 	# Variante visualmente idéntica para plataformas, con colisión unidireccional.
 	atlas.create_alternative_tile(TILE_ATLAS_DEFAULT, 1)
 	var tile_plataforma := atlas.get_tile_data(TILE_ATLAS_DEFAULT, 1)
+	# TileMapDual clasifica cada celda mediante los metadatos de terreno.
+	# La alternativa de plataforma debe conservar el terreno visual del tile base;
+	# solo cambia su colisión a unidireccional.
+	tile_plataforma.terrain_set = 0
+	tile_plataforma.terrain = 1
+	for neighbor in CORNER_NEIGHBORS:
+		tile_plataforma.set_terrain_peering_bit(neighbor, 1)
 	_configurar_colision_tile(tile_plataforma, true)
 	_terrain_layer = TileMapDual.new()
 	_terrain_layer.name = "TerrenoSaltusV2"
