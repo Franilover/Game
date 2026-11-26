@@ -47,18 +47,27 @@ var _diag_sample_reverse_path_ms: float = 0.0
 
 
 func _init(
+		world: TileMapDual = null,
+		tileset_watcher: TileSetWatcher = null,
+		fields: Dictionary = {},
+		layer: TerrainLayer = null,
+) -> void:
+	# Compatibilidad con DisplayLayer que pudo quedar serializado dentro de
+	# una escena antigua. El Display padre lo reemplazará al reconstruir capas.
+	if world != null and tileset_watcher != null and layer != null:
+		inicializar(world, tileset_watcher, fields, layer)
+
+
+func inicializar(
 		world: TileMapDual,
 		tileset_watcher: TileSetWatcher,
 		fields: Dictionary,
 		layer: TerrainLayer,
 ) -> void:
-	#print('initializing Layer...')
 	update_properties(world)
-	offset = fields.offset
+	offset = fields.get("offset", Vector2.ZERO)
 	_tileset_watcher = tileset_watcher
 	_terrain = layer
-	# Invertir cada ruta una sola vez. El resultado es idéntico a map()
-	# en cada flush, pero evita crear Arrays y Callable temporales por lote.
 	_reverse_display_paths.clear()
 	for path: Array in _terrain.display_to_world_neighborhood:
 		var reverse_path: Array = []
@@ -66,7 +75,8 @@ func _init(
 			reverse_path.append(Util.reverse_neighbor(neighbor))
 		_reverse_display_paths.append(reverse_path)
 	tile_set = tileset_watcher.tile_set
-	tileset_watcher.tileset_resized.connect(reposition, 1)
+	if not tileset_watcher.tileset_resized.is_connected(reposition):
+		tileset_watcher.tileset_resized.connect(reposition, 1)
 	reposition()
 
 
