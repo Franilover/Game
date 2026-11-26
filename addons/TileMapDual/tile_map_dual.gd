@@ -49,7 +49,11 @@ func _ready() -> void:
 	_tileset_watcher = TileSetWatcher.new(tile_set)
 	# Compatibilidad con escenas antiguas que guardaron el Display interno.
 	# Se reutiliza esa instancia en vez de crear un renderer duplicado.
-	_display = get_node_or_null("Display") as Display
+	_display = null
+	for hijo: Node in get_children():
+		if hijo is Display:
+			_display = hijo as Display
+			break
 	if is_instance_valid(_display):
 		_display.owner = null
 		_display.inicializar(self, _tileset_watcher)
