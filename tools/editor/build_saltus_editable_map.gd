@@ -6,6 +6,12 @@ extends EditorScript
 const SCENE_PATH := "res://scenes/world/expedicion_saltus.tscn"
 const EXPEDITION_SCRIPT_PATH := "res://scripts/world/saltus_expedition.gd"
 
+# Nombres de los contenedores usados por versiones anteriores del constructor.
+const CATEGORIES := [
+	"Mapa", "Vegetacion", "Criaturas", "Mecanismos", "PuntosDeControl",
+	"Fondos", "Ambiente", "ElementosTutorial", "ElementosEscena"
+]
+
 
 func _run() -> void:
 	var root := get_editor_interface().get_edited_scene_root()
