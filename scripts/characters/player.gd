@@ -779,6 +779,8 @@ func _detectar_agarre_pared() -> void:
 			var colision := get_slide_collision(indice)
 			if colision == null:
 				continue
+			if _es_superficie_unidireccional(colision.get_collider(), colision.get_position()):
+				continue
 			var normal_colision := colision.get_normal()
 			if absf(normal_colision.x) >= 0.72:
 				normal = normal_colision.normalized()
@@ -819,27 +821,30 @@ func _buscar_normal_pared() -> Vector2:
 				continue
 
 			# El sensor de agarre es independiente del CollisionShape2D del
-			# CharacterBody2D. Ignora las plataformas one-way: sus caras laterales
-			# no son paredes sólidas y no deben permitir quedarse colgado en el aire.
+			# CharacterBody2D. Las plataformas one-way no cuentan como paredes.
 			var collider_variant: Variant = impacto.get("collider")
-			if collider_variant is TileMapLayer:
-				var terreno := collider_variant as TileMapLayer
-				var punto_global: Vector2 = impacto.get("position", destino)
-				var celda := terreno.local_to_map(terreno.to_local(punto_global))
-				var datos := terreno.get_cell_tile_data(celda)
-				if datos != null:
-					var es_plataforma_one_way := false
-					for indice_poligono in range(datos.get_collision_polygons_count(0)):
-						if datos.is_collision_polygon_one_way(0, indice_poligono):
-							es_plataforma_one_way = true
-							break
-					if es_plataforma_one_way:
-						continue
+			var punto_global: Vector2 = impacto.get("position", destino)
+			if _es_superficie_unidireccional(collider_variant, punto_global):
+				continue
 
 			var normal: Vector2 = impacto.get("normal", Vector2.ZERO)
 			if absf(normal.x) >= 0.72:
 				return normal.normalized()
 	return Vector2.ZERO
+
+
+func _es_superficie_unidireccional(collider: Object, punto_global: Vector2) -> bool:
+	if not collider is TileMapLayer:
+		return false
+	var terreno := collider as TileMapLayer
+	var celda := terreno.local_to_map(terreno.to_local(punto_global))
+	var datos := terreno.get_cell_tile_data(celda)
+	if datos == null:
+		return false
+	for indice_poligono in range(datos.get_collision_polygons_count(0)):
+		if datos.is_collision_polygon_one_way(0, indice_poligono):
+			return true
+	return false
 
 
 func _procesar_agarre_pared(delta: float) -> bool:
