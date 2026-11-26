@@ -156,7 +156,7 @@ func _categoria_de_nodo(nodo: Node) -> String:
 		return "CorrientesAereas"
 	if nombre == "PuertaFlorDetectora":
 		return "Mecanismos"
-	if nombre == "PuntoDescanso" or nombre.begins_with("@Area2D") and nodo.get_node_or_null("FlorCheckpointSprite") != null:
+	if nombre == "PuntoDescanso" or nombre.begins_with("Checkpoint_") or nombre.begins_with("@Area2D") and nodo.get_node_or_null("FlorCheckpointSprite") != null:
 		return "PuntosDeControl"
 	if nombre.begins_with("Indicacion_"):
 		return "Tutorial"
@@ -286,7 +286,7 @@ func _escena_tiene_contenido_editable(root: Node) -> bool:
 		and _contiene_prefijo(root, "Flaxis_")
 		and _contiene_nombre(root, "PuertaFlorDetectora")
 		and _contiene_prefijo(root, "CorrienteAerea")
-		and _contiene_nombre(root, "PuntoDescanso")
+		and (_contiene_nombre(root, "PuntoDescanso") or _contiene_prefijo(root, "Checkpoint_"))
 		and _contiene_prefijo(root, "Parallax")
 	)
 
