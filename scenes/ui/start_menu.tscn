@@ -2,14 +2,8 @@
 
 [ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
-[ext_resource type="Texture2D" path="res://assets/art/UI/Menus/menu_background.png" id="4_menu_background"]
-[ext_resource type="Script" path="res://scripts/ui/story_navigation.gd" id="5_story_navigation"]
-
-
-
-
-
-
+[ext_resource type="Texture2D" uid="uid://bj8wnbmc7esca" path="res://assets/art/UI/Menus/menu_background.png" id="4_menu_background"]
+[ext_resource type="Script" uid="uid://tjtj2qdx8tme" path="res://scripts/ui/story_navigation.gd" id="5_story_navigation"]
 
 [node name="StartMenu" type="Control" unique_id=560386343]
 layout_mode = 3
@@ -21,6 +15,7 @@ grow_vertical = 2
 script = ExtResource("1_start_menu")
 
 [node name="Background" type="TextureRect" parent="." unique_id=1169627170]
+texture_filter = 1
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -31,7 +26,6 @@ mouse_filter = 2
 texture = ExtResource("4_menu_background")
 expand_mode = 1
 stretch_mode = 6
-texture_filter = 1
 
 [node name="Paper" type="Panel" parent="." unique_id=1398223256]
 layout_mode = 1
@@ -75,11 +69,11 @@ text = "GARLIA"
 horizontal_alignment = 1
 
 [node name="HistoriaButton" type="Button" parent="Center" unique_id=1127389707]
-disabled = true
 custom_minimum_size = Vector2(0, 44)
 layout_mode = 2
 focus_mode = 1
 theme_override_font_sizes/font_size = 18
+disabled = true
 text = "Historia"
 
 [node name="StartButton" type="Button" parent="Center" unique_id=754464902]
@@ -146,7 +140,7 @@ grow_horizontal = 2
 grow_vertical = 2
 color = Color(0.02, 0.015, 0.01, 0.72)
 
-[node name="LoginCenter" type="CenterContainer" parent="LoginOverlay"]
+[node name="LoginCenter" type="CenterContainer" parent="LoginOverlay" unique_id=657865680]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -177,7 +171,6 @@ layout_mode = 2
 theme_override_font_sizes/font_size = 26
 text = "Iniciar sesión"
 horizontal_alignment = 1
-
 
 [node name="EmailLabel" type="Label" parent="LoginOverlay/LoginCenter/LoginPanel/Margin/Content" unique_id=648128192]
 layout_mode = 2
@@ -264,7 +257,6 @@ horizontal_alignment = 1
 [node name="Subtitle" type="Label" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=2002603302]
 layout_mode = 2
 theme_override_font_sizes/font_size = 12
-text = ""
 horizontal_alignment = 1
 
 [node name="HostButton" type="Button" parent="MultiplayerOverlay/MultiplayerPanel/Margin/Content" unique_id=1334370356]
@@ -357,8 +349,12 @@ text = "Volver"
 [node name="CharacterCreation" parent="." unique_id=1640942131 instance=ExtResource("2_character_creation")]
 layout_mode = 0
 anchors_preset = 0
+anchor_right = 0.0
+anchor_bottom = 0.0
+grow_horizontal = 1
+grow_vertical = 1
 
-[node name="HistoriaNavigation" type="Node" parent="."]
+[node name="HistoriaNavigation" type="Node" parent="." unique_id=1107310363]
 script = ExtResource("5_story_navigation")
 
 [connection signal="pressed" from="Center/HistoriaButton" to="HistoriaNavigation" method="abrir_historia"]
