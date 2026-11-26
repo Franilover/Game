@@ -47,7 +47,7 @@ const COMBAT_IMPACT_EFFECTS: Script = preload(
 @export var duracion_ataque: float = 0.20
 @export var color_ataque: Color = Color(0.86, 0.74, 0.52, 0.65)
 
-var player: Player = null
+var player: Entity = null
 var inventory: InventoryController = null
 var world_context: WorldContext = null
 var world_items: GarliaWorldItems = null
@@ -59,17 +59,30 @@ var _tiempo_desde_ataque: float = 0.0
 
 
 func configurar(nuevo_player: Player, nuevo_inventory: InventoryController = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null, nuevo_world_items: GarliaWorldItems = null) -> void:
-	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
 	world_items = nuevo_world_items
 	projectile_root = nuevo_projectile_root
 	game_state = nuevo_game_state
+	configurar_jugador_activo(nuevo_player, nuevo_player.input_gate)
+
+
+## Cambia el actor que ejecuta el combate sin reemplazar inventario ni dependencias.
+## Permite que expediciones con un CharacterBody2D especializado usen el mismo
+## CombatSystem y la misma autoridad de entrada de Main.
+func configurar_jugador_activo(
+	nuevo_jugador: Entity,
+	nuevo_input_gate: GameplayInputGate = null
+) -> void:
+	if nuevo_jugador == null or not is_instance_valid(nuevo_jugador):
+		push_warning("CombatSystem: se rechazó un actor de combate inválido.")
+		return
+	player = nuevo_jugador
 	if not is_instance_valid(combat_controller):
 		combat_controller = CombatController.new()
 	if not combat_controller.is_inside_tree():
 		add_child(combat_controller)
-	combat_controller.configurar_gate(player.input_gate)
+	combat_controller.configurar_gate(nuevo_input_gate)
 
 	print(
 		"CombatSystem: configurado."
@@ -745,8 +758,10 @@ func _obtener_direccion_ataque() -> Vector2:
 	if player == null:
 		return Vector2.DOWN
 
-	var direccion: Vector2 = player.facing
-	if direccion.length_squared() > 0.01:
-		return direccion.normalized()
+	var facing_variant: Variant = player.get("facing")
+	if facing_variant is Vector2:
+		var direccion := facing_variant as Vector2
+		if direccion.length_squared() > 0.01:
+			return direccion.normalized()
 
 	return Vector2.DOWN
