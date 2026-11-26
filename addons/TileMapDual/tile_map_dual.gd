@@ -47,8 +47,16 @@ static func _editor_only(name: String):
 
 func _ready() -> void:
 	_tileset_watcher = TileSetWatcher.new(tile_set)
-	_display = Display.new(self, _tileset_watcher)
-	add_child(_display)
+	# Compatibilidad con escenas antiguas que guardaron el Display interno.
+	# Se reutiliza esa instancia en vez de crear un renderer duplicado.
+	_display = get_node_or_null("Display") as Display
+	if is_instance_valid(_display):
+		_display.owner = null
+		_display.inicializar(self, _tileset_watcher)
+	else:
+		_display = Display.new(self, _tileset_watcher)
+		_display.name = "Display"
+		add_child(_display)
 	if Engine.is_editor_hint():
 		# En el editor mostramos la capa fuente para poder pintar/borrar celdas.
 		# La capa Dual es una representación calculada y no debe interceptar la edición.
