@@ -112,24 +112,27 @@ static func tileset_gridshape(tile_set: TileSet) -> GridShape:
 
 
 ## Creates a new Display that updates when the TileSet updates.
-func _init(world: TileMapDual, tileset_watcher: TileSetWatcher) -> void:
-	#print('initializing Display...')
-	self.world = world
-	_tileset_watcher = tileset_watcher
-	terrain = TerrainDual.new(tileset_watcher)
-	terrain.changed.connect(_terrain_changed, 1)
-	world_tiles_changed.connect(_world_tiles_changed, 1)
-	# El Display es el renderer real de TileMapDual. Debe conservar el Z
-	# absoluto del TileMapDual que lo contiene; de lo contrario sus hijos
-	# pueden terminar en el Z por defecto del canvas.
-	self.z_as_relative = false
-	self.z_index = world.z_index
+func _init(world: TileMapDual = null, tileset_watcher: TileSetWatcher = null) -> void:
+	# Una versión anterior del constructor pudo serializar este nodo dentro
+	# de la escena. En ese caso Godot lo reconstruye con _init() sin argumentos;
+	# TileMapDual lo inicializará desde su propio _ready().
+	if world != null and tileset_watcher != null:
+		inicializar(world, tileset_watcher)
 
-	# El World Layer usa ghost_material para ocultarse. El DisplayLayer
-	# debe conservar su propio display_material; si hereda el material del
-	# padre, también hereda ghost_material y el terreno queda invisible.
+
+func inicializar(world_node: TileMapDual, watcher: TileSetWatcher) -> void:
+	world = world_node
+	_tileset_watcher = watcher
+	terrain = TerrainDual.new(watcher)
+	if not terrain.changed.is_connected(_terrain_changed):
+		terrain.changed.connect(_terrain_changed, 1)
+	if not world_tiles_changed.is_connected(_world_tiles_changed):
+		world_tiles_changed.connect(_world_tiles_changed, 1)
+	# El Display es el renderer real de TileMapDual. Debe conservar el Z
+	# absoluto del TileMapDual que lo contiene.
+	z_as_relative = false
+	z_index = world.z_index
 	use_parent_material = false
-	# Enable Y sorting
 	y_sort_enabled = true
 
 
