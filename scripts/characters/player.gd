@@ -817,6 +817,25 @@ func _buscar_normal_pared() -> Vector2:
 			var impacto := espacio.intersect_ray(consulta)
 			if impacto.is_empty():
 				continue
+
+			# El sensor de agarre es independiente del CollisionShape2D del
+			# CharacterBody2D. Ignora las plataformas one-way: sus caras laterales
+			# no son paredes sólidas y no deben permitir quedarse colgado en el aire.
+			var collider_variant: Variant = impacto.get("collider")
+			if collider_variant is TileMapLayer:
+				var terreno := collider_variant as TileMapLayer
+				var punto_global: Vector2 = impacto.get("position", destino)
+				var celda := terreno.local_to_map(terreno.to_local(punto_global))
+				var datos := terreno.get_cell_tile_data(celda)
+				if datos != null:
+					var es_plataforma_one_way := false
+					for indice_poligono in range(datos.get_collision_polygons_count(0)):
+						if datos.is_collision_polygon_one_way(0, indice_poligono):
+							es_plataforma_one_way = true
+							break
+					if es_plataforma_one_way:
+						continue
+
 			var normal: Vector2 = impacto.get("normal", Vector2.ZERO)
 			if absf(normal.x) >= 0.72:
 				return normal.normalized()
