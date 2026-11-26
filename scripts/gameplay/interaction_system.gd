@@ -43,6 +43,18 @@ func configurar(
 	_buscar_objetivo()
 
 
+## Main mantiene este sistema global, pero algunas zonas (como Saltus) no
+## comparten la posición del Player principal. Desactivarlo limpia objetivos
+## antiguos y deja que el InputRouter entregue la acción al CombatSystem.
+func establecer_activo(activo: bool) -> void:
+	if not activo:
+		_cambiar_objetivo(null)
+	set_process(activo)
+	if activo:
+		_scan_timer = 0.0
+		call_deferred("_buscar_objetivo")
+
+
 func _process(delta: float) -> void:
 	if player == null:
 		return
