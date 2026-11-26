@@ -108,9 +108,10 @@ func _configurar_colisiones_terreno(raiz_escena: Node) -> void:
 	var tile_set := terreno.tile_set
 	if tile_set.get_physics_layers_count() <= 0:
 		tile_set.add_physics_layer()
-	for indice in range(tile_set.get_physics_layers_count()):
-		var capa_actual := tile_set.get_physics_layer_collision_layer(indice)
-		tile_set.set_physics_layer_collision_layer(indice, capa_actual | 1)
+	# Las formas que usa este mapa están en physics layer 0. No cambiar
+	# máscaras de capas adicionales que puedan tener otro propósito.
+	var capa_terreno := tile_set.get_physics_layer_collision_layer(0)
+	tile_set.set_physics_layer_collision_layer(0, capa_terreno | 1)
 
 	var cantidad_celdas := 0
 	var celdas_con_colision := 0
