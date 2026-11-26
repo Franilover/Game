@@ -167,7 +167,16 @@ func _mano_tiene_arma(mano: String) -> bool:
 			canonico = world_items.buscar_item_por_nombre(str(objeto.get("nombre", "")))
 		if not canonico.is_empty():
 			for clave in ["nombre", "tipo", "categoria", "categoria_clave", "tipo_objeto", "propiedades_game"]:
-				if canonico.has(clave) and (not objeto.has(clave) or objeto[clave] == null or objeto[clave] == "" or (objeto[clave] is Dictionary and (objeto[clave] as Dictionary).is_empty())):
+				if not canonico.has(clave):
+					continue
+				var actual: Variant = objeto.get(clave, null)
+				var incompleto := actual == null
+				if actual is String:
+					var texto_actual := str(actual).strip_edges().to_lower()
+					incompleto = texto_actual.is_empty() or (clave in ["nombre", "tipo"] and texto_actual in ["objeto", "item", "desconocido"])
+				elif actual is Dictionary:
+					incompleto = (actual as Dictionary).is_empty()
+				if incompleto:
 					objeto[clave] = canonico[clave]
 	return CombatItemResolver.es_arma(objeto)
 
