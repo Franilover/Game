@@ -356,7 +356,8 @@ func _enriquecer_objeto_combate(objeto: Dictionary) -> Dictionary:
 			continue
 		var vacio := actual == null
 		if actual is String:
-			vacio = str(actual).strip_edges().is_empty() or (clave == "nombre" and str(actual).strip_edges().to_lower() == "objeto")
+			var texto_actual := str(actual).strip_edges().to_lower()
+			vacio = texto_actual.is_empty() or (clave in ["nombre", "tipo"] and texto_actual in ["objeto", "item", "desconocido"])
 		elif actual is Dictionary:
 			vacio = (actual as Dictionary).is_empty()
 		elif actual is Array:
