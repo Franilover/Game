@@ -66,6 +66,7 @@ func _ready() -> void:
 		push_error("Saltus: no se encontró el nodo Player.")
 		return
 
+	_configurar_colisiones_terreno(raiz_escena)
 	_player.visible = true
 	_player.velocity = Vector2.ZERO
 	_last_rest_position = _player.global_position
@@ -87,6 +88,74 @@ func _ready() -> void:
 	_crear_grafo_sector()
 	_configurar_camara()
 	print("Saltus: escena editable cargada | jugador=", _player.global_position)
+
+
+
+## La escena editable es la fuente real del terreno en runtime. Aseguramos
+## explícitamente la colisión de TileMapLayer y la máscara del CharacterBody2D.
+## Los pisos y paredes usan polígonos sólidos; las plataformas flotantes
+## conservan su alternativa one-way para permitir saltar desde abajo.
+func _configurar_colisiones_terreno(raiz_escena: Node) -> void:
+	var terreno := raiz_escena.get_node_or_null("Terreno/TerrenoSaltusV2") as TileMapLayer
+	if not is_instance_valid(terreno):
+		push_error("Saltus: falta Terreno/TerrenoSaltusV2; no se puede garantizar la colisión.")
+		return
+	terreno.collision_enabled = true
+	if terreno.tile_set == null:
+		push_error("Saltus: TerrenoSaltusV2 no tiene TileSet.")
+		return
+
+	var tile_set := terreno.tile_set
+	if tile_set.get_physics_layers_count() <= 0:
+		tile_set.add_physics_layer()
+	for indice in range(tile_set.get_physics_layers_count()):
+		var capa_actual := tile_set.get_physics_layer_collision_layer(indice)
+		tile_set.set_physics_layer_collision_layer(indice, capa_actual | 1)
+
+	var cantidad_celdas := 0
+	var celdas_con_colision := 0
+	var plataformas_unidireccionales := 0
+	var celdas_reparadas := 0
+	for celda: Vector2i in terreno.get_used_cells():
+		cantidad_celdas += 1
+		var datos := terreno.get_cell_tile_data(celda)
+		if datos == null:
+			continue
+		if datos.get_collision_polygons_count(0) <= 0:
+			# En este mapa todas las celdas de TerrenoSaltusV2 son superficie
+			# transitable; una celda sin forma sería un hueco físico accidental.
+			datos.set_collision_polygons_count(0, 1)
+			datos.set_collision_polygon_points(0, 0, PackedVector2Array([
+				Vector2(-TILE_SIZE * 0.5, -TILE_SIZE * 0.5),
+				Vector2(TILE_SIZE * 0.5, -TILE_SIZE * 0.5),
+				Vector2(TILE_SIZE * 0.5, TILE_SIZE * 0.5),
+				Vector2(-TILE_SIZE * 0.5, TILE_SIZE * 0.5)
+			]))
+			datos.set_collision_polygon_one_way(0, 0, false)
+			celdas_reparadas += 1
+		if datos.get_collision_polygons_count(0) > 0:
+			celdas_con_colision += 1
+			for poligono in range(datos.get_collision_polygons_count(0)):
+				if datos.is_collision_polygon_one_way(0, poligono):
+					plataformas_unidireccionales += 1
+					break
+
+	var forma_jugador := _player.get_node_or_null("CollisionShape2D") as CollisionShape2D
+	_player.collision_layer = 2
+	_player.collision_mask = 1
+	if is_instance_valid(forma_jugador):
+		forma_jugador.disabled = false
+	else:
+		push_error("Saltus: Player no tiene CollisionShape2D activa.")
+
+	print(
+		"Saltus: física configurada | terreno=", terreno.collision_enabled,
+		" | celdas=", cantidad_celdas,
+		" | con_colisión=", celdas_con_colision,
+		" | one_way=", plataformas_unidireccionales,
+		" | reparadas=", celdas_reparadas,
+		" | máscara_jugador=", _player.collision_mask
+	)
 
 
 func _process(_delta: float) -> void:
