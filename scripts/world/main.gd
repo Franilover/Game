@@ -581,6 +581,7 @@ func _configurar_actor_de_zona(tipo: String, zona: Node) -> void:
 	if is_instance_valid(_combat_system):
 		# El bloqueo de interfaces ya lo resuelve GameplayInputRouter.
 		_combat_system.configurar_jugador_activo(jugador_saltus)
+	_sincronizar_equipo_visual_saltus()
 	print("Main: CombatSystem enlazado al jugador de Saltus → ", jugador_saltus.get_path())
 
 
@@ -723,6 +724,10 @@ func _inicializar_runtime_de_zona() -> void:
 		MissionManager.recompensa_disponible.connect(_al_recompensa_mision_disponible)
 	if not _inventory.inventory_changed.is_connected(_al_cambio_inventario_reintentar_recompensas):
 		_inventory.inventory_changed.connect(_al_cambio_inventario_reintentar_recompensas)
+	if not _inventory.active_item_changed.is_connected(_al_cambio_item_activo_visual):
+		_inventory.active_item_changed.connect(_al_cambio_item_activo_visual)
+	if not _inventory.hand_item_changed.is_connected(_al_cambio_item_mano_visual):
+		_inventory.hand_item_changed.connect(_al_cambio_item_mano_visual)
 	_configurar_social()
 	_inicializar_ium()
 	_configurar_admin()
@@ -2324,12 +2329,38 @@ func _al_recompensa_mision_disponible(mision: Dictionary, _recompensas: Array[Di
 
 
 func _al_cambio_inventario_reintentar_recompensas() -> void:
+	_sincronizar_equipo_visual_saltus()
 	# La entrega puede emitir inventory_changed tanto al insertar como al
 	# restaurar el inventario tras una entrega parcial. No reintentar dentro
 	# de esa misma transacción: se volvería a ejecutar indefinidamente si sigue lleno.
 	if MissionManager.esta_entregando_recompensas():
 		return
 	call_deferred("_reintentar_recompensas_misiones")
+
+
+func _al_cambio_item_activo_visual(_datos: Dictionary) -> void:
+	_sincronizar_equipo_visual_saltus()
+
+
+func _al_cambio_item_mano_visual(_mano: String, _slot_index: int, _datos: Dictionary) -> void:
+	_sincronizar_equipo_visual_saltus()
+
+
+func _sincronizar_equipo_visual_saltus() -> void:
+	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "expedicion:saltus":
+		return
+	if not is_instance_valid(_inventory):
+		return
+	var zona := _zone_manager.obtener_zona_actual()
+	if not is_instance_valid(zona):
+		return
+	var jugador_saltus := zona.get_node_or_null("Player") as SaltusPlayer
+	if not is_instance_valid(jugador_saltus):
+		return
+	jugador_saltus.configurar_equipo_visual(
+		_inventory.obtener_objeto_mano_activa("izquierda"),
+		_inventory.obtener_objeto_mano_activa("derecha")
+	)
 
 
 func _reintentar_recompensas_misiones() -> void:
