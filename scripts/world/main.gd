@@ -2351,7 +2351,7 @@ func _sincronizar_equipo_visual_saltus() -> void:
 		return
 	if not is_instance_valid(_inventory):
 		return
-	var zona := _zone_manager.obtener_zona_actual()
+	var zona: Node = _zone_manager.obtener_zona_actual() as Node
 	if not is_instance_valid(zona):
 		return
 	var jugador_saltus := zona.get_node_or_null("Player") as SaltusPlayer
