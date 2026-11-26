@@ -27,7 +27,7 @@ func _run() -> void:
 	):
 		# Migra escenas anteriores: elimina contenedores de categoría y deja cada
 		# elemento del mundo como hijo directo e independiente de la raíz.
-		_desagrupar_categorias(root)
+		_organizar_nodos(root)
 		for hijo: Node in root.get_children():
 			_asignar_owner_recursivo(hijo, root)
 		get_editor_interface().save_scene()
@@ -60,6 +60,7 @@ func _run() -> void:
 	for metodo: String in metodos_generacion:
 		root.call(metodo)
 	_materializar_componentes_visuales(root)
+	_organizar_nodos(root)
 
 	# El constructor crea los nodos como hijos directos de la raíz. Se asigna
 	# owner a todo el subárbol para que Godot los serialice en el .tscn.
@@ -82,6 +83,89 @@ func _run() -> void:
 	get_editor_interface().save_scene()
 
 	print("Saltus: escena guardada. Los objetos deben figurar como nodos independientes bajo ExpedicionSaltus.")
+
+
+
+# Ordena el árbol por función sin convertir los elementos en una sola pieza:
+# cada planta, criatura, corriente y checkpoint conserva su nodo individual.
+func _organizar_nodos(root: Node) -> void:
+	# Aplana contenedores antiguos para que la migración sea idempotente.
+	for grupo_antiguo: Node in root.get_children().duplicate():
+		if CATEGORIES.has(grupo_antiguo.name):
+			for elemento: Node in grupo_antiguo.get_children().duplicate():
+				var transformacion := (elemento as Node2D).global_transform if elemento is Node2D else Transform2D.IDENTITY
+				grupo_antiguo.remove_child(elemento)
+				root.add_child(elemento)
+				if elemento is Node2D:
+					(elemento as Node2D).global_transform = transformacion
+			root.remove_child(grupo_antiguo)
+			grupo_antiguo.free()
+
+	var contenedores: Dictionary = {}
+	var hijos: Array[Node] = root.get_children().duplicate()
+	for nodo: Node in hijos:
+		var categoria := _categoria_de_nodo(nodo)
+		if categoria.is_empty():
+			continue
+		if not contenedores.has(categoria):
+			var contenedor := Node2D.new()
+			contenedor.name = categoria
+			root.add_child(contenedor)
+			contenedores[categoria] = contenedor
+		var destino: Node2D = contenedores[categoria]
+		var transformacion := (nodo as Node2D).global_transform if nodo is Node2D else Transform2D.IDENTITY
+		root.remove_child(nodo)
+		destino.add_child(nodo)
+		if nodo is Node2D:
+			(nodo as Node2D).global_transform = transformacion
+
+	# Nombres estables y legibles para los elementos que antes eran anónimos.
+	var indice_checkpoint := 0
+	for categoria in ["PuntosDeControl", "Ambiente"]:
+		var contenedor: Node = contenedores.get(categoria)
+		if contenedor == null:
+			continue
+		for nodo: Node in contenedor.get_children():
+			if categoria == "PuntosDeControl":
+				indice_checkpoint += 1
+				if nodo.name == "PuntoDescanso" or nodo.name.begins_with("@Area2D"):
+					nodo.name = "Checkpoint_%02d" % indice_checkpoint
+			elif categoria == "Ambiente" and nodo.name.begins_with("@CPUParticles2D"):
+				var x := int((nodo as Node2D).position.x) if nodo is Node2D else indice_checkpoint
+				nodo.name = "HojasEnElAire_%d" % x
+
+	# Owner en los contenedores y todos sus elementos para que se guarden
+	# como parte de ExpedicionSaltus y sigan siendo editables.
+	for hijo: Node in root.get_children():
+		_asignar_owner_recursivo(hijo, root)
+
+
+func _categoria_de_nodo(nodo: Node) -> String:
+	var nombre := String(nodo.name)
+	if nombre == "TerrenoSaltusV2":
+		return "Terreno"
+	if nombre.begins_with("Parallax"):
+		return "Fondos"
+	if nombre.begins_with("Zlish_") or nombre.begins_with("Flaxis_"):
+		return "Criaturas"
+	if nombre.begins_with("FloraImpulsora") or nombre.begins_with("FlorDetectora"):
+		return "Plantas"
+	if nombre.begins_with("CorrienteAerea"):
+		return "CorrientesAereas"
+	if nombre == "PuertaFlorDetectora":
+		return "Mecanismos"
+	if nombre == "PuntoDescanso" or nombre.begins_with("@Area2D") and nodo.get_node_or_null("FlorCheckpointSprite") != null:
+		return "PuntosDeControl"
+	if nombre.begins_with("Indicacion_"):
+		return "Tutorial"
+	if nombre == "HojasEnElAire" or nombre.begins_with("@CPUParticles2D"):
+		return "Ambiente"
+	if nombre == "ZonaPrimerJefe":
+		return "Encuentro"
+	if nombre == "RellenoVerdeFondo":
+		return "Decoracion"
+	return ""
+
 
 
 
