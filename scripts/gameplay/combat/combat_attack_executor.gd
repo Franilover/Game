@@ -43,7 +43,7 @@ static func crear_ataque_melee(
 
 
 static func disparar_proyectil(
-	atacante: Player,
+	atacante: Entity,
 	raiz_proyectiles: Node,
 	direccion: Vector2,
 	objeto: Dictionary,
