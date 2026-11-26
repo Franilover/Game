@@ -33,6 +33,11 @@ var _visual_controller: PlayerVisualController = PLAYER_VISUAL_CONTROLLER_SCRIPT
 
 
 func _ready() -> void:
+	# El TileSet de Saltus usa la capa física 1 para el terreno.
+	# El cuerpo del personaje escucha esa capa; su Hurtbox de Entity conserva
+	# la capa 2 para que los ataques sigan detectándolo.
+	collision_layer = 2
+	collision_mask = 1
 	super._ready()
 	add_to_group("saltus_player")
 	if sprite != null:
@@ -165,13 +170,16 @@ func _actualizar_presentacion(direction: float) -> void:
 	if sprite == null:
 		return
 	if absf(direction) > 0.05:
-		sprite.flip_h = direction > 0.0
+		facing = Vector2(signf(direction), 0.0)
+		sprite.flip_h = facing.x > 0.0
 		if _walk_texture != null:
 			sprite.texture = _walk_texture
 	else:
 		if _idle_texture != null:
 			sprite.texture = _idle_texture
-		sprite.flip_h = false
+		# Mantener la orientación del último movimiento también en reposo,
+		# para que el golpe y la pose del personaje coincidan.
+		sprite.flip_h = facing.x > 0.0
 	if is_on_floor() and absf(velocity.x) > 18.0:
 		sprite.position.y = -22.0 + sin(_elapsed * 15.0) * 1.3
 	else:
