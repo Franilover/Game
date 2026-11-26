@@ -108,10 +108,9 @@ func _conectar_checkpoints() -> void:
 		if checkpoint == null:
 			continue
 		checkpoint.monitoring = true
-		if not checkpoint.body_entered.is_connected(_activar_descanso):
-			checkpoint.body_entered.connect(
-				_activar_descanso.bind(checkpoint.position, checkpoint)
-			)
+		var callback: Callable = _activar_descanso.bind(checkpoint.global_position, checkpoint)
+		if not checkpoint.body_entered.is_connected(callback):
+			checkpoint.body_entered.connect(callback)
 	print("Saltus: checkpoints conectados=", contenedor.get_child_count())
 
 
