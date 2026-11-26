@@ -559,6 +559,29 @@ func _al_cambio_de_zona(tipo: String, _zona: Node) -> void:
 		_world_context.configurar(null, null, WorldData)
 		_world_items.establecer_generacion_habilitada(false)
 		_inicializar_runtime_de_zona()
+		_configurar_actor_de_zona(tipo, _zona)
+
+
+## En Saltus, el Player principal permanece oculto para conservar el inventario,
+## pero el CharacterBody2D de la expedición es quien se mueve y debe ejecutar
+## tanto el ataque como la animación sobre su propio sprite.
+func _configurar_actor_de_zona(tipo: String, zona: Node) -> void:
+	var es_saltus := tipo == "expedicion:saltus"
+	if is_instance_valid(_interaction_system):
+		_interaction_system.establecer_activo(not es_saltus)
+	if not es_saltus:
+		return
+	if not is_instance_valid(zona):
+		push_error("Main: Saltus no entregó una zona válida al enlazar el combate.")
+		return
+	var jugador_saltus := zona.get_node_or_null("Player") as SaltusPlayer
+	if not is_instance_valid(jugador_saltus):
+		push_error("Main: Saltus no contiene un SaltusPlayer válido para el combate.")
+		return
+	if is_instance_valid(_combat_system):
+		# El bloqueo de interfaces ya lo resuelve GameplayInputRouter.
+		_combat_system.configurar_jugador_activo(jugador_saltus)
+	print("Main: CombatSystem enlazado al jugador de Saltus → ", jugador_saltus.get_path())
 
 
 func _conectar_carga_visual_historia(zona: Node) -> void:
