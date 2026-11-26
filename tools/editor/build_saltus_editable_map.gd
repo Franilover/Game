@@ -19,7 +19,12 @@ func _run() -> void:
 		push_error("Saltus: abre scenes/world/expedicion_saltus.tscn antes de ejecutar este script.")
 		return
 	print("Saltus: comprobando contenido materializado de la escena...")
-	if bool(root.get("contenido_escena_preconstruido")) and _escena_tiene_contenido_editable(root):
+	if (
+		bool(root.get("contenido_escena_preconstruido"))
+		and _escena_tiene_contenido_editable(root)
+		and not _contiene_prefijo(root, "Terreno_")
+		and not _contiene_prefijo(root, "Plataforma_")
+	):
 		# Migra escenas anteriores: elimina contenedores de categoría y deja cada
 		# elemento del mundo como hijo directo e independiente de la raíz.
 		_desagrupar_categorias(root)
