@@ -101,9 +101,26 @@ func _desagrupar_categorias(root: Node) -> void:
 
 
 func _asignar_owner_recursivo(nodo: Node, root: Node) -> void:
+	# TileMapDual crea Display y DisplayLayer en runtime/editor como parte de
+	# su renderer interno. No deben serializarse dentro de la escena: Display
+	# requiere argumentos en _init(world, tileset_watcher), y Godot no puede
+	# reconstruirlo desde un nodo guardado sin argumentos.
+	var script := nodo.get_script() as Script
+	if script != null and script.resource_path == "res://addons/TileMapDual/display.gd":
+		nodo.owner = null
+		for interno: Node in nodo.get_children():
+			_quitar_owner_recursivo(interno)
+		return
+
 	nodo.owner = root
 	for hijo: Node in nodo.get_children():
 		_asignar_owner_recursivo(hijo, root)
+
+
+func _quitar_owner_recursivo(nodo: Node) -> void:
+	nodo.owner = null
+	for hijo: Node in nodo.get_children():
+		_quitar_owner_recursivo(hijo)
 
 
 func _materializar_componentes_visuales(root: Node) -> void:
