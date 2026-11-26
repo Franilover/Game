@@ -180,6 +180,8 @@ func unlock_air_dash() -> void:
 
 
 func _input(event: InputEvent) -> void:
+	if GameplayInputGate.esta_entrada_bloqueada(get_tree()):
+		return
 	if event is not InputEventKey:
 		return
 	var tecla := event as InputEventKey
@@ -192,6 +194,8 @@ func _input(event: InputEvent) -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
+	if GameplayInputGate.esta_entrada_bloqueada(get_tree()):
+		return
 	if event is InputEventKey:
 		var key := event as InputEventKey
 		if key.pressed and not key.echo and (key.keycode == KEY_SPACE or key.physical_keycode == KEY_SPACE):
@@ -203,6 +207,11 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func _physics_process(delta: float) -> void:
+	if GameplayInputGate.esta_entrada_bloqueada(get_tree()):
+		_jump_requested = false
+		_dash_requested = false
+		velocity = Vector2.ZERO
+		return
 	_elapsed += delta
 	_dash_cooldown_left = maxf(0.0, _dash_cooldown_left - delta)
 	if is_on_floor() and _air_dash_unlocked:
