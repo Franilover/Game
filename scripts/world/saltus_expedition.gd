@@ -62,6 +62,8 @@ func _ready() -> void:
 
 	_player.visible = true
 	_player.velocity = Vector2.ZERO
+	_last_rest_position = _player.global_position
+	_conectar_checkpoints()
 	_player.z_as_relative = false
 	_player.z_index = 100
 	var sprite := _player.get_node_or_null("Sprite2D") as Sprite2D
@@ -86,15 +88,43 @@ func _process(_delta: float) -> void:
 		return
 	if not is_instance_valid(_player):
 		return
-	if _player.global_position.y > 1500.0:
-		_player.global_position = _last_rest_position
-		_player.velocity = Vector2.ZERO
+	if not _player.is_alive or _player.global_position.y > 1500.0:
+		_reaparecer_jugador()
 		return
 	if is_instance_valid(_world_graph):
 		var room: Variant = _world_graph.get_room_at(_player.global_position)
 		if room != null and room.room_id != _current_room_id:
 			_current_room_id = room.room_id
 			_world_graph.discover_room(_current_room_id)
+
+
+func _conectar_checkpoints() -> void:
+	var contenedor := get_node_or_null("PuntosDeControl")
+	if contenedor == null:
+		push_warning("Saltus: no se encontró PuntosDeControl; se usará el punto inicial.")
+		return
+	for nodo: Node in contenedor.get_children():
+		var checkpoint := nodo as Area2D
+		if checkpoint == null:
+			continue
+		checkpoint.monitoring = true
+		if not checkpoint.body_entered.is_connected(_activar_descanso):
+			checkpoint.body_entered.connect(
+				_activar_descanso.bind(checkpoint.position, checkpoint)
+			)
+	print("Saltus: checkpoints conectados=", contenedor.get_child_count())
+
+
+func _reaparecer_jugador() -> void:
+	if not is_instance_valid(_player):
+		return
+	if _player.has_method("restaurar_tras_reaparicion"):
+		_player.call("restaurar_tras_reaparicion", _last_rest_position)
+	else:
+		_player.global_position = _last_rest_position
+		_player.velocity = Vector2.ZERO
+		_player.restaurar_estado_vital(_player.max_health, true, _player.max_mana)
+	print("Saltus: jugador reapareció en ", _last_rest_position)
 
 
 func _crear_relleno_fondo() -> void:
