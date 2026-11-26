@@ -327,7 +327,11 @@ func _buscar_normal_pared() -> Vector2:
 			if collider_variant is TileMapLayer:
 				var terreno := collider_variant as TileMapLayer
 				var punto_global: Vector2 = impacto.get("position", destino)
-				var celda := terreno.local_to_map(terreno.to_local(punto_global))
+				var normal_impacto: Vector2 = impacto.get("normal", Vector2.ZERO)
+				# Desplazar levemente el punto hacia el interior del tile evita
+				# resolver el borde exacto en la celda vecina.
+				var punto_interior := punto_global - normal_impacto * 0.5
+				var celda := terreno.local_to_map(terreno.to_local(punto_interior))
 				var datos := terreno.get_cell_tile_data(celda)
 				if datos != null:
 					var es_one_way := false
