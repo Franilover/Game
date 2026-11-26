@@ -124,6 +124,13 @@ func _crear_terreno() -> void:
 	tile_set.set_terrain_name(0, 0, "<any>")
 	tile_set.add_terrain(0)
 	tile_set.set_terrain_name(0, 1, "Bosque")
+	# La colisión pertenece al TileSet, no a cuerpos StaticBody2D separados.
+	# Cada celda sólida del TileMap tendrá una colisión de 32x32 editable desde
+	# el atlas, igual que cualquier TileMapLayer normal.
+	tile_set.add_physics_layer()
+	tile_set.set_physics_layer_collision_layer(0, 1)
+	tile_set.set_physics_layer_collision_mask(0, 1)
+
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = textura
 	atlas.texture_region_size = Vector2i(TILE_SIZE, TILE_SIZE)
@@ -138,6 +145,12 @@ func _crear_terreno() -> void:
 		for neighbor in CORNER_NEIGHBORS:
 			data.set_terrain_peering_bit(neighbor, 1 if (bits & 1) != 0 else 0)
 			bits >>= 1
+		_configurar_colision_tile(data, false)
+
+	# Variante visualmente idéntica para plataformas, con colisión unidireccional.
+	atlas.create_alternative_tile(TILE_ATLAS_DEFAULT, 1)
+	var tile_plataforma := atlas.get_tile_data(TILE_ATLAS_DEFAULT, 1)
+	_configurar_colision_tile(tile_plataforma, true)
 	_terrain_layer = TileMapDual.new()
 	_terrain_layer.name = "TerrenoSaltusV2"
 	_terrain_layer.tile_set = tile_set
@@ -172,7 +185,6 @@ func _crear_terreno() -> void:
 		for x in range(sx, sx + sw):
 			for y in range(sy, sy + sd):
 				_terrain_layer.set_cell(Vector2i(x, y), 0, TILE_ATLAS_DEFAULT)
-		_crear_colision_bloque_solido(sx, sy, sw, sd)
 
 	# Rutas de enseñanza: saltos cortos, un hueco de dash y parkour escalonado.
 	var plataformas: Array[Dictionary] = [
@@ -236,22 +248,18 @@ func _crear_terreno() -> void:
 		var py := int(plataforma["y"])
 		var pw := int(plataforma["w"])
 		for x in range(px, px + pw):
-			_terrain_layer.set_cell(Vector2i(x, py), 0, TILE_ATLAS_DEFAULT)
-		_crear_colision_plataforma(px, py, pw)
+			_terrain_layer.set_cell(Vector2i(x, py), 0, TILE_ATLAS_DEFAULT, 1)
 	call_deferred("_actualizar_tiles_dual")
 
-func _crear_colision_bloque_solido(inicio_x: int, fila_y: int, ancho: int, profundidad: int) -> void:
-	var cuerpo := StaticBody2D.new()
-	cuerpo.name = "Terreno_%d_%d" % [inicio_x, fila_y]
-	cuerpo.collision_layer = 1
-	cuerpo.collision_mask = 0
-	var forma := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(ancho * TILE_SIZE, profundidad * TILE_SIZE)
-	forma.shape = rect
-	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, (fila_y + profundidad * 0.5) * TILE_SIZE)
-	cuerpo.add_child(forma)
-	add_child(cuerpo)
+func _configurar_colision_tile(data: TileData, solo_desde_arriba: bool) -> void:
+	data.set_collision_polygons_count(0, 1)
+	data.set_collision_polygon_points(0, 0, PackedVector2Array([
+		Vector2(-TILE_SIZE * 0.5, -TILE_SIZE * 0.5),
+		Vector2(TILE_SIZE * 0.5, -TILE_SIZE * 0.5),
+		Vector2(TILE_SIZE * 0.5, TILE_SIZE * 0.5),
+		Vector2(-TILE_SIZE * 0.5, TILE_SIZE * 0.5)
+	]))
+	data.set_collision_polygon_one_way(0, 0, solo_desde_arriba)
 
 
 func _crear_grafo_sector() -> void:
@@ -405,23 +413,6 @@ func _crear_colision_suelo(inicio_x: int, ancho: int) -> void:
 	rect.size = Vector2(ancho * TILE_SIZE, 6.0 * TILE_SIZE)
 	forma.shape = rect
 	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, (GROUND_TOP + 3.0) * TILE_SIZE)
-	cuerpo.add_child(forma)
-	add_child(cuerpo)
-
-
-func _crear_colision_plataforma(inicio_x: int, fila_y: int, ancho: int) -> void:
-	var cuerpo := StaticBody2D.new()
-	cuerpo.name = "Plataforma_%d_%d" % [inicio_x, fila_y]
-	cuerpo.collision_layer = 1
-	cuerpo.collision_mask = 0
-	var forma := CollisionShape2D.new()
-	var rect := RectangleShape2D.new()
-	rect.size = Vector2(ancho * TILE_SIZE, 16.0)
-	forma.shape = rect
-	# Colisión de un solo sentido: bloquea al caer desde arriba, permite subir desde abajo.
-	forma.one_way_collision = true
-	forma.one_way_collision_margin = 8.0
-	forma.position = Vector2((inicio_x + ancho * 0.5) * TILE_SIZE, fila_y * TILE_SIZE + 8.0)
 	cuerpo.add_child(forma)
 	add_child(cuerpo)
 
