@@ -760,7 +760,7 @@ func _obtener_direccion_ataque() -> Vector2:
 
 	var facing_variant: Variant = player.get("facing")
 	if facing_variant is Vector2:
-		var direccion := facing_variant as Vector2
+		var direccion: Vector2 = facing_variant
 		if direccion.length_squared() > 0.01:
 			return direccion.normalized()
 
