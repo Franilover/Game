@@ -94,6 +94,16 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 	_buscar_objetivo()
 	if interaction_controller.objetivo_actual != null:
 		var objetivo_ejecutado := interaction_controller.objetivo_actual
+		# Un arma equipada debe poder atacar a una criatura dañable cercana.
+		# Las criaturas dialogables también son objetivos contextuales y, sin
+		# esta prioridad, interactuar() consume el clic antes de que CombatSystem
+		# reciba la acción; por eso no se reproduce la animación ni hay daño.
+		if (
+			objetivo_ejecutado is Creature
+			and objetivo_ejecutado.is_in_group("damageable")
+			and _mano_tiene_arma(mano)
+		):
+			return false
 		if (
 			objetivo_ejecutado is Creature
 			and is_instance_valid(_npc_conversation_system)
@@ -140,6 +150,26 @@ func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool,
 				return true
 
 	return false
+
+
+func _mano_tiene_arma(mano: String) -> bool:
+	if inventory == null:
+		return false
+	var objeto := inventory.obtener_objeto_mano_activa(mano).duplicate(true)
+	if objeto.is_empty():
+		return false
+	# Los snapshots antiguos pueden conservar sólo item_id/nombre. Resolver
+	# contra el catálogo evita que la prioridad dependa de datos incompletos.
+	if is_instance_valid(world_items):
+		var item_id := str(objeto.get("item_id", objeto.get("id", ""))).strip_edges()
+		var canonico: Dictionary = world_items.buscar_item_por_id(item_id) if not item_id.is_empty() else {}
+		if canonico.is_empty():
+			canonico = world_items.buscar_item_por_nombre(str(objeto.get("nombre", "")))
+		if not canonico.is_empty():
+			for clave in ["nombre", "tipo", "categoria", "categoria_clave", "tipo_objeto", "propiedades_game"]:
+				if canonico.has(clave) and (not objeto.has(clave) or objeto[clave] == null or objeto[clave] == "" or (objeto[clave] is Dictionary and (objeto[clave] as Dictionary).is_empty())):
+					objeto[clave] = canonico[clave]
+	return CombatItemResolver.es_arma(objeto)
 
 
 func configurar_conversaciones(sistema: Node, dialogo: DialogueSystem) -> void:
