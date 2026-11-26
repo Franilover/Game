@@ -13,6 +13,8 @@ static var popup: Callable = _editor_only.bind('popup').unbind(2)
 ## Only use this when running Godot 4.3 and below,
 ## where TileMapLayer could not detect changes properly.
 @export var godot_4_3_compatibility: bool = _godot_is_below_4_4()
+## Muestra el resultado compuesto de Dual Grid en el editor, ocultando la capa fuente.
+@export var mostrar_dual_en_editor: bool = false
 
 ## Material for the display tilemap.
 @export_custom(PROPERTY_HINT_RESOURCE_TYPE, "ShaderMaterial, CanvasItemMaterial")
@@ -62,9 +64,9 @@ func _ready() -> void:
 		_display.name = "Display"
 		add_child(_display)
 	if Engine.is_editor_hint():
-		# En el editor mostramos la capa fuente para poder pintar/borrar celdas.
-		# La capa Dual es una representación calculada y no debe interceptar la edición.
-		_display.visible = false
+		# En el editor se puede activar la vista compuesta Dual Grid por nodo.
+		# La capa fuente sigue siendo editable aunque su material sea transparente.
+		_display.visible = mostrar_dual_en_editor
 		_tileset_watcher.atlas_autotiled.connect(_atlas_autotiled)
 		set_process(true)
 	else: # Run in-game using signals for better performance
@@ -134,12 +136,17 @@ func _atlas_autotiled(source_id: int, atlas: TileSetAtlasSource):
 ##[br] The main tiles don't need to be seen. Only the DisplayLayers should be visible.
 ##[br] Called every frame, and functions a lot like TileSetWatcher.
 func _make_self_invisible(startup: bool = false) -> void:
-	# El editor debe mostrar las celdas fuente para permitir pintar y borrar.
-	# En runtime se conserva el material fantasma y el renderer Dual habitual.
+	# En editor, permitir activar la composición Dual sin dibujar encima los
+	# bloques fuente. La capa TileMapLayer continúa siendo seleccionable/editable.
 	if Engine.is_editor_hint():
-		material = null
-		if is_instance_valid(_display):
-			_display.visible = false
+		if mostrar_dual_en_editor:
+			material = _ghost_material
+			if is_instance_valid(_display):
+				_display.visible = true
+		else:
+			material = null
+			if is_instance_valid(_display):
+				_display.visible = false
 		return
 
 	# If user has set a material in the original slot, inform the user
