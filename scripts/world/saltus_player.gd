@@ -3,6 +3,7 @@ class_name SaltusPlayer
 
 const IDLE_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
 const WALK_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004_Walking_Left.png"
+const PLAYER_VISUAL_CONTROLLER_SCRIPT = preload("res://scripts/characters/player_visual_controller.gd")
 
 @export var move_speed: float = 190.0
 @export var run_multiplier: float = 1.35
@@ -27,6 +28,8 @@ var _elapsed: float = 0.0
 var _dash_ghost_timer: float = 0.0
 var _idle_texture: Texture2D
 var _walk_texture: Texture2D
+var facing: Vector2 = Vector2.DOWN
+var _visual_controller: PlayerVisualController = PLAYER_VISUAL_CONTROLLER_SCRIPT.new()
 
 
 func _ready() -> void:
@@ -38,6 +41,17 @@ func _ready() -> void:
 		_walk_texture = load(WALK_TEXTURE_PATH) as Texture2D
 		if _idle_texture != null:
 			sprite.texture = _idle_texture
+	_visual_controller.configurar(self, null, null)
+
+
+func reproducir_animacion_herramienta(objeto: Dictionary, objetivo_global: Vector2) -> void:
+	var direccion := global_position.direction_to(objetivo_global)
+	if direccion.length_squared() > 0.01:
+		facing = direccion.normalized()
+		if absf(facing.x) > 0.01 and sprite != null:
+			sprite.flip_h = facing.x > 0.0
+	if is_instance_valid(_visual_controller):
+		_visual_controller.reproducir_animacion_herramienta(objeto, facing)
 
 
 func restaurar_tras_reaparicion(posicion: Vector2) -> void:
