@@ -16,6 +16,10 @@ const EQUIPMENT_ANIMATOR_SCRIPT = preload("res://scripts/characters/player_equip
 @export var dash_distance: float = 64.0
 @export var dash_duration: float = 0.12
 @export var dash_cooldown: float = 0.8
+@export var wall_climb_speed: float = 72.0
+@export var wall_grab_probe_distance: float = 13.0
+@export var wall_jump_speed: float = 260.0
+@export var wall_jump_duration: float = 0.24
 
 @onready var sprite: Sprite2D = $Sprite2D
 
@@ -28,6 +32,10 @@ var _air_dash_unlocked: bool = true
 var _air_dash_available: bool = true
 var _elapsed: float = 0.0
 var _dash_ghost_timer: float = 0.0
+var _wall_grabbed: bool = false
+var _wall_normal: Vector2 = Vector2.ZERO
+var _wall_jump_remaining: float = 0.0
+var _wall_jump_total: float = 0.0
 var _idle_texture: Texture2D
 var _walk_texture: Texture2D
 var facing: Vector2 = Vector2.DOWN
@@ -66,6 +74,7 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 	var sprite_equipo := _sprites_equipo.get(mano) as Sprite2D
 	if objeto.is_empty():
 		if is_instance_valid(sprite_equipo):
+			sprite_equipo.texture = null
 			sprite_equipo.visible = false
 		return
 
@@ -81,6 +90,7 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 		textura = EQUIPMENT_ANIMATOR_SCRIPT.obtener_textura_respaldo(tipo)
 	if textura == null:
 		if is_instance_valid(sprite_equipo):
+			sprite_equipo.texture = null
 			sprite_equipo.visible = false
 		return
 
@@ -198,6 +208,14 @@ func _physics_process(delta: float) -> void:
 	var aim_vertical := Input.get_axis("move_up", "move_down")
 	var dash_aim := Vector2(direction, aim_vertical).normalized()
 
+	if _wall_jump_remaining > 0.0:
+		_procesar_salto_pared(delta)
+		_actualizar_presentacion(direction)
+		return
+	if _wall_grabbed and _procesar_agarre_pared(delta):
+		_actualizar_presentacion(direction)
+		return
+
 	if _dash_time_left > 0.0:
 		_dash_time_left = maxf(0.0, _dash_time_left - delta)
 		_dash_ghost_timer -= delta
@@ -251,7 +269,115 @@ func _physics_process(delta: float) -> void:
 		velocity.y = jump_velocity
 
 	move_and_slide()
+	_detectar_agarre_pared()
 	_actualizar_presentacion(direction)
+
+
+## El sensor de escalada solo busca superficies físicas laterales. El cuerpo
+## CharacterBody2D conserva su propia colisión sólida con el TileMapLayer.
+func _detectar_agarre_pared() -> void:
+	if _wall_grabbed or not Input.is_key_pressed(KEY_CTRL):
+		return
+	var normal := _buscar_normal_pared()
+	if normal.length_squared() < 0.5:
+		return
+	_wall_normal = normal
+	_wall_grabbed = true
+	velocity = Vector2.ZERO
+	facing = -normal
+	_actualizar_posicion_equipo_visual()
+
+
+func _buscar_normal_pared() -> Vector2:
+	if not is_inside_tree() or get_world_2d() == null:
+		return Vector2.ZERO
+	var espacio := get_world_2d().direct_space_state
+	var exclusion: Array[RID] = [get_rid()]
+	var offsets_y: Array[float] = [-17.0, -11.0, -5.0]
+	var distancia := maxf(wall_grab_probe_distance, 8.0)
+	for lado in [-1.0, 1.0]:
+		for offset_y in offsets_y:
+			var origen := global_position + Vector2(0.0, offset_y)
+			var destino := origen + Vector2(lado * distancia, 0.0)
+			var consulta := PhysicsRayQueryParameters2D.create(
+				origen,
+				destino,
+				1,
+				exclusion
+			)
+			consulta.collide_with_bodies = true
+			consulta.collide_with_areas = false
+			var impacto := espacio.intersect_ray(consulta)
+			if impacto.is_empty():
+				continue
+			var collider_variant: Variant = impacto.get("collider")
+			if collider_variant is TileMapLayer:
+				var terreno := collider_variant as TileMapLayer
+				var punto_global: Vector2 = impacto.get("position", destino)
+				var celda := terreno.local_to_map(terreno.to_local(punto_global))
+				var datos := terreno.get_cell_tile_data(celda)
+				if datos != null:
+					var es_one_way := false
+					for indice_poligono in range(datos.get_collision_polygons_count(0)):
+						if datos.is_collision_polygon_one_way(0, indice_poligono):
+							es_one_way = true
+							break
+					if es_one_way:
+						continue
+			var normal: Vector2 = impacto.get("normal", Vector2.ZERO)
+			if absf(normal.x) >= 0.72:
+				return normal.normalized()
+	return Vector2.ZERO
+
+
+func _procesar_agarre_pared(delta: float) -> bool:
+	if not Input.is_key_pressed(KEY_CTRL):
+		_wall_grabbed = false
+		_wall_normal = Vector2.ZERO
+		return false
+	var normal_actual := _buscar_normal_pared()
+	if normal_actual.length_squared() >= 0.5:
+		_wall_normal = normal_actual
+	else:
+		_wall_grabbed = false
+		_wall_normal = Vector2.ZERO
+		return false
+	if Input.is_action_just_pressed("jump") or _direccion_alejamiento_just_pressed():
+		_iniciar_salto_pared()
+		return true
+	var vertical := Input.get_axis("move_up", "move_down")
+	velocity = Vector2(0.0, vertical * wall_climb_speed)
+	move_and_slide()
+	return true
+
+
+func _direccion_alejamiento_just_pressed() -> bool:
+	if _wall_normal.x < -0.72:
+		return Input.is_action_just_pressed("move_left")
+	if _wall_normal.x > 0.72:
+		return Input.is_action_just_pressed("move_right")
+	return false
+
+
+func _iniciar_salto_pared() -> void:
+	var direccion_salida := _wall_normal
+	if direccion_salida.length_squared() < 0.5:
+		direccion_salida = Vector2.LEFT if facing.x >= 0.0 else Vector2.RIGHT
+	_wall_grabbed = false
+	_wall_normal = Vector2.ZERO
+	_wall_jump_total = maxf(wall_jump_duration, 0.08)
+	_wall_jump_remaining = _wall_jump_total
+	velocity = direccion_salida * wall_jump_speed + Vector2.UP * wall_jump_speed * 0.42
+	facing = direccion_salida
+
+
+func _procesar_salto_pared(delta: float) -> void:
+	_wall_jump_remaining = maxf(0.0, _wall_jump_remaining - delta)
+	velocity = velocity.move_toward(Vector2.ZERO, wall_jump_speed * 4.0 * delta)
+	move_and_slide()
+	if _wall_jump_remaining <= 0.0:
+		velocity = Vector2.ZERO
+		_wall_jump_total = 0.0
 
 
 func _actualizar_presentacion(direction: float) -> void:
