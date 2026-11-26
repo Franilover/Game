@@ -6,7 +6,7 @@ class_name CombatAttackExecutor
 
 
 static func crear_ataque_melee(
-	atacante: Player,
+	atacante: Entity,
 	direccion: Vector2,
 	alcance: float,
 	ancho: float,
