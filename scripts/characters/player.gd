@@ -36,7 +36,7 @@ signal configuracion_eterium_lista
 @export var wall_climb_speed: float = 48.0
 @export var wall_jump_speed: float = 210.0
 @export var wall_jump_duration: float = 0.24
-@export var wall_grab_probe_distance: float = 3.0
+@export var wall_grab_probe_distance: float = 9.0
 
 
 @export_category("Dash")
@@ -768,18 +768,59 @@ func _ctrl_mantenido() -> bool:
 func _detectar_agarre_pared() -> void:
 	if _red_servidor_controlado or _wall_grabbed or not _ctrl_mantenido():
 		return
-	for indice in range(get_slide_collision_count()):
-		var colision := get_slide_collision(indice)
-		if colision == null:
-			continue
-		var normal := colision.get_normal()
-		# El agarre es lateral; no permite engancharse al suelo/techo.
-		if absf(normal.x) < 0.72:
-			continue
-		_wall_normal = normal.normalized()
-		_wall_grabbed = true
-		velocity = Vector2.ZERO
+
+	# TileMapDual dibuja el terreno mediante capas Display, pero la colisión
+	# pertenece al TileMapLayer fuente. No dependemos exclusivamente de
+	# get_slide_collision(): consultamos también el espacio físico para detectar
+	# los bordes de las celdas aunque el movimiento haya rozado una unión.
+	var normal := _buscar_normal_pared()
+	if normal.length_squared() < 0.5:
+		for indice in range(get_slide_collision_count()):
+			var colision := get_slide_collision(indice)
+			if colision == null:
+				continue
+			var normal_colision := colision.get_normal()
+			if absf(normal_colision.x) >= 0.72:
+				normal = normal_colision.normalized()
+				break
+
+	if normal.length_squared() < 0.5:
 		return
+	_wall_normal = normal
+	_wall_grabbed = true
+	velocity = Vector2.ZERO
+
+
+func _buscar_normal_pared() -> Vector2:
+	if not is_inside_tree() or get_world_2d() == null:
+		return Vector2.ZERO
+
+	var espacio := get_world_2d().direct_space_state
+	var exclusion: Array[RID] = [get_rid()]
+	var offsets_y: Array[float] = [-8.0, 0.0, 8.0]
+	var distancia := maxf(wall_grab_probe_distance, 4.0)
+
+	# Consulta todas las capas físicas: el TileMapDual puede usar una capa
+	# distinta de la que bloquea el movimiento normal del jugador.
+	for lado in [-1.0, 1.0]:
+		for offset_y in offsets_y:
+			var origen := global_position + Vector2(0.0, offset_y)
+			var destino := origen + Vector2(lado * distancia, 0.0)
+			var consulta := PhysicsRayQueryParameters2D.create(
+				origen,
+				destino,
+				0x7FFFFFFF,
+				exclusion
+			)
+			consulta.collide_with_bodies = true
+			consulta.collide_with_areas = false
+			var impacto := espacio.intersect_ray(consulta)
+			if impacto.is_empty():
+				continue
+			var normal: Vector2 = impacto.get("normal", Vector2.ZERO)
+			if absf(normal.x) >= 0.72:
+				return normal.normalized()
+	return Vector2.ZERO
 
 
 func _procesar_agarre_pared(delta: float) -> bool:
@@ -787,11 +828,13 @@ func _procesar_agarre_pared(delta: float) -> bool:
 		_wall_grabbed = false
 		_wall_normal = Vector2.ZERO
 		return false
-	if _wall_normal.length_squared() < 0.5:
-		_wall_grabbed = false
-		return false
-	# Comprobar que la pared sigue junto al cuerpo incluso cuando está quieto.
-	if not test_move(global_transform, -_wall_normal * wall_grab_probe_distance):
+
+	# Recalcular contra la geometría física real cada tick. Esto mantiene el
+	# agarre sobre TileMapDual y permite seguir paredes compuestas por celdas.
+	var normal_actual := _buscar_normal_pared()
+	if normal_actual.length_squared() >= 0.5:
+		_wall_normal = normal_actual
+	elif not test_move(global_transform, -_wall_normal * wall_grab_probe_distance):
 		_wall_grabbed = false
 		_wall_normal = Vector2.ZERO
 		return false
