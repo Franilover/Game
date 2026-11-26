@@ -264,6 +264,7 @@ tile_map_data = PackedByteArray("AAAAAA4AAAACAAEAAAAAAA8AAAACAAEAAAAAABAAAAACAAE
 tile_set = SubResource("TileSet_0kwhb")
 script = ExtResource("5_w08ba")
 godot_4_3_compatibility = false
+mostrar_dual_en_editor = true
 
 [node name="Fondos" type="Node2D" parent="." unique_id=1000000001]
 
