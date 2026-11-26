@@ -795,7 +795,7 @@ func _procesar_agarre_pared(delta: float) -> bool:
 		_wall_grabbed = false
 		_wall_normal = Vector2.ZERO
 		return false
-	if Input.is_action_just_pressed("jump"):
+	if Input.is_action_just_pressed("jump") or _direccion_alejamiento_just_pressed():
 		_iniciar_salto_pared()
 		return true
 
@@ -810,6 +810,16 @@ func _procesar_agarre_pared(delta: float) -> bool:
 			_wall_normal = colision.get_normal().normalized()
 			break
 	return true
+
+
+func _direccion_alejamiento_just_pressed() -> bool:
+	# En teclado, pulsar la dirección que se aleja de la pared también salta.
+	# W/S quedan libres para trepar o descender mientras CTRL está sostenido.
+	if _wall_normal.x < -0.72:
+		return Input.is_action_just_pressed("move_left")
+	if _wall_normal.x > 0.72:
+		return Input.is_action_just_pressed("move_right")
+	return false
 
 
 func _iniciar_salto_pared() -> void:
