@@ -50,6 +50,7 @@ const COMBAT_IMPACT_EFFECTS: Script = preload(
 var player: Player = null
 var inventory: InventoryController = null
 var world_context: WorldContext = null
+var world_items: GarliaWorldItems = null
 var projectile_root: Node = null
 var game_state: GameStateService = null
 var _accion_en_mano_derecha: bool = false
@@ -57,10 +58,11 @@ var combat_controller := CombatController.new()
 var _tiempo_desde_ataque: float = 0.0
 
 
-func configurar(nuevo_player: Player, nuevo_inventory: InventoryController = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null) -> void:
+func configurar(nuevo_player: Player, nuevo_inventory: InventoryController = null, nuevo_world_context: WorldContext = null, nuevo_projectile_root: Node = null, nuevo_game_state: GameStateService = null, nuevo_world_items: GarliaWorldItems = null) -> void:
 	player = nuevo_player
 	inventory = nuevo_inventory
 	world_context = nuevo_world_context
+	world_items = nuevo_world_items
 	projectile_root = nuevo_projectile_root
 	game_state = nuevo_game_state
 	if not is_instance_valid(combat_controller):
@@ -95,7 +97,7 @@ func procesar_accion_primaria() -> bool:
 
 	# El router ya resolvió la prioridad de interacción.
 	# Aquí solo se decide la acción primaria de combate.
-	var objeto_activo: Dictionary = inventory.obtener_objeto_mano_activa("izquierda") if inventory != null else {}
+	var objeto_activo: Dictionary = _enriquecer_objeto_combate(inventory.obtener_objeto_mano_activa("izquierda")) if inventory != null else {}
 	_accion_en_mano_derecha = false
 	var modo := "objeto_mano" if _es_objeto_ataque(objeto_activo) else "desarmado"
 
@@ -110,7 +112,7 @@ func procesar_accion_secundaria() -> bool:
 	if not CombatTargeting.es_atacante_valido(player) or _tiempo_desde_ataque > 0.0:
 		return false
 
-	var objeto_mano := _obtener_objeto_mano_activa("derecha")
+	var objeto_mano := _enriquecer_objeto_combate(_obtener_objeto_mano_activa("derecha"))
 	_accion_en_mano_derecha = true
 	if objeto_mano.is_empty():
 		return false
@@ -318,10 +320,50 @@ func usar_objeto_activo() -> void:
 	if not CombatTargeting.es_atacante_valido(player):
 		return
 
-	var objeto_activo := _obtener_objeto_mano_activa("derecha")
+	var objeto_activo := _enriquecer_objeto_combate(_obtener_objeto_mano_activa("derecha"))
 	if objeto_activo.is_empty() or not _es_objeto_ataque(objeto_activo):
 		return
 	_atacar_con_objeto(objeto_activo, _obtener_direccion_ataque())
+
+
+## Los snapshots de partidas antiguas pueden conservar sólo item_id/cantidad.
+## Resolver aquí contra el catálogo evita que CombatSystem dependa de la UI
+## y permite clasificar el arma y reproducir su animación con datos canónicos.
+func _enriquecer_objeto_combate(objeto: Dictionary) -> Dictionary:
+	var resultado := objeto.duplicate(true)
+	if resultado.is_empty() or not is_instance_valid(world_items):
+		return resultado
+	var item_id := str(resultado.get("item_id", resultado.get("id", ""))).strip_edges()
+	var canonico: Dictionary = {}
+	if not item_id.is_empty():
+		canonico = world_items.buscar_item_por_id(item_id)
+	if canonico.is_empty():
+		canonico = world_items.buscar_item_por_nombre(str(resultado.get("nombre", "")))
+	if canonico.is_empty():
+		return resultado
+	for clave in ["nombre", "propiedades_game", "categoria", "categoria_clave", "tipo", "tipo_objeto"]:
+		if not canonico.has(clave):
+			continue
+		var actual: Variant = resultado.get(clave, null)
+		var valor_canonico: Variant = canonico[clave]
+		if clave == "propiedades_game" and valor_canonico is Dictionary:
+			var combinadas := (valor_canonico as Dictionary).duplicate(true)
+			if actual is Dictionary:
+				for propiedad in (actual as Dictionary).keys():
+					if not combinadas.has(propiedad):
+						combinadas[propiedad] = (actual as Dictionary)[propiedad]
+			resultado[clave] = combinadas
+			continue
+		var vacio := actual == null
+		if actual is String:
+			vacio = str(actual).strip_edges().is_empty() or (clave == "nombre" and str(actual).strip_edges().to_lower() == "objeto")
+		elif actual is Dictionary:
+			vacio = (actual as Dictionary).is_empty()
+		elif actual is Array:
+			vacio = (actual as Array).is_empty()
+		if vacio:
+			resultado[clave] = valor_canonico.duplicate(true) if valor_canonico is Dictionary or valor_canonico is Array else valor_canonico
+	return resultado
 
 
 func _obtener_objeto_mano_activa(mano: String) -> Dictionary:
@@ -350,11 +392,10 @@ func _atacar_con_arma(
 	var modo := _obtener_modo_ataque(arma)
 	_iniciar_cooldown_ataque()
 
+	_reproducir_animacion_equipo(arma, direccion)
 	if modo == "distancia":
 		_disparar_proyectil(arma, direccion)
 		return
-
-	_reproducir_animacion_equipo(arma, direccion)
 	var alcance := _obtener_alcance_arma(arma)
 	var ancho := _obtener_ancho_arma(arma)
 	_crear_ataque_melee(
