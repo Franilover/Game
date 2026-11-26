@@ -40,6 +40,19 @@ func _ready() -> void:
 			sprite.texture = _idle_texture
 
 
+func restaurar_tras_reaparicion(posicion: Vector2) -> void:
+	global_position = posicion
+	velocity = Vector2.ZERO
+	_jump_requested = false
+	_dash_requested = false
+	_dash_time_left = 0.0
+	_dash_cooldown_left = 0.0
+	_dash_ghost_timer = 0.0
+	_air_dash_available = true
+	visible = true
+	restaurar_estado_vital(max_health, true, max_mana)
+
+
 func unlock_air_dash() -> void:
 	_air_dash_unlocked = true
 	_air_dash_available = true
