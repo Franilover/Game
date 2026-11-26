@@ -382,7 +382,9 @@ func _iniciar_salto_pared() -> void:
 	_wall_normal = Vector2.ZERO
 	_wall_jump_total = maxf(wall_jump_duration, 0.08)
 	_wall_jump_remaining = _wall_jump_total
-	velocity = direccion_salida * wall_jump_speed + Vector2.UP * wall_jump_speed * 0.42
+	# El componente vertical usa el salto base del personaje: amortiguar solo
+	# el 42% de la velocidad lateral dejaba un impulso de apenas unos píxeles.
+	velocity = direccion_salida * wall_jump_speed + Vector2.UP * absf(jump_velocity) * 0.95
 	facing = direccion_salida
 
 
