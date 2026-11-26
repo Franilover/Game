@@ -44,75 +44,55 @@ func _run() -> void:
 	# contiene Player, reconstruimos. Nunca usamos el booleano como única prueba.
 	_limpiar_contenido_generado(root)
 
-	# La raíz abierta puede ser un PlaceholderScriptInstance aunque el script
-	# tenga @tool. Instanciamos una fábrica real desde el recurso GDScript.
-	var expedition_script := load(EXPEDITION_SCRIPT_PATH) as GDScript
-	if expedition_script == null or not expedition_script.can_instantiate():
-		push_error("Saltus: no se pudo compilar/instanciar saltus_expedition.gd. Revisa los errores de GDScript.")
-		return
+	# El nodo raíz ya tiene SaltusExpedition como script @tool. Generamos
+	# directamente sobre él: así cada objeto nace dentro de la escena abierta
+	# y no depende de una fábrica temporal ni de una coroutine de EditorScript.
+	var metodos_generacion := [
+		"_crear_relleno_fondo",
+		"_crear_terreno",
+		"_crear_puntos_sector",
+		"_crear_fondo_y_parallax",
+		"_crear_arboleda",
+		"_crear_criaturas",
+		"_crear_ambiente",
+		"_crear_mecanicas_ambientales"
+	]
+	for metodo: String in metodos_generacion:
+		if not root.has_method(metodo):
+			push_error("Saltus: la raíz no expone " + metodo + ". Comprueba el script SaltusExpedition.")
+			return
 
-	var factory := expedition_script.new() as Node2D
-	if factory == null:
-		push_error("Saltus: no se pudo crear la fábrica temporal del escenario.")
-		return
-	factory.name = "SaltusSceneFactory_TEMP"
-	root.add_child(factory)
+	print("Saltus: generando directamente dentro de ExpedicionSaltus...")
+	for metodo: String in metodos_generacion:
+		root.call(metodo)
+	_materializar_componentes_visuales(root)
 
-	factory.call("_crear_relleno_fondo")
-	factory.call("_crear_terreno")
-	factory.call("_crear_puntos_sector")
-	factory.call("_crear_fondo_y_parallax")
-	factory.call("_crear_arboleda")
-	factory.call("_crear_criaturas")
-	factory.call("_crear_ambiente")
-	factory.call("_crear_mecanicas_ambientales")
-	_materializar_componentes_visuales(factory)
-
-	# EditorScript no hereda Node y no dispone de get_tree().
-	# Esperamos desde el SceneTree principal para que se ejecuten los call_deferred del terreno.
-	var scene_tree := Engine.get_main_loop() as SceneTree
-	if scene_tree != null:
-		await scene_tree.process_frame
-		await scene_tree.process_frame
-
-	var generados := factory.get_children().duplicate()
-	for nodo: Node in generados:
-		var transformacion := (nodo as Node2D).global_transform if nodo is Node2D else Transform2D.IDENTITY
-		factory.remove_child(nodo)
-		root.add_child(nodo)
-		if nodo is Node2D:
-			(nodo as Node2D).global_transform = transformacion
-	root.remove_child(factory)
-	factory.free()
-
-	# Cada elemento generado queda como hijo directo de la escena raíz.
-	# No creamos Node2D intermedios que agrupen transformaciones.
-	# Garantiza que todos los nodos del escenario pertenezcan a esta escena.
-	# Sin owner, Godot los muestra pero no permite editarlos como parte del .tscn.
+	# El constructor crea los nodos como hijos directos de la raíz. Se asigna
+	# owner a todo el subárbol para que Godot los serialice en el .tscn.
 	for hijo: Node in root.get_children():
 		_asignar_owner_recursivo(hijo, root)
+
+	var cantidad_hijos := root.get_child_count()
+	if cantidad_hijos <= 1 or not _escena_tiene_contenido_editable(root):
+		root.set("contenido_escena_preconstruido", false)
+		push_error("Saltus: generación incompleta. Hijos raíz=" + str(cantidad_hijos) + ". No se guardó la escena.")
+		return
+
 	root.set("contenido_escena_preconstruido", true)
+	print("Saltus: verificación previa al guardado | hijos raíz=", cantidad_hijos)
+	for hijo: Node in root.get_children():
+		print("Saltus: nodo raíz | ", hijo.name, " | owner=", hijo.owner == root)
 
-	var packed := PackedScene.new()
-	var pack_error := packed.pack(root)
-	if pack_error != OK:
+	# Guardamos el documento que está abierto en el editor. No empaquetamos con
+	# ResourceSaver en paralelo: eso podía sobrescribir el estado del Scene dock.
+	var error_guardado := get_editor_interface().save_scene()
+	if error_guardado != OK:
 		root.set("contenido_escena_preconstruido", false)
-		push_error("Saltus: no se pudo empaquetar la expedición completa: " + error_string(pack_error))
+		push_error("Saltus: el editor no pudo guardar expedicion_saltus.tscn: " + error_string(error_guardado))
 		return
 
-	var save_error := ResourceSaver.save(packed, SCENE_PATH)
-	if save_error != OK:
-		root.set("contenido_escena_preconstruido", false)
-		push_error("Saltus: no se pudo guardar expedicion_saltus.tscn: " + error_string(save_error))
-		return
+	print("Saltus: escena guardada. Los objetos deben figurar como nodos independientes bajo ExpedicionSaltus.")
 
-	# ResourceSaver escribe el PackedScene, pero el editor conserva además
-	# su propia instancia abierta. Guardarla sincroniza el árbol visible,
-	# evita que el documento del editor quede con la versión anterior.
-	get_editor_interface().save_scene()
-
-	print("Saltus: expedicion_saltus.tscn ahora contiene terreno, colisiones, fondos, plantas, criaturas, mecanismos, checkpoints y zona del primer jefe.")
-	print("Saltus: escena guardada en disco y sincronizada con el árbol normal del editor.")
 
 
 func _desagrupar_categorias(root: Node) -> void:
