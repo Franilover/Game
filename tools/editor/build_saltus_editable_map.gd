@@ -31,7 +31,10 @@ func _run() -> void:
 		if error_guardado != OK:
 			push_error("Saltus: no se pudo guardar la escena editable: " + error_string(error_guardado))
 			return
-		print("Saltus: escena editable verificada y propietarios reparados.")
+		# Actualiza también el documento que mantiene abierto el editor.
+		# Así el árbol de Scene y el archivo .tscn quedan sincronizados.
+		get_editor_interface().save_scene()
+		print("Saltus: escena editable verificada, guardada y sincronizada con el editor.")
 		return
 
 	# Si el indicador quedó activado en una ejecución parcial pero el árbol solo
@@ -99,8 +102,13 @@ func _run() -> void:
 		push_error("Saltus: no se pudo guardar expedicion_saltus.tscn: " + error_string(save_error))
 		return
 
+	# ResourceSaver escribe el PackedScene, pero el editor conserva además
+	# su propia instancia abierta. Guardarla sincroniza el árbol visible,
+	# evita que el documento del editor quede con la versión anterior.
+	get_editor_interface().save_scene()
+
 	print("Saltus: expedicion_saltus.tscn ahora contiene terreno, colisiones, fondos, plantas, criaturas, mecanismos, checkpoints y zona del primer jefe.")
-	print("Saltus: la escena completa quedó guardada y sus nodos son editables desde el árbol.")
+	print("Saltus: escena guardada en disco y sincronizada con el árbol normal del editor.")
 
 
 func _organizar_nodos(root: Node) -> void:
