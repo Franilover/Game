@@ -66,7 +66,7 @@ static func procesar_impacto_confirmado(
 static func _es_jugador(atacante: Node) -> bool:
 	if atacante == null or not is_instance_valid(atacante):
 		return false
-	return atacante is Player or atacante.is_in_group("player")
+	return atacante is Player or atacante.is_in_group("player") or atacante.is_in_group("saltus_player")
 
 
 static func registrar_agresion_bosque(
