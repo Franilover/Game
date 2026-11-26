@@ -98,8 +98,6 @@ func update_properties(parent: TileMapDual) -> void:
 	# navegación pertenecen exclusivamente al TileMapDual fuente: duplicarlas
 	# aquí desplaza las formas medio tile y crea superficies fantasma.
 	self.collision_enabled = false
-	self.collision_layer = 0
-	self.collision_mask = 0
 	self.navigation_enabled = false
 	# Canvas item properties
 	self.show_behind_parent = parent.show_behind_parent
