@@ -32,6 +32,13 @@ signal configuracion_eterium_lista
 @export var jump_stamina_cost: float = 0.0
 
 
+@export_category("Agarre de pared")
+@export var wall_climb_speed: float = 48.0
+@export var wall_jump_speed: float = 210.0
+@export var wall_jump_duration: float = 0.24
+@export var wall_grab_probe_distance: float = 3.0
+
+
 @export_category("Dash")
 @export var dash_distance: float = 64.0
 @export var dash_duration: float = 0.12
@@ -82,6 +89,11 @@ var _death_tween: Tween = null
 var _terrain_query_timer: float = 0.0
 var _terrain_speed_multiplier: float = 1.0
 var _terrain_visual_ref: Node = null
+var _wall_grabbed: bool = false
+var _wall_normal: Vector2 = Vector2.ZERO
+var _wall_jump_remaining: float = 0.0
+var _wall_jump_total: float = 0.0
+var _wall_jump_start_position: Vector2 = Vector2.ZERO
 
 const WATER_SPEED_MULTIPLIER: float = 0.58
 const WATER_ZONES: Array[int] = [4, 5, 6]
@@ -330,6 +342,13 @@ func _physics_process(delta: float) -> void:
 			_update_visual()
 		return
 
+	# El agarre y el salto de pared tienen prioridad sobre la locomoción normal.
+	if _wall_jump_remaining > 0.0:
+		_procesar_salto_pared(delta)
+		return
+	if _wall_grabbed and _procesar_agarre_pared(delta):
+		return
+
 	# El coordinador administra la ventana temporal de la acción.
 	locomotion.avanzar_accion(delta)
 
@@ -411,6 +430,7 @@ func _aplicar_movimiento_normal(
 	)
 	physics_movement_controller.establecer_velocidad(self, velocidad)
 	physics_movement_controller.aplicar_desplazamiento(self)
+	_detectar_agarre_pared()
 	if direccion == Vector2.ZERO and state == State.IDLE:
 		_actualizar_recuperacion_eterium(delta)
 		_procesar_curacion_eterium(delta)
@@ -735,6 +755,94 @@ func _procesar_jump(delta: float) -> void:
 		visual.position = _base_visual_position
 		state = State.IDLE
 		_update_visual()
+
+
+# ============================================================
+# AGARRE Y SALTO DE PARED
+# ============================================================
+
+func _ctrl_mantenido() -> bool:
+	return Input.is_key_pressed(KEY_CTRL)
+
+
+func _detectar_agarre_pared() -> void:
+	if _red_servidor_controlado or _wall_grabbed or not _ctrl_mantenido():
+		return
+	for indice in range(get_slide_collision_count()):
+		var colision := get_slide_collision(indice)
+		if colision == null:
+			continue
+		var normal := colision.get_normal()
+		# El agarre es lateral; no permite engancharse al suelo/techo.
+		if absf(normal.x) < 0.72:
+			continue
+		_wall_normal = normal.normalized()
+		_wall_grabbed = true
+		velocity = Vector2.ZERO
+		return
+
+
+func _procesar_agarre_pared(delta: float) -> bool:
+	if not _ctrl_mantenido():
+		_wall_grabbed = false
+		_wall_normal = Vector2.ZERO
+		return false
+	if _wall_normal.length_squared() < 0.5:
+		_wall_grabbed = false
+		return false
+	# Comprobar que la pared sigue junto al cuerpo incluso cuando está quieto.
+	if not test_move(global_transform, -_wall_normal * wall_grab_probe_distance):
+		_wall_grabbed = false
+		_wall_normal = Vector2.ZERO
+		return false
+	if Input.is_action_just_pressed("jump"):
+		_iniciar_salto_pared()
+		return true
+
+	var vertical := Input.get_axis("move_up", "move_down")
+	velocity = Vector2(0.0, vertical * wall_climb_speed)
+	move_and_slide()
+	# Si el desplazamiento vertical encuentra una pared contigua, actualiza
+	# la normal para permitir recorrer esquinas sin soltar CTRL.
+	for indice in range(get_slide_collision_count()):
+		var colision := get_slide_collision(indice)
+		if colision != null and absf(colision.get_normal().x) >= 0.72:
+			_wall_normal = colision.get_normal().normalized()
+			break
+	return true
+
+
+func _iniciar_salto_pared() -> void:
+	var direccion_salida := _wall_normal
+	if direccion_salida.length_squared() < 0.5:
+		direccion_salida = Vector2.LEFT if facing.x >= 0.0 else Vector2.RIGHT
+	_wall_grabbed = false
+	_wall_jump_total = maxf(wall_jump_duration, 0.08)
+	_wall_jump_remaining = _wall_jump_total
+	_wall_jump_start_position = visual.position
+	# Impulso hacia el lado contrario de la pared, con un componente ascendente.
+	velocity = direccion_salida * wall_jump_speed + Vector2.UP * wall_jump_speed * 0.42
+	_wall_normal = Vector2.ZERO
+	facing = direccion_salida
+	_update_dir_marker()
+	_update_visual()
+
+
+func _procesar_salto_pared(delta: float) -> void:
+	_wall_jump_remaining = maxf(0.0, _wall_jump_remaining - delta)
+	velocity = velocity.move_toward(Vector2.ZERO, wall_jump_speed * 4.0 * delta)
+	move_and_slide()
+	var progreso := 1.0 - (_wall_jump_remaining / maxf(_wall_jump_total, 0.001))
+	var altura := sin(progreso * PI) * 18.0
+	visual.position = _base_visual_position + Vector2(0.0, -altura)
+	if _wall_jump_remaining <= 0.0:
+		velocity = Vector2.ZERO
+		visual.position = _base_visual_position
+		_wall_jump_total = 0.0
+		state = State.IDLE
+		_update_visual()
+
+
 
 
 # ============================================================
