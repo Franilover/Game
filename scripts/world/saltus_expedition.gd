@@ -129,7 +129,7 @@ func _crear_terreno() -> void:
 	# el atlas, igual que cualquier TileMapLayer normal.
 	tile_set.add_physics_layer()
 	tile_set.set_physics_layer_collision_layer(0, 1)
-	tile_set.set_physics_layer_collision_mask(0, 1)
+	tile_set.set_physics_layer_collision_mask(0, 0)
 
 	var atlas := TileSetAtlasSource.new()
 	atlas.texture = textura
@@ -260,6 +260,8 @@ func _configurar_colision_tile(data: TileData, solo_desde_arriba: bool) -> void:
 		Vector2(-TILE_SIZE * 0.5, TILE_SIZE * 0.5)
 	]))
 	data.set_collision_polygon_one_way(0, 0, solo_desde_arriba)
+	if solo_desde_arriba:
+		data.set_collision_polygon_one_way_margin(0, 0, 8.0)
 
 
 func _crear_grafo_sector() -> void:
