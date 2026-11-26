@@ -94,13 +94,13 @@ func update_properties(parent: TileMapDual) -> void:
 	self.y_sort_origin = parent.y_sort_origin
 	self.x_draw_order_reversed = parent.x_draw_order_reversed
 	self.rendering_quadrant_size = parent.rendering_quadrant_size
-	# Physics
-	self.collision_enabled = parent.collision_enabled
-	self.use_kinematic_bodies = parent.use_kinematic_bodies
-	self.collision_visibility_mode = parent.collision_visibility_mode
-	# Navigation
-	self.navigation_enabled = parent.navigation_enabled
-	self.navigation_visibility_mode = parent.navigation_visibility_mode
+	# DisplayLayer solo recompone la imagen Dual Grid. La colisión y la
+	# navegación pertenecen exclusivamente al TileMapDual fuente: duplicarlas
+	# aquí desplaza las formas medio tile y crea superficies fantasma.
+	self.collision_enabled = false
+	self.collision_layer = 0
+	self.collision_mask = 0
+	self.navigation_enabled = false
 	# Canvas item properties
 	self.show_behind_parent = parent.show_behind_parent
 	self.top_level = parent.top_level
