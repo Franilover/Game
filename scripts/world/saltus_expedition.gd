@@ -55,7 +55,13 @@ var _sector_gate: StaticBody2D
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
-	_player = get_node_or_null("Player") as SaltusPlayer
+	# Este script está adjunto al contenedor Decoracion, no a la raíz de la escena.
+	# Player y PuntosDeControl son hermanos de Decoracion bajo ExpedicionSaltus.
+	var raiz_escena := get_parent()
+	if not is_instance_valid(raiz_escena):
+		push_error("Saltus: no se encontró la raíz de la escena.")
+		return
+	_player = raiz_escena.get_node_or_null("Player") as SaltusPlayer
 	if not is_instance_valid(_player):
 		push_error("Saltus: no se encontró el nodo Player.")
 		return
@@ -99,7 +105,8 @@ func _process(_delta: float) -> void:
 
 
 func _conectar_checkpoints() -> void:
-	var contenedor := get_node_or_null("PuntosDeControl")
+	var raiz_escena := get_parent()
+	var contenedor := raiz_escena.get_node_or_null("PuntosDeControl") if is_instance_valid(raiz_escena) else null
 	if contenedor == null:
 		push_warning("Saltus: no se encontró PuntosDeControl; se usará el punto inicial.")
 		return
