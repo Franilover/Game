@@ -779,7 +779,7 @@ func _detectar_agarre_pared() -> void:
 			var colision := get_slide_collision(indice)
 			if colision == null:
 				continue
-			if _es_superficie_unidireccional(colision.get_collider(), colision.get_position()):
+			if _es_superficie_unidireccional(colision.get_collider(), colision.get_position(), colision.get_normal()):
 				continue
 			var normal_colision := colision.get_normal()
 			if absf(normal_colision.x) >= 0.72:
@@ -824,7 +824,8 @@ func _buscar_normal_pared() -> Vector2:
 			# CharacterBody2D. Las plataformas one-way no cuentan como paredes.
 			var collider_variant: Variant = impacto.get("collider")
 			var punto_global: Vector2 = impacto.get("position", destino)
-			if _es_superficie_unidireccional(collider_variant, punto_global):
+			var normal_impacto: Vector2 = impacto.get("normal", Vector2.ZERO)
+			if _es_superficie_unidireccional(collider_variant, punto_global, normal_impacto):
 				continue
 
 			var normal: Vector2 = impacto.get("normal", Vector2.ZERO)
@@ -833,11 +834,16 @@ func _buscar_normal_pared() -> Vector2:
 	return Vector2.ZERO
 
 
-func _es_superficie_unidireccional(collider: Object, punto_global: Vector2) -> bool:
+func _es_superficie_unidireccional(
+	collider: Object,
+	punto_global: Vector2,
+	normal: Vector2 = Vector2.ZERO
+) -> bool:
 	if not collider is TileMapLayer:
 		return false
 	var terreno := collider as TileMapLayer
-	var celda := terreno.local_to_map(terreno.to_local(punto_global))
+	var punto_interior := punto_global - normal * 0.5
+	var celda := terreno.local_to_map(terreno.to_local(punto_interior))
 	var datos := terreno.get_cell_tile_data(celda)
 	if datos == null:
 		return false
