@@ -21,6 +21,7 @@ var interaction_controller := InteractionController.new()
 var objetivo_actual: Node = null
 
 var _scan_timer: float = 0.0
+var _activo: bool = true
 
 
 func configurar(
@@ -47,6 +48,7 @@ func configurar(
 ## comparten la posición del Player principal. Desactivarlo limpia objetivos
 ## antiguos y deja que el InputRouter entregue la acción al CombatSystem.
 func establecer_activo(activo: bool) -> void:
+	_activo = activo
 	if not activo:
 		_cambiar_objetivo(null)
 	set_process(activo)
@@ -83,6 +85,8 @@ func _ready() -> void:
 
 
 func procesar_accion_primaria() -> bool:
+	if not _activo:
+		return false
 	var objeto_mano: Dictionary = {}
 	if inventory != null:
 		objeto_mano = inventory.obtener_objeto_mano_activa("izquierda").duplicate(true)
@@ -90,6 +94,8 @@ func procesar_accion_primaria() -> bool:
 
 
 func procesar_accion_secundaria() -> bool:
+	if not _activo:
+		return false
 	var objeto_mano: Dictionary = {}
 	if inventory != null:
 		objeto_mano = inventory.obtener_objeto_mano_activa("derecha").duplicate(true)
@@ -97,7 +103,7 @@ func procesar_accion_secundaria() -> bool:
 
 
 func _procesar_interaccion_de_mano(objeto: Dictionary, permite_colocacion: bool, mano: String) -> bool:
-	if player == null or not player.is_alive:
+	if not _activo or player == null or not player.is_alive:
 		return false
 
 	# La interacción contextual tiene prioridad real sobre el uso de la mano.
@@ -224,6 +230,8 @@ func _objetivo_sigue_disponible() -> bool:
 
 
 func hay_interaccion_contextual() -> bool:
+	if not _activo:
+		return false
 	_buscar_objetivo()
 	return interaction_controller.objetivo_actual != null
 
