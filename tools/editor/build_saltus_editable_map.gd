@@ -6,11 +6,6 @@ extends EditorScript
 const SCENE_PATH := "res://scenes/world/expedicion_saltus.tscn"
 const EXPEDITION_SCRIPT_PATH := "res://scripts/world/saltus_expedition.gd"
 
-const CATEGORIES := [
-	"Mapa", "Vegetacion", "Criaturas", "Mecanismos", "PuntosDeControl",
-	"Fondos", "Ambiente", "ElementosTutorial", "ElementosEscena"
-]
-
 
 func _run() -> void:
 	var root := get_editor_interface().get_edited_scene_root()
@@ -19,7 +14,9 @@ func _run() -> void:
 		return
 	print("Saltus: comprobando contenido materializado de la escena...")
 	if bool(root.get("contenido_escena_preconstruido")) and _escena_tiene_contenido_editable(root):
-		# Solo evitamos reconstruir si el .tscn realmente contiene todas las categorías.
+		# Migra escenas anteriores: elimina contenedores de categoría y deja cada
+		# elemento del mundo como hijo directo e independiente de la raíz.
+		_desagrupar_categorias(root)
 		for hijo: Node in root.get_children():
 			_asignar_owner_recursivo(hijo, root)
 		var escena_existente := PackedScene.new()
@@ -82,7 +79,8 @@ func _run() -> void:
 	root.remove_child(factory)
 	factory.free()
 
-	_organizar_nodos(root)
+	# Cada elemento generado queda como hijo directo de la escena raíz.
+	# No creamos Node2D intermedios que agrupen transformaciones.
 	# Garantiza que todos los nodos del escenario pertenezcan a esta escena.
 	# Sin owner, Godot los muestra pero no permite editarlos como parte del .tscn.
 	for hijo: Node in root.get_children():
@@ -111,46 +109,19 @@ func _run() -> void:
 	print("Saltus: escena guardada en disco y sincronizada con el árbol normal del editor.")
 
 
-func _organizar_nodos(root: Node) -> void:
-	var grupos: Dictionary = {}
-	for nombre in CATEGORIES:
-		var grupo := Node2D.new()
-		grupo.name = nombre
-		root.add_child(grupo)
-		grupo.owner = root
-		grupos[nombre] = grupo
-
-	var nodos := root.get_children().duplicate()
-	for nodo: Node in nodos:
-		if nodo is not Node2D or CATEGORIES.has(nodo.name) or nodo.name == "Player":
+func _desagrupar_categorias(root: Node) -> void:
+	for grupo: Node in root.get_children().duplicate():
+		if not CATEGORIES.has(grupo.name):
 			continue
-		var categoria := _categoria_para(nodo)
-		var destino: Node2D = grupos[categoria]
-		var transformacion := (nodo as Node2D).global_transform
-		nodo.reparent(destino)
-		(nodo as Node2D).global_transform = transformacion
-		_asignar_owner_recursivo(nodo, root)
-
-
-func _categoria_para(nodo: Node) -> String:
-	var nombre := nodo.name
-	if nombre == "TerrenoSaltusV2" or nombre.begins_with("Terreno_") or nombre.begins_with("Plataforma_"):
-		return "Mapa"
-	if nombre.begins_with("Zlish_") or nombre.begins_with("Flaxis_"):
-		return "Criaturas"
-	if nombre.begins_with("PuntoDescanso"):
-		return "PuntosDeControl"
-	if nombre.begins_with("Parallax") or nombre == "RellenoVerdeFondo":
-		return "Fondos"
-	if nombre.begins_with("HojasEnElAire"):
-		return "Ambiente"
-	if nombre.begins_with("FloraImpulsora") or nombre.begins_with("FlorDetectora"):
-		return "Vegetacion"
-	if nombre.begins_with("Puerta") or nombre.begins_with("CorrienteAerea"):
-		return "Mecanismos"
-	if nombre.begins_with("Indicacion_") or nombre == "ZonaPrimerJefe":
-		return "ElementosTutorial"
-	return "ElementosEscena"
+		for elemento: Node in grupo.get_children().duplicate():
+			var transformacion := (elemento as Node2D).global_transform if elemento is Node2D else Transform2D.IDENTITY
+			grupo.remove_child(elemento)
+			root.add_child(elemento)
+			if elemento is Node2D:
+				(elemento as Node2D).global_transform = transformacion
+		grupo.owner = null
+		root.remove_child(grupo)
+		grupo.free()
 
 
 func _asignar_owner_recursivo(nodo: Node, root: Node) -> void:
@@ -228,26 +199,16 @@ func _agregar_sprite(parent: Node, nombre: String, ruta: String) -> void:
 
 
 func _escena_tiene_contenido_editable(root: Node) -> bool:
-	var mapa := root.get_node_or_null("Mapa")
-	var vegetacion := root.get_node_or_null("Vegetacion")
-	var criaturas := root.get_node_or_null("Criaturas")
-	var mecanismos := root.get_node_or_null("Mecanismos")
-	var checkpoints := root.get_node_or_null("PuntosDeControl")
-	var fondos := root.get_node_or_null("Fondos")
-	if mapa == null or vegetacion == null or criaturas == null:
-		return false
-	if mecanismos == null or checkpoints == null or fondos == null:
-		return false
 	return (
-		_contiene_nombre(mapa, "TerrenoSaltusV2")
-		and _contiene_prefijo(vegetacion, "FloraImpulsora_")
-		and _contiene_prefijo(vegetacion, "FlorDetectora_")
-		and _contiene_prefijo(criaturas, "Zlish_")
-		and _contiene_prefijo(criaturas, "Flaxis_")
-		and _contiene_nombre(mecanismos, "PuertaFlorDetectora")
-		and _contiene_prefijo(mecanismos, "CorrienteAerea")
-		and _contiene_nombre(checkpoints, "PuntoDescanso")
-		and _contiene_prefijo(fondos, "Parallax")
+		_contiene_nombre(root, "TerrenoSaltusV2")
+		and _contiene_prefijo(root, "FloraImpulsora_")
+		and _contiene_prefijo(root, "FlorDetectora_")
+		and _contiene_prefijo(root, "Zlish_")
+		and _contiene_prefijo(root, "Flaxis_")
+		and _contiene_nombre(root, "PuertaFlorDetectora")
+		and _contiene_prefijo(root, "CorrienteAerea")
+		and _contiene_nombre(root, "PuntoDescanso")
+		and _contiene_prefijo(root, "Parallax")
 	)
 
 
