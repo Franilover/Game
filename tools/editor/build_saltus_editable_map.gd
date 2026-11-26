@@ -8,8 +8,10 @@ const EXPEDITION_SCRIPT_PATH := "res://scripts/world/saltus_expedition.gd"
 
 # Nombres de los contenedores usados por versiones anteriores del constructor.
 const CATEGORIES := [
-	"Mapa", "Vegetacion", "Criaturas", "Mecanismos", "PuntosDeControl",
-	"Fondos", "Ambiente", "ElementosTutorial", "ElementosEscena"
+	"Mapa", "Vegetacion", "Terreno", "Plantas", "Criaturas",
+	"CorrientesAereas", "Mecanismos", "PuntosDeControl", "Fondos",
+	"Ambiente", "Tutorial", "Encuentro", "Decoracion",
+	"ElementosTutorial", "ElementosEscena"
 ]
 
 
