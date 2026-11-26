@@ -25,17 +25,6 @@ func _run() -> void:
 		_desagrupar_categorias(root)
 		for hijo: Node in root.get_children():
 			_asignar_owner_recursivo(hijo, root)
-		var escena_existente := PackedScene.new()
-		var error_pack := escena_existente.pack(root)
-		if error_pack != OK:
-			push_error("Saltus: no se pudo preparar la escena para edición: " + error_string(error_pack))
-			return
-		var error_guardado := ResourceSaver.save(escena_existente, SCENE_PATH)
-		if error_guardado != OK:
-			push_error("Saltus: no se pudo guardar la escena editable: " + error_string(error_guardado))
-			return
-		# Actualiza también el documento que mantiene abierto el editor.
-		# Así el árbol de Scene y el archivo .tscn quedan sincronizados.
 		get_editor_interface().save_scene()
 		print("Saltus: escena editable verificada, guardada y sincronizada con el editor.")
 		return
@@ -85,11 +74,7 @@ func _run() -> void:
 
 	# Guardamos el documento que está abierto en el editor. No empaquetamos con
 	# ResourceSaver en paralelo: eso podía sobrescribir el estado del Scene dock.
-	var error_guardado := get_editor_interface().save_scene()
-	if error_guardado != OK:
-		root.set("contenido_escena_preconstruido", false)
-		push_error("Saltus: el editor no pudo guardar expedicion_saltus.tscn: " + error_string(error_guardado))
-		return
+	get_editor_interface().save_scene()
 
 	print("Saltus: escena guardada. Los objetos deben figurar como nodos independientes bajo ExpedicionSaltus.")
 
