@@ -165,6 +165,10 @@ func restaurar_tras_reaparicion(posicion: Vector2) -> void:
 	_dash_time_left = 0.0
 	_dash_cooldown_left = 0.0
 	_dash_ghost_timer = 0.0
+	_wall_grabbed = false
+	_wall_normal = Vector2.ZERO
+	_wall_jump_remaining = 0.0
+	_wall_jump_total = 0.0
 	_air_dash_available = true
 	visible = true
 	restaurar_estado_vital(max_health, true, max_mana)
@@ -330,7 +334,7 @@ func _buscar_normal_pared() -> Vector2:
 	return Vector2.ZERO
 
 
-func _procesar_agarre_pared(delta: float) -> bool:
+func _procesar_agarre_pared(_delta: float) -> bool:
 	if not Input.is_key_pressed(KEY_CTRL):
 		_wall_grabbed = false
 		_wall_normal = Vector2.ZERO
@@ -342,7 +346,9 @@ func _procesar_agarre_pared(delta: float) -> bool:
 		_wall_grabbed = false
 		_wall_normal = Vector2.ZERO
 		return false
-	if Input.is_action_just_pressed("jump") or _direccion_alejamiento_just_pressed():
+	var salto_solicitado := _jump_requested or Input.is_action_just_pressed("jump")
+	_jump_requested = false
+	if salto_solicitado or _direccion_alejamiento_just_pressed():
 		_iniciar_salto_pared()
 		return true
 	var vertical := Input.get_axis("move_up", "move_down")
