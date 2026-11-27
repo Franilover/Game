@@ -135,6 +135,11 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 		control.add_theme_color_override("font_outline_color", Color("#302014"))
 		control.add_theme_constant_override("outline_size", 2)
 
+	if control is Panel or control is PanelContainer:
+		var panel_background := _texture_style("background.png", 0)
+		if panel_background != null:
+			control.add_theme_stylebox_override("panel", panel_background)
+
 	if control is LineEdit:
 		var input_style := _texture_style("input_frame.png", 4)
 		if input_style != null:
