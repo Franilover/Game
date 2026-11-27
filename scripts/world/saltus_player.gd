@@ -1,11 +1,7 @@
 extends Entity
 class_name SaltusPlayer
 
-const IDLE_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
-const WALK_TEXTURE_PATH: String = "res://assets/art/kingdom/Torres/Personajes/Sprite-0004_Walking_Left.png"
-const PLAYER_VISUAL_CONTROLLER_SCRIPT = preload("res://scripts/characters/player_visual_controller.gd")
-const ITEM_ICON_RESOLVER_SCRIPT = preload("res://scripts/ui/item_icon_resolver.gd")
-const EQUIPMENT_ANIMATOR_SCRIPT = preload("res://scripts/characters/player_equipment_animation_controller.gd")
+const PLAYER_VISUAL_CONTROLLER_SCRIPT: Script = preload("res://scripts/characters/player_visual_controller.gd")
 
 @export var move_speed: float = 190.0
 @export var run_multiplier: float = 1.35
@@ -21,7 +17,8 @@ const EQUIPMENT_ANIMATOR_SCRIPT = preload("res://scripts/characters/player_equip
 @export var wall_jump_speed: float = 260.0
 @export var wall_jump_duration: float = 0.24
 
-@onready var sprite: Sprite2D = $Sprite2D
+@onready var visual: Node2D = $Visual
+@onready var sprite: Sprite2D = $Visual/Sprite2D
 
 var _jump_requested: bool = false
 var _dash_requested: bool = false
@@ -36,13 +33,8 @@ var _wall_grabbed: bool = false
 var _wall_normal: Vector2 = Vector2.ZERO
 var _wall_jump_remaining: float = 0.0
 var _wall_jump_total: float = 0.0
-var _idle_texture: Texture2D
-var _walk_texture: Texture2D
 var facing: Vector2 = Vector2.DOWN
 var _visual_controller: PlayerVisualController = PLAYER_VISUAL_CONTROLLER_SCRIPT.new()
-var _sprites_equipo: Dictionary = {}
-var _equipo_oculto_por_animacion: bool = false
-var _equipo_animacion_restore_tween: Tween = null
 
 
 func _ready() -> void:
@@ -55,94 +47,18 @@ func _ready() -> void:
 	add_to_group("saltus_player")
 	if sprite != null:
 		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		_idle_texture = load(IDLE_TEXTURE_PATH) as Texture2D
-		_walk_texture = load(WALK_TEXTURE_PATH) as Texture2D
-		if _idle_texture != null:
-			sprite.texture = _idle_texture
-	_visual_controller.configurar(self, null, null)
+	_visual_controller.configurar(visual, null, null, "platformer")
+	_visual_controller.actualizar_presentacion_plataforma(0.0, false)
 
 
 ## La UI y el personaje de Saltus leen el mismo equipamiento del InventoryController.
 ## Este método solo refleja los objetos recibidos; no mantiene un inventario local.
 func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> void:
-	_actualizar_sprite_equipado("izquierda", izquierda)
-	_actualizar_sprite_equipado("derecha", derecha)
-	_actualizar_posicion_equipo_visual()
+	_visual_controller.configurar_equipo_visual(izquierda, derecha)
 
 
-func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
-	var sprite_equipo := _sprites_equipo.get(mano) as Sprite2D
-	if objeto.is_empty():
-		if is_instance_valid(sprite_equipo):
-			sprite_equipo.texture = null
-			sprite_equipo.visible = false
-		return
-
-	var datos_sprite := objeto.duplicate(true)
-	datos_sprite.erase("icono")
-	var textura: Texture2D = ITEM_ICON_RESOLVER_SCRIPT.obtener_icono(datos_sprite)
-	if textura == null:
-		var icono_variant: Variant = objeto.get("icono", null)
-		if icono_variant is Texture2D:
-			textura = icono_variant as Texture2D
-	if textura == null:
-		var tipo := EQUIPMENT_ANIMATOR_SCRIPT.obtener_tipo_animacion(objeto)
-		textura = EQUIPMENT_ANIMATOR_SCRIPT.obtener_textura_respaldo(tipo)
-	if textura == null:
-		if is_instance_valid(sprite_equipo):
-			sprite_equipo.texture = null
-			sprite_equipo.visible = false
-		return
-
-	if not is_instance_valid(sprite_equipo):
-		sprite_equipo = Sprite2D.new()
-		sprite_equipo.name = "EquipoVisual_" + mano
-		sprite_equipo.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
-		sprite_equipo.centered = true
-		sprite_equipo.z_index = 6
-		add_child(sprite_equipo)
-		_sprites_equipo[mano] = sprite_equipo
-	sprite_equipo.texture = textura
-	sprite_equipo.scale = Vector2(0.62, 0.62)
-	sprite_equipo.visible = not _equipo_oculto_por_animacion
-
-
-func _actualizar_posicion_equipo_visual() -> void:
-	for mano_variant in _sprites_equipo.keys():
-		var mano := str(mano_variant)
-		var sprite_equipo := _sprites_equipo[mano_variant] as Sprite2D
-		if not is_instance_valid(sprite_equipo):
-			continue
-		var lado := -1.0 if mano == "izquierda" else 1.0
-		if facing.x > 0.0:
-			lado *= -1.0
-		var origen := sprite.position if is_instance_valid(sprite) else Vector2(0.0, -22.0)
-		sprite_equipo.position = origen + Vector2(lado * 8.0, 6.0)
-		sprite_equipo.flip_h = facing.x > 0.0
-
-
-func _ocultar_equipo_durante_animacion(objeto: Dictionary) -> void:
-	_equipo_oculto_por_animacion = true
-	for sprite_variant in _sprites_equipo.values():
-		var sprite_equipo := sprite_variant as Sprite2D
-		if is_instance_valid(sprite_equipo):
-			sprite_equipo.visible = false
-	if is_instance_valid(_equipo_animacion_restore_tween) and _equipo_animacion_restore_tween.is_running():
-		_equipo_animacion_restore_tween.kill()
-	var perfil := EQUIPMENT_ANIMATOR_SCRIPT.obtener_perfil(objeto)
-	var duracion := float(perfil.get("duracion", 0.44)) + 0.12
-	_equipo_animacion_restore_tween = create_tween()
-	_equipo_animacion_restore_tween.tween_interval(duracion)
-	_equipo_animacion_restore_tween.tween_callback(_restaurar_equipo_visual)
-
-
-func _restaurar_equipo_visual() -> void:
-	_equipo_oculto_por_animacion = false
-	for sprite_variant in _sprites_equipo.values():
-		var sprite_equipo := sprite_variant as Sprite2D
-		if is_instance_valid(sprite_equipo):
-			sprite_equipo.visible = sprite_equipo.texture != null
-	_equipo_animacion_restore_tween = null
+func configurar_apariencia_visual(apariencia: Dictionary) -> void:
+	_visual_controller.aplicar_apariencia(apariencia)
 
 
 func reproducir_animacion_herramienta(objeto: Dictionary, objetivo_global: Vector2) -> void:
@@ -151,10 +67,7 @@ func reproducir_animacion_herramienta(objeto: Dictionary, objetivo_global: Vecto
 		facing = direccion.normalized()
 		if absf(facing.x) > 0.01 and sprite != null:
 			sprite.flip_h = facing.x > 0.0
-	_actualizar_posicion_equipo_visual()
-	_ocultar_equipo_durante_animacion(objeto)
-	if is_instance_valid(_visual_controller):
-		_visual_controller.reproducir_animacion_herramienta(objeto, facing)
+	_visual_controller.reproducir_animacion_herramienta(objeto, facing)
 
 
 func restaurar_tras_reaparicion(posicion: Vector2) -> void:
@@ -402,24 +315,17 @@ func _procesar_salto_pared(delta: float) -> void:
 
 
 func _actualizar_presentacion(direction: float) -> void:
-	if sprite == null:
+	if not is_instance_valid(sprite):
 		return
-	if absf(direction) > 0.05:
+	var en_movimiento := absf(direction) > 0.05
+	if en_movimiento:
 		facing = Vector2(signf(direction), 0.0)
-		sprite.flip_h = facing.x > 0.0
-		if _walk_texture != null:
-			sprite.texture = _walk_texture
-	else:
-		if _idle_texture != null:
-			sprite.texture = _idle_texture
-		# Mantener la orientación del último movimiento también en reposo,
-		# para que el golpe y la pose del personaje coincidan.
-		sprite.flip_h = facing.x > 0.0
 	if is_on_floor() and absf(velocity.x) > 18.0:
 		sprite.position.y = -22.0 + sin(_elapsed * 15.0) * 1.3
 	else:
 		sprite.position.y = move_toward(sprite.position.y, -22.0, 1.0)
-	_actualizar_posicion_equipo_visual()
+	_visual_controller.actualizar_direccion(facing)
+	_visual_controller.actualizar_presentacion_plataforma(direction, en_movimiento)
 
 
 func _crear_estela_dash() -> void:
