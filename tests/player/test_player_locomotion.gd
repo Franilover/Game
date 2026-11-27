@@ -6,6 +6,8 @@ const ActionScript = preload("res://scripts/gameplay/player/player_action_contro
 const StaminaScript = preload("res://scripts/gameplay/player/player_stamina_controller.gd")
 const VisualScript = preload("res://scripts/characters/player_visual_controller.gd")
 const EquipmentAnimationScript = preload("res://scripts/characters/player_equipment_animation_controller.gd")
+const CharacterAppearanceScript = preload("res://scripts/characters/character_appearance.gd")
+const SpriteAnimationScript = preload("res://scripts/shared/animation/shared_sprite_animation_controller.gd")
 const InputScript = preload("res://scripts/gameplay/player/player_input_controller.gd")
 const PhysicsScript = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 
@@ -22,6 +24,7 @@ func _run() -> void:
 	_probar_coordinador(errores)
 	_probar_recarga_dash_reutilizable(errores)
 	_probar_presentacion_visual(errores)
+	_probar_animador_spritesheet(errores)
 	_probar_perfiles_animacion_equipo(errores)
 	_probar_adaptador_input(errores)
 	_probar_integracion_fisica(errores)
@@ -164,16 +167,16 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 
 	# Los sprites nuevos se aplican a WALK y RUN sin depender de AnimationPlayer.
 	visual.actualizar_estado(1, Vector2.LEFT)
-	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004_Walking_Left.png") or sprite.flip_h:
+	if not _textura_coincide_con_archivo(sprite.texture, "walk_left") or sprite.flip_h:
 		errores.append("Caminar hacia la izquierda no usó la nueva pose lateral.")
 	visual.actualizar_estado(2, Vector2.RIGHT)
 	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004_Walking_Left.png") or not sprite.flip_h:
 		errores.append("Correr hacia la derecha no reflejó la pose lateral.")
 	visual.actualizar_estado(1, Vector2.UP)
-	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004_Walking_Back.png") or sprite.flip_h:
+	if not _textura_coincide_con_archivo(sprite.texture, "walk_back") or sprite.flip_h:
 		errores.append("Caminar hacia arriba no usó la pose de espalda.")
 	visual.actualizar_estado(2, Vector2.DOWN)
-	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004.png") or sprite.flip_h:
+	if not _textura_coincide_con_archivo(sprite.texture, "idle_front") or sprite.flip_h:
 		errores.append("Caminar hacia abajo no conservó la skin frontal base.")
 	visual.actualizar_estado(0, Vector2.LEFT)
 	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004.png") or sprite.flip_h:
@@ -250,10 +253,25 @@ func _probar_integracion_fisica(errores: Array[String]) -> void:
 	cuerpo.free()
 
 
-func _textura_coincide_con_archivo(textura: Texture2D, ruta: String) -> bool:
+func _probar_animador_spritesheet(errores: Array[String]) -> void:
+	var sprite := Sprite2D.new()
+	sprite.hframes = 4
+	var animator: SharedSpriteAnimationController = SpriteAnimationScript.new()
+	animator.configurar(sprite)
+	animator.reproducir(4.0, 0, 4, true)
+	animator.actualizar(0.26)
+	if sprite.frame != 1:
+		errores.append("El animador compartido no avanzó el spritesheet según sus FPS.")
+
+	animator.reproducir(10.0, 0, 2, false)
+	animator.actualizar(0.25)
+	if animator.reproduciendo or sprite.frame != 1:
+		errores.append("El animador compartido no finalizó una secuencia sin bucle.")
+	sprite.free()
+
+
+func _textura_coincide_con_archivo(textura: Texture2D, clave: String) -> bool:
 	if textura == null:
 		return false
-	# Comparar contra el recurso importado por el mismo ResourceLoader; los
-	# buffers del PNG fuente no son necesariamente idénticos al formato importado.
-	var esperada := ResourceLoader.load(ruta) as Texture2D
+	var esperada := CharacterAppearanceScript.obtener_textura_sprite(clave)
 	return esperada != null and textura == esperada
