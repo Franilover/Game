@@ -45,16 +45,17 @@ const CATALOG_ASSETS := {
 		{"name": "Pelo 3", "path": PLAYER_ART_DIR + "customization/hair/3 Front.png"}
 	],
 	"eyes": [
-		{"name": "expressive", "path": PLAYER_ART_DIR + "customization/eyes/expressive.png"}
+		{"name": "Ojos 1", "path": PLAYER_ART_DIR + "customization/eyes/1 Front.png"}
 	],
 	"shirt": [
-		{"name": "tunic", "path": PLAYER_ART_DIR + "customization/shirts/tunic.png"}
+		{"name": "Camisa 1", "path": PLAYER_ART_DIR + "customization/shirts/1 Front.png"},
+		{"name": "Túnica", "path": PLAYER_ART_DIR + "customization/shirts/tunic.png"}
 	],
 	"pants": [
-		{"name": "skirt", "path": PLAYER_ART_DIR + "customization/pants/skirt.png"}
+		{"name": "Falda", "path": PLAYER_ART_DIR + "customization/pants/skirt.png"}
 	],
 	"shoes": [
-		{"name": "sneakers", "path": PLAYER_ART_DIR + "customization/shoes/sneakers.png"}
+		{"name": "Zapatillas", "path": PLAYER_ART_DIR + "customization/shoes/sneakers.png"}
 	]
 }
 
@@ -178,13 +179,9 @@ static func sincronizar_capas(visual: Node2D) -> void:
 
 
 static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> void:
+	# Mantiene el nombre público histórico; actualiza todas las capas que tengan
+	# variantes direccionales (cabello, ojos y prendas superiores).
 	if visual == null or not is_instance_valid(visual):
-		return
-	var cabello := visual.get_node_or_null("Appearance_hair") as Sprite2D
-	if cabello == null:
-		return
-	var ruta_base := str(cabello.get_meta("appearance_base_path", "")).strip_edges()
-	if ruta_base.is_empty():
 		return
 	var direccion := "Front"
 	var invertir := false
@@ -193,15 +190,23 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 	else:
 		direccion = "Lateral"
 		invertir = facing.x > 0.0
-	var clave_direccion := direccion + (":flip" if invertir else "")
-	if str(cabello.get_meta("appearance_direction", "")) == clave_direccion:
-		return
-	var numero_pelo := ruta_base.get_file().get_basename().get_slice(" ", 0)
-	var ruta := ruta_base.get_base_dir() + "/" + numero_pelo + " " + direccion + ".png"
-	var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
-	if textura == null and ruta != ruta_base:
-		textura = SHARED_ASSET_LIBRARY.textura(ruta_base)
-	if textura != null:
-		cabello.texture = textura
-	cabello.flip_h = invertir
-	cabello.set_meta("appearance_direction", clave_direccion)
+	for slot in ["hair", "eyes", "shirt"]:
+		var capa := visual.get_node_or_null("Appearance_" + slot) as Sprite2D
+		if capa == null:
+			continue
+		var ruta_base := str(capa.get_meta("appearance_base_path", "")).strip_edges()
+		if ruta_base.is_empty():
+			continue
+		var nombre_base := ruta_base.get_file().get_basename()
+		var numero_o_nombre := nombre_base.get_slice(" ", 0)
+		var ruta_direccional := ruta_base.get_base_dir() + "/" + numero_o_nombre + " " + direccion + ".png"
+		var clave_direccion := direccion + (":flip" if invertir else "")
+		if str(capa.get_meta("appearance_direction", "")) == clave_direccion:
+			continue
+		var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta_direccional)
+		if textura == null:
+			textura = SHARED_ASSET_LIBRARY.textura(ruta_base)
+		if textura != null:
+			capa.texture = textura
+		capa.flip_h = invertir if direccion == "Lateral" else false
+		capa.set_meta("appearance_direction", clave_direccion)
