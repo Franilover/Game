@@ -150,6 +150,7 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="LoginPanel" type="PanelContainer" parent="LoginOverlay/LoginCenter" unique_id=2015400300]
+	metadata/ui_background_role = "floating"
 custom_minimum_size = Vector2(380, 330)
 layout_mode = 2
 size_flags_horizontal = 4
@@ -224,6 +225,7 @@ grow_vertical = 2
 color = Color(0.02, 0.015, 0.01, 0.78)
 
 [node name="MultiplayerPanel" type="PanelContainer" parent="MultiplayerOverlay" unique_id=1423139232]
+	metadata/ui_background_role = "floating"
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
