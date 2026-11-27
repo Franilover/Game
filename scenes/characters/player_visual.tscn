@@ -1,14 +1,11 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png" id="1_player_texture"]
-
 [node name="Visual" type="Node2D"]
 z_as_relative = false
 z_index = 4096
 
 [node name="Sprite2D" type="Sprite2D" parent="."]
 position = Vector2(-2, -22)
-texture = ExtResource("1_player_texture")
 
 [node name="FacingMarker" type="ColorRect" parent="."]
 visible = false
