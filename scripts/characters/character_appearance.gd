@@ -5,13 +5,24 @@ class_name CharacterAppearance
 ## con el sprite base para que las piezas coincidan sin ajustes por personaje.
 
 const SLOTS: Array[String] = ["body", "hair", "eyes", "shirt", "pants", "shoes"]
+const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
+
+# El arte original se conserva en su ubicación histórica para no duplicar
+# PNG ni romper referencias de importación. Este catálogo es su única puerta
+# de acceso para jugadores, reinos y expediciones.
+const PLAYER_ART_DIR := "res://assets/art/kingdom/Torres/Personajes/"
+const PLAYER_SPRITES := {
+	"idle_front": PLAYER_ART_DIR + "Sprite-0004.png",
+	"walk_left": PLAYER_ART_DIR + "Sprite-0004_Walking_Left.png",
+	"walk_back": PLAYER_ART_DIR + "Sprite-0004_Walking_Back.png"
+}
 const SLOT_DIRECTORIES := {
-	"body": "res://assets/art/kingdom/Torres/Personajes/customization/body/",
-	"hair": "res://assets/art/kingdom/Torres/Personajes/customization/hair/",
-	"eyes": "res://assets/art/kingdom/Torres/Personajes/customization/eyes/",
-	"shirt": "res://assets/art/kingdom/Torres/Personajes/customization/shirts/",
-	"pants": "res://assets/art/kingdom/Torres/Personajes/customization/pants/",
-	"shoes": "res://assets/art/kingdom/Torres/Personajes/customization/shoes/"
+	"body": PLAYER_ART_DIR + "customization/body/",
+	"hair": PLAYER_ART_DIR + "customization/hair/",
+	"eyes": PLAYER_ART_DIR + "customization/eyes/",
+	"shirt": PLAYER_ART_DIR + "customization/shirts/",
+	"pants": PLAYER_ART_DIR + "customization/pants/",
+	"shoes": PLAYER_ART_DIR + "customization/shoes/"
 }
 const SLOT_LABELS := {
 	"body": "Cuerpo",
@@ -48,6 +59,10 @@ const CATALOG_ASSETS := {
 }
 
 
+static func obtener_textura_sprite(clave: String) -> Texture2D:
+	return SHARED_ASSET_LIBRARY.textura(str(PLAYER_SPRITES.get(clave, "")))
+
+
 static func catalogo(slot: String) -> Array[Dictionary]:
 	var resultado: Array[Dictionary] = []
 	var piezas: Array = CATALOG_ASSETS.get(slot, [])
@@ -58,7 +73,7 @@ static func catalogo(slot: String) -> Array[Dictionary]:
 		var ruta := str(pieza.get("path", ""))
 		if ruta.is_empty() or not ResourceLoader.exists(ruta):
 			continue
-		var textura := load(ruta) as Texture2D
+		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
 		resultado.append({
@@ -90,6 +105,9 @@ static func html_a_color(valor: Variant, predeterminado: Color = Color.WHITE) ->
 static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 	if visual == null or not is_instance_valid(visual):
 		return
+	var apariencia_anterior: Variant = visual.get_meta("character_appearance", null)
+	if apariencia_anterior is Dictionary and apariencia_anterior == apariencia:
+		return
 	for hijo in visual.get_children():
 		if hijo is Sprite2D and hijo.is_in_group("character_customization_layer"):
 			hijo.queue_free()
@@ -106,7 +124,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		var ruta := str(pieza.get("ruta", "")).strip_edges()
 		if ruta.is_empty() or not ResourceLoader.exists(ruta):
 			continue
-		var textura := load(ruta) as Texture2D
+		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
 		var capa := Sprite2D.new()
@@ -126,6 +144,26 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		capa.modulate = html_a_color(pieza.get("color", "#ffffff"), Color.WHITE)
 		visual.add_child(capa)
 		indice_z += 1
+	visual.set_meta("character_appearance", apariencia.duplicate(true))
+
+
+static func sincronizar_capas(visual: Node2D) -> void:
+	if not is_instance_valid(visual):
+		return
+	var sprite_base := visual.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite_base == null:
+		return
+	for hijo in visual.get_children():
+		if not hijo is Sprite2D or not hijo.is_in_group("character_customization_layer"):
+			continue
+		var capa := hijo as Sprite2D
+		capa.position = sprite_base.position
+		capa.centered = sprite_base.centered
+		capa.offset = sprite_base.offset
+		capa.flip_h = sprite_base.flip_h
+		capa.flip_v = sprite_base.flip_v
+		capa.scale = sprite_base.scale
+		capa.texture_filter = sprite_base.texture_filter
 
 
 static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> void:
@@ -148,7 +186,7 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 	var ruta := ruta_base.get_base_dir() + "/" + numero_pelo + " " + direccion + ".png"
 	if not ResourceLoader.exists(ruta):
 		ruta = ruta_base
-	var textura := ResourceLoader.load(ruta) as Texture2D
+	var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 	if textura != null:
 		cabello.texture = textura
 	cabello.flip_h = invertir
