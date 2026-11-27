@@ -946,13 +946,13 @@ func iniciar_animacion_ataque() -> bool:
 	_sprite_hframes_base = maxi(sprite.hframes, 1)
 	_sprite_vframes_base = maxi(sprite.vframes, 1)
 	_sprite_frame_base = sprite.frame
-	var ancho_frame := maxi(int(textura_base.get_width()) / _sprite_hframes_base, 1)
-	var alto_frame := maxi(int(textura_base.get_height()) / _sprite_vframes_base, 1)
+	var ancho_frame := maxi(int(floor(float(textura_base.get_width()) / float(_sprite_hframes_base))), 1)
+	var alto_frame := maxi(int(floor(float(textura_base.get_height()) / float(_sprite_vframes_base))), 1)
 	var hframes := 1
 	var vframes := 1
 	if textura_ataque.get_width() >= ancho_frame and textura_ataque.get_height() >= alto_frame:
-		hframes = maxi(int(textura_ataque.get_width()) / ancho_frame, 1)
-		vframes = maxi(int(textura_ataque.get_height()) / alto_frame, 1)
+		hframes = maxi(int(floor(float(textura_ataque.get_width()) / float(ancho_frame))), 1)
+		vframes = maxi(int(floor(float(textura_ataque.get_height()) / float(alto_frame))), 1)
 
 	_ataque_frames_totales = maxi(hframes * vframes, 1)
 	_ataque_fps = 10.0
@@ -1045,10 +1045,10 @@ func _iniciar_animacion_caminando() -> bool:
 	_caminando_hframes_base = maxi(sprite.hframes, 1)
 	_caminando_vframes_base = maxi(sprite.vframes, 1)
 	_caminando_frame_base = sprite.frame
-	var ancho_frame := maxi(int(_caminando_textura_base.get_width()) / _caminando_hframes_base, 1)
-	var alto_frame := maxi(int(_caminando_textura_base.get_height()) / _caminando_vframes_base, 1)
-	var hframes := maxi(int(textura.get_width()) / ancho_frame, 1)
-	var vframes := maxi(int(textura.get_height()) / alto_frame, 1)
+	var ancho_frame := maxi(int(floor(float(_caminando_textura_base.get_width()) / float(_caminando_hframes_base))), 1)
+	var alto_frame := maxi(int(floor(float(_caminando_textura_base.get_height()) / float(_caminando_vframes_base))), 1)
+	var hframes := maxi(int(floor(float(textura.get_width()) / float(ancho_frame))), 1)
+	var vframes := maxi(int(floor(float(textura.get_height()) / float(alto_frame))), 1)
 	_caminando_frames_totales = maxi(hframes * vframes, 1)
 	_caminando_animando = true
 	_zlish_idle_animando = false
