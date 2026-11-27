@@ -195,7 +195,8 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 		return
 	var origen := sprite.position if is_instance_valid(sprite) else Vector2(0.0, -22.0)
 	var orientacion := _obtener_direccion(direccion)
-	var vista_frontal := orientacion == "down" or orientacion == "up"
+	var vista_frontal := orientacion == "down"
+	var vista_trasera := orientacion == "up"
 	var mirando_derecha := direccion.x > 0.0
 	# En perfil se muestra la mano opuesta a la dirección de mirada:
 	# izquierda -> objeto de la mano derecha; derecha -> objeto de la mano izquierda.
@@ -206,6 +207,7 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 			continue
 		sprite_equipo.visible = (
 			not _equipo_oculto
+			and not vista_trasera
 			and (vista_frontal or mano == mano_visible)
 			and sprite_equipo.texture != null
 		)
@@ -224,7 +226,8 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 				lado = -1.0
 				rotacion_mano = -0.38
 				invertir_sprite = true
-		sprite_equipo.position = origen + Vector2(lado * 8.0, 6.0)
+		var separacion_frontal := 11.0 if vista_frontal else 8.0
+		sprite_equipo.position = origen + Vector2(lado * separacion_frontal, 6.0)
 		sprite_equipo.flip_h = invertir_sprite
 		sprite_equipo.rotation = rotacion_mano
 		sprite_equipo.z_index = 5 if direccion.y < -0.45 else 8
