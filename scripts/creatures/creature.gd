@@ -4,6 +4,8 @@ class_name Creature
 const PIXELGRAFIA_FONT = preload("res://assets/fonts/Pixelgrafia.ttf")
 const SHOP_UI_PATH := "res://scripts/ui/shop_ui.gd"
 const COMBAT_DEFENSE_SCRIPT: Script = preload("res://scripts/gameplay/combat/combat_defense.gd")
+const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
+const CHARACTER_APPEARANCE_SCRIPT: Script = preload("res://scripts/characters/character_appearance.gd")
 
 signal configuracion_actualizada
 signal danio_recibido(cantidad: int, atacante: Node)
@@ -306,7 +308,7 @@ func _cargar_sprite() -> void:
 			for ruta_garumi in rutas_garumi:
 				if not ResourceLoader.exists(ruta_garumi):
 					continue
-				textura_garumi = load(ruta_garumi) as Texture2D
+				textura_garumi = SHARED_ASSET_LIBRARY.textura(ruta_garumi)
 				if textura_garumi != null:
 					break
 			if textura_garumi != null:
@@ -322,7 +324,7 @@ func _cargar_sprite() -> void:
 	# sprites del paquete artístico del reino sin copiarlos a la carpeta global.
 	var sprite_path := str(datos.get("sprite_path", "")).strip_edges()
 	if sprite_path.begins_with("res://assets/art/kingdom/Froslia/Personajes/") and ResourceLoader.exists(sprite_path):
-		var textura_local := ResourceLoader.load(sprite_path) as Texture2D
+		var textura_local := SHARED_ASSET_LIBRARY.textura(sprite_path)
 		if textura_local != null:
 			sprite.texture = textura_local
 			_normalizar_escala_sprite_personaje(sprite)
@@ -339,8 +341,7 @@ func _cargar_sprite() -> void:
 			var ruta_personaje: String = "res://assets/art/kingdom/Torres/Personajes/" + sprite_key_local + str(extension)
 			if not FileAccess.file_exists(ruta_personaje) and not ResourceLoader.exists(ruta_personaje):
 				continue
-			var recurso_personaje: Resource = ResourceLoader.load(ruta_personaje)
-			var textura_personaje := recurso_personaje as Texture2D
+			var textura_personaje := SHARED_ASSET_LIBRARY.textura(ruta_personaje)
 			if textura_personaje != null:
 				sprite.texture = textura_personaje
 				_configurar_sprites_direccionales_npc(sprite_key_local, sprite)
@@ -415,7 +416,7 @@ func _cargar_sprite() -> void:
 		if not ResourceLoader.exists(ruta):
 			continue
 
-		var textura := load(ruta) as Texture2D
+		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
 
@@ -430,7 +431,7 @@ func _cargar_sprite() -> void:
 	if _es_humano() and not get_personaje_game_id().is_empty():
 		var sprite_humano_base := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
 		if ResourceLoader.exists(sprite_humano_base):
-			var textura_base := load(sprite_humano_base) as Texture2D
+			var textura_base := CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("idle_front")
 			if textura_base != null:
 				sprite.texture = textura_base
 				_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
@@ -467,7 +468,7 @@ func _cargar_sprite_direccional_personaje(nombre_archivo: String) -> Texture2D:
 	var ruta := "res://assets/art/kingdom/Torres/Personajes/" + nombre_archivo
 	if not ResourceLoader.exists(ruta):
 		return null
-	return ResourceLoader.load(ruta) as Texture2D
+	return SHARED_ASSET_LIBRARY.textura(ruta)
 
 
 func _actualizar_sprite_direccional_npc() -> void:
@@ -945,7 +946,7 @@ func iniciar_animacion_ataque() -> bool:
 	var textura_ataque: Texture2D = null
 	for ruta in rutas:
 		if ResourceLoader.exists(ruta):
-			textura_ataque = load(ruta) as Texture2D
+			textura_ataque = SHARED_ASSET_LIBRARY.textura(ruta)
 			if textura_ataque != null:
 				break
 
@@ -1095,7 +1096,7 @@ func _iniciar_animacion_caminando() -> bool:
 	var textura: Texture2D = null
 	for ruta in rutas:
 		if ResourceLoader.exists(ruta):
-			textura = load(ruta) as Texture2D
+			textura = SHARED_ASSET_LIBRARY.textura(ruta)
 			if textura != null:
 				break
 
