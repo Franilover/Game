@@ -6,6 +6,7 @@ class_name SharedAssetLibrary
 ## búsquedas, conversiones de tipo y carga desde cada sistema de presentación.
 
 static var _recursos: Dictionary = {}
+static var _rutas_ausentes: Dictionary = {}
 
 
 static func obtener_recurso(ruta: String) -> Resource:
@@ -16,7 +17,10 @@ static func obtener_recurso(ruta: String) -> Resource:
 	var recurso_cache: Variant = _recursos.get(clave)
 	if recurso_cache is Resource and is_instance_valid(recurso_cache):
 		return recurso_cache as Resource
+	if _rutas_ausentes.has(clave):
+		return null
 	if not ResourceLoader.exists(clave):
+		_rutas_ausentes[clave] = true
 		return null
 
 	var recurso := ResourceLoader.load(clave)
@@ -37,5 +41,8 @@ static func escena(ruta: String) -> PackedScene:
 static func invalidar(ruta: String = "") -> void:
 	if ruta.strip_edges().is_empty():
 		_recursos.clear()
+		_rutas_ausentes.clear()
 	else:
-		_recursos.erase(ruta.strip_edges())
+		var clave := ruta.strip_edges()
+		_recursos.erase(clave)
+		_rutas_ausentes.erase(clave)
