@@ -1,0 +1,8 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://scripts/world/first_person_2_5d.gd" id="1_first_person"]
+
+[node name="FirstPerson25D" type="Node2D"]
+script = ExtResource("1_first_person")
+
+[node name="Billboards" type="Node2D" parent="."]
