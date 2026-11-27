@@ -3,7 +3,6 @@ extends ColorRect
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
 const APPEARANCE_PREVIEW_SCENE = preload("res://scenes/ui/character_appearance_preview.tscn")
 const APPEARANCE_OPTION_ROW_SCENE = preload("res://scenes/ui/character_appearance_option_row.tscn")
-const BASE_CHARACTER_TEXTURE = preload("res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png")
 
 signal confirmed(config: Dictionary, action: String)
 signal cancelled
@@ -268,7 +267,7 @@ func _crear_vista_previa() -> void:
 			_preview_layers[slot] = capa
 	var cuerpo := _preview_layers.get("body") as TextureRect
 	if cuerpo != null:
-		cuerpo.texture = BASE_CHARACTER_TEXTURE
+		cuerpo.texture = CharacterAppearance.obtener_textura_sprite("idle_front")
 		cuerpo.visible = true
 	appearance_container.add_child(_preview_container)
 
