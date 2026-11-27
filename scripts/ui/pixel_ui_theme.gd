@@ -163,4 +163,4 @@ static func _vigilar_panel_menu(control: Control) -> void:
 	var centrado_por_contenedor := control.get_parent() is CenterContainer
 	if anclado_al_centro or centrado_por_contenedor:
 		MenuLayout.vigilar_panel_centrado(control)
-	control.set_meta("pixel_ui_menu_layout_watched", true)
+		control.set_meta("pixel_ui_menu_layout_watched", true)
