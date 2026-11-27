@@ -3,6 +3,8 @@ class_name PixelUITheme
 
 # Texturas opcionales: si todavía no existen, Godot conserva los estilos actuales.
 const UI_DIR := "res://assets/art/UI/Menus/"
+const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
+static var _style_cache: Dictionary = {}
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
@@ -18,12 +20,13 @@ static func apply(root: Control, use_pixel_titles: bool = true) -> void:
 
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
-	var path := UI_DIR + file_name
-	if not ResourceLoader.exists(path):
-		return null
-	var texture := load(path) as Texture2D
+	var clave := "%s:%d" % [file_name, margins]
+	var cache: Variant = _style_cache.get(clave)
+	if cache is StyleBoxTexture and is_instance_valid(cache):
+		return cache as StyleBoxTexture
+
+	var texture := SHARED_ASSET_LIBRARY.textura(UI_DIR + file_name)
 	if texture == null:
-		push_warning("PixelUITheme: no se pudo cargar " + path)
 		return null
 	var style := StyleBoxTexture.new()
 	style.texture = texture
@@ -32,8 +35,8 @@ static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTextu
 	style.texture_margin_right = margins
 	style.texture_margin_bottom = margins
 	style.draw_center = true
+	_style_cache[clave] = style
 	return style
-
 
 static func slot_style(selected: bool = false) -> StyleBoxTexture:
 	return _texture_style("slot_selected.png" if selected else "slot_frame.png", 5)
@@ -55,11 +58,12 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
-		# Los paneles conservan su fondo propio. Solo los paneles de detalle
-		# que fueron diseñados como superficies de botón comparten esa textura.
-		var panel: StyleBox = button_surface_style() if control.name in ["DetailPanel", "SpeakerPortraitFrame"] else _texture_style("panel_background.png", 8)
-		if panel != null:
-			control.add_theme_stylebox_override("panel", panel)
+		# Cada panel conserva su superficie declarada en su escena. Solo los
+		# paneles diseñados como superficies de botón comparten esa base.
+		if control.name in ["DetailPanel", "SpeakerPortraitFrame"]:
+			var panel := button_surface_style()
+			if panel != null:
+				control.add_theme_stylebox_override("panel", panel)
 
 	# Pixelgrafia queda reservada para encabezados; el resto usa la fuente Open Sans integrada en Godot.
 	var control_name := control.name.to_lower()
