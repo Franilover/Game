@@ -14,9 +14,12 @@ static func obtener_recurso(ruta: String) -> Resource:
 	if clave.is_empty():
 		return null
 
-	var recurso_cache: Variant = _recursos.get(clave)
-	if recurso_cache is Resource and is_instance_valid(recurso_cache):
-		return recurso_cache as Resource
+	var referencia_cache: Variant = _recursos.get(clave)
+	if referencia_cache is WeakRef:
+		var recurso_cache: Variant = (referencia_cache as WeakRef).get_ref()
+		if recurso_cache is Resource and is_instance_valid(recurso_cache):
+			return recurso_cache as Resource
+		_recursos.erase(clave)
 	if _rutas_ausentes.has(clave):
 		return null
 	if not ResourceLoader.exists(clave):
@@ -25,7 +28,7 @@ static func obtener_recurso(ruta: String) -> Resource:
 
 	var recurso := ResourceLoader.load(clave)
 	if recurso != null:
-		_recursos[clave] = recurso
+		_recursos[clave] = weakref(recurso)
 	return recurso
 
 
