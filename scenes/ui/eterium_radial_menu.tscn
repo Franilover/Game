@@ -18,6 +18,7 @@ color = Color(0.035, 0.022, 0.012, 0.34)
 mouse_filter = 0
 
 [node name="MenuPanel" type="PanelContainer" parent="Fondo"]
+	metadata/ui_background_role = "floating"
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
@@ -70,6 +71,7 @@ color = Color(0.025, 0.018, 0.012, 0)
 mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="MinijuegoEterium"]
+	metadata/ui_background_role = "floating"
 anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
