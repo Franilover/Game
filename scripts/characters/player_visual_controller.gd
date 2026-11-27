@@ -70,7 +70,7 @@ func actualizar_direccion(nueva_direccion: Vector2) -> void:
 	if is_instance_valid(facing_marker):
 		var centro := Vector2(0.0, -24.0)
 		facing_marker.position = centro + facing * 14.0 - Vector2(2.0, 2.0)
-	_actualizar_posicion_equipo_visual(facing)
+	_actualizar_posicion_equipo_visual(_obtener_direccion_equipo_render())
 
 
 func actualizar_estado(estado: int, nueva_direccion: Vector2) -> void:
@@ -80,7 +80,7 @@ func actualizar_estado(estado: int, nueva_direccion: Vector2) -> void:
 		var nombre := obtener_nombre_animacion(estado, facing)
 		if animation_player.has_animation(nombre):
 			animation_player.play(nombre)
-	_actualizar_posicion_equipo_visual(facing)
+	_actualizar_posicion_equipo_visual(_obtener_direccion_equipo_render())
 
 
 func _actualizar_sprite_direccional(estado: int, direccion: Vector2) -> void:
@@ -188,6 +188,14 @@ func _obtener_textura_equipo(objeto: Dictionary) -> Texture2D:
 	var datos_sprite := objeto.duplicate(true)
 	datos_sprite.erase("icono")
 	return ITEM_ICON_RESOLVER_SCRIPT.obtener_icono(datos_sprite)
+
+
+func _obtener_direccion_equipo_render() -> Vector2:
+	# La pose idle vuelve a mostrar al personaje de frente; el equipo debe
+	# acompañar esa pose aunque la última dirección de movimiento fuera lateral.
+	if is_instance_valid(sprite) and sprite.texture == sprite_idle:
+		return Vector2.DOWN
+	return facing
 
 
 func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
