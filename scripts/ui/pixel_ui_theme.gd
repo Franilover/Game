@@ -5,18 +5,25 @@ class_name PixelUITheme
 const UI_DIR := "res://assets/art/UI/Menus/"
 const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 static var _style_cache: Dictionary = {}
+static var _focus_style: StyleBoxEmpty = null
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
-static func apply(root: Control, use_pixel_titles: bool = true) -> void:
-	if root == null:
+static func apply(root: Control, use_pixel_titles: bool = true, force: bool = false) -> void:
+	if not is_instance_valid(root):
 		return
-	_apply_control(root, use_pixel_titles)
+	_apply_control(root, use_pixel_titles, force)
 	_vigilar_panel_menu(root)
 	for node in root.find_children("*", "Control", true, false):
 		var control := node as Control
-		_apply_control(control, use_pixel_titles)
+		_apply_control(control, use_pixel_titles, force)
 		_vigilar_panel_menu(control)
+
+
+static func _obtener_estilo_foco() -> StyleBoxEmpty:
+	if _focus_style == null:
+		_focus_style = StyleBoxEmpty.new()
+	return _focus_style
 
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
@@ -54,7 +61,9 @@ static func button_pressed_style() -> StyleBoxTexture:
 	return _texture_style("button_pressed.png", 5)
 
 
-static func _apply_control(control: Control, use_pixel_titles: bool = true) -> void:
+static func _apply_control(control: Control, use_pixel_titles: bool = true, force: bool = false) -> void:
+	if not force and bool(control.get_meta("pixel_ui_theme_applied", false)) == use_pixel_titles:
+		return
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
@@ -80,7 +89,7 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 	# El foco de teclado no debe dibujar el contorno blanco predeterminado de Godot.
 	# Los estados normal, hover y pressed ya tienen el diseño visual propio del juego.
 	if control is BaseButton:
-		control.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+		control.add_theme_stylebox_override("focus", _obtener_estilo_foco())
 
 	var is_slot_button := control is Button and (
 		control.name.ends_with("HandSlot")
@@ -144,11 +153,14 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true) -> v
 		if bar_fill != null:
 			control.add_theme_stylebox_override("fill", bar_fill)
 
+	control.set_meta("pixel_ui_theme_applied", use_pixel_titles)
+
 
 static func _vigilar_panel_menu(control: Control) -> void:
-	if not (control is PanelContainer or control is Panel):
+	if not (control is PanelContainer or control is Panel) or control.has_meta("pixel_ui_menu_layout_watched"):
 		return
 	var anclado_al_centro := is_equal_approx(control.anchor_left, 0.5) and is_equal_approx(control.anchor_right, 0.5) and is_equal_approx(control.anchor_top, 0.5) and is_equal_approx(control.anchor_bottom, 0.5)
 	var centrado_por_contenedor := control.get_parent() is CenterContainer
 	if anclado_al_centro or centrado_por_contenedor:
 		MenuLayout.vigilar_panel_centrado(control)
+	control.set_meta("pixel_ui_menu_layout_watched", true)
