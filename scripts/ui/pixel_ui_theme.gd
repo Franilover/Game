@@ -62,7 +62,7 @@ static func button_pressed_style() -> StyleBoxTexture:
 
 
 static func _apply_control(control: Control, use_pixel_titles: bool = true, force: bool = false) -> void:
-	if not force and bool(control.get_meta("pixel_ui_theme_applied", false)) == use_pixel_titles:
+	if not force and control.has_meta("pixel_ui_theme_applied") and bool(control.get_meta("pixel_ui_theme_applied")) == use_pixel_titles:
 		return
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
