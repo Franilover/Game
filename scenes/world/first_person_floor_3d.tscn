@@ -12,7 +12,8 @@ uv1_scale = Vector3(8, 8, 1)
 size = Vector2(2, 2)
 material = SubResource("Material_floor")
 
-[sub_resource type="PlaneShape3D" id="Floor_collision"]
+[sub_resource type="BoxShape3D" id="Floor_collision"]
+size = Vector3(2, 0.1, 2)
 
 [node name="Suelo3D" type="StaticBody3D"]
 
@@ -21,3 +22,4 @@ mesh = SubResource("Mesh_floor")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
 shape = SubResource("Floor_collision")
+position = Vector3(0, -0.05, 0)
