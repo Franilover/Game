@@ -4,7 +4,7 @@
 
 [sub_resource type="StandardMaterial3D" id="Material_wall"]
 albedo_texture = ExtResource("1_wall")
-texture_filter = 1
+texture_filter = 0
 shading_mode = 0
 uv1_scale = Vector3(2, 1, 1)
 
