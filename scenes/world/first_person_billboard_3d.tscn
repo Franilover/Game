@@ -1,0 +1,6 @@
+[gd_scene format=3]
+
+[node name="SpriteBillboard3D" type="Sprite3D"]
+billboard = 1
+pixel_size = 0.025
+texture_filter = 1
