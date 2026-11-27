@@ -54,6 +54,8 @@ func _ready() -> void:
 	collision_mask = 1
 	max_health = 32 if especie == "Zlish" else 26
 	super._ready()
+	if not died.is_connected(_al_morir_en_saltus):
+		died.connect(_al_morir_en_saltus)
 	if especie == "Zlish" and sprite != null and sprite.hframes * sprite.vframes > 1:
 		_sprite_animator.reproducir(7.0)
 	_rng.randomize()
@@ -71,6 +73,31 @@ func _physics_process(delta: float) -> void:
 		_procesar_zlish(delta)
 	else:
 		_procesar_flaxis(delta)
+
+
+func _al_morir_en_saltus() -> void:
+	# En Saltus las criaturas son instancias de escena: Entity marca su estado
+	# vital, pero no elimina automáticamente su representación del mundo.
+	set_physics_process(false)
+	set_process(false)
+	velocity = Vector2.ZERO
+	collision_layer = 0
+	collision_mask = 0
+	var hurtbox := get_node_or_null("Hurtbox") as Area2D
+	if is_instance_valid(hurtbox):
+		hurtbox.set_deferred("monitoring", false)
+		hurtbox.set_deferred("monitorable", false)
+	var collision := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if is_instance_valid(collision):
+		collision.set_deferred("disabled", true)
+	if not is_instance_valid(sprite):
+		queue_free()
+		return
+	var tween := create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(sprite, "modulate:a", 0.0, 0.28)
+	tween.tween_property(sprite, "scale", sprite.scale * 0.72, 0.28).set_trans(Tween.TRANS_QUAD).set_ease(Tween.EASE_IN)
+	tween.chain().tween_callback(queue_free)
 
 
 func take_damage(cantidad: int, origen: String = "desconocido") -> int:
