@@ -310,8 +310,6 @@ func _cargar_sprite() -> void:
 				"res://assets/art/creatures/criaturas/" + clave_asset + ".SVG"
 			]
 			for ruta_garumi in rutas_garumi:
-				if not ResourceLoader.exists(ruta_garumi):
-					continue
 				textura_garumi = SHARED_ASSET_LIBRARY.textura(ruta_garumi)
 				if textura_garumi != null:
 					break
@@ -327,7 +325,7 @@ func _cargar_sprite() -> void:
 	# Los NPC de reinos locales pueden declarar una ruta propia para reutilizar
 	# sprites del paquete artístico del reino sin copiarlos a la carpeta global.
 	var sprite_path := str(datos.get("sprite_path", "")).strip_edges()
-	if sprite_path.begins_with("res://assets/art/kingdom/") and sprite_path.contains("/Personajes/") and ResourceLoader.exists(sprite_path):
+	if sprite_path.begins_with("res://assets/art/kingdom/") and sprite_path.contains("/Personajes/"):
 		var textura_local := SHARED_ASSET_LIBRARY.textura(sprite_path)
 		if textura_local != null:
 			sprite.texture = textura_local
@@ -343,8 +341,6 @@ func _cargar_sprite() -> void:
 	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\"):
 		for extension in [".png", ".PNG"]:
 			var ruta_personaje: String = "res://assets/art/kingdom/Torres/Personajes/" + sprite_key_local + str(extension)
-			if not FileAccess.file_exists(ruta_personaje) and not ResourceLoader.exists(ruta_personaje):
-				continue
 			var textura_personaje := SHARED_ASSET_LIBRARY.textura(ruta_personaje)
 			if textura_personaje != null:
 				sprite.texture = textura_personaje
@@ -417,9 +413,6 @@ func _cargar_sprite() -> void:
 	)
 
 	for ruta in rutas:
-		if not ResourceLoader.exists(ruta):
-			continue
-
 		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
@@ -468,8 +461,6 @@ func _configurar_sprites_direccionales_npc(sprite_key: String, sprite: Sprite2D)
 
 func _cargar_sprite_direccional_personaje(nombre_archivo: String) -> Texture2D:
 	var ruta := "res://assets/art/kingdom/Torres/Personajes/" + nombre_archivo
-	if not ResourceLoader.exists(ruta):
-		return null
 	return SHARED_ASSET_LIBRARY.textura(ruta)
 
 
@@ -945,8 +936,6 @@ func iniciar_animacion_ataque() -> bool:
 	]
 	var textura_ataque: Texture2D = null
 	for ruta in rutas:
-		if not ResourceLoader.exists(ruta):
-			continue
 		textura_ataque = SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura_ataque != null:
 			break
@@ -1046,8 +1035,6 @@ func _iniciar_animacion_caminando() -> bool:
 	])
 	var textura: Texture2D = null
 	for ruta in rutas:
-		if not ResourceLoader.exists(ruta):
-			continue
 		textura = SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura != null:
 			break
