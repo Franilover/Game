@@ -68,11 +68,15 @@ static func button_surface_style() -> StyleBoxTexture:
 
 
 static func button_hover_style() -> StyleBoxTexture:
-	return button_surface_style()
+	return _texture_style("button_hover.png", 5)
 
 
 static func button_pressed_style() -> StyleBoxTexture:
-	return button_surface_style()
+	return _texture_style("button_pressed.png", 5)
+
+
+static func button_disabled_style() -> StyleBoxTexture:
+	return _texture_style("button_disabled.png", 5)
 
 
 static func _apply_control(control: Control, use_pixel_titles: bool = true, force: bool = false) -> void:
@@ -80,15 +84,6 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 		return
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
-	if control is Panel or control is PanelContainer:
-		# Los paneles de interfaz comparten la misma superficie pixel-art que
-		# los botones. Se preservan únicamente superficies con una función
-		# visual propia que no deben parecer un botón.
-		if control.name not in ["Paper", "CanvasContainer"]:
-			var panel_surface := button_surface_style()
-			if panel_surface != null:
-				control.add_theme_stylebox_override("panel", panel_surface)
-
 	# Pixelgrafia queda reservada para encabezados; el resto usa la fuente Open Sans integrada en Godot.
 	var control_name := control.name.to_lower()
 	var is_title := control_name == "title" or control_name.ends_with("_title") or control_name.begins_with("title_") or control_name == "heading" or control_name.ends_with("_heading")
@@ -105,32 +100,33 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 	# Los estados normal, hover y pressed ya tienen el diseño visual propio del juego.
 	if control is BaseButton:
 		control.add_theme_stylebox_override("focus", _obtener_estilo_foco())
+		# Cada estado usa su propio sprite Button; también se aplica a botones
+		# de ranuras para que no queden excepciones con otros fondos.
+		var normal: StyleBox = button_surface_style()
+		var hover: StyleBox = button_hover_style()
+		var pressed: StyleBox = button_pressed_style()
+		var disabled: StyleBox = button_disabled_style()
+		if normal == null:
+			normal = button_fallback_style()
+		if hover == null:
+			hover = normal
+		if pressed == null:
+			pressed = normal
+		if disabled == null:
+			disabled = normal
+		control.add_theme_stylebox_override("normal", normal)
+		control.add_theme_stylebox_override("hover", hover)
+		control.add_theme_stylebox_override("pressed", pressed)
+		control.add_theme_stylebox_override("disabled", disabled)
 
-	var is_slot_button := control is Button and (
-		control.name.ends_with("HandSlot")
-	)
-	if is_slot_button:
-		var slot := slot_style(false)
-		var selected_slot := slot_style(true)
-		if slot != null:
-			control.add_theme_stylebox_override("normal", slot)
-			control.add_theme_stylebox_override("hover", selected_slot if selected_slot != null else slot)
-			control.add_theme_stylebox_override("pressed", selected_slot if selected_slot != null else slot)
-
-	elif control is Button:
-		# Texto claro con contorno oscuro para mantener la legibilidad
-		# sobre los fondos de los botones en todos sus estados.
+	if control is Button:
+		# Texto claro con contorno oscuro para mantener la legibilidad.
 		control.add_theme_color_override("font_color", Color("#FFF3D6"))
 		control.add_theme_color_override("font_hover_color", Color("#FFFFFF"))
 		control.add_theme_color_override("font_pressed_color", Color("#F2DDB8"))
 		control.add_theme_color_override("font_disabled_color", Color("#D0C3A8"))
 		control.add_theme_color_override("font_outline_color", Color("#302014"))
 		control.add_theme_constant_override("outline_size", 2)
-		var normal: StyleBox = button_surface_style()
-		if normal == null:
-			normal = button_fallback_style()
-		for estado in ["normal", "hover", "pressed", "disabled"]:
-			control.add_theme_stylebox_override(estado, normal)
 
 	if control is LineEdit:
 		var input_style := _texture_style("input_frame.png", 4)
