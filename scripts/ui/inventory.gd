@@ -1664,6 +1664,17 @@ func obtener_objeto_mano_activa(mano: String) -> Dictionary:
 	return inventory_controller.obtener_objeto_mano_activa(mano)
 
 
+func consumir_durabilidad_mano_activa(mano: String) -> bool:
+	var resultado: bool = inventory_controller.consumir_durabilidad_mano_activa(mano)
+	if not resultado:
+		return false
+	actualizar()
+	_actualizar_slots_equipamiento()
+	inventory_changed.emit()
+	_emitir_objeto_activo()
+	return true
+
+
 func obtener_objeto_activo() -> Dictionary:
 	var indice_inventario := obtener_indice_inventario_hotbar(
 		indice_hotbar_activo
