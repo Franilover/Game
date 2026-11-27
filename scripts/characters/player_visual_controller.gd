@@ -137,9 +137,7 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 			sprite_equipo.visible = false
 		return
 
-	var datos_sprite := objeto.duplicate(true)
-	datos_sprite.erase("icono")
-	var textura: Texture2D = ITEM_ICON_RESOLVER_SCRIPT.obtener_icono(datos_sprite)
+	var textura: Texture2D = _obtener_textura_equipo(objeto)
 	if textura == null:
 		var icono_variant: Variant = objeto.get("icono", null)
 		if icono_variant is Texture2D:
@@ -164,6 +162,32 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 	sprite_equipo.texture = textura
 	sprite_equipo.scale = Vector2(0.62, 0.62)
 	sprite_equipo.visible = not _equipo_oculto
+
+
+func _obtener_textura_equipo(objeto: Dictionary) -> Texture2D:
+	# Acepta sprites/texturas directos y rutas explícitas del catálogo,
+	# además de los iconos resueltos por nombre. Así cualquier objeto puede
+	# representarse en la mano, aunque no tenga una animación de herramienta.
+	for clave in ["sprite", "textura", "texture", "imagen", "icono"]:
+		var valor: Variant = objeto.get(clave, null)
+		if valor is Texture2D:
+			return valor as Texture2D
+
+	for clave_ruta in [
+		"sprite_ruta", "ruta_sprite", "sprite_path",
+		"textura_ruta", "ruta_textura", "texture_path",
+		"imagen_ruta", "ruta_imagen", "icono_ruta"
+	]:
+		var ruta := str(objeto.get(clave_ruta, "")).strip_edges()
+		if ruta.is_empty():
+			continue
+		var textura_ruta: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
+		if textura_ruta != null:
+			return textura_ruta
+
+	var datos_sprite := objeto.duplicate(true)
+	datos_sprite.erase("icono")
+	return ITEM_ICON_RESOLVER_SCRIPT.obtener_icono(datos_sprite)
 
 
 func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
