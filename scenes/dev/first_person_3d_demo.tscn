@@ -1,4 +1,4 @@
-[gd_scene load_steps=8 format=3]
+[gd_scene load_steps=7 format=3]
 
 [ext_resource type="PackedScene" path="res://scenes/world/first_person_player_3d.tscn" id="1_player"]
 [ext_resource type="PackedScene" path="res://scenes/world/first_person_wall_3d.tscn" id="2_wall"]
