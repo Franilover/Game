@@ -40,21 +40,21 @@ const SLOT_LABELS := {
 # y preload() provoca errores de parseo en estas rutas.
 const CATALOG_ASSETS := {
 	"hair": [
-		{"name": "Pelo 1", "path": "res://assets/art/kingdom/Torres/Personajes/customization/hair/1 Front.png"},
-		{"name": "Pelo 2", "path": "res://assets/art/kingdom/Torres/Personajes/customization/hair/2 Front.png"},
-		{"name": "Pelo 3", "path": "res://assets/art/kingdom/Torres/Personajes/customization/hair/3 Front.png"}
+		{"name": "Pelo 1", "path": PLAYER_ART_DIR + "customization/hair/1 Front.png"},
+		{"name": "Pelo 2", "path": PLAYER_ART_DIR + "customization/hair/2 Front.png"},
+		{"name": "Pelo 3", "path": PLAYER_ART_DIR + "customization/hair/3 Front.png"}
 	],
 	"eyes": [
-		{"name": "expressive", "path": "res://assets/art/kingdom/Torres/Personajes/customization/eyes/expressive.png"}
+		{"name": "expressive", "path": PLAYER_ART_DIR + "customization/eyes/expressive.png"}
 	],
 	"shirt": [
-		{"name": "tunic", "path": "res://assets/art/kingdom/Torres/Personajes/customization/shirts/tunic.png"}
+		{"name": "tunic", "path": PLAYER_ART_DIR + "customization/shirts/tunic.png"}
 	],
 	"pants": [
-		{"name": "skirt", "path": "res://assets/art/kingdom/Torres/Personajes/customization/pants/skirt.png"}
+		{"name": "skirt", "path": PLAYER_ART_DIR + "customization/pants/skirt.png"}
 	],
 	"shoes": [
-		{"name": "sneakers", "path": "res://assets/art/kingdom/Torres/Personajes/customization/shoes/sneakers.png"}
+		{"name": "sneakers", "path": PLAYER_ART_DIR + "customization/shoes/sneakers.png"}
 	]
 }
 
@@ -110,6 +110,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		return
 	for hijo in visual.get_children():
 		if hijo is Sprite2D and hijo.is_in_group("character_customization_layer"):
+			visual.remove_child(hijo)
 			hijo.queue_free()
 
 	var sprite_base := visual.get_node_or_null("Sprite2D") as Sprite2D
