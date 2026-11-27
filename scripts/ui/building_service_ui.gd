@@ -43,6 +43,7 @@ var _seccion_expedicion := "primera_expedicion"
 var _seccion_clinica := "basico"
 signal solicitar_selector_expediciones
 signal solicitar_expedicion_saltus
+signal solicitar_exploracion_3d
 
 
 func configurar(tipo: String, inventario: InventoryController, world_items: GarliaWorldItems, jugador: Node = null) -> void:
@@ -1058,6 +1059,7 @@ func _construir_centro_expediciones() -> void:
 	lista.columns = 1
 	var grupo_selector := ButtonGroup.new()
 	var detalle := layout["detail_content"] as VBoxContainer
+	_agregar_opcion_selector(lista, "Explorar", _seccion_expedicion == "explorar_3d", _seleccionar_seccion_expedicion.bind("explorar_3d", detalle), grupo_selector)
 	_agregar_opcion_selector(lista, "Primera\nexpedición", _seccion_expedicion == "primera_expedicion", _seleccionar_seccion_expedicion.bind("primera_expedicion", detalle), grupo_selector)
 	_agregar_opcion_selector(lista, "Saltus", _seccion_expedicion == "saltus", _seleccionar_seccion_expedicion.bind("saltus", detalle), grupo_selector)
 	_agregar_opcion_selector(lista, "Rutas\ny destinos", _seccion_expedicion == "rutas", _seleccionar_seccion_expedicion.bind("rutas", detalle), grupo_selector)
@@ -1073,6 +1075,10 @@ func _seleccionar_seccion_expedicion(id: String, detalle: VBoxContainer) -> void
 func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
 	_limpiar_detalle(detalle)
 	match id:
+		"explorar_3d":
+			_agregar_titulo_detalle(detalle, "Exploración en primera persona")
+			_agregar_texto_detalle(detalle, "Entra en un entorno 3D y continúa usando tu partida, inventario y equipo habituales.")
+			_agregar_boton_detalle(detalle, "Entrar a explorar", _emitir_solicitud_exploracion_3d)
 		"primera_expedicion":
 			_agregar_titulo_detalle(detalle, "Primera expedición")
 			var finalizada := _primera_expedicion_finalizada()
@@ -1272,6 +1278,11 @@ func _emitir_solicitud_selector_expediciones() -> void:
 func _emitir_solicitud_expedicion_saltus() -> void:
 	cerrar_interfaz()
 	solicitar_expedicion_saltus.emit()
+
+
+func _emitir_solicitud_exploracion_3d() -> void:
+	cerrar_interfaz()
+	solicitar_exploracion_3d.emit()
 
 
 func _primera_expedicion_finalizada() -> bool:
