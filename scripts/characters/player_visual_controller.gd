@@ -175,7 +175,7 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 	var mirando_derecha := direccion.x > 0.0
 	# En perfil se muestra la mano opuesta a la dirección de mirada:
 	# izquierda -> objeto de la mano derecha; derecha -> objeto de la mano izquierda.
-	var mano_visible := "derecha" if mirando_derecha else "izquierda"
+	var mano_visible := "izquierda" if mirando_derecha else "derecha"
 	for mano in ["izquierda", "derecha"]:
 		var sprite_equipo := _equipo_sprites.get(mano) as Sprite2D
 		if not is_instance_valid(sprite_equipo):
