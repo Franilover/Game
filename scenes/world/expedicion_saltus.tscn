@@ -2,7 +2,6 @@
 
 [ext_resource type="Script" uid="uid://dwhoxclkj2fgv" path="res://scripts/world/saltus_expedition.gd" id="1_world"]
 [ext_resource type="Script" uid="uid://cuscdj6x0o8as" path="res://scripts/world/saltus_player.gd" id="2_player"]
-[ext_resource type="Texture2D" uid="uid://crau8csyabfro" path="res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png" id="3_player_texture"]
 [ext_resource type="Texture2D" uid="uid://daclbxuvabbuc" path="res://assets/tilesets/Bosque.png" id="4_0kwhb"]
 [ext_resource type="Script" uid="uid://cnorbhdwg6btn" path="res://addons/TileMapDual/tile_map_dual.gd" id="5_w08ba"]
 [ext_resource type="Texture2D" uid="uid://ce3u5vwlsukkp" path="res://assets/art/kingdom/Saltus/2D Section/Flor Checkpoint.png" id="7_kram0"]
@@ -890,9 +889,10 @@ disabled = false
 position = Vector2(0, -11)
 shape = SubResource("CapsuleShape2D_player")
 
-[node name="Sprite2D" type="Sprite2D" parent="Player" unique_id=865130652]
+[node name="Visual" type="Node2D" parent="Player"]
+
+[node name="Sprite2D" type="Sprite2D" parent="Player/Visual" unique_id=865130652]
 position = Vector2(0, -22)
-texture = ExtResource("3_player_texture")
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1025805938]
 position = Vector2(0, -35)
