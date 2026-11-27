@@ -1,6 +1,8 @@
 extends Area2D
 class_name CombatProjectile
 
+const FLECHA_MADERA_TEXTURE: Texture2D = preload("res://assets/art/items/Flecha de Madera.png")
+
 ## Proyectil de combate.
 ## Transporta una instancia de ataque y ejecuta su impacto mediante el
 ## resolver compartido CombatDamage. No implementa reglas de daño propias
@@ -16,6 +18,7 @@ var lifetime: float = 3.0
 
 var _collision_shape: CollisionShape2D = null
 var _impactado: bool = false
+var _sprite_proyectil: Sprite2D = null
 
 func configurar(nuevo_ataque: CombatAttack, direccion: Vector2, velocidad: float, vida: float, radio: float) -> void:
 	attack = nuevo_ataque
@@ -26,12 +29,15 @@ func configurar(nuevo_ataque: CombatAttack, direccion: Vector2, velocidad: float
 	lifetime = maxf(vida, 0.01)
 	rotation = direccion_normalizada.angle()
 	_configurar_colision(maxf(radio, 1.0))
+	if is_instance_valid(_sprite_proyectil):
+		_sprite_proyectil.rotation = 0.0
 
 func _ready() -> void:
 	monitoring = true
 	monitorable = false
 	collision_layer = 0
 	collision_mask = 2
+	_crear_sprite_proyectil()
 	body_entered.connect(_al_entrar_cuerpo)
 	area_entered.connect(_al_entrar_area)
 
@@ -147,28 +153,14 @@ func _finalizar() -> void:
 	queue_free()
 
 
-func _draw() -> void:
-	var asta_color := Color(0.35, 0.20, 0.10, 1.0)
-	var punta_color := Color(0.78, 0.74, 0.62, 1.0)
-
-	draw_line(
-		Vector2(-12.0, 0.0),
-		Vector2(8.0, 0.0),
-		asta_color,
-		2.0
-	)
-	draw_colored_polygon(
-		PackedVector2Array([
-			Vector2(13.0, 0.0),
-			Vector2(6.0, -3.0),
-			Vector2(8.0, 0.0),
-			Vector2(6.0, 3.0)
-		]),
-		punta_color
-	)
-	draw_line(
-		Vector2(-7.0, -3.0),
-		Vector2(-7.0, 3.0),
-		punta_color,
-		1.0
-	)
+func _crear_sprite_proyectil() -> void:
+	if is_instance_valid(_sprite_proyectil):
+		return
+	_sprite_proyectil = Sprite2D.new()
+	_sprite_proyectil.name = "FlechaMadera"
+	_sprite_proyectil.texture = FLECHA_MADERA_TEXTURE
+	_sprite_proyectil.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_sprite_proyectil.centered = true
+	_sprite_proyectil.scale = Vector2.ONE
+	_sprite_proyectil.z_index = 1
+	add_child(_sprite_proyectil)
