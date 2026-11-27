@@ -12,6 +12,7 @@ class_name FirstPerson3DController
 @onready var camara: Camera3D = $Camera3D
 
 var _rotacion_vertical: float = 0.0
+var _controlador_objetos: FirstPerson3DItemController = null
 
 
 func _ready() -> void:
@@ -20,6 +21,14 @@ func _ready() -> void:
 		return
 	if capturar_raton_al_iniciar:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+	_controlador_objetos = FirstPerson3DItemController.new()
+	_controlador_objetos.name = "FirstPersonItemController"
+	camara.add_child(_controlador_objetos)
+
+
+func configurar_contexto_objetos(inventario: Node, jugador: Node, resolvedor_visual: Object, world_items: Node = null) -> void:
+	if is_instance_valid(_controlador_objetos):
+		_controlador_objetos.configurar_contexto(inventario, jugador, resolvedor_visual, world_items)
 
 
 func _unhandled_input(event: InputEvent) -> void:
@@ -29,6 +38,17 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
 		Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
+		get_viewport().set_input_as_handled()
+		return
+
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event.is_action_pressed("primary_action"):
+		if is_instance_valid(_controlador_objetos):
+			_controlador_objetos.usar_mano("izquierda")
+		get_viewport().set_input_as_handled()
+		return
+	if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and event.is_action_pressed("secondary_action"):
+		if is_instance_valid(_controlador_objetos):
+			_controlador_objetos.usar_mano("derecha")
 		get_viewport().set_input_as_handled()
 		return
 
