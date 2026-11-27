@@ -2,6 +2,7 @@ extends Entity
 class_name Player
 
 const INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
+const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 
 
 signal stamina_changed(current: float, maximum: float)
@@ -1162,11 +1163,11 @@ func _aplicar_configuracion_personaje() -> void:
 
 	var sprite := get_node_or_null("Visual/Sprite2D") as Sprite2D
 	if sprite != null and not personaje_skin.is_empty() and ResourceLoader.exists(personaje_skin):
-		var textura := load(personaje_skin) as Texture2D
+		var textura := SHARED_ASSET_LIBRARY.textura(personaje_skin)
 		if textura != null:
 			sprite.texture = textura
 
-	CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
+	visual_controller.aplicar_apariencia(personaje_apariencia)
 
 	print(
 		"Player: personaje aplicado → ",
