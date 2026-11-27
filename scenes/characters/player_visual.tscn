@@ -1,4 +1,4 @@
-[gd_scene load_steps=2 format=3]
+[gd_scene load_steps=1 format=3]
 
 [node name="Visual" type="Node2D"]
 z_as_relative = false
