@@ -243,7 +243,7 @@ func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> voi
 func configurar_apariencia_visual(apariencia: Dictionary) -> void:
 	personaje_apariencia = apariencia.duplicate(true)
 	_apariencia_red_aplicada = true
-	visual_controller.aplicar_apariencia(personaje_apariencia)
+	visual_controller.aplicar_apariencia(personaje_apariencia, personaje_skin)
 
 
 func aplicar_runtime_eterium_red(datos_runtime: Dictionary, reglas_especies: Array) -> void:
