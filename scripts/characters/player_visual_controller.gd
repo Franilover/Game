@@ -21,6 +21,8 @@ var perfil_renderizado: String = "top_down"
 
 var _equipment_animator = null
 var _equipo_sprites: Dictionary = {}
+var _armadura_sprites: Dictionary = {}
+var _armadura_datos: Dictionary = {}
 var _equipo_datos: Dictionary = {}
 var _equipo_oculto: bool = false
 var _equipo_restore_tween: Tween = null
@@ -162,6 +164,49 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 	sprite_equipo.texture = textura
 	sprite_equipo.scale = Vector2(0.62, 0.62)
 	sprite_equipo.visible = not _equipo_oculto
+
+
+func configurar_armadura_visual(equipamiento: Dictionary) -> void:
+	for ranura in ["cabeza", "torso", "pies"]:
+		var objeto_variant: Variant = equipamiento.get(ranura, {})
+		var objeto: Dictionary = objeto_variant as Dictionary if objeto_variant is Dictionary else {}
+		_actualizar_sprite_armadura(ranura, objeto)
+
+
+func _actualizar_sprite_armadura(ranura: String, objeto: Dictionary) -> void:
+	var sprite_armadura := _armadura_sprites.get(ranura) as Sprite2D
+	_armadura_datos[ranura] = objeto.duplicate(true)
+	var ruta := ""
+	var propiedades_variant: Variant = objeto.get("propiedades_game", {})
+	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+	for clave in ["sprite_ruta", "ruta_sprite", "sprite_path", "textura_ruta", "ruta_textura"]:
+		ruta = str(propiedades.get(clave, objeto.get(clave, ""))).strip_edges()
+		if not ruta.is_empty():
+			break
+	if objeto.is_empty() or ruta.is_empty():
+		if is_instance_valid(sprite_armadura):
+			sprite_armadura.texture = null
+			sprite_armadura.visible = false
+		return
+	var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
+	if textura == null:
+		if is_instance_valid(sprite_armadura):
+			sprite_armadura.visible = false
+		return
+	if not is_instance_valid(sprite_armadura):
+		sprite_armadura = Sprite2D.new()
+		sprite_armadura.name = "ArmaduraVisual_" + ranura
+		sprite_armadura.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		sprite_armadura.centered = true
+		visual.add_child(sprite_armadura)
+		_armadura_sprites[ranura] = sprite_armadura
+	sprite_armadura.texture = textura
+	# Los PNG de armadura deben compartir lienzo y pivote con el sprite base.
+	sprite_armadura.position = sprite.position if is_instance_valid(sprite) else Vector2.ZERO
+	sprite_armadura.scale = sprite.scale if is_instance_valid(sprite) else Vector2.ONE
+	sprite_armadura.flip_h = sprite.flip_h if is_instance_valid(sprite) else false
+	sprite_armadura.z_index = 4 if ranura == "torso" else (3 if ranura == "pies" else 6)
+	sprite_armadura.visible = true
 
 
 func _obtener_textura_equipo(objeto: Dictionary) -> Texture2D:
