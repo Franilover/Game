@@ -46,7 +46,7 @@ static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTextu
 	if cache is StyleBoxTexture and is_instance_valid(cache):
 		return cache as StyleBoxTexture
 
-	var texture := SHARED_ASSET_LIBRARY.textura(UI_DIR + file_name)
+	var texture: Texture2D = SHARED_ASSET_LIBRARY.textura(UI_DIR + file_name)
 	if texture == null:
 		return null
 	var style := StyleBoxTexture.new()
