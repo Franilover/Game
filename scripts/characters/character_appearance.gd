@@ -71,7 +71,7 @@ static func catalogo(slot: String) -> Array[Dictionary]:
 			continue
 		var pieza: Dictionary = pieza_variant
 		var ruta := str(pieza.get("path", ""))
-		if ruta.is_empty() or not ResourceLoader.exists(ruta):
+		if ruta.is_empty()
 			continue
 		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
@@ -123,7 +123,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 			continue
 		var pieza := pieza_variant as Dictionary
 		var ruta := str(pieza.get("ruta", "")).strip_edges()
-		if ruta.is_empty() or not ResourceLoader.exists(ruta):
+		if ruta.is_empty()
 			continue
 		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
@@ -185,9 +185,9 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 		invertir = facing.x > 0.0
 	var numero_pelo := ruta_base.get_file().get_basename().get_slice(" ", 0)
 	var ruta := ruta_base.get_base_dir() + "/" + numero_pelo + " " + direccion + ".png"
-	if not ResourceLoader.exists(ruta):
-		ruta = ruta_base
 	var textura := SHARED_ASSET_LIBRARY.textura(ruta)
+	if textura == null and ruta != ruta_base:
+		textura = SHARED_ASSET_LIBRARY.textura(ruta_base)
 	if textura != null:
 		cabello.texture = textura
 	cabello.flip_h = invertir
