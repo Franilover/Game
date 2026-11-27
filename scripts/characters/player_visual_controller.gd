@@ -102,6 +102,7 @@ func _actualizar_sprite_direccional(estado: int, direccion: Vector2) -> void:
 					sprite.texture = sprite_walk_back
 	CHARACTER_APPEARANCE_SCRIPT.actualizar_cabello_direccion(visual, direccion)
 	CHARACTER_APPEARANCE_SCRIPT.sincronizar_capas(visual)
+	_actualizar_orientacion_armadura()
 
 
 ## Perfil lateral usado por Saltus. Solo cambia la pose y el espejo:
@@ -118,6 +119,7 @@ func actualizar_presentacion_plataforma(direccion_horizontal: float, en_movimien
 	CHARACTER_APPEARANCE_SCRIPT.actualizar_cabello_direccion(visual, facing)
 	CHARACTER_APPEARANCE_SCRIPT.sincronizar_capas(visual)
 	_actualizar_posicion_equipo_visual(_obtener_direccion_equipo_render())
+	_actualizar_orientacion_armadura()
 
 
 func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> void:
@@ -164,6 +166,17 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 	sprite_equipo.texture = textura
 	sprite_equipo.scale = Vector2(0.62, 0.62)
 	sprite_equipo.visible = not _equipo_oculto
+
+
+func _actualizar_orientacion_armadura() -> void:
+	for sprite_variant in _armadura_sprites.values():
+		var sprite_armadura := sprite_variant as Sprite2D
+		if not is_instance_valid(sprite_armadura):
+			continue
+		if is_instance_valid(sprite):
+			sprite_armadura.flip_h = sprite.flip_h
+			sprite_armadura.position = sprite.position
+			sprite_armadura.scale = sprite.scale
 
 
 func configurar_armadura_visual(equipamiento: Dictionary) -> void:
