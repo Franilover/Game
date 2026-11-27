@@ -52,7 +52,7 @@ func _crear_sprite_mano(mano: String, posicion: Vector3) -> void:
 	var sprite := Sprite3D.new()
 	sprite.name = "ObjetoPrimeraPersona_" + mano
 	sprite.centered = true
-	sprite.texture_filter = SpriteBase3D.TEXTURE_FILTER_NEAREST
+	sprite.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
 	sprite.pixel_size = 0.01
 	sprite.position = posicion
 	sprite.scale = Vector3.ONE * 1.15
