@@ -30,7 +30,7 @@ func configurar(
 	_area = Area2D.new()
 	_area.name = "Hitbox"
 	_area.collision_layer = 0
-	_area.collision_mask = 2
+	_area.collision_mask = 6 # Hurtboxes (capa 2) y cuerpos de criaturas Saltus (capa 4).
 	_area.monitoring = true
 	_area.monitorable = false
 	_area.set_meta("damageable_owner", self)
