@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://scripts/world/first_person_3d_controller.gd" id="1_controller"]
+
+[sub_resource type="CapsuleShape3D" id="Capsule_player"]
+radius = 0.28
+height = 1.7
+
+[node name="FirstPersonPlayer3D" type="CharacterBody3D"]
+script = ExtResource("1_controller")
+collision_layer = 1
+collision_mask = 1
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+position = Vector3(0, 0.85, 0)
+shape = SubResource("Capsule_player")
+
+[node name="Camera3D" type="Camera3D" parent="."]
+position = Vector3(0, 1.52, 0)
+current = true
+fov = 72.0
