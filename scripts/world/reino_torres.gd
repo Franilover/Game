@@ -2528,8 +2528,17 @@ func _abrir_menu_servicio_edificio(tipo: String) -> void:
 		interfaz.connect("solicitar_selector_expediciones", Callable(self, "_abrir_selector_viajes_desde_servicio"))
 	if interfaz.has_signal("solicitar_expedicion_saltus"):
 		interfaz.connect("solicitar_expedicion_saltus", Callable(self, "_iniciar_expedicion_saltus"))
+	if interfaz.has_signal("solicitar_exploracion_3d"):
+		interfaz.connect("solicitar_exploracion_3d", Callable(self, "_iniciar_exploracion_3d"))
 	get_tree().root.add_child(interfaz)
 	interfaz.call("configurar", tipo, inventario, world_items, _jugador)
+
+
+func _iniciar_exploracion_3d() -> void:
+	var escena_principal := get_tree().current_scene
+	var sesion := escena_principal.get_node_or_null("FirstPersonExplorationSession") if is_instance_valid(escena_principal) else null
+	if not is_instance_valid(sesion) or not sesion.has_method("iniciar") or not bool(sesion.call("iniciar")):
+		Events.notification_pushed.emit("No se pudo iniciar la exploración 3D.")
 
 
 func _iniciar_expedicion_saltus() -> void:
