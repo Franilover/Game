@@ -73,7 +73,7 @@ static func catalogo(slot: String) -> Array[Dictionary]:
 		var ruta := str(pieza.get("path", ""))
 		if ruta.is_empty():
 			continue
-		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
+		var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
 		resultado.append({
