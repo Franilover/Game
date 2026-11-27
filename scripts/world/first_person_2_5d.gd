@@ -24,8 +24,8 @@ class_name FirstPerson25D
 @export_range(-360.0, 360.0, 1.0) var angulo_inicial: float = 0.0
 
 @export_category("Texturas y aspecto")
-@export var textura_pared: Texture2D = preload("res://assets/tilesets/Bosque.png")
-@export var region_textura_pared: Rect2 = Rect2(0.0, 0.0, 32.0, 32.0)
+@export var textura_pared: Texture2D = preload("res://assets/tilesets/Muro Piedra.png")
+@export var region_textura_pared: Rect2 = Rect2(0.0, 0.0, 16.0, 16.0)
 @export var color_pared: Color = Color(0.72, 0.72, 0.72, 1.0)
 @export var color_cielo: Color = Color(0.20, 0.25, 0.31, 1.0)
 @export var color_suelo: Color = Color(0.25, 0.22, 0.18, 1.0)
