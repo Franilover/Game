@@ -401,11 +401,7 @@ func _preparar_aviso_evento_comunitario() -> void:
 	_aviso_evento_comunitario.z_index = 20
 	var estilo_boton: StyleBox = PIXEL_UI_THEME.button_surface_style()
 	if estilo_boton == null:
-		var respaldo := StyleBoxFlat.new()
-		respaldo.bg_color = Color("#302014")
-		respaldo.border_color = Color("#9B7950")
-		respaldo.set_border_width_all(2)
-		estilo_boton = respaldo
+		estilo_boton = PIXEL_UI_THEME.button_fallback_style()
 	for estado in ["normal", "hover", "pressed", "disabled"]:
 		_aviso_evento_comunitario.add_theme_stylebox_override(estado, estilo_boton)
 	_aviso_evento_comunitario.add_theme_color_override("font_color", Color("#FFF3D6"))
