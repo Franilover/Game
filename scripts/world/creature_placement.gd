@@ -9,7 +9,10 @@ class_name CreaturePlacement
 const CATALOGO_PATH := "res://data/world_initial.json"
 const PROPERTY_CRITTER := "criatura_id"
 
+enum ModoDirecciones { DOS_DIRECCIONES = 2, CUATRO_DIRECCIONES = 4 }
+
 @export_category("Aparición")
+@export var modo_direcciones: ModoDirecciones = ModoDirecciones.CUATRO_DIRECCIONES
 @export_range(1, 20, 1) var cantidad: int = 1
 @export var separacion: float = 28.0
 @export var desplazamiento_inicial: Vector2 = Vector2.ZERO
@@ -153,4 +156,5 @@ func _generar_criaturas() -> void:
 		if not nombre_individual.strip_edges().is_empty():
 			datos_instancia["nombre_individual"] = nombre_individual if total == 1 else "%s %d" % [nombre_individual, indice + 1]
 		criatura.configurar(datos_instancia)
+		criatura.establecer_modo_direcciones(int(modo_direcciones))
 		criatura.activar_como_proxy()
