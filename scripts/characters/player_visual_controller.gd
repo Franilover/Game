@@ -213,11 +213,11 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 		# La izquierda frontal conserva el mismo ángulo, espejado hacia el lado opuesto.
 		var lado := -1.0 if mano == "izquierda" else 1.0
 		var rotacion_mano := -0.38 if mano == "izquierda" else 0.38
-		var invertir_sprite := mano == "izquierda" and vista_frontal
+		var invertir_sprite: bool = mano == "izquierda" and vista_frontal
 		if not vista_frontal:
 			# Al caminar a la derecha, la mano izquierda ocupa exactamente
 			# la posición, rotación y orientación visual de la mano derecha frontal.
-			lado = 8.0 / 8.0
+			lado = 1.0
 			rotacion_mano = 0.38
 			invertir_sprite = false
 			if not mirando_derecha:
