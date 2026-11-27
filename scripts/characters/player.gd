@@ -100,6 +100,8 @@ var _wall_jump_start_position: Vector2 = Vector2.ZERO
 var _shield_guard_active: bool = false
 var _shield_visual: Sprite2D = null
 var _shield_tween: Tween = null
+var _totem_scan_timer: float = 0.0
+var _totem_target_cooldowns: Dictionary = {}
 
 const WATER_SPEED_MULTIPLIER: float = 0.58
 const WATER_ZONES: Array[int] = [4, 5, 6]
@@ -364,6 +366,7 @@ func _physics_process(delta: float) -> void:
 		return
 
 	_actualizar_guardia_escudo()
+	_actualizar_aura_totem_proteccion(delta)
 
 	# El agarre y el salto de pared tienen prioridad sobre la locomoción normal.
 	if _wall_jump_remaining > 0.0:
@@ -1039,6 +1042,81 @@ func _obtener_escudo_en_mano() -> Dictionary:
 			if "escudo" in identidad or "shield" in identidad:
 				return objeto
 	return {}
+
+
+func _obtener_totem_proteccion_en_mano() -> Dictionary:
+	for inventario_variant in get_tree().get_nodes_in_group("inventory"):
+		if not is_instance_valid(inventario_variant) or not inventario_variant.has_method("obtener_objeto_mano_activa"):
+			continue
+		for mano in ["izquierda", "derecha"]:
+			var objeto_variant: Variant = inventario_variant.call("obtener_objeto_mano_activa", mano)
+			if not objeto_variant is Dictionary:
+				continue
+			var objeto := objeto_variant as Dictionary
+			var identidad := (str(objeto.get("nombre", "")) + " " + str(objeto.get("nombre_sprite", ""))).to_lower()
+			if "totem" in identidad or "tótem" in identidad:
+				return objeto
+	return {}
+
+
+func _actualizar_aura_totem_proteccion(delta: float) -> void:
+	_totem_scan_timer = maxf(0.0, _totem_scan_timer - delta)
+	for id_variant in _totem_target_cooldowns.keys():
+		var id := int(id_variant)
+		_totem_target_cooldowns[id] = maxf(0.0, float(_totem_target_cooldowns[id]) - delta)
+		if float(_totem_target_cooldowns[id]) <= 0.0:
+			_totem_target_cooldowns.erase(id)
+	if _totem_scan_timer > 0.0:
+		return
+	_totem_scan_timer = 0.12
+	var totem := _obtener_totem_proteccion_en_mano()
+	if totem.is_empty():
+		return
+	var propiedades_variant: Variant = totem.get("propiedades_game", {})
+	var propiedades: Dictionary = propiedades_variant as Dictionary if propiedades_variant is Dictionary else {}
+	var radio := maxf(float(propiedades.get("radio_proteccion", 96.0)), 24.0)
+	for criatura_variant in get_tree().get_nodes_in_group("creatures"):
+		if not criatura_variant is Creature:
+			continue
+		var criatura := criatura_variant as Creature
+		if not is_instance_valid(criatura) or not criatura.is_alive or not _es_criatura_agresiva(criatura):
+			continue
+		if global_position.distance_squared_to(criatura.global_position) > radio * radio:
+			continue
+		var id := criatura.get_instance_id()
+		if _totem_target_cooldowns.has(id):
+			continue
+		_totem_target_cooldowns[id] = 1.35
+		criatura.aplicar_empuje_talisman(global_position, 250.0, 0.28)
+		_reproducir_efecto_totem(criatura.global_position)
+
+
+func _es_criatura_agresiva(criatura: Creature) -> bool:
+	var conducta := criatura.comportamiento.strip_edges().to_lower()
+	return conducta in ["agresivo", "agresiva", "cazador", "depredador"]
+
+
+func _reproducir_efecto_totem(posicion: Vector2) -> void:
+	if not is_inside_tree():
+		return
+	var efecto := Sprite2D.new()
+	efecto.name = "EfectoEscudoTotem"
+	efecto.texture = SHIELD_TEXTURE
+	efecto.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	efecto.centered = true
+	efecto.global_position = posicion
+	efecto.z_as_relative = false
+	efecto.z_index = 4096
+	efecto.modulate = Color(0.62, 0.9, 1.0, 0.0)
+	efecto.scale = Vector2(0.35, 0.35)
+	get_tree().current_scene.add_child(efecto)
+	var tween := efecto.create_tween()
+	tween.set_parallel(true)
+	tween.tween_property(efecto, "scale", Vector2(1.25, 1.25), 0.24).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	tween.tween_property(efecto, "modulate:a", 0.82, 0.07)
+	tween.tween_property(efecto, "rotation", TAU * 0.18, 0.24)
+	tween.chain().tween_property(efecto, "modulate:a", 0.0, 0.18)
+	tween.tween_callback(efecto.queue_free)
 
 
 func _crear_visual_escudo() -> void:
