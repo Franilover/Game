@@ -1058,6 +1058,12 @@ func _crear_visual_escudo() -> void:
 func _actualizar_guardia_escudo() -> void:
 	var debe_proteger := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not _obtener_escudo_en_mano().is_empty()
 	if debe_proteger == _shield_guard_active:
+		if _shield_guard_active and is_instance_valid(_shield_visual):
+			var direccion_actual := facing.normalized()
+			if direccion_actual.length_squared() < 0.01:
+				direccion_actual = Vector2.DOWN
+			_shield_visual.position = Vector2(0.0, -23.0) + direccion_actual * 17.0
+			_shield_visual.rotation = direccion_actual.angle() + PI * 0.5
 		return
 	_shield_guard_active = debe_proteger
 	if not is_instance_valid(_shield_visual):
@@ -1075,7 +1081,7 @@ func _actualizar_guardia_escudo() -> void:
 		_shield_visual.modulate.a = 0.0
 		_shield_visual.scale = Vector2(0.48, 0.48)
 		_shield_tween.set_parallel(true)
-		_shield_tween.tween_property(_shield_visual, "scale", Vector2(0.92, 0.92), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_shield_tween.tween_property(_shield_visual, "scale", Vector2(1.08, 1.08), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 		_shield_tween.tween_property(_shield_visual, "modulate:a", 1.0, 0.08)
 	else:
 		_shield_tween.tween_property(_shield_visual, "scale", Vector2(0.48, 0.48), 0.09)
