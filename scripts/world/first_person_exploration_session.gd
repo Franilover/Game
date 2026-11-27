@@ -16,7 +16,6 @@ var _zona_visible_previa: bool = true
 var _jugador_visible_previo: bool = true
 var _camara_2d_habilitada_previa: bool = true
 var _interaccion_activa_previa: bool = true
-var _estado_zona: Array[Dictionary] = []
 var _estado_jugador: Array[Dictionary] = []
 
 
@@ -46,12 +45,12 @@ func iniciar() -> bool:
 	_zona = zona_actual
 	_jugador = jugador
 	_camara_2d = camara
-	_zona_visible_previa = _zona.visible if _zona is CanvasItem else true
+	_zona_visible_previa = (_zona as CanvasItem).visible if _zona is CanvasItem else true
 	_jugador_visible_previo = _jugador.visible
 	_camara_2d_habilitada_previa = _camara_2d.enabled
-	_estado_zona = _suspender_subarbol(_zona)
 	_estado_jugador = _suspender_subarbol(_jugador)
 	if _zona is CanvasItem:
+		# Se oculta la zona 2D, pero sus habitantes siguen simulando el reloj y sus rutinas.
 		(_zona as CanvasItem).visible = false
 	_jugador.visible = false
 	_camara_2d.enabled = false
@@ -116,9 +115,7 @@ func salir() -> void:
 		await _escena_3d.tree_exited
 	_escena_3d = null
 
-	_restaurar_subarbol(_estado_zona)
 	_restaurar_subarbol(_estado_jugador)
-	_estado_zona.clear()
 	_estado_jugador.clear()
 	if is_instance_valid(_zona) and _zona is CanvasItem:
 		(_zona as CanvasItem).visible = _zona_visible_previa
