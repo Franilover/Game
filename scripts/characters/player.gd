@@ -231,8 +231,18 @@ func aplicar_identidad_red(
 	var cambio := capas != personaje_apariencia
 	personaje_apariencia = capas
 	if is_instance_valid(visual) and (cambio or not _apariencia_red_aplicada):
-		CharacterAppearance.aplicar_capas(visual, personaje_apariencia)
+		visual_controller.aplicar_apariencia(personaje_apariencia)
 		_apariencia_red_aplicada = true
+
+
+func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> void:
+	visual_controller.configurar_equipo_visual(izquierda, derecha)
+
+
+func configurar_apariencia_visual(apariencia: Dictionary) -> void:
+	personaje_apariencia = apariencia.duplicate(true)
+	_apariencia_red_aplicada = true
+	visual_controller.aplicar_apariencia(personaje_apariencia)
 
 
 func aplicar_runtime_eterium_red(datos_runtime: Dictionary, reglas_especies: Array) -> void:
