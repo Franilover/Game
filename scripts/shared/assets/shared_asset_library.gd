@@ -10,12 +10,14 @@ static var _recursos: Dictionary = {}
 
 static func obtener_recurso(ruta: String) -> Resource:
 	var clave := ruta.strip_edges()
-	if clave.is_empty() or not ResourceLoader.exists(clave):
+	if clave.is_empty():
 		return null
 
 	var recurso_cache: Variant = _recursos.get(clave)
 	if recurso_cache is Resource and is_instance_valid(recurso_cache):
 		return recurso_cache as Resource
+	if not ResourceLoader.exists(clave):
+		return null
 
 	var recurso := ResourceLoader.load(clave)
 	if recurso != null:
