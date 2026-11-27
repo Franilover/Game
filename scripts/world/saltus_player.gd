@@ -211,7 +211,7 @@ func _detectar_agarre_pared() -> void:
 	_wall_grabbed = true
 	velocity = Vector2.ZERO
 	facing = -normal
-	_actualizar_posicion_equipo_visual()
+	_visual_controller.actualizar_direccion(facing)
 
 
 func _buscar_normal_pared() -> Vector2:
