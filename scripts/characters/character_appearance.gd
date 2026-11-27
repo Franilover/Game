@@ -132,6 +132,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		capa.name = "Appearance_" + slot
 		capa.add_to_group("character_customization_layer")
 		capa.set_meta("appearance_slot", slot)
+		capa.set_meta("appearance_slot_order", indice_z)
 		capa.set_meta("appearance_base_path", ruta)
 		capa.texture = textura
 		capa.position = sprite_base.position
@@ -154,6 +155,13 @@ static func sincronizar_capas(visual: Node2D) -> void:
 	var sprite_base := visual.get_node_or_null("Sprite2D") as Sprite2D
 	if sprite_base == null:
 		return
+	var estado := [
+		sprite_base.position, sprite_base.centered, sprite_base.offset,
+		sprite_base.flip_h, sprite_base.flip_v, sprite_base.scale,
+		sprite_base.texture_filter, sprite_base.z_index
+	]
+	if visual.get_meta("appearance_transform", []) == estado:
+		return
 	for hijo in visual.get_children():
 		if not hijo is Sprite2D or not hijo.is_in_group("character_customization_layer"):
 			continue
@@ -165,6 +173,8 @@ static func sincronizar_capas(visual: Node2D) -> void:
 		capa.flip_v = sprite_base.flip_v
 		capa.scale = sprite_base.scale
 		capa.texture_filter = sprite_base.texture_filter
+		capa.z_index = sprite_base.z_index + int(capa.get_meta("appearance_slot_order", 0))
+	visual.set_meta("appearance_transform", estado)
 
 
 static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> void:
@@ -182,7 +192,9 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 		direccion = "Back" if facing.y < 0.0 else "Front"
 	else:
 		direccion = "Lateral"
-		invertir = facing.x > 0.0
+		invertir = facing.x > 0.0	var clave_direccion := direccion + (":flip" if invertir else "")
+	if str(cabello.get_meta("appearance_direction", "")) == clave_direccion:
+		return
 	var numero_pelo := ruta_base.get_file().get_basename().get_slice(" ", 0)
 	var ruta := ruta_base.get_base_dir() + "/" + numero_pelo + " " + direccion + ".png"
 	var textura := SHARED_ASSET_LIBRARY.textura(ruta)
@@ -191,3 +203,4 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 	if textura != null:
 		cabello.texture = textura
 	cabello.flip_h = invertir
+	cabello.set_meta("appearance_direction", clave_direccion)
