@@ -170,9 +170,11 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 	if not is_instance_valid(visual):
 		return
 	var origen := sprite.position if is_instance_valid(sprite) else Vector2(0.0, -22.0)
-	var mirando_derecha := direccion.x >= 0.0
-	# En vista lateral solo se dibuja la mano que queda visible:
-	# mirando a la izquierda se ve la mano derecha y viceversa.
+	var orientacion := _obtener_direccion(direccion)
+	var vista_frontal := orientacion == "down" or orientacion == "up"
+	var mirando_derecha := direccion.x > 0.0
+	# De perfil se dibuja la mano que queda visible desde ese lado.
+	# De frente/espaldas se muestran ambas manos.
 	var mano_visible := "izquierda" if mirando_derecha else "derecha"
 	for mano in ["izquierda", "derecha"]:
 		var sprite_equipo := _equipo_sprites.get(mano) as Sprite2D
@@ -180,15 +182,20 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 			continue
 		sprite_equipo.visible = (
 			not _equipo_oculto
-			and mano == mano_visible
+			and (vista_frontal or mano == mano_visible)
 			and sprite_equipo.texture != null
 		)
+		# Conserva la composición frontal original: izquierda a -8/-0.38,
+		# derecha a +8/+0.38. En perfil se intercambian y espejan al mirar a la derecha.
 		var lado := -1.0 if mano == "izquierda" else 1.0
+		var rotacion_mano := -0.38 if mano == "izquierda" else 0.38
+		if not vista_frontal and mirando_derecha:
+			lado *= -1.0
+			rotacion_mano *= -1.0
 		sprite_equipo.position = origen + Vector2(lado * 8.0, 6.0)
-		# La rotación es la misma en magnitud y se refleja al cambiar de lado.
-		sprite_equipo.flip_h = mirando_derecha
-		sprite_equipo.rotation = 0.38 if mirando_derecha else -0.38
-		sprite_equipo.z_index = 8
+		sprite_equipo.flip_h = not vista_frontal and mirando_derecha
+		sprite_equipo.rotation = rotacion_mano
+		sprite_equipo.z_index = 5 if direccion.y < -0.45 else 8
 
 func reproducir_animacion_herramienta(objeto: Dictionary, direccion: Vector2) -> void:
 	if not is_instance_valid(visual) or not is_instance_valid(_equipment_animator) or objeto.is_empty():
