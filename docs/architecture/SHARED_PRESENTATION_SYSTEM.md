@@ -10,7 +10,7 @@ La regla es **una implementación compartida + datos/configuración por contexto
 
 | Sistema | Responsabilidad | No debe absorber |
 |---|---|---|
-| `SharedAssetLibrary` | Cargar y cachear recursos `res://`, incluidas rutas inexistentes, para evitar búsquedas repetidas | Catálogos de canon de Supabase o decisiones de gameplay |
+| `SharedAssetLibrary` | Cargar recursos `res://` desde un punto único; recordar rutas inexistentes y usar referencias débiles para no retener recursos liberables | Catálogos de canon de Supabase o decisiones de gameplay |
 | `CharacterAppearance` | Catálogo visual del personaje, capas de ropa/cabello/ojos y orientación de cabello | Movimiento, colisiones, IA o reglas del reino |
 | `PlayerVisualController` | Render del jugador, orientaciones, apariencia, manos/equipo y animaciones visuales de herramientas/comida | Física, input, daño, inventario canónico o cámara |
 | `SharedSpriteAnimationController` | Temporización y avance de spritesheets, con reproducción en bucle o de una sola ejecución | Qué animación debe elegir la IA o el gameplay |
@@ -91,7 +91,7 @@ Una pantalla nueva debe llamar a `PixelUITheme.apply(root)` y aportar únicament
 ## Restricciones de rendimiento
 
 - Carga diferida: solo se solicitan los recursos que la entidad o interfaz necesita.
-- Caché positiva y negativa: una ruta se resuelve una vez hasta que se invalida.
+- Caché negativa de rutas ausentes; las referencias positivas son débiles y no fijan texturas en memoria. `ResourceLoader` mantiene su propio caché.
 - Sin `ResourceLoader.load`, `ResourceLoader.exists` o enumeración de carpetas dentro de `_process` o `_physics_process`.
 - Sin recrear sprites de equipo en cada cambio de frame; se conservan los nodos de cada mano.
 - Sin recalcular capas de apariencia si el diccionario no cambió.
