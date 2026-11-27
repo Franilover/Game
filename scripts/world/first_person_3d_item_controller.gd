@@ -56,12 +56,8 @@ func _crear_sprite_mano(mano: String, posicion: Vector3) -> void:
 	sprite.pixel_size = 0.01
 	sprite.position = posicion
 	sprite.scale = Vector3.ONE * 1.15
-	var material := StandardMaterial3D.new()
-	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
-	material.no_depth_test = true
-	material.render_priority = 1
-	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
-	sprite.material_override = material
+	sprite.shaded = false
+	sprite.no_depth_test = true
 	sprite.visible = false
 	add_child(sprite)
 	_sprites[mano] = sprite
