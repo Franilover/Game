@@ -188,6 +188,7 @@ func configurar(
 	_player = player
 	_world_items = world_items
 	call_deferred("_actualizar_vista_personaje")
+	call_deferred("_sincronizar_armadura_visual")
 	if _world_items != null:
 		if not _world_items.catalogo_cargado.is_connected(_al_catalogo_items_cargado):
 			_world_items.catalogo_cargado.connect(_al_catalogo_items_cargado)
@@ -198,6 +199,12 @@ func configurar(
 	_configurar_relationships(relationship_system)
 	_configurar_crafting()
 	_actualizar_admin_tab()
+
+
+func _sincronizar_armadura_visual() -> void:
+	if not is_instance_valid(_player) or not _player.has_method("configurar_armadura_visual"):
+		return
+	_player.call("configurar_armadura_visual", obtener_equipamiento())
 
 
 func _configurar_admin_inventory(world_entity_spawner: WorldEntitySpawner) -> void:
@@ -268,6 +275,7 @@ func cargar_estado_partida(datos: Dictionary) -> void:
 	var equipo_variant: Variant = datos.get("equipo", {})
 	var equipo_guardado: Dictionary = equipo_variant as Dictionary if equipo_variant is Dictionary else {}
 	inventory_controller.establecer_equipamiento(equipo_guardado)
+	_sincronizar_armadura_visual()
 
 	# El estado de runtime ya cambió; notificar a la hotbar/HUD después de
 	# reconstruir los slots para que la carga no dependa de una interacción.
@@ -885,6 +893,7 @@ func _al_equipar_objeto(slot: Button, objeto: Dictionary) -> void:
 		# El runtime conserva el objeto canónico del slot, no la copia que la
 		# interfaz pudo capturar antes de una actualización del inventario.
 		_actualizar_slots_equipamiento()
+		_sincronizar_armadura_visual()
 		actualizar()
 		inventory_changed.emit()
 		_emitir_objeto_activo()
@@ -903,6 +912,7 @@ func _al_desequipar_objeto(slot: Button, objeto: Dictionary) -> void:
 		print("Inventory: no hay espacio para desequipar → ", str(objeto.get("nombre", "Objeto")))
 		return
 	equipment_slot.limpiar_objeto()
+	_sincronizar_armadura_visual()
 	actualizar()
 	inventory_changed.emit()
 	_emitir_objeto_activo()
