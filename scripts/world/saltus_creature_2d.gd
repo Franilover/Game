@@ -73,6 +73,15 @@ func _physics_process(delta: float) -> void:
 		_procesar_flaxis(delta)
 
 
+func take_damage(cantidad: int, origen: String = "desconocido") -> int:
+	var dano_real := super.take_damage(cantidad, origen)
+	if dano_real > 0 and is_instance_valid(sprite):
+		var tween := create_tween()
+		tween.tween_property(sprite, "modulate", Color(1.0, 0.28, 0.28, 1.0), 0.055)
+		tween.tween_property(sprite, "modulate", Color.WHITE, 0.13)
+	return dano_real
+
+
 func _procesar_zlish(delta: float) -> void:
 	_zlish_attack_cooldown_left = maxf(0.0, _zlish_attack_cooldown_left - delta)
 	_jump_timer -= delta
