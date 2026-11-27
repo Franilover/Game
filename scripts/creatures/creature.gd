@@ -147,6 +147,12 @@ func _crear_movimiento() -> void:
 func configurar(
 	datos_criatura: Dictionary
 ) -> void:
+	# Una instancia reciclada debe liberar la animación anterior antes de
+	# recibir otra criatura, para no heredar textura, cuadro ni temporizador.
+	_detener_animacion_ataque()
+	_detener_animacion_caminando()
+	_sprite_animator.detener(0)
+	_zlish_idle_animando = false
 	_muerte_procesada = false
 	_ataque_animando = false
 	_caminando_animando = false
