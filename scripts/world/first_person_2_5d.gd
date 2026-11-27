@@ -47,6 +47,8 @@ var _mostrar_ayuda: bool = true
 func _ready() -> void:
 	texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 	if Engine.is_editor_hint():
+		_posicion = posicion_inicial
+		_angulo = deg_to_rad(angulo_inicial)
 		queue_redraw()
 		return
 	_posicion = posicion_inicial
@@ -239,7 +241,7 @@ func _dibujar_billboards(tamano: Vector2, fov: float, direccion: Vector2, plano:
 		var altura := tamano_celda * proyeccion / profundidad * sprite.scale.y
 		var textura := sprite.texture
 		var ancho := altura * float(textura.get_width()) / maxf(float(textura.get_height()), 1.0) * sprite.scale.x
-		var destino := Rect2(centro_x - ancho * 0.5, tamano.y * 0.5 - altura * 0.5 + sprite.position.y * 0.0, ancho, altura)
+		var destino := Rect2(centro_x - ancho * 0.5, tamano.y * 0.5 - altura * 0.5, ancho, altura)
 		var inicio := maxi(0, floori(destino.position.x / tamano.x * float(cantidad_rayos)))
 		var fin := mini(cantidad_rayos - 1, ceili(destino.end.x / tamano.x * float(cantidad_rayos)))
 		for columna in range(inicio, fin + 1):
