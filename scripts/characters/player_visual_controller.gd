@@ -7,12 +7,14 @@ class_name PlayerVisualController
 const EQUIPMENT_ANIMATOR_SCRIPT: Script = preload("res://scripts/characters/player_equipment_animation_controller.gd")
 const ITEM_ICON_RESOLVER_SCRIPT: Script = preload("res://scripts/ui/item_icon_resolver.gd")
 const CHARACTER_APPEARANCE_SCRIPT: Script = preload("res://scripts/characters/character_appearance.gd")
+const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 
 var visual: Node2D = null
 var facing_marker: Control = null
 var animation_player: AnimationPlayer = null
 var sprite: Sprite2D = null
 var sprite_idle: Texture2D = null
+var _sprite_idle_catalogo: Texture2D = null
 var sprite_walk_left: Texture2D = null
 var sprite_walk_back: Texture2D = null
 var perfil_renderizado: String = "top_down"
@@ -41,6 +43,7 @@ func configurar(
 	_equipment_animator = EQUIPMENT_ANIMATOR_SCRIPT.new()
 	_equipment_animator.configurar(visual, sprite)
 	sprite_idle = CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("idle_front")
+	_sprite_idle_catalogo = sprite_idle
 	sprite_walk_left = CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("walk_left")
 	sprite_walk_back = CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("walk_back")
 	if is_instance_valid(sprite) and sprite.texture == null:
@@ -48,9 +51,13 @@ func configurar(
 	CHARACTER_APPEARANCE_SCRIPT.sincronizar_capas(visual)
 
 
-func aplicar_apariencia(apariencia: Dictionary) -> void:
+func aplicar_apariencia(apariencia: Dictionary, skin_path: String = "") -> void:
 	if not is_instance_valid(visual):
 		return
+	var textura_personaje := SHARED_ASSET_LIBRARY.textura(skin_path) if not skin_path.strip_edges().is_empty() else null
+	sprite_idle = textura_personaje if textura_personaje != null else _sprite_idle_catalogo
+	if is_instance_valid(sprite):
+		sprite.texture = sprite_idle
 	CHARACTER_APPEARANCE_SCRIPT.aplicar_capas(visual, apariencia)
 	CHARACTER_APPEARANCE_SCRIPT.actualizar_cabello_direccion(visual, facing)
 	CHARACTER_APPEARANCE_SCRIPT.sincronizar_capas(visual)
