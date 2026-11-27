@@ -1,0 +1,21 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Texture2D" path="res://assets/tilesets/Muro Piedra.png" id="1_wall"]
+
+[sub_resource type="StandardMaterial3D" id="Material_wall"]
+albedo_texture = ExtResource("1_wall")
+texture_filter = 1
+uv1_scale = Vector3(2, 1, 1)
+
+[sub_resource type="BoxShape3D" id="Collision_wall"]
+
+[node name="Pared3D" type="StaticBody3D"]
+collision_layer = 1
+collision_mask = 1
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = BoxMesh.new()
+surface_material_override/0 = SubResource("Material_wall")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Collision_wall")
