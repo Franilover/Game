@@ -56,7 +56,7 @@ func configurar(
 func aplicar_apariencia(apariencia: Dictionary, skin_path: String = "") -> void:
 	if not is_instance_valid(visual):
 		return
-	var textura_personaje := SHARED_ASSET_LIBRARY.textura(skin_path) if not skin_path.strip_edges().is_empty() else null
+	var textura_personaje: Texture2D = SHARED_ASSET_LIBRARY.textura(skin_path) if not skin_path.strip_edges().is_empty() else null
 	sprite_idle = textura_personaje if textura_personaje != null else _sprite_idle_catalogo
 	if is_instance_valid(sprite):
 		sprite.texture = sprite_idle
@@ -145,7 +145,7 @@ func _actualizar_sprite_equipado(mano: String, objeto: Dictionary) -> void:
 		if icono_variant is Texture2D:
 			textura = icono_variant as Texture2D
 	if textura == null:
-		var tipo := EQUIPMENT_ANIMATOR_SCRIPT.obtener_tipo_animacion(objeto)
+		var tipo: String = EQUIPMENT_ANIMATOR_SCRIPT.obtener_tipo_animacion(objeto)
 		textura = EQUIPMENT_ANIMATOR_SCRIPT.obtener_textura_respaldo(tipo)
 	if textura == null:
 		if is_instance_valid(sprite_equipo):
@@ -195,7 +195,7 @@ func reproducir_animacion_herramienta(objeto: Dictionary, direccion: Vector2) ->
 	if is_instance_valid(_equipo_restore_tween) and _equipo_restore_tween.is_running():
 		_equipo_restore_tween.kill()
 	_equipment_animator.reproducir(objeto, facing)
-	var perfil := EQUIPMENT_ANIMATOR_SCRIPT.obtener_perfil(objeto)
+	var perfil: Dictionary = EQUIPMENT_ANIMATOR_SCRIPT.obtener_perfil(objeto)
 	var duracion := float(perfil.get("duracion", 0.44)) + 0.12
 	_equipo_restore_tween = visual.create_tween()
 	_equipo_restore_tween.tween_interval(duracion)
@@ -224,7 +224,7 @@ func reproducir_animacion_comer(objeto: Dictionary) -> void:
 		_sprite_comida.queue_free()
 		_sprite_comida = null
 
-	var textura := ITEM_ICON_RESOLVER_SCRIPT.obtener_icono(objeto)
+	var textura: Texture2D = ITEM_ICON_RESOLVER_SCRIPT.obtener_icono(objeto)
 	if textura == null:
 		_reproducir_saltito_comiendo()
 		return
