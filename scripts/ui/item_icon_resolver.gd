@@ -5,6 +5,7 @@ class_name ItemIconResolver
 const ITEMS_ASSET_ROOT: String = "res://assets/art/items"
 const PROPS_ASSET_ROOT: String = "res://assets/art/props"
 const FURNITURE_ASSET_ROOT: String = "res://assets/art/kingdom/Torres/Edificios/Muebles"
+const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 
 const EXTENSIONES_IMAGEN: Array[String] = [
 	"png",
@@ -66,7 +67,6 @@ const TEXTURAS_INCLUIDAS: Array[Texture2D] = [
 static var _indice_listo: bool = false
 static var _rutas_por_nombre: Dictionary = {}
 static var _nombres_sin_icono: Dictionary = {}
-static var _texturas_por_ruta: Dictionary = {}
 static var _entradas: Array[Dictionary] = []
 static var _regex_tokens: RegEx = RegEx.new()
 static var _regex_tokens_compilado: bool = false
@@ -87,8 +87,10 @@ static func obtener_icono(
 		return icono
 
 	var ruta_icono_estado := str(datos.get("icono_ruta", "")).strip_edges()
-	if not ruta_icono_estado.is_empty() and ResourceLoader.exists(ruta_icono_estado):
-		return _cargar_textura(ruta_icono_estado)
+	if not ruta_icono_estado.is_empty():
+		var textura_estado := _cargar_textura(ruta_icono_estado)
+		if textura_estado != null:
+			return textura_estado
 
 	# Los ejemplares únicos conservan el sprite del objeto base aunque
 	# tengan un nombre visible distinto (p. ej. "Carta Aoris de Elian").
@@ -272,20 +274,7 @@ static func _es_imagen(
 
 
 static func _cargar_textura(ruta: String) -> Texture2D:
-	if ruta.is_empty():
-		return null
-
-	if _texturas_por_ruta.has(ruta):
-		return _texturas_por_ruta[ruta] as Texture2D
-
-	var recurso := ResourceLoader.load(ruta)
-	if recurso is Texture2D:
-		var textura := recurso as Texture2D
-		_texturas_por_ruta[ruta] = textura
-		return textura
-
-	return null
-
+	return SHARED_ASSET_LIBRARY.textura(ruta)
 
 static func _normalizar_nombre(
 	nombre: String
