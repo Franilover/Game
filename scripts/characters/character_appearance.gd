@@ -125,7 +125,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 		var ruta := str(pieza.get("ruta", "")).strip_edges()
 		if ruta.is_empty():
 			continue
-		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
+		var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
 		var capa := Sprite2D.new()
@@ -198,7 +198,7 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 		return
 	var numero_pelo := ruta_base.get_file().get_basename().get_slice(" ", 0)
 	var ruta := ruta_base.get_base_dir() + "/" + numero_pelo + " " + direccion + ".png"
-	var textura := SHARED_ASSET_LIBRARY.textura(ruta)
+	var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
 	if textura == null and ruta != ruta_base:
 		textura = SHARED_ASSET_LIBRARY.textura(ruta_base)
 	if textura != null:
