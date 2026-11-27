@@ -18,7 +18,7 @@ var _personalizacion_rows: VBoxContainer
 var _preview_container: Control
 var _preview_layers: Dictionary = {}
 var _preview_direction_index: int = 0
-const PREVIEW_DIRECTIONS: Array[String] = ["Frente", "Atrás", "Izquierda", "Derecha"]
+const PREVIEW_DIRECTIONS: Array[String] = ["Frente", "Derecha", "Atrás", "Izquierda"]
 var _preview_direction_label: Label
 @onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
 @onready var creation_margin: MarginContainer = $Panel/Margin
