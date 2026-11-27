@@ -157,7 +157,10 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 				background_file = "background acento.png"
 			"floating":
 				background_file = "background_flotante.png"
-		var panel_background := _texture_style(background_file, 0)
+		# El fondo flotante usa el mismo margen de nueve sectores que button_normal:
+		# conserva sus bordes y escala el centro sin deformar el marco.
+		var background_margins := 5 if background_role == "floating" else 0
+		var panel_background := _texture_style(background_file, background_margins)
 		if panel_background != null:
 			control.add_theme_stylebox_override("panel", panel_background)
 
