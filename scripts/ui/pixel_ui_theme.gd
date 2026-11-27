@@ -54,11 +54,11 @@ static func button_surface_style() -> StyleBoxTexture:
 
 
 static func button_hover_style() -> StyleBoxTexture:
-	return _texture_style("button_hover.png", 5)
+	return button_surface_style()
 
 
 static func button_pressed_style() -> StyleBoxTexture:
-	return _texture_style("button_pressed.png", 5)
+	return button_surface_style()
 
 
 static func _apply_control(control: Control, use_pixel_titles: bool = true, force: bool = false) -> void:
@@ -111,15 +111,10 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 		control.add_theme_color_override("font_disabled_color", Color("#D0C3A8"))
 		control.add_theme_color_override("font_outline_color", Color("#302014"))
 		control.add_theme_constant_override("outline_size", 2)
-		var normal := _texture_style("button_normal.png", 5)
-		var hover := _texture_style("button_hover.png", 5)
-		var pressed := _texture_style("button_pressed.png", 5)
-		var disabled := _texture_style("button_disabled.png", 5)
+		var normal := button_surface_style()
 		if normal != null:
-			control.add_theme_stylebox_override("normal", normal)
-			control.add_theme_stylebox_override("hover", hover if hover != null else normal)
-			control.add_theme_stylebox_override("pressed", pressed if pressed != null else normal)
-			control.add_theme_stylebox_override("disabled", disabled if disabled != null else normal)
+			for estado in ["normal", "hover", "pressed", "disabled"]:
+				control.add_theme_stylebox_override(estado, normal)
 
 	if control is LineEdit:
 		var input_style := _texture_style("input_frame.png", 4)
