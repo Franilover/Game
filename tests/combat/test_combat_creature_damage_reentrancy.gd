@@ -1,6 +1,6 @@
 extends Node
 
-const CreatureScript = preload("res://scripts/creatures/creature.gd")
+const ZlishScene = preload("res://scenes/creatures/zlish.tscn")
 const EntityScript = preload("res://scripts/characters/entity.gd")
 const CombatDamageScript = preload("res://scripts/gameplay/combat/combat_damage.gd")
 
@@ -11,7 +11,7 @@ func _ready() -> void:
 
 func _run() -> void:
 	var errores: Array[String] = []
-	var criatura := CreatureScript.new()
+	var criatura := ZlishScene.instantiate() as Creature
 	var atacante_externo := EntityScript.new()
 	var atacante_reentrante := EntityScript.new()
 	criatura.name = "CreatureDamageReentrancyTarget"
@@ -21,6 +21,9 @@ func _run() -> void:
 	get_tree().root.add_child(atacante_externo)
 	get_tree().root.add_child(atacante_reentrante)
 	await get_tree().process_frame
+
+	if (criatura.collision_layer & 2) == 0:
+		errores.append("El Zlish no está en la capa de colisión que detecta la hitbox melee.")
 
 	var eventos: Array[Dictionary] = []
 	var control_reentrada := {"iniciado": false}
