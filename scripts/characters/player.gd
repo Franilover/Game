@@ -232,7 +232,7 @@ func aplicar_identidad_red(
 	var cambio := capas != personaje_apariencia
 	personaje_apariencia = capas
 	if is_instance_valid(visual) and (cambio or not _apariencia_red_aplicada):
-		visual_controller.aplicar_apariencia(personaje_apariencia)
+		visual_controller.aplicar_apariencia(personaje_apariencia, personaje_skin)
 		_apariencia_red_aplicada = true
 
 
@@ -1161,14 +1161,7 @@ func _aplicar_configuracion_personaje() -> void:
 	if apariencia_variant is Dictionary:
 		personaje_apariencia = (apariencia_variant as Dictionary).duplicate(true)
 
-	var sprite := get_node_or_null("Visual/Sprite2D") as Sprite2D
-	if sprite != null and not personaje_skin.is_empty() and ResourceLoader.exists(personaje_skin):
-		var textura := SHARED_ASSET_LIBRARY.textura(personaje_skin)
-		if textura != null:
-			sprite.texture = textura
-
-	visual_controller.aplicar_apariencia(personaje_apariencia)
-
+	visual_controller.aplicar_apariencia(personaje_apariencia, personaje_skin)
 	print(
 		"Player: personaje aplicado → ",
 		personaje_nombre,
