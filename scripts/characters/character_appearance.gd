@@ -52,9 +52,11 @@ const CATALOG_ASSETS := {
 		{"name": "Túnica", "path": PLAYER_ART_DIR + "customization/shirts/tunic.png"}
 	],
 	"pants": [
+		{"name": "Pantalón 1", "path": PLAYER_ART_DIR + "customization/pants/1 Front.png"},
 		{"name": "Falda", "path": PLAYER_ART_DIR + "customization/pants/skirt.png"}
 	],
 	"shoes": [
+		{"name": "Zapatos 1", "path": PLAYER_ART_DIR + "customization/shoes/1 Front.png"},
 		{"name": "Zapatillas", "path": PLAYER_ART_DIR + "customization/shoes/sneakers.png"}
 	]
 }
@@ -190,7 +192,7 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 	else:
 		direccion = "Lateral"
 		invertir = facing.x > 0.0
-	for slot in ["hair", "eyes", "shirt"]:
+	for slot in ["hair", "eyes", "shirt", "pants", "shoes"]:
 		var capa := visual.get_node_or_null("Appearance_" + slot) as Sprite2D
 		if capa == null:
 			continue
