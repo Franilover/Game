@@ -2364,7 +2364,7 @@ func _sincronizar_equipo_visual_saltus() -> void:
 		return
 	jugador_saltus.configurar_equipo_visual(mano_izquierda, mano_derecha)
 	if is_instance_valid(_player):
-		jugador_saltus.configurar_apariencia_visual(_player.personaje_apariencia)
+		jugador_saltus.configurar_apariencia_visual(_player.personaje_apariencia, _player.personaje_skin)
 
 
 func _reintentar_recompensas_misiones() -> void:
