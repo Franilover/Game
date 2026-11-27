@@ -2535,7 +2535,7 @@ func _abrir_menu_servicio_edificio(tipo: String) -> void:
 
 
 func _iniciar_exploracion_3d() -> void:
-	var escena_principal := get_tree().current_scene
+	var escena_principal := get_tree().root.find_child("Main", true, false)
 	var sesion := escena_principal.get_node_or_null("FirstPersonExplorationSession") if is_instance_valid(escena_principal) else null
 	if not is_instance_valid(sesion) or not sesion.has_method("iniciar") or not bool(sesion.call("iniciar")):
 		Events.notification_pushed.emit("No se pudo iniciar la exploración 3D.")
