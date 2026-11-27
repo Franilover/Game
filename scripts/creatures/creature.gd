@@ -1343,7 +1343,7 @@ func get_interaction_distance() -> float:
 
 
 func _obtener_tienda_npc() -> Dictionary:
-	var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
+	var shop_script := SHARED_ASSET_LIBRARY.obtener_recurso(SHOP_UI_PATH) as Script
 	if shop_script == null:
 		return {}
 	var tienda_variant: Variant = shop_script.call("tienda_para_npc", self)
@@ -1366,7 +1366,7 @@ func interact(
 
 	var tienda := _obtener_tienda_npc()
 	if not tienda.is_empty() and is_instance_valid(_world_items_dependency):
-		var shop_script := ResourceLoader.load(SHOP_UI_PATH) as Script
+		var shop_script := SHARED_ASSET_LIBRARY.obtener_recurso(SHOP_UI_PATH) as Script
 		var inventario := get_tree().get_first_node_in_group("inventory") as GarliaInventory
 		var interfaz: CanvasLayer = null
 		if shop_script != null:
