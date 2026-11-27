@@ -24,6 +24,7 @@ mouse_filter = 2
 color = Color(0.02, 0.015, 0.01, 0.72)
 
 [node name="Panel" type="PanelContainer" parent="."]
+metadata/ui_background_role = "floating"
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
