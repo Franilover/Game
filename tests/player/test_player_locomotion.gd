@@ -170,7 +170,7 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 	if not _textura_coincide_con_archivo(sprite.texture, "walk_left") or sprite.flip_h:
 		errores.append("Caminar hacia la izquierda no usó la nueva pose lateral.")
 	visual.actualizar_estado(2, Vector2.RIGHT)
-	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004_Walking_Left.png") or not sprite.flip_h:
+	if not _textura_coincide_con_archivo(sprite.texture, "walk_left") or not sprite.flip_h:
 		errores.append("Correr hacia la derecha no reflejó la pose lateral.")
 	visual.actualizar_estado(1, Vector2.UP)
 	if not _textura_coincide_con_archivo(sprite.texture, "walk_back") or sprite.flip_h:
@@ -179,7 +179,7 @@ func _probar_presentacion_visual(errores: Array[String]) -> void:
 	if not _textura_coincide_con_archivo(sprite.texture, "idle_front") or sprite.flip_h:
 		errores.append("Caminar hacia abajo no conservó la skin frontal base.")
 	visual.actualizar_estado(0, Vector2.LEFT)
-	if not _textura_coincide_con_archivo(sprite.texture, "res://assets/art/characters/Sprite-0004.png") or sprite.flip_h:
+	if not _textura_coincide_con_archivo(sprite.texture, "idle_front") or sprite.flip_h:
 		errores.append("Al detenerse no se restauró la skin base.")
 	raiz_visual.free()
 	marcador.free()
