@@ -179,6 +179,12 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 			lado *= -1.0
 		sprite_equipo.position = origen + Vector2(lado * 8.0, 6.0)
 		sprite_equipo.flip_h = direccion.x > 0.0
+		# Cada mano conserva una inclinación propia: la izquierda apunta
+		# hacia fuera a la izquierda y la derecha hacia fuera a la derecha.
+		var rotacion_mano := -0.38 if mano == "izquierda" else 0.38
+		if direccion.x > 0.0:
+			rotacion_mano *= -1.0
+		sprite_equipo.rotation = rotacion_mano
 		sprite_equipo.z_index = 5 if direccion.y < -0.45 else 8
 
 
