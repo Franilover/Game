@@ -173,8 +173,8 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 	var orientacion := _obtener_direccion(direccion)
 	var vista_frontal := orientacion == "down" or orientacion == "up"
 	var mirando_derecha := direccion.x > 0.0
-	# De perfil se dibuja la mano que queda visible desde ese lado.
-	# De frente/espaldas se muestran ambas manos.
+	# En perfil se muestra la mano opuesta a la dirección de mirada:
+	# izquierda -> objeto de la mano derecha; derecha -> objeto de la mano izquierda.
 	var mano_visible := "izquierda" if mirando_derecha else "derecha"
 	for mano in ["izquierda", "derecha"]:
 		var sprite_equipo := _equipo_sprites.get(mano) as Sprite2D
@@ -185,13 +185,14 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 			and (vista_frontal or mano == mano_visible)
 			and sprite_equipo.texture != null
 		)
-		# Conserva la composición frontal original: izquierda a -8/-0.38,
-		# derecha a +8/+0.38. En perfil se intercambian y espejan al mirar a la derecha.
+		# En frontal cada mano conserva su composición original.
+		# En perfil, la mano visible adopta el lado de pantalla hacia el que mira:
+		# izquierda = posición/ángulo izquierdos; derecha = posición/ángulo derechos.
 		var lado := -1.0 if mano == "izquierda" else 1.0
 		var rotacion_mano := -0.38 if mano == "izquierda" else 0.38
-		if not vista_frontal and mirando_derecha:
-			lado *= -1.0
-			rotacion_mano *= -1.0
+		if not vista_frontal:
+			lado = -1.0 if not mirando_derecha else 1.0
+			rotacion_mano = -0.38 if not mirando_derecha else 0.38
 		sprite_equipo.position = origen + Vector2(lado * 8.0, 6.0)
 		sprite_equipo.flip_h = not vista_frontal and mirando_derecha
 		sprite_equipo.rotation = rotacion_mano
