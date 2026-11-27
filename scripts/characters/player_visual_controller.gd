@@ -46,8 +46,10 @@ func configurar(
 	_sprite_idle_catalogo = sprite_idle
 	sprite_walk_left = CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("walk_left")
 	sprite_walk_back = CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("walk_back")
-	if is_instance_valid(sprite) and sprite.texture == null:
-		sprite.texture = sprite_idle
+	if is_instance_valid(sprite):
+		sprite.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+		if sprite.texture == null:
+			sprite.texture = sprite_idle
 	CHARACTER_APPEARANCE_SCRIPT.sincronizar_capas(visual)
 
 
