@@ -47,7 +47,8 @@ grow_horizontal = 2
 grow_vertical = 2
 pivot_offset = Vector2(310, 170)
 scale = Vector2(1.5, 1.5)
-texture_filter = 1
+# Mantener el filtro heredado evita rasterizar el texto con nearest-neighbor.
+texture_filter = 0
 mouse_filter = 1
 
 [node name="Margin" type="MarginContainer" parent="Window" unique_id=319582735]
