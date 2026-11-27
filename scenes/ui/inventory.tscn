@@ -32,6 +32,7 @@ mouse_filter = 1
 color = Color(0.04, 0.025, 0.015, 0.55)
 
 [node name="Window" type="PanelContainer" parent="." unique_id=1322938373]
+	metadata/ui_background_role = "fixed"
 layout_mode = 1
 anchors_preset = 8
 anchor_left = 0.5
@@ -201,6 +202,7 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 
 [node name="DetailBlock" type="PanelContainer" parent="Window/Margin/Column/Tabs/Inventario/InventoryContent/LeftPanel"]
+	metadata/ui_background_role = "priority"
 custom_minimum_size = Vector2(0, 102)
 layout_mode = 2
 size_flags_horizontal = 3
