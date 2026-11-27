@@ -241,6 +241,10 @@ func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> voi
 	visual_controller.configurar_equipo_visual(izquierda, derecha)
 
 
+func configurar_armadura_visual(equipamiento: Dictionary) -> void:
+	visual_controller.configurar_armadura_visual(equipamiento)
+
+
 func configurar_apariencia_visual(apariencia: Dictionary) -> void:
 	personaje_apariencia = apariencia.duplicate(true)
 	_apariencia_red_aplicada = true
