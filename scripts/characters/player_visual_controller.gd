@@ -115,7 +115,7 @@ func actualizar_presentacion_plataforma(direccion_horizontal: float, en_movimien
 	sprite.flip_h = facing.x > 0.0
 	CHARACTER_APPEARANCE_SCRIPT.actualizar_cabello_direccion(visual, facing)
 	CHARACTER_APPEARANCE_SCRIPT.sincronizar_capas(visual)
-	_actualizar_posicion_equipo_visual(facing)
+	_actualizar_posicion_equipo_visual(_obtener_direccion_equipo_render())
 
 
 func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> void:
