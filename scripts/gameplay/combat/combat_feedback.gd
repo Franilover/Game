@@ -10,20 +10,25 @@ static func impacto(objetivo: Node, _cantidad: int) -> void:
 	if not objetivo is CanvasItem:
 		return
 
-	var objetivo_visual := objetivo as CanvasItem
+	var objetivo_visual: CanvasItem = objetivo as CanvasItem
+	# En criaturas, aplicar el destello al sprite garantiza que sea visible
+	# aunque el nodo raíz tenga otros efectos de estado o transparencias.
+	var sprite := objetivo.get_node_or_null("Sprite2D") as Sprite2D
+	if is_instance_valid(sprite):
+		objetivo_visual = sprite
 	var modulate_original: Color = objetivo_visual.modulate
 	var tween := objetivo_visual.create_tween()
 	tween.tween_property(
 		objetivo_visual,
 		"modulate",
-		Color(1.0, 0.45, 0.45, modulate_original.a),
-		0.04
+		Color(1.0, 0.22, 0.22, modulate_original.a),
+		0.07
 	)
 	tween.tween_property(
 		objetivo_visual,
 		"modulate",
 		modulate_original,
-		0.08
+		0.15
 	)
 
 static func muerte(_objetivo: Node) -> void:
