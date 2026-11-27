@@ -106,7 +106,7 @@ func _enriquecer_objeto(objeto: Dictionary) -> Dictionary:
 		canonico = world_items.call("buscar_item_por_nombre", str(resultado.get("nombre", "")))
 	if canonico.is_empty():
 		return resultado
-	for clave in ["nombre", "tipo", "tipo_objeto", "categoria", "categoria_clave", "propiedades_game", "sprite_ruta", "ruta_sprite", "icono_ruta"]:
+	for clave in ["nombre", "tipo", "tipo_objeto", "categoria", "categoria_clave", "propiedades_game", "sprite_ruta", "ruta_sprite", "sprite_path", "textura_ruta", "ruta_textura", "texture_path", "imagen_ruta", "ruta_imagen", "icono_ruta"]:
 		if not canonico.has(clave):
 			continue
 		var actual: Variant = resultado.get(clave, null)
@@ -118,7 +118,7 @@ func _enriquecer_objeto(objeto: Dictionary) -> Dictionary:
 					if not combinadas.has(propiedad):
 						combinadas[propiedad] = (actual as Dictionary)[propiedad]
 			resultado[clave] = combinadas
-		elif actual == null or (actual is String and str(actual).strip_edges().is_empty()) or (actual is Dictionary and (actual as Dictionary).is_empty()):
+		elif actual == null or (actual is String and (str(actual).strip_edges().is_empty() or (clave in ["nombre", "tipo"] and str(actual).strip_edges().to_lower() in ["objeto", "item", "desconocido"]))) or (actual is Dictionary and (actual as Dictionary).is_empty()):
 			resultado[clave] = canonico_valor.duplicate(true) if canonico_valor is Dictionary or canonico_valor is Array else canonico_valor
 	return resultado
 
