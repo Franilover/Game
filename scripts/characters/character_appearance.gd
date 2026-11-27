@@ -71,7 +71,7 @@ static func catalogo(slot: String) -> Array[Dictionary]:
 			continue
 		var pieza: Dictionary = pieza_variant
 		var ruta := str(pieza.get("path", ""))
-		if ruta.is_empty()
+		if ruta.is_empty():
 			continue
 		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
@@ -123,7 +123,7 @@ static func aplicar_capas(visual: Node2D, apariencia: Dictionary) -> void:
 			continue
 		var pieza := pieza_variant as Dictionary
 		var ruta := str(pieza.get("ruta", "")).strip_edges()
-		if ruta.is_empty()
+		if ruta.is_empty():
 			continue
 		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
@@ -192,7 +192,8 @@ static func actualizar_cabello_direccion(visual: Node2D, facing: Vector2) -> voi
 		direccion = "Back" if facing.y < 0.0 else "Front"
 	else:
 		direccion = "Lateral"
-		invertir = facing.x > 0.0	var clave_direccion := direccion + (":flip" if invertir else "")
+		invertir = facing.x > 0.0
+	var clave_direccion := direccion + (":flip" if invertir else "")
 	if str(cabello.get_meta("appearance_direction", "")) == clave_direccion:
 		return
 	var numero_pelo := ruta_base.get_file().get_basename().get_slice(" ", 0)
