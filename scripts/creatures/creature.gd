@@ -82,6 +82,7 @@ var _zlish_idle_fps: float = 5.0
 var _sprite_npc_base: Texture2D = null
 var _sprite_npc_lateral: Texture2D = null
 var _sprite_npc_espalda: Texture2D = null
+var _usar_cuatro_direcciones: bool = true
 var _npc_direccion_anterior := Vector2.DOWN
 var _proteccion_empuje_direccion: Vector2 = Vector2.ZERO
 var _proteccion_empuje_restante: float = 0.0
@@ -473,6 +474,11 @@ func _cargar_sprite_direccional_personaje(nombre_archivo: String) -> Texture2D:
 	return SHARED_ASSET_LIBRARY.textura(ruta)
 
 
+func establecer_modo_direcciones(cantidad_direcciones: int) -> void:
+	_usar_cuatro_direcciones = cantidad_direcciones >= 4
+	_actualizar_sprite_direccional_npc()
+
+
 func _actualizar_sprite_direccional_npc() -> void:
 	if _sprite_npc_base == null or _ataque_animando or _caminando_animando:
 		return
@@ -489,15 +495,21 @@ func _actualizar_sprite_direccional_npc() -> void:
 	var textura := _sprite_npc_base
 	sprite.flip_h = false
 	var postura := str(get_meta("postura_npc", ""))
-	if postura == "dormir":
-		if _sprite_npc_espalda != null:
-			textura = _sprite_npc_espalda
-	elif velocity.length_squared() > 0.25:
-		if _npc_direccion_anterior == Vector2.UP and _sprite_npc_espalda != null:
-			textura = _sprite_npc_espalda
-		elif absf(_npc_direccion_anterior.x) > 0.0 and _sprite_npc_lateral != null:
+	if _usar_cuatro_direcciones:
+		if postura == "dormir":
+			if _sprite_npc_espalda != null:
+				textura = _sprite_npc_espalda
+		elif velocity.length_squared() > 0.25:
+			if _npc_direccion_anterior == Vector2.UP and _sprite_npc_espalda != null:
+				textura = _sprite_npc_espalda
+			elif absf(_npc_direccion_anterior.x) > 0.0 and _sprite_npc_lateral != null:
+				textura = _sprite_npc_lateral
+				sprite.flip_h = _npc_direccion_anterior.x > 0.0
+	else:
+		# Dos direcciones: perfil para izquierda/derecha y vista base en vertical.
+		if velocity.length_squared() > 0.25 and absf(velocity.x) > 0.01 and _sprite_npc_lateral != null:
 			textura = _sprite_npc_lateral
-			sprite.flip_h = _npc_direccion_anterior.x > 0.0
+			sprite.flip_h = velocity.x > 0.0
 
 	if sprite.texture != textura:
 		sprite.texture = textura
