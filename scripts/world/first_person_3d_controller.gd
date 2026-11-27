@@ -23,9 +23,8 @@ func _ready() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.pressed and not event.echo and event.keycode == KEY_ESCAPE:
+	if _hay_interfaz_abierta():
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
-		get_viewport().set_input_as_handled()
 		return
 
 	if event is InputEventMouseButton and event.pressed and Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
@@ -43,7 +42,28 @@ func _unhandled_input(event: InputEvent) -> void:
 		camara.rotation.x = _rotacion_vertical
 
 
+func _hay_interfaz_abierta() -> bool:
+	if get_tree().paused:
+		return true
+	var escena_principal := get_tree().current_scene
+	if is_instance_valid(escena_principal):
+		var inventario := escena_principal.get_node_or_null("UI/Inventory")
+		if is_instance_valid(inventario) and bool(inventario.get("_abierto")):
+			return true
+		var pausa := escena_principal.get_node_or_null("UI/PauseMenu")
+		if is_instance_valid(pausa) and bool(pausa.get("abierto")):
+			return true
+	for modal in get_tree().get_nodes_in_group("modal_ui"):
+		if is_instance_valid(modal) and (not modal is CanvasItem or (modal as CanvasItem).is_visible_in_tree()):
+			return true
+	return false
+
+
 func _physics_process(_delta: float) -> void:
+	if _hay_interfaz_abierta():
+		velocity = Vector3.ZERO
+		move_and_slide()
+		return
 	var entrada := Input.get_vector("move_left", "move_right", "move_up", "move_down")
 	var direccion := (global_basis * Vector3(entrada.x, 0.0, entrada.y)).normalized()
 	if entrada.length_squared() > 0.0001:
