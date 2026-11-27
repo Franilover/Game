@@ -6,6 +6,7 @@ const SHOP_UI_PATH := "res://scripts/ui/shop_ui.gd"
 const COMBAT_DEFENSE_SCRIPT: Script = preload("res://scripts/gameplay/combat/combat_defense.gd")
 const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 const CHARACTER_APPEARANCE_SCRIPT: Script = preload("res://scripts/characters/character_appearance.gd")
+const SHARED_SPRITE_ANIMATOR_SCRIPT: Script = preload("res://scripts/shared/animation/shared_sprite_animation_controller.gd")
 
 signal configuracion_actualizada
 signal danio_recibido(cantidad: int, atacante: Node)
@@ -58,15 +59,15 @@ var _control_remoto_cliente: bool = false
 var _red_posicion_objetivo: Vector2 = Vector2.ZERO
 var _red_velocidad_objetivo: Vector2 = Vector2.ZERO
 var _red_ataque_activo_previo := false
+var _sprite_animator = SHARED_SPRITE_ANIMATOR_SCRIPT.new()
+var _zlish_idle_animando: bool = false
 
 var _sprite_textura_base: Texture2D = null
 var _sprite_hframes_base: int = 1
 var _sprite_vframes_base: int = 1
 var _sprite_frame_base: int = 0
 var _ataque_animando: bool = false
-var _ataque_frame_actual: int = 0
 var _ataque_frames_totales: int = 1
-var _ataque_tiempo: float = 0.0
 var _ataque_fps: float = 10.0
 
 var _caminando_animando: bool = false
@@ -74,12 +75,8 @@ var _caminando_textura_base: Texture2D = null
 var _caminando_hframes_base: int = 1
 var _caminando_vframes_base: int = 1
 var _caminando_frame_base: int = 0
-var _caminando_frame_actual: int = 0
 var _caminando_frames_totales: int = 1
-var _caminando_tiempo: float = 0.0
 var _caminando_fps: float = 8.0
-var _zlish_idle_tiempo: float = 0.0
-var _zlish_idle_frame: int = 0
 var _zlish_idle_fps: float = 5.0
 
 var _sprite_npc_base: Texture2D = null
@@ -121,6 +118,7 @@ func _ready() -> void:
 	) + 1
 
 	_crear_movimiento()
+	_sprite_animator.configurar(get_node_or_null("Sprite2D") as Sprite2D)
 
 	queue_redraw()
 
@@ -926,30 +924,28 @@ func iniciar_animacion_ataque() -> bool:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null:
 		return false
-
+	_detener_animacion_caminando()
+	_zlish_idle_animando = false
 	var textura_base := sprite.texture
 	if textura_base == null:
 		return false
 
-	var rutas: Array[String] = []
 	var nombre := criatura_nombre.strip_edges()
 	if nombre.is_empty():
 		return false
-
-	# Formato principal: una carpeta propia por criatura.
-	rutas.append("res://assets/art/creatures/" + nombre + "/" + nombre + "_ataque.png")
-	rutas.append("res://assets/art/creatures/" + nombre + "/" + nombre + "_ataque.PNG")
-	# Compatibilidad con el formato plano que ya usa el sistema de skins.
-	rutas.append("res://assets/art/creatures/" + nombre + "_ataque.png")
-	rutas.append("res://assets/art/creatures/" + nombre + "_ataque.PNG")
-
+	var rutas: Array[String] = [
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_ataque.png",
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_ataque.PNG",
+		"res://assets/art/creatures/" + nombre + "_ataque.png",
+		"res://assets/art/creatures/" + nombre + "_ataque.PNG"
+	]
 	var textura_ataque: Texture2D = null
 	for ruta in rutas:
-		if ResourceLoader.exists(ruta):
-			textura_ataque = SHARED_ASSET_LIBRARY.textura(ruta)
-			if textura_ataque != null:
-				break
-
+		if not ResourceLoader.exists(ruta):
+			continue
+		textura_ataque = SHARED_ASSET_LIBRARY.textura(ruta)
+		if textura_ataque != null:
+			break
 	if textura_ataque == null:
 		return false
 
@@ -957,16 +953,8 @@ func iniciar_animacion_ataque() -> bool:
 	_sprite_hframes_base = maxi(sprite.hframes, 1)
 	_sprite_vframes_base = maxi(sprite.vframes, 1)
 	_sprite_frame_base = sprite.frame
-
-	var ancho_frame := maxi(
-		int(textura_base.get_width()) / _sprite_hframes_base,
-		1
-	)
-	var alto_frame := maxi(
-		int(textura_base.get_height()) / _sprite_vframes_base,
-		1
-	)
-
+	var ancho_frame := maxi(int(textura_base.get_width()) / _sprite_hframes_base, 1)
+	var alto_frame := maxi(int(textura_base.get_height()) / _sprite_vframes_base, 1)
 	var hframes := 1
 	var vframes := 1
 	if textura_ataque.get_width() >= ancho_frame and textura_ataque.get_height() >= alto_frame:
@@ -974,98 +962,60 @@ func iniciar_animacion_ataque() -> bool:
 		vframes = maxi(int(textura_ataque.get_height()) / alto_frame, 1)
 
 	_ataque_frames_totales = maxi(hframes * vframes, 1)
-	_ataque_frame_actual = 0
 	_ataque_fps = 10.0
-	_ataque_tiempo = 0.0
 	_ataque_animando = true
-
 	sprite.texture = textura_ataque
 	sprite.hframes = hframes
 	sprite.vframes = vframes
 	sprite.frame = 0
-
+	_sprite_animator.configurar(sprite)
+	_sprite_animator.reproducir(_ataque_fps, 0, _ataque_frames_totales, false)
 	return true
 
 
 func _actualizar_animacion_ataque(delta: float) -> void:
 	if not _ataque_animando:
 		return
-
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null:
 		_detener_animacion_ataque()
 		return
-
-	_ataque_tiempo += delta
-	var intervalo := 1.0 / maxf(_ataque_fps, 1.0)
-	while _ataque_tiempo >= intervalo:
-		_ataque_tiempo -= intervalo
-		_ataque_frame_actual += 1
-		if _ataque_frame_actual >= _ataque_frames_totales:
-			_detener_animacion_ataque()
-			return
-		sprite.frame = _ataque_frame_actual
+	_sprite_animator.actualizar(delta)
+	if not _sprite_animator.reproduciendo:
+		_detener_animacion_ataque()
 
 
 func _detener_animacion_ataque() -> void:
 	if not _ataque_animando and _sprite_textura_base == null:
 		return
-
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite != null and _sprite_textura_base != null:
 		sprite.texture = _sprite_textura_base
 		sprite.hframes = _sprite_hframes_base
 		sprite.vframes = _sprite_vframes_base
-		sprite.frame = clampi(
-			_sprite_frame_base,
-			0,
-			maxi(sprite.hframes * sprite.vframes - 1, 0)
-		)
-
+		sprite.frame = clampi(_sprite_frame_base, 0, maxi(sprite.hframes * sprite.vframes - 1, 0))
+		_sprite_animator.detener(sprite.frame)
 	_ataque_animando = false
-	_ataque_frame_actual = 0
 	_ataque_frames_totales = 1
-	_ataque_tiempo = 0.0
 	_sprite_textura_base = null
 
 
 func _actualizar_animacion_caminando(delta: float) -> void:
-	# La animación de movimiento se resuelve por el asset disponible,
-	# no por una lista fija de criaturas.
-	var nombre_normalizado := criatura_nombre.strip_edges()
-	if nombre_normalizado.is_empty():
+	if criatura_nombre.strip_edges().is_empty():
 		return
-
-	if _ataque_animando:
+	if _ataque_animando or velocity.length_squared() <= 0.25:
 		_detener_animacion_caminando()
 		return
-
-	# La misma animación de Flaxis sirve para caminar, perseguir y huir.
-	# El ataque tiene prioridad y usa su propia animación cuando existe.
-	var esta_moviendo := velocity.length_squared() > 0.25
-	if not esta_moviendo:
-		_detener_animacion_caminando()
+	if not _caminando_animando and not _iniciar_animacion_caminando():
 		return
-
-	if not _caminando_animando:
-		if not _iniciar_animacion_caminando():
-			return
 
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null:
 		_detener_animacion_caminando()
 		return
-	if nombre_normalizado.to_lower() == "zlish":
+	if criatura_nombre.strip_edges().to_lower() == "zlish":
 		sprite.flip_h = velocity.x > 0.0
-
-	_caminando_tiempo += delta
-	var intervalo := 1.0 / maxf(_caminando_fps, 1.0)
-	while _caminando_tiempo >= intervalo:
-		_caminando_tiempo -= intervalo
-		_caminando_frame_actual = (
-			(_caminando_frame_actual + 1) % _caminando_frames_totales
-		)
-		sprite.frame = _caminando_frame_actual
+	_sprite_animator.actualizar(delta)
 
 
 func iniciar_animacion_caminando() -> bool:
@@ -1078,28 +1028,25 @@ func _iniciar_animacion_caminando() -> bool:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
 		return false
-
 	var nombre := criatura_nombre.strip_edges()
 	var rutas: Array[String] = []
 	if nombre.to_lower() == "zlish":
 		rutas.append("res://assets/art/creatures/Zlish/Zlish Izquierda.png")
 	rutas.append_array([
-		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png", 
+		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.png",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_Walking.PNG",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_walking.png",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_walking.PNG",
-		# Compatibilidad temporal con assets anteriores.
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.png",
 		"res://assets/art/creatures/" + nombre + "/" + nombre + "_caminando.PNG"
 	])
-
 	var textura: Texture2D = null
 	for ruta in rutas:
-		if ResourceLoader.exists(ruta):
-			textura = SHARED_ASSET_LIBRARY.textura(ruta)
-			if textura != null:
-				break
-
+		if not ResourceLoader.exists(ruta):
+			continue
+		textura = SHARED_ASSET_LIBRARY.textura(ruta)
+		if textura != null:
+			break
 	if textura == null:
 		return false
 
@@ -1107,53 +1054,38 @@ func _iniciar_animacion_caminando() -> bool:
 	_caminando_hframes_base = maxi(sprite.hframes, 1)
 	_caminando_vframes_base = maxi(sprite.vframes, 1)
 	_caminando_frame_base = sprite.frame
-
-	var ancho_frame := maxi(
-		int(_caminando_textura_base.get_width()) / _caminando_hframes_base,
-		1
-	)
-	var alto_frame := maxi(
-		int(_caminando_textura_base.get_height()) / _caminando_vframes_base,
-		1
-	)
-
+	var ancho_frame := maxi(int(_caminando_textura_base.get_width()) / _caminando_hframes_base, 1)
+	var alto_frame := maxi(int(_caminando_textura_base.get_height()) / _caminando_vframes_base, 1)
 	var hframes := maxi(int(textura.get_width()) / ancho_frame, 1)
 	var vframes := maxi(int(textura.get_height()) / alto_frame, 1)
 	_caminando_frames_totales = maxi(hframes * vframes, 1)
-	_caminando_frame_actual = 0
-	_caminando_tiempo = 0.0
 	_caminando_animando = true
-
+	_zlish_idle_animando = false
 	sprite.texture = textura
 	sprite.hframes = hframes
 	sprite.vframes = vframes
 	sprite.frame = 0
 	if nombre.to_lower() == "zlish":
 		sprite.flip_h = velocity.x > 0.0
-
+	_sprite_animator.configurar(sprite)
+	_sprite_animator.reproducir(_caminando_fps, 0, _caminando_frames_totales, true)
 	return true
 
 
 func _detener_animacion_caminando() -> void:
 	if not _caminando_animando:
 		return
-
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite != null and _caminando_textura_base != null:
 		sprite.texture = _caminando_textura_base
 		sprite.hframes = _caminando_hframes_base
 		sprite.vframes = _caminando_vframes_base
-		sprite.frame = clampi(
-			_caminando_frame_base,
-			0,
-			maxi(sprite.hframes * sprite.vframes - 1, 0)
-		)
-
+		sprite.frame = clampi(_caminando_frame_base, 0, maxi(sprite.hframes * sprite.vframes - 1, 0))
+		_sprite_animator.detener(sprite.frame)
 	_caminando_animando = false
-	_caminando_frame_actual = 0
 	_caminando_frames_totales = 1
-	_caminando_tiempo = 0.0
 	_caminando_textura_base = null
+	_zlish_idle_animando = false
 	if criatura_nombre.strip_edges().to_lower() == "zlish" and sprite != null:
 		sprite.flip_h = false
 
@@ -1162,20 +1094,21 @@ func _actualizar_animacion_idle_zlish(delta: float) -> void:
 	if criatura_nombre.strip_edges().to_lower() != "zlish" or _ataque_animando or _caminando_animando:
 		return
 	if velocity.length_squared() > 0.25:
+		if _zlish_idle_animando:
+			_sprite_animator.detener(0)
+			_zlish_idle_animando = false
 		return
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null or sprite.texture == null:
 		return
-	# Zlish_Idle.png contiene 11 cuadros de 32x32 en una tira horizontal.
 	if sprite.hframes != 11 or sprite.vframes != 1:
 		sprite.hframes = 11
 		sprite.vframes = 1
-	_zlish_idle_tiempo += delta
-	var intervalo := 1.0 / maxf(_zlish_idle_fps, 1.0)
-	while _zlish_idle_tiempo >= intervalo:
-		_zlish_idle_tiempo -= intervalo
-		_zlish_idle_frame = (_zlish_idle_frame + 1) % 11
-		sprite.frame = _zlish_idle_frame
+	if not _zlish_idle_animando:
+		_sprite_animator.configurar(sprite)
+		_sprite_animator.reproducir(_zlish_idle_fps, 0, 11, true)
+		_zlish_idle_animando = true
+	_sprite_animator.actualizar(delta)
 
 
 func _es_humano() -> bool:
