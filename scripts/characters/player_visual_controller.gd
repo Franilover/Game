@@ -234,7 +234,7 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 				lado = -1.0
 				rotacion_mano = -0.38
 				invertir_sprite = true
-		var separacion_frontal := 11.0 if vista_frontal else 8.0
+		var separacion_frontal := 15.0 if vista_frontal else 8.0
 		sprite_equipo.position = origen + Vector2(lado * separacion_frontal, 6.0)
 		sprite_equipo.flip_h = invertir_sprite
 		sprite_equipo.rotation = rotacion_mano
