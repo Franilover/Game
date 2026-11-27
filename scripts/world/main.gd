@@ -2347,9 +2347,14 @@ func _al_cambio_item_mano_visual(_mano: String, _slot_index: int, _datos: Dictio
 
 
 func _sincronizar_equipo_visual_saltus() -> void:
-	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "expedicion:saltus":
-		return
 	if not is_instance_valid(_inventory):
+		return
+	var mano_izquierda: Dictionary = _inventory.obtener_objeto_mano_activa("izquierda")
+	var mano_derecha: Dictionary = _inventory.obtener_objeto_mano_activa("derecha")
+	if is_instance_valid(_player):
+		_player.configurar_equipo_visual(mano_izquierda, mano_derecha)
+
+	if not is_instance_valid(_zone_manager) or _zone_manager.obtener_tipo_actual() != "expedicion:saltus":
 		return
 	var zona: Node = _zone_manager.obtener_zona_actual() as Node
 	if not is_instance_valid(zona):
@@ -2357,10 +2362,9 @@ func _sincronizar_equipo_visual_saltus() -> void:
 	var jugador_saltus := zona.get_node_or_null("Player") as SaltusPlayer
 	if not is_instance_valid(jugador_saltus):
 		return
-	jugador_saltus.configurar_equipo_visual(
-		_inventory.obtener_objeto_mano_activa("izquierda"),
-		_inventory.obtener_objeto_mano_activa("derecha")
-	)
+	jugador_saltus.configurar_equipo_visual(mano_izquierda, mano_derecha)
+	if is_instance_valid(_player):
+		jugador_saltus.configurar_apariencia_visual(_player.personaje_apariencia)
 
 
 func _reintentar_recompensas_misiones() -> void:
