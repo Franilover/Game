@@ -4,6 +4,7 @@ class_name Player
 const INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
 const PLAYER_MOVEMENT_PHYSICS_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
+const SHIELD_TEXTURE: Texture2D = preload("res://assets/art/items/Escudo.png")
 
 
 signal stamina_changed(current: float, maximum: float)
@@ -96,6 +97,9 @@ var _wall_normal: Vector2 = Vector2.ZERO
 var _wall_jump_remaining: float = 0.0
 var _wall_jump_total: float = 0.0
 var _wall_jump_start_position: Vector2 = Vector2.ZERO
+var _shield_guard_active: bool = false
+var _shield_visual: Sprite2D = null
+var _shield_tween: Tween = null
 
 const WATER_SPEED_MULTIPLIER: float = 0.58
 const WATER_ZONES: Array[int] = [4, 5, 6]
@@ -174,6 +178,7 @@ func _ready() -> void:
 
 	_base_visual_position = visual.position
 	visual_controller.configurar(visual, facing_marker, anim)
+	_crear_visual_escudo()
 
 	_aplicar_configuracion_personaje()
 	_update_dir_marker()
@@ -357,6 +362,8 @@ func _physics_process(delta: float) -> void:
 			locomotion.reiniciar()
 			_update_visual()
 		return
+
+	_actualizar_guardia_escudo()
 
 	# El agarre y el salto de pared tienen prioridad sobre la locomoción normal.
 	if _wall_jump_remaining > 0.0:
@@ -984,7 +991,7 @@ func _obtener_direccion_accion() -> Vector2:
 # ============================================================
 
 func take_damage(cantidad: int, origen: String = "desconocido") -> int:
-	if not is_alive or state == State.DASH:
+	if not is_alive or state == State.DASH or _shield_guard_active:
 		return 0
 
 	var dano_recibido := maxi(cantidad, 0)
@@ -1017,6 +1024,66 @@ func take_damage(cantidad: int, origen: String = "desconocido") -> int:
 		_recibir_golpe_visual()
 
 	return danio_real
+
+
+func _obtener_escudo_en_mano() -> Dictionary:
+	for inventario_variant in get_tree().get_nodes_in_group("inventory"):
+		if not is_instance_valid(inventario_variant) or not inventario_variant.has_method("obtener_objeto_mano_activa"):
+			continue
+		for mano in ["izquierda", "derecha"]:
+			var objeto_variant: Variant = inventario_variant.call("obtener_objeto_mano_activa", mano)
+			if not objeto_variant is Dictionary:
+				continue
+			var objeto := objeto_variant as Dictionary
+			var identidad := str(objeto.get("nombre", "")).to_lower() + " " + str(objeto.get("nombre_sprite", "")).to_lower()
+			if "escudo" in identidad or "shield" in identidad:
+				return objeto
+	return {}
+
+
+func _crear_visual_escudo() -> void:
+	if not is_instance_valid(visual) or is_instance_valid(_shield_visual):
+		return
+	_shield_visual = Sprite2D.new()
+	_shield_visual.name = "EscudoDefensivoVisual"
+	_shield_visual.texture = SHIELD_TEXTURE
+	_shield_visual.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	_shield_visual.centered = true
+	_shield_visual.scale = Vector2(0.72, 0.72)
+	_shield_visual.z_index = 12
+	_shield_visual.visible = false
+	visual.add_child(_shield_visual)
+
+
+func _actualizar_guardia_escudo() -> void:
+	var debe_proteger := Input.is_mouse_button_pressed(MOUSE_BUTTON_LEFT) and not _obtener_escudo_en_mano().is_empty()
+	if debe_proteger == _shield_guard_active:
+		return
+	_shield_guard_active = debe_proteger
+	if not is_instance_valid(_shield_visual):
+		return
+	if is_instance_valid(_shield_tween) and _shield_tween.is_running():
+		_shield_tween.kill()
+	_shield_tween = create_tween()
+	if _shield_guard_active:
+		var direccion := facing.normalized()
+		if direccion.length_squared() < 0.01:
+			direccion = Vector2.DOWN
+		_shield_visual.position = Vector2(0.0, -23.0) + direccion * 17.0
+		_shield_visual.rotation = direccion.angle() + PI * 0.5
+		_shield_visual.visible = true
+		_shield_visual.modulate.a = 0.0
+		_shield_visual.scale = Vector2(0.48, 0.48)
+		_shield_tween.set_parallel(true)
+		_shield_tween.tween_property(_shield_visual, "scale", Vector2(0.92, 0.92), 0.12).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+		_shield_tween.tween_property(_shield_visual, "modulate:a", 1.0, 0.08)
+	else:
+		_shield_tween.tween_property(_shield_visual, "scale", Vector2(0.48, 0.48), 0.09)
+		_shield_tween.tween_property(_shield_visual, "modulate:a", 0.0, 0.09)
+		_shield_tween.finished.connect(func() -> void:
+			if not _shield_guard_active and is_instance_valid(_shield_visual):
+				_shield_visual.visible = false
+		)
 
 
 func _recibir_golpe_visual() -> void:
