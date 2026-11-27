@@ -116,11 +116,22 @@ func _actualizar_vista_personaje() -> void:
 	if not is_instance_valid(sprite):
 		vista.queue_free()
 		return
-	const ESCALA_PREVIEW := 2.0
-	vista.scale = Vector2.ONE * ESCALA_PREVIEW
-	# El SubViewport ahora renderiza a la resolución física del panel
-	# escalado; centrar con sus nuevas dimensiones evita desplazar el sprite.
-	vista.position = Vector2(78.0, 135.0) - sprite.position * ESCALA_PREVIEW
+	var viewport := skin_preview_root.get_parent() as SubViewport
+	if not is_instance_valid(viewport):
+		vista.queue_free()
+		return
+	var tamano_viewport := Vector2(viewport.size)
+	var tamano_frame := Vector2(
+		float(sprite.texture.get_width()) / float(maxi(sprite.hframes, 1)),
+		float(sprite.texture.get_height()) / float(maxi(sprite.vframes, 1))
+	) * sprite.scale.abs()
+	var escala_x := (tamano_viewport.x - 12.0) / maxf(tamano_frame.x, 1.0)
+	var escala_y := (tamano_viewport.y - 12.0) / maxf(tamano_frame.y, 1.0)
+	var escala_preview := clampf(minf(escala_x, escala_y), 0.55, 1.4)
+	vista.scale = Vector2.ONE * escala_preview
+	# Centrado y escala calculados desde el tamaño real del SubViewport:
+	# evita recortar cabeza, mochila o equipo en el borde del recuadro.
+	vista.position = tamano_viewport * 0.5 - sprite.position * escala_preview
 	skin_preview_root.add_child(vista)
 
 func _inicializar_navegacion_tabs() -> void:
