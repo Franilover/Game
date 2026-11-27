@@ -52,13 +52,16 @@ func _crear_sprite_mano(mano: String, posicion: Vector3) -> void:
 	var sprite := Sprite3D.new()
 	sprite.name = "ObjetoPrimeraPersona_" + mano
 	sprite.centered = true
-	sprite.billboard = BaseMaterial3D.BILLBOARD_DISABLED
 	sprite.texture_filter = SpriteBase3D.TEXTURE_FILTER_NEAREST
 	sprite.pixel_size = 0.01
 	sprite.position = posicion
 	sprite.scale = Vector3.ONE * 1.15
-	sprite.no_depth_test = true
-	sprite.render_priority = 1
+	var material := StandardMaterial3D.new()
+	material.shading_mode = BaseMaterial3D.SHADING_MODE_UNSHADED
+	material.no_depth_test = true
+	material.render_priority = 1
+	material.texture_filter = BaseMaterial3D.TEXTURE_FILTER_NEAREST
+	sprite.material_override = material
 	sprite.visible = false
 	add_child(sprite)
 	_sprites[mano] = sprite
@@ -179,8 +182,9 @@ func _consultar_objetivo() -> Dictionary:
 	consulta.collide_with_areas = true
 	consulta.collide_with_bodies = true
 	var exclusion: Array[RID] = []
-	if get_parent() is CollisionObject3D:
-		exclusion.append((get_parent() as CollisionObject3D).get_rid())
+	var jugador_3d := get_parent().get_parent() if is_instance_valid(get_parent()) else null
+	if jugador_3d is CollisionObject3D:
+		exclusion.append((jugador_3d as CollisionObject3D).get_rid())
 	consulta.exclude = exclusion
 	return espacio.intersect_ray(consulta)
 
