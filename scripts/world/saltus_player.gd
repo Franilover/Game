@@ -2,6 +2,7 @@ extends Entity
 class_name SaltusPlayer
 
 const PLAYER_VISUAL_CONTROLLER_SCRIPT: Script = preload("res://scripts/characters/player_visual_controller.gd")
+const COMBAT_ATTACK_AREA_SCRIPT: Script = preload("res://scripts/gameplay/combat/combat_attack_area.gd")
 
 @export var move_speed: float = 190.0
 @export var run_multiplier: float = 1.35
@@ -28,6 +29,7 @@ var _dash_direction: Vector2 = Vector2.RIGHT
 var _air_dash_unlocked: bool = true
 var _air_dash_available: bool = true
 var _elapsed: float = 0.0
+var _attack_cooldown_left: float = 0.0
 var _dash_ghost_timer: float = 0.0
 var _wall_grabbed: bool = false
 var _wall_normal: Vector2 = Vector2.ZERO
@@ -127,6 +129,9 @@ func _physics_process(delta: float) -> void:
 		return
 	_elapsed += delta
 	_dash_cooldown_left = maxf(0.0, _dash_cooldown_left - delta)
+	_attack_cooldown_left = maxf(0.0, _attack_cooldown_left - delta)
+	if Input.is_action_just_pressed("primary_action"):
+		_ejecutar_ataque()
 	if is_on_floor() and _air_dash_unlocked:
 		_air_dash_available = true
 
@@ -349,3 +354,26 @@ func _crear_estela_dash() -> void:
 	tween.tween_property(fantasma, "modulate:a", 0.0, 0.17)
 	tween.tween_property(fantasma, "scale", sprite.scale * 0.92, 0.17)
 	tween.chain().tween_callback(fantasma.queue_free)
+
+
+## Ataque cuerpo a cuerpo propio de la expedición 2D. Usa el mismo contrato
+## de hitbox y resolución de daño que el combate general.
+func _ejecutar_ataque() -> void:
+	if _attack_cooldown_left > 0.0 or not is_alive:
+		return
+	var direccion := global_position.direction_to(get_global_mouse_position())
+	if direccion.length_squared() < 0.01:
+		direccion = facing.normalized() if facing.length_squared() > 0.01 else Vector2.RIGHT
+	facing = direccion
+	var ataque := COMBAT_ATTACK_AREA_SCRIPT.new() as CombatAttackArea
+	ataque.objetivo_detectado.connect(_al_golpear_objetivo)
+	ataque.configurar(self, direccion, 46.0, 30.0, {"nombre": "Ataque de Saltus"}, 0.14, Color(0.0, 0.0, 0.0, 0.0))
+	ataque.global_position = global_position + direccion * 12.0
+	get_tree().current_scene.add_child(ataque)
+	_attack_cooldown_left = 0.42
+
+
+func _al_golpear_objetivo(objetivo: Entity) -> void:
+	if not is_instance_valid(objetivo) or objetivo == self:
+		return
+	CombatDamage.aplicar(objetivo, 18, "Jugador/Saltus", Callable(), self)
