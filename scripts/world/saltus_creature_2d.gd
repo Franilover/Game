@@ -84,8 +84,8 @@ func _procesar_zlish(delta: float) -> void:
 		if distancia <= zlish_detection_range:
 			persiguiendo = true
 			_direction = signf(_target.global_position.x - global_position.x)
-			if absf(_target.global_position.x - global_position.x) <= zlish_attack_range and absf(_target.global_position.y - global_position.y) <= 52.0 and _zlish_attack_cooldown_left <= 0.0:
-				CombatDamage.aplicar(_target, zlish_attack_damage, "Zlish de Saltus", Callable(), self)
+			if _target is Entity and absf(_target.global_position.x - global_position.x) <= zlish_attack_range and absf(_target.global_position.y - global_position.y) <= 52.0 and _zlish_attack_cooldown_left <= 0.0:
+				CombatDamage.aplicar(_target as Entity, zlish_attack_damage, "Zlish de Saltus", Callable(), self)
 				_zlish_attack_cooldown_left = zlish_attack_cooldown
 	if not persiguiendo:
 		if global_position.x <= _home_x - patrol_range:
