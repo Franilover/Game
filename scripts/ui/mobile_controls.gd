@@ -102,30 +102,12 @@ func _estilizar_boton(boton: Button, accion: String) -> void:
 	boton.add_theme_color_override("font_disabled_color", Color("#D0C3A8"))
 	boton.add_theme_color_override("font_outline_color", Color("#302014"))
 	boton.add_theme_constant_override("outline_size", 2)
-	var normal: StyleBox = PIXEL_UI_THEME.button_surface_style()
-	var hover: StyleBox = PIXEL_UI_THEME.button_hover_style()
-	var pressed: StyleBox = PIXEL_UI_THEME.button_pressed_style()
-	var disabled: StyleBox = PIXEL_UI_THEME._texture_style("button_disabled.png", 5)
-	# Conserva un fallback legible si falta alguna textura opcional.
-	if normal == null:
-		var fallback := StyleBoxFlat.new()
-		fallback.bg_color = Color(0.075, 0.065, 0.055, 0.82)
-		fallback.border_color = Color(0.72, 0.62, 0.43, 0.9)
-		fallback.set_border_width_all(2)
-		fallback.set_corner_radius_all(12)
-		normal = fallback
-	if hover == null:
-		hover = normal
-	if pressed == null:
-		var fallback_pressed: StyleBox = normal.duplicate() as StyleBox
-		if fallback_pressed is StyleBoxFlat:
-			(fallback_pressed as StyleBoxFlat).bg_color = Color("#66543A")
-		pressed = fallback_pressed
-	boton.add_theme_stylebox_override("normal", normal)
-	boton.add_theme_stylebox_override("hover", hover)
-	boton.add_theme_stylebox_override("pressed", pressed)
-	boton.add_theme_stylebox_override("disabled", disabled if disabled != null else normal)
-	boton.add_theme_stylebox_override("focus", StyleBoxEmpty.new())
+	var superficie: StyleBox = PIXEL_UI_THEME.button_surface_style()
+	if superficie == null:
+		superficie = PIXEL_UI_THEME.button_fallback_style()
+	for estado in ["normal", "hover", "pressed", "disabled"]:
+		boton.add_theme_stylebox_override(estado, superficie)
+	boton.add_theme_stylebox_override("focus", PIXEL_UI_THEME.focus_style())
 	boton.custom_minimum_size = Vector2(tamano_accion, tamano_accion)
 	boton.tooltip_text = ""
 
