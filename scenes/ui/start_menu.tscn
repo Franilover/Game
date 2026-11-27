@@ -2,7 +2,7 @@
 
 [ext_resource type="Script" uid="uid://cmn23gd47tjqf" path="res://scripts/ui/start_menu.gd" id="1_start_menu"]
 [ext_resource type="PackedScene" path="res://scenes/ui/character_creation.tscn" id="2_character_creation"]
-[ext_resource type="Texture2D" uid="uid://bj8wnbmc7esca" path="res://assets/art/UI/Menus/menu_background.png" id="4_menu_background"]
+[ext_resource type="Texture2D" path="res://assets/art/UI/Menus/background.png" id="4_menu_background"]
 [ext_resource type="Script" uid="uid://tjtj2qdx8tme" path="res://scripts/ui/story_navigation.gd" id="5_story_navigation"]
 
 [node name="StartMenu" type="Control" unique_id=560386343]
