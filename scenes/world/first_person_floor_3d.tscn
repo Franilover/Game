@@ -1,16 +1,23 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=5 format=3]
 
 [ext_resource type="Texture2D" path="res://assets/tilesets/Suelo Piedra.png" id="1_floor"]
 
 [sub_resource type="StandardMaterial3D" id="Material_floor"]
 albedo_texture = ExtResource("1_floor")
 texture_filter = 1
+shading_mode = 0
 uv1_scale = Vector3(8, 8, 1)
 
 [sub_resource type="PlaneMesh" id="Mesh_floor"]
 size = Vector2(2, 2)
 material = SubResource("Material_floor")
 
-[node name="Suelo3D" type="MeshInstance3D"]
+[sub_resource type="PlaneShape3D" id="Floor_collision"]
 
+[node name="Suelo3D" type="StaticBody3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("Mesh_floor")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("Floor_collision")
