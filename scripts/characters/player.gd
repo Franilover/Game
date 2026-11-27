@@ -2,6 +2,7 @@ extends Entity
 class_name Player
 
 const INPUT_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_input_controller.gd")
+const PLAYER_MOVEMENT_PHYSICS_CONTROLLER_SCRIPT = preload("res://scripts/gameplay/player/player_movement_physics_controller.gd")
 const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 
 
@@ -75,7 +76,7 @@ var movement_controller := PlayerMovementController.new()
 var action_controller := PlayerActionController.new()
 var visual_controller := PlayerVisualController.new()
 var input_controller = INPUT_CONTROLLER_SCRIPT.new()
-var physics_movement_controller := PlayerMovementPhysicsController.new()
+var physics_movement_controller: RefCounted = PLAYER_MOVEMENT_PHYSICS_CONTROLLER_SCRIPT.new()
 
 var _world_context_ref: WorldContext = null
 var _game_state_ref: GameStateService = null
