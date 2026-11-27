@@ -85,6 +85,7 @@ var _sprite_npc_espalda: Texture2D = null
 var _npc_direccion_anterior := Vector2.DOWN
 var _proteccion_empuje_direccion: Vector2 = Vector2.ZERO
 var _proteccion_empuje_restante: float = 0.0
+var _proteccion_empuje_velocidad: float = 230.0
 
 
 func configurar_dependencias(
@@ -1183,7 +1184,7 @@ func _physics_process(delta: float) -> void:
 
 	if _proteccion_empuje_restante > 0.0:
 		_proteccion_empuje_restante = maxf(0.0, _proteccion_empuje_restante - delta)
-		velocity = _proteccion_empuje_direccion * 230.0
+		velocity = _proteccion_empuje_direccion * _proteccion_empuje_velocidad
 		move_and_slide()
 	else:
 		_proteccion_empuje_direccion = Vector2.ZERO
@@ -1205,8 +1206,7 @@ func aplicar_empuje_talisman(origen_global: Vector2, fuerza: float = 230.0, dura
 		direccion = Vector2.RIGHT
 	_proteccion_empuje_direccion = direccion.normalized()
 	_proteccion_empuje_restante = maxf(duracion, 0.05)
-	if _movimiento != null:
-		_movimiento.tomar_control()
+	_proteccion_empuje_velocidad = maxf(fuerza, 1.0)
 
 
 func iniciar_seguimiento_jugador(nuevo_jugador: Node) -> bool:
