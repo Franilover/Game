@@ -1,0 +1,56 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="PackedScene" path="res://scenes/world/first_person_player_3d.tscn" id="1_player"]
+[ext_resource type="PackedScene" path="res://scenes/world/first_person_wall_3d.tscn" id="2_wall"]
+[ext_resource type="PackedScene" path="res://scenes/world/first_person_floor_3d.tscn" id="3_floor"]
+[ext_resource type="Texture2D" path="res://assets/art/props/Árbol.png" id="4_tree"]
+[ext_resource type="Texture2D" path="res://assets/art/props/Piedra Grande.png" id="5_rock"]
+[ext_resource type="Texture2D" path="res://assets/art/creatures/Feerin.png" id="6_feerin"]
+
+[node name="FirstPerson3DDemo" type="Node3D"]
+
+[node name="Suelo" parent="." instance=ExtResource("3_floor")]
+position = Vector3(0, 0, 0)
+scale = Vector3(10, 1, 10)
+
+[node name="ParedFondo" parent="." instance=ExtResource("2_wall")]
+position = Vector3(0, 1.5, -5)
+scale = Vector3(10, 3, 0.2)
+
+[node name="ParedIzquierda" parent="." instance=ExtResource("2_wall")]
+position = Vector3(-5, 1.5, 0)
+rotation = Vector3(0, 1.5708, 0)
+scale = Vector3(10, 3, 0.2)
+
+[node name="ParedDerecha" parent="." instance=ExtResource("2_wall")]
+position = Vector3(5, 1.5, 0)
+rotation = Vector3(0, 1.5708, 0)
+scale = Vector3(10, 3, 0.2)
+
+[node name="ParedTrasera" parent="." instance=ExtResource("2_wall")]
+position = Vector3(0, 1.5, 5)
+scale = Vector3(10, 3, 0.2)
+
+[node name="Arbol" type="Sprite3D" parent="."]
+texture = ExtResource("4_tree")
+billboard = 1
+pixel_size = 0.025
+texture_filter = 1
+position = Vector3(-1.8, 1.0, -2.5)
+
+[node name="Piedra" type="Sprite3D" parent="."]
+texture = ExtResource("5_rock")
+billboard = 1
+pixel_size = 0.025
+texture_filter = 1
+position = Vector3(1.4, 0.45, -2.0)
+
+[node name="Feerin" type="Sprite3D" parent="."]
+texture = ExtResource("6_feerin")
+billboard = 1
+pixel_size = 0.025
+texture_filter = 1
+position = Vector3(0.0, 0.8, -3.5)
+
+[node name="Jugador" parent="." instance=ExtResource("1_player")]
+position = Vector3(0, 0, 2.5)
