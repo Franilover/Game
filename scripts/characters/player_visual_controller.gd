@@ -209,16 +209,23 @@ func _actualizar_posicion_equipo_visual(direccion: Vector2) -> void:
 			and (vista_frontal or mano == mano_visible)
 			and sprite_equipo.texture != null
 		)
-		# En frontal cada mano conserva su composición original.
-		# En perfil, la mano visible adopta el lado de pantalla hacia el que mira:
-		# izquierda = posición/ángulo izquierdos; derecha = posición/ángulo derechos.
+		# La mano derecha frontal define la referencia: +8 px y +0.38 rad.
+		# La izquierda frontal conserva el mismo ángulo, espejado hacia el lado opuesto.
 		var lado := -1.0 if mano == "izquierda" else 1.0
 		var rotacion_mano := -0.38 if mano == "izquierda" else 0.38
+		var invertir_sprite := mano == "izquierda" and vista_frontal
 		if not vista_frontal:
-			lado = -1.0 if not mirando_derecha else 1.0
-			rotacion_mano = -0.38 if not mirando_derecha else 0.38
+			# Al caminar a la derecha, la mano izquierda ocupa exactamente
+			# la posición, rotación y orientación visual de la mano derecha frontal.
+			lado = 8.0 / 8.0
+			rotacion_mano = 0.38
+			invertir_sprite = false
+			if not mirando_derecha:
+				lado = -1.0
+				rotacion_mano = -0.38
+				invertir_sprite = true
 		sprite_equipo.position = origen + Vector2(lado * 8.0, 6.0)
-		sprite_equipo.flip_h = not vista_frontal and mirando_derecha
+		sprite_equipo.flip_h = invertir_sprite
 		sprite_equipo.rotation = rotacion_mano
 		sprite_equipo.z_index = 5 if direccion.y < -0.45 else 8
 
