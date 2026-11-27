@@ -75,6 +75,11 @@ func iniciar() -> bool:
 	nueva_escena.name = "Exploracion3DActiva"
 	principal.add_child(nueva_escena)
 	_escena_3d = nueva_escena
+	var jugador_3d := nueva_escena.get_node_or_null("Jugador")
+	var inventario := principal.get_node_or_null("UI/Inventory")
+	var world_items_actual := principal.get_node_or_null("Systems/WorldItems")
+	if is_instance_valid(jugador_3d) and jugador_3d.has_method("configurar_contexto_objetos"):
+		jugador_3d.call("configurar_contexto_objetos", inventario, _jugador, _jugador.get("visual_controller"), world_items_actual)
 	_activa = true
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	Events.notification_pushed.emit("Exploración 3D · WASD para moverte · ratón para mirar · F10 para regresar.")
