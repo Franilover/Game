@@ -74,7 +74,7 @@ No se deben crear texturas, nodos o tweens cada frame. Los recursos se resuelven
 
 `PixelUITheme` es el estilo base de todas las interfaces. Los menús, inventario, relaciones, crafteo, pausa y paneles reutilizan sus superficies de botón, estados, slots, contornos y barras.
 
-Los estilos y texturas se cachean. Los paneles conservan el diseño de su propia escena; el tema no debe imponer un fondo genérico a todos los paneles. En particular, no se aplica `panel_background.png` como fondo automático de menús o diálogos. Las pantallas pueden tener composiciones distintas, pero no duplicar la definición de los estados visuales comunes.
+Los estilos y texturas se cachean. Todos los botones reutilizan `button_normal.png` para los estados `normal`, `hover`, `pressed` y `disabled`; los estados de texto pueden variar, pero la superficie no se reinventa. Los slots conservan sus superficies propias. Los paneles mantienen el diseño declarado en su escena; el tema no impone un fondo genérico a todos. En particular, no se aplica `panel_background.png` como fondo automático de menús o diálogos. Las pantallas pueden tener composiciones distintas, pero no duplicar la definición de los estados visuales comunes.
 
 Una pantalla nueva debe llamar a `PixelUITheme.apply(root)` y aportar únicamente los controles o superficies verdaderamente específicos de su función.
 
