@@ -57,8 +57,8 @@ func configurar_equipo_visual(izquierda: Dictionary, derecha: Dictionary) -> voi
 	_visual_controller.configurar_equipo_visual(izquierda, derecha)
 
 
-func configurar_apariencia_visual(apariencia: Dictionary) -> void:
-	_visual_controller.aplicar_apariencia(apariencia)
+func configurar_apariencia_visual(apariencia: Dictionary, skin_path: String = "") -> void:
+	_visual_controller.aplicar_apariencia(apariencia, skin_path)
 
 
 func reproducir_animacion_herramienta(objeto: Dictionary, objetivo_global: Vector2) -> void:
