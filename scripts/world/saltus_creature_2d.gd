@@ -4,6 +4,8 @@ class_name SaltusCreature2D
 
 ## Movimiento 2D específico de Saltus. No altera el comportamiento del mundo libre.
 
+const SHARED_SPRITE_ANIMATOR_SCRIPT: Script = preload("res://scripts/shared/animation/shared_sprite_animation_controller.gd")
+
 @export_enum("Zlish", "Flaxis") var especie: String = "Zlish"
 
 @export_category("Zlish")
@@ -29,7 +31,7 @@ var _rng := RandomNumberGenerator.new()
 var _home_x: float = 0.0
 var _direction: float = 1.0
 var _jump_timer: float = 2.0
-var _animation_time: float = 0.0
+var _sprite_animator = SHARED_SPRITE_ANIMATOR_SCRIPT.new()
 var _attack_cooldown_left: float = 0.0
 var _windup_left: float = 0.0
 var _lunge_left: float = 0.0
@@ -42,6 +44,9 @@ var _flaxis_phase: float = 0.0
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
+	_sprite_animator.configurar(sprite)
+	if especie == "Zlish" and sprite != null and sprite.hframes * sprite.vframes > 1:
+		_sprite_animator.reproducir(7.0)
 	_rng.randomize()
 	_home_x = global_position.x
 	_flaxis_hover_origin = global_position
@@ -58,8 +63,8 @@ func _ready() -> void:
 func _physics_process(delta: float) -> void:
 	if Engine.is_editor_hint():
 		return
-	_animation_time += delta
 	if especie == "Zlish":
+		_sprite_animator.actualizar(delta)
 		_procesar_zlish(delta)
 	else:
 		_procesar_flaxis(delta)
@@ -82,8 +87,6 @@ func _procesar_zlish(delta: float) -> void:
 	move_and_slide()
 	if sprite != null:
 		sprite.flip_h = _direction < 0.0
-		if sprite.hframes > 1:
-			sprite.frame = int(_animation_time * 7.0) % sprite.hframes
 
 
 func _procesar_flaxis(delta: float) -> void:
