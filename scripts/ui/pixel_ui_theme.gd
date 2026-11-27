@@ -79,6 +79,20 @@ static func button_disabled_style() -> StyleBoxTexture:
 	return _texture_style("button_disabled.png", 5)
 
 
+static func _background_role_for(control: Control) -> String:
+	var current: Node = control
+	while current != null:
+		if current.has_meta("ui_background_role"):
+			var role := str(current.get_meta("ui_background_role")).strip_edges().to_lower()
+			if role in ["fixed", "priority", "floating"]:
+				return role
+		current = current.get_parent()
+	# Los Panel simples se reservan para superficies de énfasis dentro de un menú fijo.
+	if control is Panel and not (control is PanelContainer):
+		return "priority"
+	return "fixed"
+
+
 static func _apply_control(control: Control, use_pixel_titles: bool = true, force: bool = false) -> void:
 	if not force and control.has_meta("pixel_ui_theme_applied") and bool(control.get_meta("pixel_ui_theme_applied")) == use_pixel_titles:
 		return
@@ -136,7 +150,14 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 		control.add_theme_constant_override("outline_size", 2)
 
 	if control is Panel or control is PanelContainer:
-		var panel_background := _texture_style("background.png", 0)
+		var background_role := _background_role_for(control)
+		var background_file := "background.png"
+		match background_role:
+			"priority":
+				background_file = "background acento.png"
+			"floating":
+				background_file = "background_flotante.png"
+		var panel_background := _texture_style(background_file, 0)
 		if panel_background != null:
 			control.add_theme_stylebox_override("panel", panel_background)
 
