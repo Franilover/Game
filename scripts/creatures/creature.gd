@@ -59,7 +59,7 @@ var _control_remoto_cliente: bool = false
 var _red_posicion_objetivo: Vector2 = Vector2.ZERO
 var _red_velocidad_objetivo: Vector2 = Vector2.ZERO
 var _red_ataque_activo_previo := false
-var _sprite_animator = SHARED_SPRITE_ANIMATOR_SCRIPT.new()
+var _sprite_animator: SharedSpriteAnimationController = SHARED_SPRITE_ANIMATOR_SCRIPT.new()
 var _zlish_idle_animando: bool = false
 
 var _sprite_textura_base: Texture2D = null
@@ -148,6 +148,11 @@ func configurar(
 	datos_criatura: Dictionary
 ) -> void:
 	_muerte_procesada = false
+	_ataque_animando = false
+	_caminando_animando = false
+	_zlish_idle_animando = false
+	_sprite_textura_base = null
+	_caminando_textura_base = null
 	visible = true
 	modulate = Color.WHITE
 	scale = Vector2.ONE
@@ -427,15 +432,13 @@ func _cargar_sprite() -> void:
 	# Mientras cada NPC recibe su sprite propio, reutilizamos el cuerpo humano
 	# base ya incluido en el proyecto. No generamos ni sustituimos arte del usuario.
 	if _es_humano() and not get_personaje_game_id().is_empty():
-		var sprite_humano_base := "res://assets/art/kingdom/Torres/Personajes/Sprite-0004.png"
-		if ResourceLoader.exists(sprite_humano_base):
-			var textura_base := CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("idle_front")
-			if textura_base != null:
-				sprite.texture = textura_base
-				_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
-				_normalizar_escala_sprite_personaje(sprite)
-				set_meta("sprite_placeholder_humano", true)
-				return
+		var textura_base := CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("idle_front")
+		if textura_base != null:
+			sprite.texture = textura_base
+			_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
+			_normalizar_escala_sprite_personaje(sprite)
+			set_meta("sprite_placeholder_humano", true)
+			return
 
 	sprite.texture = null
 
