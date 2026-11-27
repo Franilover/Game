@@ -18,6 +18,7 @@
 [ext_resource type="Script" uid="uid://dy4r46t5e2yvq" path="res://scripts/world/saltus_switch_flower.gd" id="18_fy0rs"]
 [ext_resource type="Texture2D" uid="uid://c2ejc1ia2xg6p" path="res://assets/art/kingdom/Saltus/2D Section/Flor Detectora.png" id="19_rajcj"]
 [ext_resource type="Script" uid="uid://w767fhgbbhkj" path="res://scripts/world/saltus_bounce_flora.gd" id="20_y4x3k"]
+[ext_resource type="PackedScene" path="res://scenes/characters/player_visual.tscn" id="23_player_visual"]
 [ext_resource type="Texture2D" uid="uid://dck3twsn1cag6" path="res://assets/art/kingdom/Saltus/2D Section/Flor Saltarina.png" id="21_2r4a3"]
 [ext_resource type="Script" uid="uid://bhfq0lvffagnv" path="res://scripts/world/saltus_wind_current.gd" id="22_oxwsk"]
 
@@ -889,10 +890,7 @@ disabled = false
 position = Vector2(0, -11)
 shape = SubResource("CapsuleShape2D_player")
 
-[node name="Visual" type="Node2D" parent="Player"]
-
-[node name="Sprite2D" type="Sprite2D" parent="Player/Visual" unique_id=865130652]
-position = Vector2(0, -22)
+[node name="Visual" parent="Player" instance=ExtResource("23_player_visual")]
 
 [node name="Camera2D" type="Camera2D" parent="Player" unique_id=1025805938]
 position = Vector2(0, -35)
