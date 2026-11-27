@@ -332,7 +332,7 @@ func _cargar_sprite() -> void:
 	# sprites del paquete artístico del reino sin copiarlos a la carpeta global.
 	var sprite_path := str(datos.get("sprite_path", "")).strip_edges()
 	if sprite_path.begins_with("res://assets/art/kingdom/") and sprite_path.contains("/Personajes/"):
-		var textura_local := SHARED_ASSET_LIBRARY.textura(sprite_path)
+		var textura_local: Texture2D = SHARED_ASSET_LIBRARY.textura(sprite_path)
 		if textura_local != null:
 			sprite.texture = textura_local
 			_normalizar_escala_sprite_personaje(sprite)
@@ -347,7 +347,7 @@ func _cargar_sprite() -> void:
 	if not sprite_key_local.is_empty() and not sprite_key_local.contains("/") and not sprite_key_local.contains("\\"):
 		for extension in [".png", ".PNG"]:
 			var ruta_personaje: String = "res://assets/art/kingdom/Torres/Personajes/" + sprite_key_local + str(extension)
-			var textura_personaje := SHARED_ASSET_LIBRARY.textura(ruta_personaje)
+			var textura_personaje: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta_personaje)
 			if textura_personaje != null:
 				sprite.texture = textura_personaje
 				_configurar_sprites_direccionales_npc(sprite_key_local, sprite)
@@ -419,7 +419,7 @@ func _cargar_sprite() -> void:
 	)
 
 	for ruta in rutas:
-		var textura := SHARED_ASSET_LIBRARY.textura(ruta)
+		var textura: Texture2D = SHARED_ASSET_LIBRARY.textura(ruta)
 		if textura == null:
 			continue
 
@@ -432,7 +432,7 @@ func _cargar_sprite() -> void:
 	# Mientras cada NPC recibe su sprite propio, reutilizamos el cuerpo humano
 	# base ya incluido en el proyecto. No generamos ni sustituimos arte del usuario.
 	if _es_humano() and not get_personaje_game_id().is_empty():
-		var textura_base := CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("idle_front")
+		var textura_base: Texture2D = CHARACTER_APPEARANCE_SCRIPT.obtener_textura_sprite("idle_front")
 		if textura_base != null:
 			sprite.texture = textura_base
 			_configurar_sprites_direccionales_npc(str(datos.get("sprite_key", nombre_individual)).strip_edges(), sprite)
