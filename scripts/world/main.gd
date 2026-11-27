@@ -581,7 +581,7 @@ func _configurar_actor_de_zona(tipo: String, zona: Node) -> void:
 	if is_instance_valid(_combat_system):
 		# El bloqueo de interfaces ya lo resuelve GameplayInputRouter.
 		_combat_system.configurar_jugador_activo(jugador_saltus)
-	_sincronizar_equipo_visual_saltus()
+	_sincronizar_presentacion_jugador()
 	print("Main: CombatSystem enlazado al jugador de Saltus → ", jugador_saltus.get_path())
 
 
@@ -2329,7 +2329,7 @@ func _al_recompensa_mision_disponible(mision: Dictionary, _recompensas: Array[Di
 
 
 func _al_cambio_inventario_reintentar_recompensas() -> void:
-	_sincronizar_equipo_visual_saltus()
+	_sincronizar_presentacion_jugador()
 	# La entrega puede emitir inventory_changed tanto al insertar como al
 	# restaurar el inventario tras una entrega parcial. No reintentar dentro
 	# de esa misma transacción: se volvería a ejecutar indefinidamente si sigue lleno.
@@ -2339,14 +2339,14 @@ func _al_cambio_inventario_reintentar_recompensas() -> void:
 
 
 func _al_cambio_item_activo_visual(_datos: Dictionary) -> void:
-	_sincronizar_equipo_visual_saltus()
+	_sincronizar_presentacion_jugador()
 
 
 func _al_cambio_item_mano_visual(_mano: String, _slot_index: int, _datos: Dictionary) -> void:
-	_sincronizar_equipo_visual_saltus()
+	_sincronizar_presentacion_jugador()
 
 
-func _sincronizar_equipo_visual_saltus() -> void:
+func _sincronizar_presentacion_jugador() -> void:
 	if not is_instance_valid(_inventory):
 		return
 	var mano_izquierda: Dictionary = _inventory.obtener_objeto_mano_activa("izquierda")
