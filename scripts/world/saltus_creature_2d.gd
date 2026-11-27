@@ -1,5 +1,5 @@
 @tool
-extends CharacterBody2D
+extends Entity
 class_name SaltusCreature2D
 
 ## Movimiento 2D específico de Saltus. No altera el comportamiento del mundo libre.
@@ -11,6 +11,10 @@ const SHARED_SPRITE_ANIMATOR_SCRIPT: Script = preload("res://scripts/shared/anim
 @export_category("Zlish")
 @export var patrol_range: float = 130.0
 @export var patrol_speed: float = 42.0
+@export var zlish_detection_range: float = 180.0
+@export var zlish_attack_damage: int = 7
+@export var zlish_attack_range: float = 38.0
+@export var zlish_attack_cooldown: float = 1.7
 @export var jump_velocity: float = -285.0
 @export var gravity: float = 900.0
 @export var jump_interval_min: float = 1.8
@@ -39,24 +43,23 @@ var _attack_direction: Vector2 = Vector2.ZERO
 var _target: Node2D
 var _flaxis_hover_origin: Vector2
 var _flaxis_phase: float = 0.0
+var _zlish_attack_cooldown_left: float = 0.0
 
 
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
 	_sprite_animator.configurar(sprite)
+	collision_layer = 4
+	collision_mask = 1
+	max_health = 32 if especie == "Zlish" else 26
+	super._ready()
 	if especie == "Zlish" and sprite != null and sprite.hframes * sprite.vframes > 1:
 		_sprite_animator.reproducir(7.0)
 	_rng.randomize()
 	_home_x = global_position.x
 	_flaxis_hover_origin = global_position
 	_jump_timer = _rng.randf_range(jump_interval_min, jump_interval_max)
-	if especie == "Zlish":
-		collision_layer = 4
-		collision_mask = 1
-	else:
-		collision_layer = 0
-		collision_mask = 0
 	set_physics_process(true)
 
 
@@ -71,18 +74,31 @@ func _physics_process(delta: float) -> void:
 
 
 func _procesar_zlish(delta: float) -> void:
+	_zlish_attack_cooldown_left = maxf(0.0, _zlish_attack_cooldown_left - delta)
 	_jump_timer -= delta
-	if global_position.x <= _home_x - patrol_range:
-		_direction = 1.0
-	elif global_position.x >= _home_x + patrol_range:
-		_direction = -1.0
-	velocity.x = _direction * patrol_speed
+	if not is_instance_valid(_target):
+		_target = _buscar_jugador()
+	var persiguiendo := false
+	if is_instance_valid(_target):
+		var distancia := global_position.distance_to(_target.global_position)
+		if distancia <= zlish_detection_range:
+			persiguiendo = true
+			_direction = signf(_target.global_position.x - global_position.x)
+			if absf(_target.global_position.x - global_position.x) <= zlish_attack_range and absf(_target.global_position.y - global_position.y) <= 52.0 and _zlish_attack_cooldown_left <= 0.0:
+				CombatDamage.aplicar(_target, zlish_attack_damage, "Zlish de Saltus", Callable(), self)
+				_zlish_attack_cooldown_left = zlish_attack_cooldown
+	if not persiguiendo:
+		if global_position.x <= _home_x - patrol_range:
+			_direction = 1.0
+		elif global_position.x >= _home_x + patrol_range:
+			_direction = -1.0
+	velocity.x = _direction * (patrol_speed * 1.35 if persiguiendo else patrol_speed)
 	if not is_on_floor():
 		velocity.y += gravity * delta
 	else:
 		velocity.y = 0.0
 		if _jump_timer <= 0.0:
-			velocity.y = jump_velocity
+			velocity.y = jump_velocity * (1.08 if persiguiendo else 1.0)
 			_jump_timer = _rng.randf_range(jump_interval_min, jump_interval_max)
 	move_and_slide()
 	if sprite != null:
@@ -130,12 +146,11 @@ func _iniciar_ataque(destino: Vector2) -> void:
 
 
 func _resolver_ataque() -> void:
-	if not is_instance_valid(_target):
+	if not is_instance_valid(_target) or not _target is Entity:
 		return
 	if global_position.distance_to(_target.global_position) > attack_range + 22.0:
 		return
-	if _target.has_method("take_damage"):
-		_target.call("take_damage", attack_damage, "Flaxis de Saltus")
+	CombatDamage.aplicar(_target as Entity, attack_damage, "Flaxis de Saltus", Callable(), self)
 
 
 func _buscar_jugador() -> Node2D:
