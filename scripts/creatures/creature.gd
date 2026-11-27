@@ -275,6 +275,7 @@ func _cargar_sprite() -> void:
 	var sprite := get_node_or_null("Sprite2D") as Sprite2D
 	if sprite == null:
 		return
+	_sprite_animator.configurar(sprite)
 	# Cada configuración parte de la escala neutra para no heredar ajustes
 	# de un habitante anterior cuando una instancia se reutiliza.
 	sprite.scale = Vector2.ONE
@@ -326,7 +327,7 @@ func _cargar_sprite() -> void:
 	# Los NPC de reinos locales pueden declarar una ruta propia para reutilizar
 	# sprites del paquete artístico del reino sin copiarlos a la carpeta global.
 	var sprite_path := str(datos.get("sprite_path", "")).strip_edges()
-	if sprite_path.begins_with("res://assets/art/kingdom/Froslia/Personajes/") and ResourceLoader.exists(sprite_path):
+	if sprite_path.begins_with("res://assets/art/kingdom/") and sprite_path.contains("/Personajes/") and ResourceLoader.exists(sprite_path):
 		var textura_local := SHARED_ASSET_LIBRARY.textura(sprite_path)
 		if textura_local != null:
 			sprite.texture = textura_local
