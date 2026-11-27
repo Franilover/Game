@@ -33,7 +33,6 @@ func _ready() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_construir_interfaz()
 	PIXEL_UI_THEME.apply(self)
-	_aplicar_fondos_button()
 	get_viewport().size_changed.connect(_ajustar_panel_a_pantalla)
 	_ajustar_panel_a_pantalla()
 
@@ -51,6 +50,7 @@ func _construir_interfaz() -> void:
 	add_child(_center)
 
 	_panel = Panel.new()
+	_panel.set_meta("ui_background_role", "floating")
 	_panel.custom_minimum_size = Vector2(620.0, 490.0)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
@@ -125,16 +125,6 @@ func _crear_seccion_button(contenedor: VBoxContainer, nombre: String, padding: i
 	contenido.add_theme_constant_override("separation", 6)
 	margen.add_child(contenido)
 	return contenido
-
-
-func _aplicar_fondos_button() -> void:
-	for nombre in ["SettingsTitlePanel", "SettingsVolumePanel", "SettingsControlsPanel"]:
-		var panel := find_child(nombre, true, false) as PanelContainer
-		if panel == null:
-			continue
-		var fondo := PIXEL_UI_THEME.button_surface_style()
-		if fondo != null:
-			panel.add_theme_stylebox_override("panel", fondo)
 
 
 func _ajustar_panel_a_pantalla() -> void:
