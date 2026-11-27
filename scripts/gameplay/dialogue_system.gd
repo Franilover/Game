@@ -96,12 +96,7 @@ func configurar_estilo_cinematica(activar: bool) -> void:
 		if fondo_boton != null:
 			dialogue_panel.add_theme_stylebox_override("panel", fondo_boton)
 		else:
-			var fallback := StyleBoxFlat.new()
-			fallback.bg_color = Color("#4B3924")
-			fallback.border_color = Color("#8A6842")
-			fallback.set_border_width_all(2)
-			fallback.set_corner_radius_all(5)
-			dialogue_panel.add_theme_stylebox_override("panel", fallback)
+			dialogue_panel.add_theme_stylebox_override("panel", PIXEL_UI_THEME.button_fallback_style())
 	else:
 		if _estilo_panel_dialogo_normal != null:
 			dialogue_panel.add_theme_stylebox_override("panel", _estilo_panel_dialogo_normal)
