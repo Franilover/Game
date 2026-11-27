@@ -6,6 +6,7 @@ const UI_DIR := "res://assets/art/UI/Menus/"
 const SHARED_ASSET_LIBRARY: Script = preload("res://scripts/shared/assets/shared_asset_library.gd")
 static var _style_cache: Dictionary = {}
 static var _focus_style: StyleBoxEmpty = null
+static var _button_fallback: StyleBoxFlat = null
 const PIXEL_TITLE_FONT: Font = preload("res://assets/fonts/Pixelgrafia.ttf")
 
 
@@ -24,6 +25,19 @@ static func _obtener_estilo_foco() -> StyleBoxEmpty:
 	if _focus_style == null:
 		_focus_style = StyleBoxEmpty.new()
 	return _focus_style
+
+
+static func focus_style() -> StyleBoxEmpty:
+	return _obtener_estilo_foco()
+
+
+static func button_fallback_style() -> StyleBoxFlat:
+	if _button_fallback == null:
+		_button_fallback = StyleBoxFlat.new()
+		_button_fallback.bg_color = Color("#302014")
+		_button_fallback.border_color = Color("#9B7950")
+		_button_fallback.set_border_width_all(2)
+	return _button_fallback
 
 
 static func _texture_style(file_name: String, margins: int = 8) -> StyleBoxTexture:
@@ -111,10 +125,11 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 		control.add_theme_color_override("font_disabled_color", Color("#D0C3A8"))
 		control.add_theme_color_override("font_outline_color", Color("#302014"))
 		control.add_theme_constant_override("outline_size", 2)
-		var normal := button_surface_style()
-		if normal != null:
-			for estado in ["normal", "hover", "pressed", "disabled"]:
-				control.add_theme_stylebox_override(estado, normal)
+		var normal: StyleBox = button_surface_style()
+		if normal == null:
+			normal = button_fallback_style()
+		for estado in ["normal", "hover", "pressed", "disabled"]:
+			control.add_theme_stylebox_override(estado, normal)
 
 	if control is LineEdit:
 		var input_style := _texture_style("input_frame.png", 4)
