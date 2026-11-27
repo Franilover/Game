@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://b6q0n144jync6"
-path="res://.godot/imported/sneakers.png-790364a7dd1d098e7e580240ecb0f676.ctex"
+uid="uid://dn27e6dfkddy2"
+path="res://.godot/imported/1 Lateral.png-18a7716a228597e447bf5c068ff3f1c4.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/kingdom/Torres/Personajes/customization/shoes/sneakers.png"
-dest_files=["res://.godot/imported/sneakers.png-790364a7dd1d098e7e580240ecb0f676.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/customization/pants/1 Lateral.png"
+dest_files=["res://.godot/imported/1 Lateral.png-18a7716a228597e447bf5c068ff3f1c4.ctex"]
 
 [params]
 

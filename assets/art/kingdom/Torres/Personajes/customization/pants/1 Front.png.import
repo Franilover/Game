@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bwqv3kfqmka21"
-path="res://.godot/imported/tunic.png-106f78e60e82545febef34644b9024f8.ctex"
+uid="uid://dpr4iy6mwfb46"
+path="res://.godot/imported/1 Front.png-979d8c2125d73f214c14fbc503cbe7d8.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://assets/art/kingdom/Torres/Personajes/customization/shirts/tunic.png"
-dest_files=["res://.godot/imported/tunic.png-106f78e60e82545febef34644b9024f8.ctex"]
+source_file="res://assets/art/kingdom/Torres/Personajes/customization/pants/1 Front.png"
+dest_files=["res://.godot/imported/1 Front.png-979d8c2125d73f214c14fbc503cbe7d8.ctex"]
 
 [params]
 
