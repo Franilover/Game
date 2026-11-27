@@ -17,6 +17,9 @@ var _kingdom_label: Label
 var _personalizacion_rows: VBoxContainer
 var _preview_container: Control
 var _preview_layers: Dictionary = {}
+var _preview_direction_index: int = 0
+const PREVIEW_DIRECTIONS: Array[String] = ["Frente", "Atrás", "Izquierda", "Derecha"]
+var _preview_direction_label: Label
 @onready var appearance_container: VBoxContainer = $Panel/Margin/Column/Content/Appearance
 @onready var creation_margin: MarginContainer = $Panel/Margin
 @onready var creation_column: VBoxContainer = $Panel/Margin/Column
@@ -259,6 +262,29 @@ func _on_species_loaded(data: Array) -> void:
 	_update_confirm()
 
 func _crear_vista_previa() -> void:
+	var barra_vistas := HBoxContainer.new()
+	barra_vistas.name = "SelectorVistaPrevia"
+	barra_vistas.alignment = BoxContainer.ALIGNMENT_CENTER
+	barra_vistas.add_theme_constant_override("separation", 10)
+	var anterior := Button.new()
+	anterior.text = "‹"
+	anterior.custom_minimum_size = Vector2(38, 30)
+	anterior.tooltip_text = "Vista anterior"
+	anterior.pressed.connect(_cambiar_vista_previa.bind(-1))
+	barra_vistas.add_child(anterior)
+	_preview_direction_label = Label.new()
+	_preview_direction_label.text = PREVIEW_DIRECTIONS[_preview_direction_index]
+	_preview_direction_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_preview_direction_label.custom_minimum_size.x = 100
+	barra_vistas.add_child(_preview_direction_label)
+	var siguiente := Button.new()
+	siguiente.text = "›"
+	siguiente.custom_minimum_size = Vector2(38, 30)
+	siguiente.tooltip_text = "Vista siguiente"
+	siguiente.pressed.connect(_cambiar_vista_previa.bind(1))
+	barra_vistas.add_child(siguiente)
+	appearance_container.add_child(barra_vistas)
+
 	_preview_container = APPEARANCE_PREVIEW_SCENE.instantiate() as Control
 	_preview_container.name = "VistaPreviaPersonaje"
 	for slot in CharacterAppearance.SLOTS:
@@ -267,25 +293,58 @@ func _crear_vista_previa() -> void:
 			_preview_layers[slot] = capa
 	var cuerpo := _preview_layers.get("body") as TextureRect
 	if cuerpo != null:
-		cuerpo.texture = CharacterAppearance.obtener_textura_sprite("idle_front")
 		cuerpo.visible = true
 	appearance_container.add_child(_preview_container)
+	_actualizar_vista_previa()
+
+
+func _cambiar_vista_previa(delta: int) -> void:
+	_preview_direction_index = posmod(_preview_direction_index + delta, PREVIEW_DIRECTIONS.size())
+	if is_instance_valid(_preview_direction_label):
+		_preview_direction_label.text = PREVIEW_DIRECTIONS[_preview_direction_index]
+	_actualizar_vista_previa()
 
 
 func _actualizar_vista_previa() -> void:
+	var direccion: String = PREVIEW_DIRECTIONS[_preview_direction_index]
+	var cuerpo := _preview_layers.get("body") as TextureRect
+	if cuerpo != null:
+		var clave_sprite := "idle_front"
+		match direccion:
+			"Atrás": clave_sprite = "walk_back"
+			"Izquierda", "Derecha": clave_sprite = "walk_left"
+		cuerpo.texture = CharacterAppearance.obtener_textura_sprite(clave_sprite)
+		cuerpo.flip_h = direccion == "Derecha"
+
 	for slot in ["shoes", "pants", "shirt", "eyes", "hair"]:
 		var capa: TextureRect = _preview_layers.get(slot) as TextureRect
 		var lista: ItemList = _personalizacion_items.get(slot) as ItemList
 		var selector_color: ColorPickerButton = _personalizacion_colores.get(slot) as ColorPickerButton
-		if capa == null or lista == null:
+		if capa == null:
 			continue
-		var seleccionados := lista.get_selected_items()
 		var ruta := ""
-		if not seleccionados.is_empty():
-			ruta = str(lista.get_item_metadata(seleccionados[0]))
-		capa.texture = load(ruta) as Texture2D if not ruta.is_empty() and ResourceLoader.exists(ruta) else null
+		if lista != null:
+			var seleccionados := lista.get_selected_items()
+			if not seleccionados.is_empty():
+				ruta = str(lista.get_item_metadata(seleccionados[0]))
+		var ruta_vista := _ruta_pieza_para_vista(ruta, direccion)
+		capa.texture = load(ruta_vista) as Texture2D if not ruta_vista.is_empty() and ResourceLoader.exists(ruta_vista) else null
+		capa.flip_h = direccion == "Derecha"
 		capa.modulate = selector_color.color if selector_color != null else Color.WHITE
 		capa.visible = capa.texture != null
+
+
+func _ruta_pieza_para_vista(ruta: String, direccion: String) -> String:
+	if ruta.is_empty():
+		return ""
+	var sufijo := " Front"
+	match direccion:
+		"Atrás": sufijo = " Back"
+		"Izquierda", "Derecha": sufijo = " Lateral"
+	var base := ruta.get_file().get_basename()
+	var identificador := base.get_slice(" ", 0)
+	var candidata := ruta.get_base_dir() + "/" + identificador + sufijo + ".png"
+	return candidata if ResourceLoader.exists(candidata) else ruta
 
 func _construir_controles_personalizacion() -> void:
 	# Cada fila tiene estructura propia editable en el editor; el catálogo se
