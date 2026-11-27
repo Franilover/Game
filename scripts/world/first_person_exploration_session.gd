@@ -12,10 +12,13 @@ var _zona: Node = null
 var _jugador: Node2D = null
 var _camara_2d: Camera2D = null
 var _interaccion: Node = null
+var _input_router: Node = null
 var _zona_visible_previa: bool = true
 var _jugador_visible_previo: bool = true
 var _camara_2d_habilitada_previa: bool = true
 var _interaccion_activa_previa: bool = true
+var _router_input_previo: bool = true
+var _router_unhandled_previo: bool = true
 var _estado_jugador: Array[Dictionary] = []
 
 
@@ -54,6 +57,13 @@ func iniciar() -> bool:
 		(_zona as CanvasItem).visible = false
 	_jugador.visible = false
 	_camara_2d.enabled = false
+
+	_input_router = principal.get_node_or_null("Systems/GameplayInputRouter")
+	if is_instance_valid(_input_router):
+		_router_input_previo = _input_router.is_processing_input()
+		_router_unhandled_previo = _input_router.is_processing_unhandled_input()
+		_input_router.set_process_input(false)
+		_input_router.set_process_unhandled_input(false)
 
 	_interaccion = principal.get_node_or_null("Systems/InteractionSystem")
 	if is_instance_valid(_interaccion):
@@ -127,11 +137,15 @@ func salir() -> void:
 			_camara_2d.make_current()
 	if is_instance_valid(_interaccion) and _interaccion.has_method("establecer_activo"):
 		_interaccion.call("establecer_activo", _interaccion_activa_previa)
+	if is_instance_valid(_input_router):
+		_input_router.set_process_input(_router_input_previo)
+		_input_router.set_process_unhandled_input(_router_unhandled_previo)
 
 	_zona = null
 	_jugador = null
 	_camara_2d = null
 	_interaccion = null
+	_input_router = null
 	Events.notification_pushed.emit("Has regresado al Centro de Expediciones.")
 
 
