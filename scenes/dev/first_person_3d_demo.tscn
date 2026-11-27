@@ -36,21 +36,21 @@ texture = ExtResource("4_tree")
 billboard = 1
 shaded = false
 pixel_size = 0.025
-texture_filter = 1
+texture_filter = 0
 position = Vector3(-1.8, 1.0, -2.5)
 
 [node name="Piedra" type="Sprite3D" parent="."]
 texture = ExtResource("5_rock")
 billboard = 1
 pixel_size = 0.025
-texture_filter = 1
+texture_filter = 0
 position = Vector3(1.4, 0.45, -2.0)
 
 [node name="Feerin" type="Sprite3D" parent="."]
 texture = ExtResource("6_feerin")
 billboard = 1
 pixel_size = 0.025
-texture_filter = 1
+texture_filter = 0
 position = Vector3(0.0, 0.8, -3.5)
 
 [node name="Jugador" parent="." instance=ExtResource("1_player")]
