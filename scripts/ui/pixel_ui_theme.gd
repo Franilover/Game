@@ -81,12 +81,13 @@ static func _apply_control(control: Control, use_pixel_titles: bool = true, forc
 	# El juego no usa tooltips emergentes: la información vive en sus paneles y etiquetas.
 	control.tooltip_text = ""
 	if control is Panel or control is PanelContainer:
-		# Cada panel conserva su superficie declarada en su escena. Solo los
-		# paneles diseñados como superficies de botón comparten esa base.
-		if control.name in ["DetailPanel", "SpeakerPortraitFrame"]:
-			var panel := button_surface_style()
-			if panel != null:
-				control.add_theme_stylebox_override("panel", panel)
+		# Los paneles de interfaz comparten la misma superficie pixel-art que
+		# los botones. Se preservan únicamente superficies con una función
+		# visual propia que no deben parecer un botón.
+		if control.name not in ["Paper", "CanvasContainer"]:
+			var panel_surface := button_surface_style()
+			if panel_surface != null:
+				control.add_theme_stylebox_override("panel", panel_surface)
 
 	# Pixelgrafia queda reservada para encabezados; el resto usa la fuente Open Sans integrada en Godot.
 	var control_name := control.name.to_lower()
