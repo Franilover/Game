@@ -2,6 +2,7 @@ extends CanvasLayer
 ## Estudio Oris: selección visual de objetos y análisis informativo.
 
 const PIXEL_UI_THEME = preload("res://scripts/ui/pixel_ui_theme.gd")
+const MENU_LAYOUT = preload("res://scripts/ui/menu_layout.gd")
 
 @onready var _panel: PanelContainer = $Panel
 @onready var _boton_cerrar: Button = $Panel/Margin/Column/Header/Close
@@ -29,6 +30,12 @@ func _ready() -> void:
 	_boton_analizar.text = "Inspeccionar" if _estacion_id == "forja_inspeccion" else "Analizar"
 	_aplicar_estilo_laboratorio()
 	_configurar_scroll_resultado()
+	call_deferred("_ajustar_panel_al_viewport")
+
+
+func _ajustar_panel_al_viewport() -> void:
+	if is_instance_valid(_panel) and _panel.is_inside_tree():
+		MENU_LAYOUT.vigilar_panel_centrado(_panel, 18.0)
 
 
 func _configurar_scroll_resultado() -> void:
