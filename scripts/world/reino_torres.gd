@@ -119,7 +119,10 @@ var _atmosfera_mundo: Node = null
 var _luces_faroles: Array[PointLight2D] = []
 var _brillos_faroles: Array[Sprite2D] = []
 var _capa_brillos_faroles: CanvasLayer = null
+var _textura_luz_farol: GradientTexture2D = null
 var _ventanas_hogares: Array[Sprite2D] = []
+var _luces_hogares_exterior: Dictionary = {}
+var _brillos_hogares_exterior: Dictionary = {}
 var _charcos_torres: Array[Polygon2D] = []
 var _brillos_charcos_torres: Array[Polygon2D] = []
 var _sistema_clima_torres: Node = null
@@ -197,6 +200,25 @@ const UBICACION_RUTINA_POR_ENTRADA: Dictionary = {
 	"casa_vacia_11": "vivienda_oeste_11",
 	"casa_granjeros": "casa_granjeros",
 	"castillo": "castillo"
+}
+
+const SPRITES_HOGARES: Dictionary = {
+	"casa_bruna": "Sprite_Casa_Bruna",
+	"casa_narel": "Sprite_Casa_Narel",
+	"casa_elian": "Sprite_Casa_Elian",
+	"casa_darven": "Sprite_Casa_Darven",
+	"casa_saira": "Sprite_Casa_Saira",
+	"casa_granjeros": "Sprite_casa_granjeros",
+	"casa_vacia_01": "Sprite_Casa_Vacia_01",
+	"casa_vacia_02": "Sprite_Casa_Vacia_02",
+	"casa_vacia_03": "Sprite_Casa_Vacia_03",
+	"casa_vacia_04": "Sprite_Casa_Vacia_04",
+	"casa_vacia_05": "Sprite_Casa_Vacia_05",
+	"casa_vacia_06": "Sprite_Casa_Vacia_06",
+	"casa_vacia_07": "Sprite_Casa_Vacia_07",
+	"casa_vacia_08": "Sprite_Casa_Vacia_08",
+	"casa_vacia_10": "Sprite_Casa_Vacia_10",
+	"casa_vacia_11": "Sprite_Casa_Vacia_11"
 }
 
 const ENTRADAS: Array[Dictionary] = [
@@ -707,44 +729,32 @@ func _cargar_arboles_pixelart() -> void:
 		copa.visible = false
 
 
-## Iluminación cálida en las viviendas habitadas. Las casas vacías permanecen
-## apagadas; las ventanas acompañan el ciclo real de día y noche.
+## Las viviendas sólo muestran luz cuando un habitante está dentro.
+## La misma ocupación activa las ventanas y la iluminación exterior/interior.
 func _crear_ventanas_hogares() -> void:
+	if _textura_luz_farol == null or not is_instance_valid(_capa_brillos_faroles):
+		return
 	var imagen := Image.create(5, 5, false, Image.FORMAT_RGBA8)
 	imagen.fill(Color(0.0, 0.0, 0.0, 0.0))
 	var marco := Color("#563b2a")
-	var luz := Color("#ffd58a")
+	var luz_ventana := Color("#ffd58a")
 	for y in range(5):
 		for x in range(5):
 			if x == 0 or x == 4 or y == 0 or y == 4:
 				imagen.set_pixel(x, y, marco)
 			else:
-				imagen.set_pixel(x, y, luz)
+				imagen.set_pixel(x, y, luz_ventana)
 	var textura_ventana := ImageTexture.create_from_image(imagen)
-	var hogares_ocupados: Array[String] = [
-		"Sprite_Casa_Bruna",
-		"Sprite_Casa_Narel",
-		"Sprite_Casa_Elian",
-		"Sprite_Casa_Darven",
-		"Sprite_Casa_Saira",
-		"Sprite_Casa_Vacia_01",
-		"Sprite_Casa_Vacia_02",
-		"Sprite_Casa_Vacia_03",
-		"Sprite_casa_granjeros"
-	]
-	for nombre_casa in hogares_ocupados:
-		# Las viviendas están dentro de grupos (Grupo_casa_*), no como
-		# hijos directos de ReinoTorres. La búsqueda recursiva resuelve la ruta
-		# real sin generar advertencias falsas ni omitir sus ventanas.
+
+	for hogar_id_variant in SPRITES_HOGARES:
+		var hogar_id := str(hogar_id_variant)
+		var nombre_casa := str(SPRITES_HOGARES[hogar_id_variant])
 		var casa := find_child(nombre_casa, true, false) as Sprite2D
 		if not is_instance_valid(casa):
 			push_warning("ReinoTorres: no se encontró la vivienda para iluminar: " + nombre_casa)
 			continue
-		var posiciones_ventana: Array[Vector2] = [
-			Vector2(-10.0, -5.0),
-			Vector2(10.0, -5.0)
-		]
-		for posicion_ventana: Vector2 in posiciones_ventana:
+
+		for posicion_ventana: Vector2 in [Vector2(-10.0, -5.0), Vector2(10.0, -5.0)]:
 			var ventana := Sprite2D.new()
 			ventana.name = "VentanaIluminada"
 			ventana.texture = textura_ventana
@@ -752,31 +762,108 @@ func _crear_ventanas_hogares() -> void:
 			ventana.z_index = 1
 			ventana.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
 			ventana.visible = false
+			ventana.set_meta("hogar_id", hogar_id)
 			casa.add_child(ventana)
 			_ventanas_hogares.append(ventana)
 
+		var luz_exterior := PointLight2D.new()
+		luz_exterior.name = "LuzHogarExterior"
+		luz_exterior.position = Vector2(0.0, -7.0)
+		luz_exterior.texture = _textura_luz_farol
+		luz_exterior.texture_scale = 1.8
+		luz_exterior.color = Color("#ffd9a6")
+		luz_exterior.energy = 0.58
+		luz_exterior.range_item_cull_mask = 1
+		luz_exterior.blend_mode = Light2D.BLEND_MODE_ADD
+		luz_exterior.shadow_enabled = false
+		luz_exterior.enabled = false
+		casa.add_child(luz_exterior)
+		_luces_hogares_exterior[hogar_id] = luz_exterior
 
-func _actualizar_ventanas_hogares() -> void:
-	if _ventanas_hogares.is_empty():
-		return
-	var intensidad := 0.0
+		# El brillo visual permanece fuera de CanvasModulate, igual que el de
+		# los postes, mientras PointLight2D ilumina el terreno alrededor.
+		var brillo := Sprite2D.new()
+		brillo.name = "BrilloHogar_" + hogar_id
+		brillo.texture = _textura_luz_farol
+		brillo.position = casa.to_global(Vector2(0.0, -7.0))
+		brillo.scale = Vector2(0.48, 0.48)
+		brillo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
+		brillo.visible = false
+		var material_brillo := CanvasItemMaterial.new()
+		material_brillo.blend_mode = CanvasItemMaterial.BLEND_MODE_ADD
+		brillo.material = material_brillo
+		_capa_brillos_faroles.add_child(brillo)
+		_brillos_hogares_exterior[hogar_id] = brillo
+
+
+func _obtener_hogares_ocupados() -> Dictionary:
+	var ocupados: Dictionary = {}
+	for npc in get_tree().get_nodes_in_group("torres_game_npc"):
+		if not is_instance_valid(npc) or not npc is Creature:
+			continue
+		if not npc.is_alive or npc.get_meta("rutina_en_edificio", false) != true:
+			continue
+		var edificio_id := str(npc.get_meta("rutina_edificio_id", ""))
+		if SPRITES_HOGARES.has(edificio_id):
+			ocupados[edificio_id] = true
+	return ocupados
+
+
+func _obtener_intensidad_luz_hogares() -> float:
 	if not is_instance_valid(_atmosfera_mundo):
 		_atmosfera_mundo = get_tree().root.find_child("WorldAtmosphere", true, false)
-	if is_instance_valid(_atmosfera_mundo) and _atmosfera_mundo.has_method("obtener_tiempo"):
-		var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
-		if bool(tiempo.get("calendario_cargado", false)):
-			var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
-			var hora_normalizada := fposmod(float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia, 1.0)
-			if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
-				intensidad = 1.0
-			elif hora_normalizada >= 0.72:
-				intensidad = _suavizar_luz((hora_normalizada - 0.72) / 0.10)
-			elif hora_normalizada < 0.30:
-				intensidad = 1.0 - _suavizar_luz((hora_normalizada - 0.20) / 0.10)
+	if not is_instance_valid(_atmosfera_mundo) or not _atmosfera_mundo.has_method("obtener_tiempo"):
+		return _obtener_intensidad_desde_modulacion()
+	var tiempo: Dictionary = _atmosfera_mundo.call("obtener_tiempo")
+	if not bool(tiempo.get("calendario_cargado", false)):
+		return _obtener_intensidad_desde_modulacion()
+	var horas_por_dia := maxf(float(tiempo.get("horas_por_dia", 24.0)), 1.0)
+	var hora_normalizada := fposmod(float(tiempo.get("hora_del_dia", 0.0)) / horas_por_dia, 1.0)
+	if hora_normalizada >= 0.82 or hora_normalizada < 0.20:
+		return 1.0
+	if hora_normalizada >= 0.72:
+		return _suavizar_luz((hora_normalizada - 0.72) / 0.10)
+	if hora_normalizada < 0.30:
+		return 1.0 - _suavizar_luz((hora_normalizada - 0.20) / 0.10)
+	return 0.0
+
+
+func _actualizar_ventanas_hogares() -> void:
+	if _ventanas_hogares.is_empty() and _luces_hogares_exterior.is_empty():
+		return
+	var intensidad := _obtener_intensidad_luz_hogares()
+	var hogares_ocupados := _obtener_hogares_ocupados()
+	var mostrar_exterior := intensidad > 0.02 and not _interior_activo
+
 	for ventana in _ventanas_hogares:
-		if is_instance_valid(ventana):
-			ventana.visible = intensidad > 0.02 and not _interior_activo
-			ventana.modulate = Color(1.0, 0.91, 0.72, intensidad)
+		if not is_instance_valid(ventana):
+			continue
+		var hogar_id := str(ventana.get_meta("hogar_id", ""))
+		var ocupado := bool(hogares_ocupados.get(hogar_id, false))
+		ventana.visible = mostrar_exterior and ocupado
+		ventana.modulate = Color(1.0, 0.91, 0.72, intensidad)
+
+	for hogar_id_variant in _luces_hogares_exterior:
+		var hogar_id := str(hogar_id_variant)
+		var ocupado := bool(hogares_ocupados.get(hogar_id, false))
+		var luz_exterior := _luces_hogares_exterior[hogar_id_variant] as PointLight2D
+		if is_instance_valid(luz_exterior):
+			luz_exterior.enabled = mostrar_exterior and ocupado
+			luz_exterior.energy = 0.58 * intensidad
+		var brillo := _brillos_hogares_exterior.get(hogar_id_variant) as Sprite2D
+		if is_instance_valid(brillo):
+			brillo.visible = mostrar_exterior and ocupado
+			brillo.modulate = Color(1.0, 0.86, 0.68, intensidad * 0.55)
+
+	# El interior usa una luz real sólo si hay un habitante en esa vivienda.
+	if _interior_activo and SPRITES_HOGARES.has(_entrada_interior_id):
+		var cuarto := _capa_interior.get_node_or_null("Habitacion_" + _entrada_interior_id)
+		if is_instance_valid(cuarto):
+			var luz_interior := cuarto.get_node_or_null("LuzInteriorHogar") as PointLight2D
+			if is_instance_valid(luz_interior):
+				var ocupado := bool(hogares_ocupados.get(_entrada_interior_id, false))
+				luz_interior.enabled = intensidad > 0.02 and ocupado
+				luz_interior.energy = 0.62 * intensidad
 
 
 ## Los charcos se forman lentamente con la lluvia y desaparecen después,
@@ -1036,13 +1123,13 @@ func _crear_luces_faroles() -> void:
 	gradiente.add_point(0.62, Color(1.0, 0.55, 0.22, 0.07))
 	gradiente.add_point(0.84, Color(1.0, 0.48, 0.12, 0.015))
 
-	var textura_luz: GradientTexture2D = GradientTexture2D.new()
-	textura_luz.gradient = gradiente
-	textura_luz.width = 256
-	textura_luz.height = 256
-	textura_luz.fill = GradientTexture2D.FILL_RADIAL
-	textura_luz.fill_from = Vector2(0.5, 0.5)
-	textura_luz.fill_to = Vector2(0.5, 0.0)
+	_textura_luz_farol = GradientTexture2D.new()
+	_textura_luz_farol.gradient = gradiente
+	_textura_luz_farol.width = 256
+	_textura_luz_farol.height = 256
+	_textura_luz_farol.fill = GradientTexture2D.FILL_RADIAL
+	_textura_luz_farol.fill_from = Vector2(0.5, 0.5)
+	_textura_luz_farol.fill_to = Vector2(0.5, 0.0)
 
 	_capa_brillos_faroles = CanvasLayer.new()
 	_capa_brillos_faroles.name = "CapaBrillosFaroles"
@@ -1079,7 +1166,7 @@ func _crear_luces_faroles() -> void:
 		var luz: PointLight2D = PointLight2D.new()
 		luz.name = "LuzFarol" + nombre_farol
 		luz.position = posicion_local
-		luz.texture = textura_luz
+		luz.texture = _textura_luz_farol
 		luz.texture_scale = 2.8
 		luz.color = Color("#ffd9a6")
 		luz.energy = 0.72
@@ -1092,7 +1179,7 @@ func _crear_luces_faroles() -> void:
 
 		var brillo: Sprite2D = Sprite2D.new()
 		brillo.name = "Brillo" + nombre_farol
-		brillo.texture = textura_luz
+		brillo.texture = _textura_luz_farol
 		brillo.position = posicion_global
 		brillo.scale = Vector2(0.9, 0.9)
 		brillo.texture_filter = CanvasItem.TEXTURE_FILTER_LINEAR
@@ -1876,6 +1963,19 @@ func _construir_habitacion(entrada: Dictionary) -> void:
 	_capa_interior.add_child(cuarto)
 
 	var tipo := str(entrada["tipo"])
+	if tipo == "vivienda" and _textura_luz_farol != null:
+		var luz_interior := PointLight2D.new()
+		luz_interior.name = "LuzInteriorHogar"
+		luz_interior.position = Vector2(0.0, -58.0)
+		luz_interior.texture = _textura_luz_farol
+		luz_interior.texture_scale = 2.35
+		luz_interior.color = Color("#ffe0b0")
+		luz_interior.energy = 0.62
+		luz_interior.range_item_cull_mask = 1
+		luz_interior.blend_mode = Light2D.BLEND_MODE_ADD
+		luz_interior.shadow_enabled = false
+		luz_interior.enabled = false
+		cuarto.add_child(luz_interior)
 	var dimensiones := _obtener_dimensiones_interior(tipo)
 	_interior_ancho_actual = dimensiones.x
 	_interior_alto_actual = dimensiones.y
