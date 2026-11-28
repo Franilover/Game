@@ -2205,9 +2205,17 @@ func _crear_interfaz_posada() -> void:
 	PIXEL_UI_THEME.apply(_menu_posada_panel, false)
 	centrador.add_child(_menu_posada_panel)
 
+	var margen_posada := MarginContainer.new()
+	margen_posada.add_theme_constant_override("margin_left", 14)
+	margen_posada.add_theme_constant_override("margin_top", 12)
+	margen_posada.add_theme_constant_override("margin_right", 14)
+	margen_posada.add_theme_constant_override("margin_bottom", 12)
+	_menu_posada_panel.add_child(margen_posada)
+
 	_menu_posada_contenido = VBoxContainer.new()
 	_menu_posada_contenido.add_theme_constant_override("separation", 8)
-	_menu_posada_panel.add_child(_menu_posada_contenido)
+	_menu_posada_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	margen_posada.add_child(_menu_posada_contenido)
 
 
 func _crear_boton_posada(texto: String, accion: Callable, deshabilitado: bool = false) -> Button:
@@ -2295,6 +2303,12 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 		_menu_posada_panel.custom_minimum_size = Vector2(310, 0)
 		_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
 	_menu_posada_layer.visible = true
+	call_deferred("_ajustar_panel_posada")
+
+
+func _ajustar_panel_posada() -> void:
+	if is_instance_valid(_menu_posada_panel) and _menu_posada_panel.is_inside_tree():
+		MENU_LAYOUT.vigilar_panel_centrado(_menu_posada_panel, 18.0)
 
 
 func _obtener_textura_mueble_posada(mueble_id: String) -> Texture2D:
