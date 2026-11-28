@@ -101,9 +101,20 @@ func _crear_interfaz() -> void:
 	_barra_superior.alignment = BoxContainer.ALIGNMENT_END
 	margen.add_child(_barra_superior)
 
+	var saldo_panel := PanelContainer.new()
+	var fondo_saldo := PIXEL_UI_THEME.button_surface_style()
+	if fondo_saldo != null:
+		saldo_panel.add_theme_stylebox_override("panel", fondo_saldo)
+	var saldo_margen := MarginContainer.new()
+	saldo_margen.add_theme_constant_override("margin_left", 8)
+	saldo_margen.add_theme_constant_override("margin_top", 4)
+	saldo_margen.add_theme_constant_override("margin_right", 8)
+	saldo_margen.add_theme_constant_override("margin_bottom", 4)
+	saldo_panel.add_child(saldo_margen)
 	_saldo_superior = Label.new()
 	_saldo_superior.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-	_barra_superior.add_child(_saldo_superior)
+	saldo_margen.add_child(_saldo_superior)
+	_barra_superior.add_child(saldo_panel)
 
 	var cerrar_superior := Button.new()
 	cerrar_superior.text = "×"
