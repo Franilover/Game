@@ -163,9 +163,9 @@ static func actividad_social_bloqueada(npc: Creature) -> bool:
 	if not is_instance_valid(npc):
 		return true
 	return (
-		bool(npc.get_meta("_conversacion_ambiental_activa", false))
-		or bool(npc.get_meta("conversacion_npc_bloqueada", false))
-		or bool(npc.get_meta("cinematica_npc_activa", false))
+		(npc.get_meta("_conversacion_ambiental_activa", false) == true)
+		or (npc.get_meta("conversacion_npc_bloqueada", false) == true)
+		or (npc.get_meta("cinematica_npc_activa", false) == true)
 	)
 
 
@@ -274,7 +274,7 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		return
 
 	var tiempo := _world_atmosphere.obtener_tiempo()
-	if not bool(tiempo.get("calendario_cargado", false)):
+	if not (tiempo.get("calendario_cargado", false) == true):
 		return
 
 	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 5)
@@ -297,14 +297,14 @@ func actualizar(delta: float = INTERVALO_ACTUALIZACION) -> void:
 		if es_hora_de_dormir:
 			# Las conversaciones ambientales también podían retener al NPC antes
 			# de que el planificador aplicara su rutina de regreso al hogar.
-			if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+			if (npc.get_meta("_conversacion_ambiental_activa", false) == true):
 				npc.remove_meta("_conversacion_ambiental_activa")
 				var movimiento_nocturno := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 				if is_instance_valid(movimiento_nocturno):
 					movimiento_nocturno.detener_por_rutina()
 				npc.set_meta("rutina_en_transito", false)
 				npc.set_meta("rutina_firma", "")
-			if bool(npc.get_meta("actividad_social_activa", false)) or bool(npc.get_meta("acercamiento_social_activo", false)):
+			if (npc.get_meta("actividad_social_activa", false) == true) or (npc.get_meta("acercamiento_social_activo", false) == true):
 				_finalizar_actividad_social(npc)
 		if _actualizar_actividad_social(npc, delta):
 			continue
@@ -334,7 +334,7 @@ func iniciar_acercamiento_social(npc: Creature, jugador: Node2D) -> bool:
 		return false
 	if not _navegacion_lista():
 		return false
-	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("rutina_en_edificio", false)):
+	if (npc.get_meta("rutina_en_transito", false) == true) or (npc.get_meta("rutina_en_edificio", false) == true):
 		return false
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
@@ -371,7 +371,7 @@ func iniciar_acercamiento_social(npc: Creature, jugador: Node2D) -> bool:
 func iniciar_actividad_social(npc: Creature, destino_local: Vector2, duracion: float = 5.0) -> bool:
 	if not is_instance_valid(npc) or not _navegacion_lista() or not is_instance_valid(_zona):
 		return false
-	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("rutina_en_edificio", false)):
+	if (npc.get_meta("rutina_en_transito", false) == true) or (npc.get_meta("rutina_en_edificio", false) == true):
 		return false
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if movimiento == null:
@@ -392,7 +392,7 @@ func iniciar_actividad_social(npc: Creature, destino_local: Vector2, duracion: f
 
 
 func _actualizar_actividad_social(npc: Creature, delta: float) -> bool:
-	if not bool(npc.get_meta("actividad_social_activa", false)):
+	if not (npc.get_meta("actividad_social_activa", false) == true):
 		return false
 	if _esta_lloviendo_en_posicion(npc.global_position):
 		# La actividad al aire libre se interrumpe para que la rutina normal
@@ -493,7 +493,7 @@ func finalizar_acercamiento_social(npc: Creature) -> void:
 	if str(_zone_manager.obtener_tipo_actual()) != "reino_torres" or not _navegacion_lista():
 		return
 	var tiempo := _obtener_tiempo_actual()
-	if not bool(tiempo.get("calendario_cargado", false)):
+	if not (tiempo.get("calendario_cargado", false) == true):
 		return
 	var dia_semana := posmod(int(tiempo.get("dia", 1)) - 1, 5)
 	var minutos := clampi(int(floor(float(tiempo.get("hora_del_dia", 0.0)) * 60.0)), 0, 1439)
@@ -517,7 +517,7 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 		var npc := npc_variant as Creature
 		if not npc.is_alive:
 			continue
-		if bool(npc.get_meta("actividad_social_activa", false)):
+		if (npc.get_meta("actividad_social_activa", false) == true):
 			# La malla nueva invalida los puntos de la ruta anterior, pero no la
 			# actividad: se conserva el destino y se reanuda en el siguiente tick.
 			var movimiento_social := npc.get_node_or_null("CreatureMovement") as CreatureMovement
@@ -527,10 +527,10 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 			npc.set_meta("actividad_social_ultima_posicion", npc.global_position)
 			npc.set_meta("actividad_social_ultimo_progreso_ms", Time.get_ticks_msec())
 			continue
-		if bool(npc.get_meta("acercamiento_social_activo", false)):
+		if (npc.get_meta("acercamiento_social_activo", false) == true):
 			continue
-		var ruta_fallida := bool(npc.get_meta("rutina_ruta_fallida", false))
-		var en_transito := bool(npc.get_meta("rutina_en_transito", false))
+		var ruta_fallida := (npc.get_meta("rutina_ruta_fallida", false) == true)
+		var en_transito := (npc.get_meta("rutina_en_transito", false) == true)
 		if not en_transito and not ruta_fallida:
 			continue
 		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
@@ -567,7 +567,7 @@ func _resolver_rutina_base_y_eventos(
 		rutinas_variant = rutinas_elian
 	# El índice 4 representa el día número 5 del calendario: descanso para
 	# todos los NPC con oficio. Los habitantes sin oficio conservan sus rutinas.
-	if dia_semana == 4 and (not bool(npc.get_meta("habitante_sin_oficio", false)) or nombre_para_descanso in ["mara", "ivo", "nima"]):
+	if dia_semana == 4 and (not (npc.get_meta("habitante_sin_oficio", false) == true) or nombre_para_descanso in ["mara", "ivo", "nima"]):
 		rutina = _seleccionar_rutina_dia_libre(npc, minutos)
 	else:
 		rutina = _seleccionar_rutina(rutinas_variant, dia_semana, minutos, npc.get_nombre_visual())
@@ -622,10 +622,10 @@ func _resolver_rutina_base_y_eventos(
 
 func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var horario_nocturno := NPC_SCHEDULE_RULES.es_horario_nocturno(minutos)
-	if horario_nocturno and (bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false))):
+	if horario_nocturno and ((npc.get_meta("acercamiento_social_activo", false) == true) or (npc.get_meta("actividad_social_activa", false) == true)):
 		# Cancela acercamientos y charlas iniciadas antes de la hora de dormir.
 		_finalizar_actividad_social(npc)
-	elif bool(npc.get_meta("acercamiento_social_activo", false)) or bool(npc.get_meta("actividad_social_activa", false)):
+	elif (npc.get_meta("acercamiento_social_activo", false) == true) or (npc.get_meta("actividad_social_activa", false) == true):
 		return
 	var nombre_para_descanso := npc.get_nombre_visual().strip_edges().to_lower()
 	var hogar_respaldo := obtener_clave_hogar(nombre_para_descanso, "plaza")
@@ -719,7 +719,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# La lluvia modifica temporalmente las actividades al aire libre.
 	# Los NPC que ya están dentro o cuyo trabajo ocurre en un edificio continúan allí.
 	var clima_lluvioso := _esta_lloviendo_en_posicion(npc.global_position)
-	var esta_en_edificio := bool(npc.get_meta("rutina_en_edificio", false))
+	var esta_en_edificio := (npc.get_meta("rutina_en_edificio", false) == true)
 	if not clima_lluvioso:
 		npc.remove_meta("refugio_lluvia_clave")
 		npc.remove_meta("reaccion_climatica")
@@ -763,7 +763,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
 	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
 	var edificio_id := str(edificio.get("id", ""))
-	var esta_dentro := bool(npc.get_meta("rutina_en_edificio", false))
+	var esta_dentro := (npc.get_meta("rutina_en_edificio", false) == true)
 	var edificio_actual := str(npc.get_meta("rutina_edificio_id", ""))
 
 	# Si cambió de destino mientras estaba dentro, sale desde la puerta antes
@@ -804,9 +804,9 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				# No contar el tiempo detenido por diálogos o cinemáticas como
 				# atasco de navegación: esas pausas son intencionales.
 				var movimiento_bloqueado := (
-					bool(npc.get_meta("conversacion_npc_bloqueada", false))
-					or bool(npc.get_meta("_conversacion_ambiental_activa", false))
-					or bool(npc.get_meta("cinematica_npc_activa", false))
+					(npc.get_meta("conversacion_npc_bloqueada", false) == true)
+					or (npc.get_meta("_conversacion_ambiental_activa", false) == true)
+					or (npc.get_meta("cinematica_npc_activa", false) == true)
 				)
 				if movimiento_bloqueado:
 					npc.set_meta("rutina_ultima_posicion_vigilada", npc.global_position)
@@ -837,7 +837,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				npc.set_physics_process(true)
 			else:
 				# Las rutas fallidas se reintentan con pausa para no recalcular AStar cada tick.
-				var ruta_fallida := bool(npc.get_meta("rutina_ruta_fallida", false))
+				var ruta_fallida := (npc.get_meta("rutina_ruta_fallida", false) == true)
 				var reintento_en := int(npc.get_meta("rutina_ruta_reintento_ms", 0))
 				if ruta_fallida and Time.get_ticks_msec() < reintento_en:
 					return
@@ -986,13 +986,13 @@ static func _obtener_muebles_por_tokens(contenedor: Node, tokens: Array) -> Arra
 ## Conserva el estado de interior activo: si el jugador sigue dentro, el NPC permanece oculto.
 func _salir_de_edificio_para_cambiar_rutina(npc: Creature, edificio_actual: String) -> void:
 	_detener_animacion_actividad_interior(npc)
-	if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+	if (npc.get_meta("rutina_paseo_interior_activo", false) == true):
 		_detener_paseo_interior(npc, true)
 	if is_instance_valid(_zona) and _zona.has_method("sacar_npc_del_interior"):
 		_zona.call("sacar_npc_del_interior", npc)
 	if (
 		is_instance_valid(_zona)
-		and not bool(_zona.get("_interior_activo"))
+		and not (_zona.get("_interior_activo") == true)
 		and _zona.has_method("restaurar_colision_npc")
 	):
 		_zona.call("restaurar_colision_npc", npc)
@@ -1238,7 +1238,7 @@ func _seleccionar_refugio_lluvia(npc: Creature, hogar: String) -> String:
 
 
 func _registrar_compra_habitante(npc: Creature, edificio_id: String) -> void:
-	if not is_instance_valid(npc) or not bool(npc.get_meta("habitante_sin_oficio", false)):
+	if not is_instance_valid(npc) or not (npc.get_meta("habitante_sin_oficio", false) == true):
 		return
 	var actividad := str(npc.get_meta("rutina_actual", ""))
 	if not actividad.begins_with("comprar_"):
@@ -1283,7 +1283,7 @@ func _el_npc_tiene_rutina_en_ubicacion(nombre_buscado: String, ubicacion_buscada
 			continue
 		# Para sincronizar una compra compartida exigimos presencia física,
 		# no basta con que el horario diga que el NPC va camino al local.
-		return bool(candidato.get_meta("rutina_en_edificio", false)) and str(candidato.get_meta("rutina_edificio_id", "")) == ubicacion_buscada
+		return (candidato.get_meta("rutina_en_edificio", false) == true) and str(candidato.get_meta("rutina_edificio_id", "")) == ubicacion_buscada
 	return false
 
 
@@ -1384,7 +1384,7 @@ func _obtener_rutina_encuentro_trio(
 			minutos
 		)
 		var evaluacion_invitacion: Dictionary = resultado_invitacion.get("evaluacion", {})
-		if bool(evaluacion_invitacion.get("activa", false)):
+		if (evaluacion_invitacion.get("activa", false) == true):
 			return {}
 	var posiciones: Dictionary = {
 		"mara": Vector2(-42.0, 18.0),
@@ -1463,14 +1463,14 @@ func _detener_paseo_interior(npc: Creature, limpiar_siguiente: bool = false) -> 
 func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: int, actividad: String) -> void:
 	if not is_instance_valid(npc):
 		return
-	if bool(npc.get_meta("cinematica_npc_activa", false)):
+	if (npc.get_meta("cinematica_npc_activa", false) == true):
 		_detener_animacion_actividad_interior(npc)
-		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+		if (npc.get_meta("rutina_paseo_interior_activo", false) == true):
 			_detener_paseo_interior(npc)
 		return
-	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+	if (npc.get_meta("_conversacion_ambiental_activa", false) == true):
 		_detener_animacion_actividad_interior(npc)
-		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+		if (npc.get_meta("rutina_paseo_interior_activo", false) == true):
 			# La conversación tiene prioridad: libera el puesto y pausa el paseo.
 			_detener_paseo_interior(npc)
 		return
@@ -1483,14 +1483,14 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 	var esta_en_cuarto := is_instance_valid(padre_npc) and str(padre_npc.name) == "Habitacion_" + edificio_id
 	if not interior_activo or interior_actual != edificio_id or not esta_en_cuarto:
 		_detener_animacion_actividad_interior(npc)
-		if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+		if (npc.get_meta("rutina_paseo_interior_activo", false) == true):
 			_detener_paseo_interior(npc)
 		return
 	if not is_instance_valid(movimiento):
 		return
-	if bool(npc.get_meta("animacion_panaderia_activa", false)):
+	if (npc.get_meta("animacion_panaderia_activa", false) == true):
 		return
-	if bool(npc.get_meta("rutina_paseo_interior_activo", false)):
+	if (npc.get_meta("rutina_paseo_interior_activo", false) == true):
 		var actividad_paseo := str(npc.get_meta("rutina_paseo_interior_actividad", ""))
 		if actividad_paseo != actividad.strip_edges().to_lower():
 			# Un cambio de tarea dentro del mismo edificio invalida el destino
@@ -1616,13 +1616,13 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 func _actualizar_animacion_actividad_interior(npc: Creature) -> void:
 	if not is_instance_valid(npc):
 		return
-	if bool(npc.get_meta("rutina_en_transito", false)) or bool(npc.get_meta("animacion_panaderia_activa", false)) or bool(npc.get_meta("cinematica_npc_activa", false)) or bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+	if (npc.get_meta("rutina_en_transito", false) == true) or (npc.get_meta("animacion_panaderia_activa", false) == true) or (npc.get_meta("cinematica_npc_activa", false) == true) or (npc.get_meta("_conversacion_ambiental_activa", false) == true):
 		_detener_animacion_actividad_interior(npc)
 		return
 	var actividad := str(npc.get_meta("actividad_actual", npc.datos.get("actividad_actual", ""))).to_lower()
 	var postura_actual := str(npc.get_meta("postura_npc", ""))
 	var clave_animacion := actividad + "|" + postura_actual
-	if bool(npc.get_meta("animacion_actividad_interior_activa", false)):
+	if (npc.get_meta("animacion_actividad_interior_activa", false) == true):
 		if str(npc.get_meta("animacion_actividad_interior_clave", "")) == clave_animacion:
 			return
 		_detener_animacion_actividad_interior(npc)
@@ -1692,7 +1692,7 @@ func _iniciar_idle_postura_npc(npc: Creature, sprite: Sprite2D, postura: String,
 
 
 func _detener_animacion_actividad_interior(npc: Creature) -> void:
-	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_actividad_interior_activa", false)):
+	if not is_instance_valid(npc) or not (npc.get_meta("animacion_actividad_interior_activa", false) == true):
 		return
 	var tween_variant: Variant = npc.get_meta("animacion_actividad_interior_tween", null)
 	if tween_variant is Tween and is_instance_valid(tween_variant):
@@ -1714,7 +1714,7 @@ func _detener_animacion_actividad_interior(npc: Creature) -> void:
 ## Idle exterior con variaciones pequeñas por personaje. Se detiene durante
 ## conversaciones, desplazamientos y cinemáticas para no competir con sus gestos.
 func _actualizar_animacion_ocio_exterior(npc: Creature) -> void:
-	if not is_instance_valid(npc) or bool(npc.get_meta("animacion_ocio_exterior_activa", false)):
+	if not is_instance_valid(npc) or (npc.get_meta("animacion_ocio_exterior_activa", false) == true):
 		return
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 	if not is_instance_valid(sprite):
@@ -1778,7 +1778,7 @@ func _actualizar_animacion_ocio_exterior(npc: Creature) -> void:
 
 
 func _detener_animacion_ocio_exterior(npc: Creature) -> void:
-	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_ocio_exterior_activa", false)):
+	if not is_instance_valid(npc) or not (npc.get_meta("animacion_ocio_exterior_activa", false) == true):
 		return
 	var tween_variant: Variant = npc.get_meta("animacion_ocio_exterior_tween", null)
 	if tween_variant is Tween and is_instance_valid(tween_variant):
@@ -1834,7 +1834,7 @@ func _npc_puede_ajustar_separacion(npc: Creature) -> bool:
 		not is_instance_valid(npc)
 		or not npc.is_alive
 		or not npc.visible
-		or bool(npc.get_meta("rutina_en_edificio", false))
+		or (npc.get_meta("rutina_en_edificio", false) == true)
 		or npc.velocity.length() > 5.0
 	):
 		return false
@@ -1846,7 +1846,7 @@ func _npc_puede_ajustar_separacion(npc: Creature) -> bool:
 		"_conversacion_ambiental_activa",
 		"cinematica_npc_activa"
 	]:
-		if bool(npc.get_meta(clave, false)):
+		if (npc.get_meta(clave, false) == true):
 			return false
 	return true
 
@@ -1859,21 +1859,21 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	# En días laborales, un NPC con oficio no hace paseos ambientales al azar.
 	# Sus desplazamientos sólo proceden de la rutina laboral (por ejemplo,
 	# la ronda de Darven); el día 5 sí puede disfrutar de su descanso.
-	if not bool(npc.get_meta("habitante_sin_oficio", false)):
+	if not (npc.get_meta("habitante_sin_oficio", false) == true):
 		var tiempo_trabajo: Dictionary = _obtener_tiempo_actual() if is_instance_valid(_world_atmosphere) else {}
 		var dia_trabajo := posmod(int(tiempo_trabajo.get("dia", 1)) - 1, 5)
 		if dia_trabajo != 4:
 			_detener_animacion_ocio_exterior(npc)
 			return
-	if bool(npc.get_meta("rutina_en_edificio", false)):
+	if (npc.get_meta("rutina_en_edificio", false) == true):
 		_detener_animacion_ocio_exterior(npc)
 		return
 	if (
-		bool(npc.get_meta("rutina_en_transito", false))
-		or bool(npc.get_meta("actividad_social_activa", false))
-		or bool(npc.get_meta("acercamiento_social_activo", false))
-		or bool(npc.get_meta("_conversacion_ambiental_activa", false))
-		or bool(npc.get_meta("cinematica_npc_activa", false))
+		(npc.get_meta("rutina_en_transito", false) == true)
+		or (npc.get_meta("actividad_social_activa", false) == true)
+		or (npc.get_meta("acercamiento_social_activo", false) == true)
+		or (npc.get_meta("_conversacion_ambiental_activa", false) == true)
+		or (npc.get_meta("cinematica_npc_activa", false) == true)
 	):
 		_detener_animacion_ocio_exterior(npc)
 		return
@@ -1886,7 +1886,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	if not is_instance_valid(movimiento):
 		return
-	if bool(npc.get_meta("rutina_paseo_exterior_activo", false)):
+	if (npc.get_meta("rutina_paseo_exterior_activo", false) == true):
 		if movimiento.rutina_terminada():
 			npc.remove_meta("rutina_paseo_exterior_activo")
 			npc.set_meta("rutina_en_transito", false)
@@ -1937,7 +1937,7 @@ func _actualizar_paseo_ambiental_exterior(npc: Creature, minutos: int) -> void:
 		if not otro_variant is Creature or otro_variant == npc or not is_instance_valid(otro_variant):
 			continue
 		var otro := otro_variant as Creature
-		if not bool(otro.get_meta("rutina_en_edificio", false)) and otro.global_position.distance_to(destino) < 28.0:
+		if not (otro.get_meta("rutina_en_edificio", false) == true) and otro.global_position.distance_to(destino) < 28.0:
 			destino = ancla + desplazamientos[posmod(indice + 1, desplazamientos.size())]
 			break
 	var ruta := _crear_ruta(npc.global_position, destino)
@@ -1967,14 +1967,14 @@ func _actualizar_interaccion_panaderia() -> void:
 	var coinciden := (
 		is_instance_valid(ivo)
 		and is_instance_valid(elian)
-		and bool(ivo.get_meta("rutina_en_edificio", false))
-		and bool(elian.get_meta("rutina_en_edificio", false))
+		and (ivo.get_meta("rutina_en_edificio", false) == true)
+		and (elian.get_meta("rutina_en_edificio", false) == true)
 		and str(ivo.get_meta("rutina_edificio_id", "")) == "panaderia"
 		and str(elian.get_meta("rutina_edificio_id", "")) == "panaderia"
-		and not bool(ivo.get_meta("cinematica_npc_activa", false))
-		and not bool(elian.get_meta("cinematica_npc_activa", false))
-		and not bool(ivo.get_meta("_conversacion_ambiental_activa", false))
-		and not bool(elian.get_meta("_conversacion_ambiental_activa", false))
+		and not (ivo.get_meta("cinematica_npc_activa", false) == true)
+		and not (elian.get_meta("cinematica_npc_activa", false) == true)
+		and not (ivo.get_meta("_conversacion_ambiental_activa", false) == true)
+		and not (elian.get_meta("_conversacion_ambiental_activa", false) == true)
 	)
 	if coinciden:
 		_iniciar_animacion_compartida_panaderia(ivo, "cliente")
@@ -1985,7 +1985,7 @@ func _actualizar_interaccion_panaderia() -> void:
 
 
 func _iniciar_animacion_compartida_panaderia(npc: Creature, rol: String) -> void:
-	if not is_instance_valid(npc) or bool(npc.get_meta("animacion_panaderia_activa", false)):
+	if not is_instance_valid(npc) or (npc.get_meta("animacion_panaderia_activa", false) == true):
 		return
 	var sprite := npc.get_node_or_null("Sprite2D") as Sprite2D
 	if not is_instance_valid(sprite):
@@ -2017,7 +2017,7 @@ func _iniciar_animacion_compartida_panaderia(npc: Creature, rol: String) -> void
 
 
 func _detener_animacion_compartida_panaderia(npc: Creature) -> void:
-	if not is_instance_valid(npc) or not bool(npc.get_meta("animacion_panaderia_activa", false)):
+	if not is_instance_valid(npc) or not (npc.get_meta("animacion_panaderia_activa", false) == true):
 		return
 	var tween_variant: Variant = npc.get_meta("animacion_panaderia_tween", null)
 	if tween_variant is Tween and is_instance_valid(tween_variant):
@@ -2322,14 +2322,14 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 		return false
 	if not mind.has_method("obtener_necesidades") or not mind.has_method("establecer_objetivo"):
 		return false
-	if bool(npc.get_meta("_conversacion_ambiental_activa", false)):
+	if (npc.get_meta("_conversacion_ambiental_activa", false) == true):
 		return false
 
 	var personaje_id := npc.get_personaje_game_id().strip_edges()
 	if personaje_id.is_empty():
 		return false
 	var objetivo: Dictionary = npc.get_meta("npc_objetivo_social", {})
-	if bool(npc.get_meta("rutina_en_edificio", false)):
+	if (npc.get_meta("rutina_en_edificio", false) == true):
 		if not objetivo.is_empty():
 			_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
@@ -2370,7 +2370,7 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 			"creado_dia": _clave_fecha_actual(),
 			"estado": "activo"
 		}
-		if not bool(mind.call("establecer_objetivo", personaje_id, objetivo)):
+		if not (mind.call("establecer_objetivo", personaje_id, objetivo) == true):
 			return false
 		# Reservar a la pareja en el mismo ciclo en que se crea el objetivo.
 		# Evita que dos NPC elijan simultáneamente al mismo habitante libre.
@@ -2390,10 +2390,10 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 	elif reserva_pareja != personaje_id.to_lower():
 		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
-	if bool(pareja_actual.get_meta("rutina_en_edificio", false)) or bool(pareja_actual.get_meta("_conversacion_ambiental_activa", false)):
+	if (pareja_actual.get_meta("rutina_en_edificio", false) == true) or (pareja_actual.get_meta("_conversacion_ambiental_activa", false) == true):
 		_cancelar_objetivo_social_npc(npc, mind, personaje_id)
 		return false
-	if bool(pareja_actual.get_meta("rutina_en_transito", false)):
+	if (pareja_actual.get_meta("rutina_en_transito", false) == true):
 		var espera := float(npc.get_meta("npc_objetivo_social_espera", 0.0)) + maxf(delta, 0.0)
 		npc.set_meta("npc_objetivo_social_espera", espera)
 		if espera >= 45.0:
@@ -2416,7 +2416,7 @@ func _actualizar_objetivo_social_npc(npc: Creature, delta: float, minutos: int) 
 		npc.set_meta("npc_objetivo_social_tiempo", 0.0)
 		npc.set_meta("npc_objetivo_social_en_curso", false)
 		var ahora_ms := Time.get_ticks_msec()
-		if bool(npc.get_meta("rutina_en_transito", false)):
+		if (npc.get_meta("rutina_en_transito", false) == true):
 			var posicion_guardada_variant: Variant = npc.get_meta("npc_objetivo_social_ultima_posicion", npc.global_position)
 			var posicion_guardada: Vector2 = posicion_guardada_variant if posicion_guardada_variant is Vector2 else npc.global_position
 			var ultimo_progreso_ms := int(npc.get_meta("npc_objetivo_social_ultimo_progreso_ms", ahora_ms))
@@ -2489,7 +2489,7 @@ func _seleccionar_motivo_encuentro_social(personaje_id: String, pareja_id: Strin
 		if not conocimiento_variant is Dictionary:
 			continue
 		var conocimiento_asunto := conocimiento_variant as Dictionary
-		if not bool(conocimiento_asunto.get("requiere_ayuda", false)):
+		if not (conocimiento_asunto.get("requiere_ayuda", false) == true):
 			continue
 		if str(conocimiento_asunto.get("personaje_relacionado", "")) != pareja_id:
 			continue
@@ -2543,16 +2543,16 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var candidato := candidato_variant as Creature
 		if candidato == npc or not candidato.is_alive:
 			continue
-		if bool(candidato.get_meta("rutina_en_edificio", false)):
+		if (candidato.get_meta("rutina_en_edificio", false) == true):
 			continue
-		if bool(candidato.get_meta("rutina_en_transito", false)):
+		if (candidato.get_meta("rutina_en_transito", false) == true):
 			continue
 		var objetivo_candidato: Variant = candidato.get_meta("npc_objetivo_social", {})
 		if objetivo_candidato is Dictionary and not (objetivo_candidato as Dictionary).is_empty():
 			continue
-		if bool(candidato.get_meta("_conversacion_ambiental_activa", false)):
+		if (candidato.get_meta("_conversacion_ambiental_activa", false) == true):
 			continue
-		if bool(candidato.get_meta("actividad_social_activa", false)):
+		if (candidato.get_meta("actividad_social_activa", false) == true):
 			continue
 		# Un habitante reservado ya está comprometido con otro encuentro,
 		# aunque todavía no haya comenzado a caminar hacia él.
@@ -2574,9 +2574,9 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var colaboracion := float(relacion.get("colaboracion", 0.0))
 		var motivos_npc := _obtener_motivos_sociales_concretos(id_npc, id_candidato)
 		var motivo_concreto := (
-			bool(motivos_npc.get("promesa", false))
-			or bool(motivos_npc.get("asunto", false))
-			or bool(motivos_npc.get("noticia", false))
+			(motivos_npc.get("promesa", false) == true)
+			or (motivos_npc.get("asunto", false) == true)
+			or (motivos_npc.get("noticia", false) == true)
 			or _hay_motivo_social_concreto(id_candidato, id_npc)
 		)
 		# Ambos perfiles cuentan: una persona muy sociable tampoco debe imponer
@@ -2612,13 +2612,13 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		# candidato como la experiencia que el candidato conserva del iniciador.
 		puntuacion += memoria_npc * 0.7
 		puntuacion += memoria_candidato * 0.45
-		if bool(candidato.get_meta("npc_objetivo_social_en_curso", false)):
+		if (candidato.get_meta("npc_objetivo_social_en_curso", false) == true):
 			puntuacion -= 8.0
-		if bool(motivos_npc.get("promesa", false)):
+		if (motivos_npc.get("promesa", false) == true):
 			puntuacion += 16.0
-		if bool(motivos_npc.get("asunto", false)):
+		if (motivos_npc.get("asunto", false) == true):
 			puntuacion += 12.0
-		if bool(motivos_npc.get("noticia", false)):
+		if (motivos_npc.get("noticia", false) == true):
 			puntuacion += 8.0
 		if puntuacion > mejor_puntuacion:
 			mejor_puntuacion = puntuacion
@@ -2681,11 +2681,11 @@ func _obtener_motivos_sociales_concretos(personaje_id: String, pareja_id: String
 		return resultado
 	resultado["promesa_consultada"] = true
 	resultado["promesa"] = not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty()
-	if bool(resultado["promesa"]):
+	if (resultado["promesa"] == true):
 		return resultado
 	resultado["asunto_consultado"] = true
 	resultado["asunto"] = not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty()
-	if bool(resultado["asunto"]):
+	if (resultado["asunto"] == true):
 		return resultado
 	resultado["noticia_consultada"] = true
 	resultado["noticia"] = _hay_noticia_compartible(personaje_id, pareja_id)
@@ -2697,11 +2697,11 @@ func _completar_motivos_sociales_concretos(
 ) -> Dictionary:
 	if not is_instance_valid(_relationship_system):
 		return resultado
-	if not bool(resultado.get("promesa_consultada", false)):
+	if not (resultado.get("promesa_consultada", false) == true):
 		resultado["promesa"] = not _relationship_system.obtener_promesas_pendientes_npc(personaje_id, pareja_id).is_empty()
-	if not bool(resultado.get("asunto_consultado", false)):
+	if not (resultado.get("asunto_consultado", false) == true):
 		resultado["asunto"] = not _relationship_system.obtener_asuntos_pendientes_npc(personaje_id, pareja_id).is_empty()
-	if not bool(resultado.get("noticia_consultada", false)):
+	if not (resultado.get("noticia_consultada", false) == true):
 		resultado["noticia"] = _hay_noticia_compartible(personaje_id, pareja_id)
 	return resultado
 
@@ -3054,7 +3054,7 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 		return {}
 	var invitacion: Dictionary = resultado_invitacion.get("invitacion", {})
 	var evaluacion: Dictionary = resultado_invitacion.get("evaluacion", {})
-	if bool(evaluacion.get("caducada", false)):
+	if (evaluacion.get("caducada", false) == true):
 		var invitaciones_variant: Variant = GameState.world_state.flags.get("invitaciones_npc", {})
 		if not invitaciones_variant is Dictionary:
 			return {}
@@ -3065,7 +3065,7 @@ func _obtener_rutina_invitacion(npc: Creature, rutina_actual: Dictionary, minuto
 		if GameState.has_method("guardar_partida"):
 			GameState.call_deferred("guardar_partida")
 		return {}
-	if not bool(evaluacion.get("activa", false)):
+	if not (evaluacion.get("activa", false) == true):
 		return {}
 	var ubicacion := str(evaluacion.get("ubicacion_clave", "plaza"))
 	if not POSICIONES.has(ubicacion):
@@ -3119,7 +3119,7 @@ func _registrar_observacion_evento_comunitario(npc: Creature, evento: Dictionary
 	# Sólo se registra cuando el NPC ya llegó a su punto de reunión.
 	if clave_evento.is_empty() or str(npc.get_meta("rutina_actual", "")) != clave_evento:
 		return
-	if bool(npc.get_meta("rutina_en_transito", true)):
+	if (npc.get_meta("rutina_en_transito", true) == true):
 		return
 	var ancla_variant: Variant = npc.get_meta("rutina_ancla_ocio", null)
 	if not ancla_variant is Vector2:
