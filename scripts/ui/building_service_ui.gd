@@ -175,7 +175,6 @@ func _actualizar() -> void:
 			"herbolario_procesamiento": titulo.text = "PROCESAMIENTO BOTÁNICO"
 			"herbolario": titulo.text = "HERBOLARIO"
 			"biblioteca": titulo.text = "BIBLIOTECA"
-			"centro_expediciones": titulo.text = "GREMIO DE AVENTUREROS"
 			"taberna": titulo.text = "TABERNA"
 			"escuela": titulo.text = "ESCUELA DE OFICIOS"
 			"clinica": titulo.text = "CLÍNICA"
