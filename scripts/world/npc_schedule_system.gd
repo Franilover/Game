@@ -837,7 +837,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				npc.set_physics_process(true)
 			else:
 				# Las rutas fallidas se reintentan con pausa para no recalcular AStar cada tick.
-				var ruta_fallida := (npc.get_meta("rutina_ruta_fallida", false) == true)
+				var ruta_fallida: bool = npc.get_meta("rutina_ruta_fallida", false) == true
 				var reintento_en := int(npc.get_meta("rutina_ruta_reintento_ms", 0))
 				if ruta_fallida and Time.get_ticks_msec() < reintento_en:
 					return
