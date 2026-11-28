@@ -2938,14 +2938,20 @@ func _crear_selector_viajes() -> void:
 	lista_dinamica.add_theme_constant_override("separation", 6)
 	contenido.add_child(lista_dinamica)
 
+	var barra_superior := HBoxContainer.new()
+	barra_superior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	barra_superior.alignment = BoxContainer.ALIGNMENT_END
+	contenido.add_child(barra_superior)
+	contenido.move_child(barra_superior, 0)
 	var cerrar := Button.new()
 	cerrar.name = "CloseTravelSelector"
-	cerrar.text = "Cerrar"
-	cerrar.custom_minimum_size.y = 34.0
+	cerrar.text = "×"
+	cerrar.custom_minimum_size = Vector2(32, 32)
 	cerrar.pressed.connect(func() -> void:
 		_selector_viajes_layer.visible = false
 	)
-	contenido.add_child(cerrar)
+	barra_superior.add_child(cerrar)
+	PIXEL_UI_THEME.apply(cerrar, false)
 
 	PIXEL_UI_THEME.apply(_selector_viajes_panel, false)
 	PIXEL_UI_THEME.apply(contenido, false)
