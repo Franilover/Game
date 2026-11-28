@@ -2313,7 +2313,7 @@ func _obtener_textura_mueble_posada(mueble_id: String) -> Texture2D:
 
 
 func _construir_tienda_muebles_posada() -> void:
-	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_menu_posada_contenido, 176.0, 270.0, 8)
+	var layout: Dictionary = MENU_LAYOUT.crear_selector_dos_paneles(_menu_posada_contenido, 176.0, 270.0, 8)
 	var lista := layout["list_content"] as GridContainer
 	var detalle := layout["detail_content"] as VBoxContainer
 	var grupo := ButtonGroup.new()
@@ -2322,7 +2322,7 @@ func _construir_tienda_muebles_posada() -> void:
 		var id := str(mueble.get("id", ""))
 		var seleccionado := id == _posada_mueble_seleccionado
 		seleccion_valida = seleccion_valida or seleccionado
-		var boton := MENU_LAYOUT.crear_boton_sprite(_obtener_textura_mueble_posada(id), seleccionado, Vector2(58, 58))
+		var boton: Button = MENU_LAYOUT.crear_boton_sprite(_obtener_textura_mueble_posada(id), seleccionado, Vector2(58, 58))
 		boton.button_group = grupo
 		boton.tooltip_text = str(mueble.get("nombre", "Mueble"))
 		boton.pressed.connect(_seleccionar_mueble_posada.bind(id))
