@@ -2677,8 +2677,8 @@ func _abrir_menu_servicio_edificio(tipo: String) -> void:
 	if not is_instance_valid(interfaz):
 		return
 	interfaz.add_to_group("building_service_ui")
-	if interfaz.has_signal("solicitar_selector_expediciones"):
-		interfaz.connect("solicitar_selector_expediciones", Callable(self, "_abrir_selector_viajes_desde_servicio"))
+	if interfaz.has_signal("solicitar_destino_viaje"):
+		interfaz.connect("solicitar_destino_viaje", Callable(self, "_seleccionar_destino_viaje"))
 	if interfaz.has_signal("solicitar_expedicion_saltus"):
 		interfaz.connect("solicitar_expedicion_saltus", Callable(self, "_iniciar_expedicion_saltus"))
 	if interfaz.has_signal("solicitar_exploracion_3d"):
