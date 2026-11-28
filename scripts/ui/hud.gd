@@ -1614,6 +1614,9 @@ func _preparar_reloj_calendario() -> void:
 	_clock_label.text = "--:--\nDía —"
 	add_child(_clock_panel)
 	PIXEL_UI_THEME.apply(_clock_panel)
+	var fondo_reloj := PIXEL_UI_THEME.button_surface_style()
+	if fondo_reloj != null:
+		_clock_panel.add_theme_stylebox_override("panel", fondo_reloj)
 
 
 
