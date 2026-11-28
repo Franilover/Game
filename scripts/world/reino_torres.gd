@@ -22,6 +22,7 @@ const MERCADO_PUESTO: Texture2D = preload("res://assets/art/kingdom/Torres/Edifi
 const PRODUCTO_PAN: Texture2D = preload("res://assets/art/items/Pan.png")
 const PRODUCTO_MANZANA: Texture2D = preload("res://assets/art/items/Manzana.png")
 const PIXEL_UI_THEME: Script = preload("res://scripts/ui/pixel_ui_theme.gd")
+const MENU_LAYOUT: Script = preload("res://scripts/ui/menu_layout.gd")
 const CONTEXTUAL_ACTION_TARGET_SCRIPT = preload("res://scripts/gameplay/interaction/contextual_action_target.gd")
 const WATERING_INTERACTABLE_SCRIPT: Script = preload("res://scripts/gameplay/watering_interactable.gd")
 const WORLD_INTERACTABLE_SCRIPT = preload("res://scripts/gameplay/interaction/world_interactable.gd")
@@ -132,6 +133,7 @@ var _menu_posada_panel: PanelContainer = null
 var _menu_posada_contenido: VBoxContainer = null
 var _menu_posada_estado: Label = null
 var _menu_posada_vista := "principal"
+var _posada_mueble_seleccionado := "mesa"
 const POSADA_COSTE_MENSUAL := 100
 const POSADA_DURACION_MES_DIAS := 30
 const POSADA_FLAG := "posada_estado"
@@ -2267,14 +2269,90 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 				_crear_boton_posada("Renovar por 100 monedas", Callable(self, "_comprar_estancia_posada").bind(false))
 			_crear_boton_posada("Tienda de muebles", Callable(self, "_mostrar_menu_posada").bind("muebles"))
 		"muebles":
-			_menu_posada_estado.text = "Compra muebles para tu habitación. Las compras quedan guardadas en tu partida; falta conectar su colocación."
-			for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
-				var texto := "%s · %d monedas" % [str(mueble.nombre), int(mueble.precio)]
-				_crear_boton_posada(texto, Callable(self, "_comprar_mueble_posada").bind(str(mueble.id)))
-			_crear_boton_posada("Volver", Callable(self, "_mostrar_menu_posada").bind("comprar"))
+			_menu_posada_estado.text = "Muebles para tu habitación."
+			_menu_posada_panel.custom_minimum_size = Vector2(660, 0)
+			_construir_tienda_muebles_posada()
 
-	_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
+	if vista != "muebles":
+		_menu_posada_panel.custom_minimum_size = Vector2(310, 0)
+		_crear_boton_posada("Cerrar", Callable(self, "_cerrar_menu_posada"))
 	_menu_posada_layer.visible = true
+
+
+func _obtener_textura_mueble_posada(mueble_id: String) -> Texture2D:
+	match mueble_id:
+		"mesa": return MUEBLE_MESA
+		"silla": return MUEBLE_SILLA_FRENTE
+		"armario": return MUEBLE_ARMARIO
+		"cofre": return MUEBLE_COFRE
+	return null
+
+
+func _construir_tienda_muebles_posada() -> void:
+	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_menu_posada_contenido, 176.0, 270.0, 8)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	var grupo := ButtonGroup.new()
+	var seleccion_valida := false
+	for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
+		var id := str(mueble.get("id", ""))
+		var seleccionado := id == _posada_mueble_seleccionado
+		seleccion_valida = seleccion_valida or seleccionado
+		var boton := MENU_LAYOUT.crear_boton_sprite(_obtener_textura_mueble_posada(id), seleccionado, Vector2(58, 58))
+		boton.button_group = grupo
+		boton.tooltip_text = str(mueble.get("nombre", "Mueble"))
+		boton.pressed.connect(_seleccionar_mueble_posada.bind(id))
+		lista.add_child(boton)
+		PIXEL_UI_THEME.apply(boton, false)
+	var fondo_seccion: StyleBoxTexture = PIXEL_UI_THEME.button_surface_style()
+	if fondo_seccion != null:
+		(layout["list_panel"] as PanelContainer).add_theme_stylebox_override("panel", fondo_seccion.duplicate())
+		(layout["detail_panel"] as PanelContainer).add_theme_stylebox_override("panel", fondo_seccion.duplicate())
+	if not seleccion_valida and not POSADA_CATALOGO_MUEBLES.is_empty():
+		_posada_mueble_seleccionado = str(POSADA_CATALOGO_MUEBLES[0].get("id", "mesa"))
+	_mostrar_detalle_mueble_posada(detalle)
+
+
+func _seleccionar_mueble_posada(mueble_id: String) -> void:
+	_posada_mueble_seleccionado = mueble_id
+	_mostrar_menu_posada("muebles")
+
+
+func _mostrar_detalle_mueble_posada(detalle: VBoxContainer) -> void:
+	for hijo in detalle.get_children():
+		hijo.queue_free()
+	var definicion: Dictionary = {}
+	for mueble: Dictionary in POSADA_CATALOGO_MUEBLES:
+		if str(mueble.get("id", "")) == _posada_mueble_seleccionado:
+			definicion = mueble
+			break
+	if definicion.is_empty():
+		return
+	var imagen := TextureRect.new()
+	imagen.texture = _obtener_textura_mueble_posada(_posada_mueble_seleccionado)
+	imagen.custom_minimum_size = Vector2(0, 148)
+	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	detalle.add_child(imagen)
+	var nombre := Label.new()
+	nombre.text = str(definicion.get("nombre", "Mueble"))
+	nombre.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalle.add_child(nombre)
+	var estado := _obtener_estado_posada()
+	var comprados_variant: Variant = estado.get("muebles_comprados", {})
+	var comprados: Dictionary = comprados_variant if comprados_variant is Dictionary else {}
+	var info := Label.new()
+	info.text = "%d monedas\\nEn propiedad: %d" % [int(definicion.get("precio", 0)), int(comprados.get(_posada_mueble_seleccionado, 0))]
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalle.add_child(info)
+	var comprar := Button.new()
+	comprar.text = "Comprar"
+	comprar.custom_minimum_size = Vector2(0, 36)
+	comprar.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	comprar.disabled = GameState.obtener_dinero() < int(definicion.get("precio", 0))
+	comprar.pressed.connect(_comprar_mueble_posada.bind(_posada_mueble_seleccionado))
+	detalle.add_child(comprar)
+	PIXEL_UI_THEME.apply(comprar, false)
 
 
 func _ir_habitacion_posada() -> void:
