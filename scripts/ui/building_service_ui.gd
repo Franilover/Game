@@ -141,10 +141,28 @@ func _actualizar() -> void:
 		_contenido.add_child(titulo)
 
 	if _tipo != "vivero":
-		var saldo := Label.new()
-		saldo.text = "%d" % GameState.obtener_dinero()
-		saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
-		_contenido.add_child(saldo)
+		if _tipo == "carpinteria":
+			var fila_saldo := HBoxContainer.new()
+			fila_saldo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var espacio := Control.new()
+			espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			fila_saldo.add_child(espacio)
+			var saldo := Label.new()
+			saldo.text = "%d" % GameState.obtener_dinero()
+			saldo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+			fila_saldo.add_child(saldo)
+			var cerrar_superior := Button.new()
+			cerrar_superior.text = "×"
+			cerrar_superior.custom_minimum_size = Vector2(32, 32)
+			cerrar_superior.pressed.connect(cerrar_interfaz)
+			fila_saldo.add_child(cerrar_superior)
+			PIXEL_UI_THEME.apply(cerrar_superior, false)
+			_contenido.add_child(fila_saldo)
+		else:
+			var saldo := Label.new()
+			saldo.text = "%d" % GameState.obtener_dinero()
+			saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
+			_contenido.add_child(saldo)
 
 	match _tipo:
 		"cuartel": _construir_menu_cuartel()
@@ -177,12 +195,13 @@ func _actualizar() -> void:
 		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
 		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
 		etiqueta.add_theme_constant_override("outline_size", 2)
-	var cerrar := Button.new()
-	cerrar.text = "Cerrar"
-	cerrar.custom_minimum_size = Vector2(0, 34)
-	cerrar.pressed.connect(cerrar_interfaz)
-	_contenido.add_child(cerrar)
-	PIXEL_UI_THEME.apply(cerrar, false)
+	if _tipo != "carpinteria":
+		var cerrar := Button.new()
+		cerrar.text = "Cerrar"
+		cerrar.custom_minimum_size = Vector2(0, 34)
+		cerrar.pressed.connect(cerrar_interfaz)
+		_contenido.add_child(cerrar)
+		PIXEL_UI_THEME.apply(cerrar, false)
 	call_deferred("_ajustar_menu_al_viewport")
 
 
