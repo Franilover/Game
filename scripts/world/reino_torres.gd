@@ -2271,6 +2271,24 @@ func _mostrar_menu_posada(vista: String = "principal") -> void:
 		"muebles":
 			_menu_posada_estado.text = "Muebles para tu habitación."
 			_menu_posada_panel.custom_minimum_size = Vector2(660, 0)
+			var controles_tienda := HBoxContainer.new()
+			controles_tienda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			var volver_tienda := Button.new()
+			volver_tienda.text = "‹"
+			volver_tienda.custom_minimum_size = Vector2(32, 32)
+			volver_tienda.pressed.connect(_mostrar_menu_posada.bind("comprar"))
+			controles_tienda.add_child(volver_tienda)
+			PIXEL_UI_THEME.apply(volver_tienda, false)
+			var espacio_tienda := Control.new()
+			espacio_tienda.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			controles_tienda.add_child(espacio_tienda)
+			var cerrar_tienda := Button.new()
+			cerrar_tienda.text = "×"
+			cerrar_tienda.custom_minimum_size = Vector2(32, 32)
+			cerrar_tienda.pressed.connect(_cerrar_menu_posada)
+			controles_tienda.add_child(cerrar_tienda)
+			PIXEL_UI_THEME.apply(cerrar_tienda, false)
+			_menu_posada_contenido.add_child(controles_tienda)
 			_construir_tienda_muebles_posada()
 
 	if vista != "muebles":
@@ -2342,7 +2360,7 @@ func _mostrar_detalle_mueble_posada(detalle: VBoxContainer) -> void:
 	var comprados_variant: Variant = estado.get("muebles_comprados", {})
 	var comprados: Dictionary = comprados_variant if comprados_variant is Dictionary else {}
 	var info := Label.new()
-	info.text = "%d monedas\\nEn propiedad: %d" % [int(definicion.get("precio", 0)), int(comprados.get(_posada_mueble_seleccionado, 0))]
+	info.text = "%d monedas\nEn propiedad: %d" % [int(definicion.get("precio", 0)), int(comprados.get(_posada_mueble_seleccionado, 0))]
 	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	detalle.add_child(info)
 	var comprar := Button.new()
