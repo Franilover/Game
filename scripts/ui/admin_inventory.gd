@@ -320,8 +320,7 @@ func _cargar_edificios() -> void:
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		var sprite_ruta := "res://assets/art/kingdom/Torres/Edificios/" + str(edificio.get("sprite", ""))
 		boton.icon = load(sprite_ruta) as Texture2D
-		boton.expand_icon = true
-		boton.icon_max_width = 34
+		boton.expand_icon = false
 		boton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.button_pressed = id == _edificio_seleccionado
 		boton.toggle_mode = true
