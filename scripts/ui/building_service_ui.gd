@@ -83,7 +83,11 @@ func _crear_interfaz() -> void:
 	fondo.add_child(centro)
 
 	_panel = PanelContainer.new()
-	_panel.custom_minimum_size = Vector2(390, 0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	_panel.custom_minimum_size = Vector2(
+		minf(900.0, maxf(320.0, viewport_size.x - 48.0)),
+		minf(680.0, maxf(300.0, viewport_size.y - 48.0))
+	)
 	_panel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 	_panel.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	centro.add_child(_panel)
@@ -100,7 +104,7 @@ func _crear_interfaz() -> void:
 	# superior y el área desplazable sin solaparlas.
 	var columna_principal := VBoxContainer.new()
 	columna_principal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	columna_principal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	columna_principal.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	columna_principal.add_theme_constant_override("separation", 8)
 	margen.add_child(columna_principal)
 
@@ -134,7 +138,7 @@ func _crear_interfaz() -> void:
 
 	var scroll_contenido := ScrollContainer.new()
 	var alto_viewport: float = get_viewport().get_visible_rect().size.y
-	scroll_contenido.custom_minimum_size = Vector2(0.0, minf(440.0, maxf(180.0, alto_viewport - 72.0)))
+	scroll_contenido.custom_minimum_size = Vector2.ZERO
 	scroll_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scroll_contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_contenido.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
@@ -144,6 +148,7 @@ func _crear_interfaz() -> void:
 	_contenido = VBoxContainer.new()
 	_contenido.add_theme_constant_override("separation", 7)
 	_contenido.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_contenido.add_child(_contenido)
 
 
@@ -936,7 +941,11 @@ func _es_muestra_botanica(objeto: Dictionary) -> bool:
 	return false
 
 func _crear_selector_edificio(ancho_lista: float = 148.0, alto: float = 250.0) -> Dictionary:
-	_panel.custom_minimum_size = Vector2(610.0, 0.0)
+	var viewport_size := get_viewport().get_visible_rect().size
+	_panel.custom_minimum_size = Vector2(
+		minf(900.0, maxf(320.0, viewport_size.x - 48.0)),
+		minf(680.0, maxf(300.0, viewport_size.y - 48.0))
+	)
 	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, ancho_lista, alto, 8)
 	_aplicar_fondo_seccion_boton(layout["list_panel"] as PanelContainer)
 	_aplicar_fondo_seccion_boton(layout["detail_panel"] as PanelContainer)
