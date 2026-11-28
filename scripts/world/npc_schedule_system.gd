@@ -529,8 +529,8 @@ func _reiniciar_rutas_npc_tras_reconstruccion() -> void:
 			continue
 		if (npc.get_meta("acercamiento_social_activo", false) == true):
 			continue
-		var ruta_fallida := (npc.get_meta("rutina_ruta_fallida", false) == true)
-		var en_transito := (npc.get_meta("rutina_en_transito", false) == true)
+		var ruta_fallida: bool = npc.get_meta("rutina_ruta_fallida", false) == true
+		var en_transito: bool = npc.get_meta("rutina_en_transito", false) == true
 		if not en_transito and not ruta_fallida:
 			continue
 		var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
@@ -719,7 +719,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	# La lluvia modifica temporalmente las actividades al aire libre.
 	# Los NPC que ya están dentro o cuyo trabajo ocurre en un edificio continúan allí.
 	var clima_lluvioso := _esta_lloviendo_en_posicion(npc.global_position)
-	var esta_en_edificio := (npc.get_meta("rutina_en_edificio", false) == true)
+	var esta_en_edificio: bool = npc.get_meta("rutina_en_edificio", false) == true
 	if not clima_lluvioso:
 		npc.remove_meta("refugio_lluvia_clave")
 		npc.remove_meta("reaccion_climatica")
@@ -763,7 +763,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 	var edificio_variant: Variant = ENTRADAS_INTERIORES.get(ubicacion, {})
 	var edificio: Dictionary = edificio_variant if edificio_variant is Dictionary else {}
 	var edificio_id := str(edificio.get("id", ""))
-	var esta_dentro := (npc.get_meta("rutina_en_edificio", false) == true)
+	var esta_dentro: bool = npc.get_meta("rutina_en_edificio", false) == true
 	var edificio_actual := str(npc.get_meta("rutina_edificio_id", ""))
 
 	# Si cambió de destino mientras estaba dentro, sale desde la puerta antes
@@ -803,7 +803,7 @@ func _aplicar_rutina(npc: Creature, dia_semana: int, minutos: int) -> void:
 				npc.set_meta("rutina_en_transito", true)
 				# No contar el tiempo detenido por diálogos o cinemáticas como
 				# atasco de navegación: esas pausas son intencionales.
-				var movimiento_bloqueado := (
+				var movimiento_bloqueado: bool = (
 					(npc.get_meta("conversacion_npc_bloqueada", false) == true)
 					or (npc.get_meta("_conversacion_ambiental_activa", false) == true)
 					or (npc.get_meta("cinematica_npc_activa", false) == true)
@@ -1476,7 +1476,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		return
 	if edificio_id == "castillo":
 		return
-	var interior_activo := (_zona.get("_interior_activo") == true) if is_instance_valid(_zona) else false
+	var interior_activo: bool = (_zona.get("_interior_activo") == true) if is_instance_valid(_zona) else false
 	var interior_actual := str(_zona.get("_entrada_interior_id")) if is_instance_valid(_zona) else ""
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	var padre_npc := npc.get_parent()
@@ -1964,7 +1964,7 @@ func _actualizar_interaccion_panaderia() -> void:
 			elian = candidato
 		if is_instance_valid(ivo) and is_instance_valid(elian):
 			break
-	var coinciden := (
+	var coinciden: bool = (
 		is_instance_valid(ivo)
 		and is_instance_valid(elian)
 		and (ivo.get_meta("rutina_en_edificio", false) == true)
@@ -2573,7 +2573,7 @@ func _seleccionar_companero_social(npc: Creature, presion_social: float) -> Crea
 		var tension := float(relacion.get("tension", 0.0))
 		var colaboracion := float(relacion.get("colaboracion", 0.0))
 		var motivos_npc := _obtener_motivos_sociales_concretos(id_npc, id_candidato)
-		var motivo_concreto := (
+		var motivo_concreto: bool = (
 			(motivos_npc.get("promesa", false) == true)
 			or (motivos_npc.get("asunto", false) == true)
 			or (motivos_npc.get("noticia", false) == true)
