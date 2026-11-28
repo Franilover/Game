@@ -37,6 +37,8 @@ var _jugador_fisica_previa := true
 var _jugador_input_previo := true
 var _jugador_unhandled_previo := true
 var _herramienta_seleccionada := -1
+var _mueble_seleccionado := "silla"
+var _receta_seleccionada := ""
 var _bancal_seleccionado := "BancalOeste"
 var _seccion_biblioteca := "criaturas"
 var _seccion_expedicion := "primera_expedicion"
@@ -199,48 +201,9 @@ func _aplicar_fondo_seccion_boton(panel: PanelContainer) -> void:
 
 
 func _construir_forja() -> void:
-	var distribucion := HBoxContainer.new()
-	distribucion.add_theme_constant_override("separation", 8)
-	distribucion.custom_minimum_size = Vector2(440, 260)
-	_contenido.add_child(distribucion)
-
-	var panel_herramientas := PanelContainer.new()
-	panel_herramientas.custom_minimum_size = Vector2(132, 0)
-	panel_herramientas.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	distribucion.add_child(panel_herramientas)
-	PIXEL_UI_THEME.apply(panel_herramientas, false)
-
-	var scroll_lista := ScrollContainer.new()
-	scroll_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll_lista.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll_lista.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	panel_herramientas.add_child(scroll_lista)
-
-	var lista := GridContainer.new()
-	lista.columns = 2
-	lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	lista.add_theme_constant_override("h_separation", 5)
-	lista.add_theme_constant_override("v_separation", 5)
-	scroll_lista.add_child(lista)
-
-	var panel_detalle := PanelContainer.new()
-	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	distribucion.add_child(panel_detalle)
-	PIXEL_UI_THEME.apply(panel_detalle, false)
-
-	var scroll_detalle := ScrollContainer.new()
-	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	scroll_detalle.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	panel_detalle.add_child(scroll_detalle)
-
-	var detalle := VBoxContainer.new()
-	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalle.add_theme_constant_override("separation", 8)
-	scroll_detalle.add_child(detalle)
+	var layout := _crear_selector_edificio(220.0, 260.0)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
 
 	if not is_instance_valid(_inventario):
 		return
@@ -426,44 +389,63 @@ func _guardar_reparacion() -> void:
 
 
 func _construir_carpinteria() -> void:
+	var layout := _crear_selector_edificio(220.0, 260.0)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	var grupo := ButtonGroup.new()
+	var seleccion_valida := false
 	for mueble in CATALOGO_CARPINTERIA:
-		var tarjeta := PanelContainer.new()
-		tarjeta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		var fondo := PIXEL_UI_THEME.button_surface_style()
-		if fondo != null:
-			tarjeta.add_theme_stylebox_override("panel", fondo)
-		_contenido.add_child(tarjeta)
-
-		var fila := HBoxContainer.new()
-		fila.add_theme_constant_override("separation", 10)
-		tarjeta.add_child(fila)
-
-		var icono := TextureRect.new()
-		icono.texture = ITEM_ICON_RESOLVER.obtener_icono({"nombre": str(mueble.nombre)})
-		icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icono.custom_minimum_size = Vector2(54, 54)
-		fila.add_child(icono)
-
-		var etiqueta := Label.new()
-		etiqueta.text = "%s\n%d madera · %d monedas\nEn inventario: %d" % [
-			str(mueble.nombre), int(mueble.madera), int(mueble.precio),
-			_contar_item("carpinteria_mueble_" + str(mueble.id))
-		]
-		etiqueta.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		etiqueta.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
-		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
-		etiqueta.add_theme_constant_override("outline_size", 2)
-		fila.add_child(etiqueta)
-
-		var boton := Button.new()
-		boton.text = "Encargar"
-		boton.custom_minimum_size = Vector2(82, 38)
-		boton.disabled = not is_instance_valid(_inventario) or _contar_item(ITEM_MADERA) < int(mueble.madera) or GameState.obtener_dinero() < int(mueble.precio)
-		boton.pressed.connect(_encargar_mueble.bind(str(mueble.id)))
-		fila.add_child(boton)
+		var id := str(mueble.get("id", ""))
+		var seleccionado := id == _mueble_seleccionado
+		seleccion_valida = seleccion_valida or seleccionado
+		var boton := MENU_LAYOUT.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono({"nombre": str(mueble.get("nombre", ""))}), seleccionado, Vector2(58, 58))
+		boton.button_group = grupo
+		boton.tooltip_text = str(mueble.get("nombre", "Mueble"))
+		boton.pressed.connect(_seleccionar_mueble.bind(id))
+		lista.add_child(boton)
 		PIXEL_UI_THEME.apply(boton, false)
+	if not seleccion_valida and not CATALOGO_CARPINTERIA.is_empty():
+		_mueble_seleccionado = str(CATALOGO_CARPINTERIA[0].get("id", "silla"))
+	_mostrar_detalle_mueble(detalle)
+
+
+func _seleccionar_mueble(mueble_id: String) -> void:
+	_mueble_seleccionado = mueble_id
+	_actualizar()
+
+
+func _mostrar_detalle_mueble(detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	var definicion: Dictionary = {}
+	for mueble in CATALOGO_CARPINTERIA:
+		if str(mueble.get("id", "")) == _mueble_seleccionado:
+			definicion = mueble
+			break
+	if definicion.is_empty():
+		return
+	var icono := TextureRect.new()
+	icono.texture = ITEM_ICON_RESOLVER.obtener_icono({"nombre": str(definicion.get("nombre", ""))})
+	icono.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	icono.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	icono.custom_minimum_size = Vector2(0, 150)
+	detalle.add_child(icono)
+	_agregar_titulo_detalle(detalle, str(definicion.get("nombre", "Mueble")))
+	var info := Label.new()
+	info.text = "%d madera · %d monedas\nEn inventario: %d" % [
+		int(definicion.get("madera", 0)),
+		int(definicion.get("precio", 0)),
+		_contar_item("carpinteria_mueble_" + _mueble_seleccionado)
+	]
+	info.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	detalle.add_child(info)
+	_agregar_boton_detalle(
+		detalle,
+		"Encargar",
+		Callable(self, "_encargar_mueble").bind(_mueble_seleccionado),
+		not is_instance_valid(_inventario)
+		or _contar_item(ITEM_MADERA) < int(definicion.get("madera", 0))
+		or GameState.obtener_dinero() < int(definicion.get("precio", 0))
+)
 
 
 func _encargar_mueble(mueble_id: String) -> void:
@@ -521,13 +503,9 @@ func _encargar_mueble(mueble_id: String) -> void:
 func _construir_vivero() -> void:
 	_panel.custom_minimum_size = Vector2(430, 0)
 	var nombres := ["BancalOeste", "BancalCentro", "BancalEste", "BancalSurOeste", "BancalSurCentro"]
-	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 184.0, 268.0, 9)
+	var layout := _crear_selector_edificio(184.0, 268.0)
 	var lista := layout["list_content"] as GridContainer
-	var panel_lista := layout["list_panel"] as PanelContainer
-	var panel_detalle := layout["detail_panel"] as PanelContainer
 	var detalle := layout["detail_content"] as VBoxContainer
-	_aplicar_fondo_seccion_boton(panel_lista)
-	_aplicar_fondo_seccion_boton(panel_detalle)
 
 	var estados_variant: Variant = GameState.world_state.flags.get("vivero_bancales", {})
 	var estados: Dictionary = estados_variant if estados_variant is Dictionary else {}
@@ -622,8 +600,6 @@ func _cultivo_esta_maduro(cultivo: Dictionary) -> bool:
 
 
 func _construir_elaboracion_herbolario() -> void:
-	_panel.custom_minimum_size = Vector2(540, 0)
-
 	if not is_instance_valid(_world_items):
 		_agregar_texto("No se pudo acceder al catálogo compartido.")
 		return
@@ -632,25 +608,51 @@ func _construir_elaboracion_herbolario() -> void:
 		if not _world_items.recetas_cargadas.is_connected(_al_recetas_herbolario_cargadas):
 			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
 		return
-	var recetas_elaboracion: Array[Dictionary] = []
+	var recetas: Array[Dictionary] = []
 	for receta in _world_items.obtener_recetas():
-		# "herbolario" es la etiqueta histórica del extracto vegetal ya existente.
 		if _receta_es_de_estacion(receta, "herbolario_elaboracion") or _receta_es_de_estacion(receta, "herbolario"):
-			recetas_elaboracion.append(receta)
-	if recetas_elaboracion.is_empty():
+			recetas.append(receta)
+	if recetas.is_empty():
 		_agregar_texto("Sin fórmulas disponibles.")
 		return
-	var scroll_recetas := ScrollContainer.new()
-	scroll_recetas.custom_minimum_size = Vector2(0, 280)
-	scroll_recetas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_recetas.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
-	_contenido.add_child(scroll_recetas)
-	var detalle := VBoxContainer.new()
-	detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	detalle.add_theme_constant_override("separation", 7)
-	scroll_recetas.add_child(detalle)
-	for receta in recetas_elaboracion:
+	var layout := _crear_selector_edificio(220.0, 260.0)
+	var lista := layout["list_content"] as GridContainer
+	var detalle := layout["detail_content"] as VBoxContainer
+	var grupo := ButtonGroup.new()
+	var seleccion_valida := false
+	for receta in recetas:
+		var id := str(receta.get("id", receta.get("nombre", "")))
+		var seleccionado := id == _receta_seleccionada
+		seleccion_valida = seleccion_valida or seleccionado
+		var resultado_variant: Variant = receta.get("resultado", {})
+		var resultado: Dictionary = resultado_variant if resultado_variant is Dictionary else {}
+		var item := _world_items.buscar_item_por_id(str(resultado.get("item_id", "")))
+		var boton := MENU_LAYOUT.crear_boton_sprite(ITEM_ICON_RESOLVER.obtener_icono(item), seleccionado, Vector2(58, 58))
+		boton.button_group = grupo
+		boton.tooltip_text = str(receta.get("nombre", item.get("nombre", "Fórmula")))
+		boton.pressed.connect(_seleccionar_receta_elaboracion.bind(id))
+		lista.add_child(boton)
+		PIXEL_UI_THEME.apply(boton, false)
+	if not seleccion_valida:
+		_receta_seleccionada = str(recetas[0].get("id", recetas[0].get("nombre", "")))
+	_mostrar_detalle_receta_elaboracion(detalle)
+
+
+func _seleccionar_receta_elaboracion(receta_id: String) -> void:
+	_receta_seleccionada = receta_id
+	_actualizar()
+
+
+func _mostrar_detalle_receta_elaboracion(detalle: VBoxContainer) -> void:
+	_limpiar_detalle(detalle)
+	for receta in _world_items.obtener_recetas():
+		if not (_receta_es_de_estacion(receta, "herbolario_elaboracion") or _receta_es_de_estacion(receta, "herbolario")):
+			continue
+		var id := str(receta.get("id", receta.get("nombre", "")))
+		if id != _receta_seleccionada:
+			continue
 		_agregar_tarjeta_receta_herbolario(receta, detalle)
+		return
 
 
 func _construir_procesamiento_herbolario() -> void:
@@ -670,13 +672,9 @@ func _construir_procesamiento_herbolario_impl() -> void:
 			_world_items.recetas_cargadas.connect(_al_recetas_herbolario_cargadas, CONNECT_ONE_SHOT)
 		return
 
-	var layout := MENU_LAYOUT.crear_selector_dos_paneles(_contenido, 180.0, 260.0, 10)
+	var layout := _crear_selector_edificio(220.0, 260.0)
 	var lista := layout["list_content"] as GridContainer
-	var panel_lista := layout["list_panel"] as PanelContainer
-	var panel_detalle := layout["detail_panel"] as PanelContainer
 	var detalle := layout["detail_content"] as VBoxContainer
-	_aplicar_fondo_seccion_boton(panel_lista)
-	_aplicar_fondo_seccion_boton(panel_detalle)
 
 	var vistos: Dictionary = {}
 	var seleccion_inicial: Dictionary = {}
