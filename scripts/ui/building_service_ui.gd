@@ -31,6 +31,8 @@ var _inventario: InventoryController
 var _world_items: GarliaWorldItems
 var _panel: PanelContainer
 var _contenido: VBoxContainer
+var _barra_superior: HBoxContainer
+var _saldo_superior: Label
 var _estado: Label
 var _jugador: Node
 var _jugador_fisica_previa := true
@@ -94,6 +96,22 @@ func _crear_interfaz() -> void:
 	margen.add_theme_constant_override("margin_bottom", 12)
 	_panel.add_child(margen)
 
+	_barra_superior = HBoxContainer.new()
+	_barra_superior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_barra_superior.alignment = BoxContainer.ALIGNMENT_END
+	margen.add_child(_barra_superior)
+
+	_saldo_superior = Label.new()
+	_saldo_superior.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
+	_barra_superior.add_child(_saldo_superior)
+
+	var cerrar_superior := Button.new()
+	cerrar_superior.text = "×"
+	cerrar_superior.custom_minimum_size = Vector2(32, 32)
+	cerrar_superior.pressed.connect(cerrar_interfaz)
+	_barra_superior.add_child(cerrar_superior)
+	PIXEL_UI_THEME.apply(cerrar_superior, false)
+
 	var scroll_contenido := ScrollContainer.new()
 	var alto_viewport: float = get_viewport().get_visible_rect().size.y
 	scroll_contenido.custom_minimum_size = Vector2(0.0, minf(440.0, maxf(180.0, alto_viewport - 72.0)))
@@ -140,29 +158,8 @@ func _actualizar() -> void:
 			_: titulo.text = "EDIFICIO"
 		_contenido.add_child(titulo)
 
-	if _tipo != "vivero":
-		if _tipo == "carpinteria":
-			var fila_saldo := HBoxContainer.new()
-			fila_saldo.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			var espacio := Control.new()
-			espacio.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-			fila_saldo.add_child(espacio)
-			var saldo := Label.new()
-			saldo.text = "%d" % GameState.obtener_dinero()
-			saldo.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
-			fila_saldo.add_child(saldo)
-			var cerrar_superior := Button.new()
-			cerrar_superior.text = "×"
-			cerrar_superior.custom_minimum_size = Vector2(32, 32)
-			cerrar_superior.pressed.connect(cerrar_interfaz)
-			fila_saldo.add_child(cerrar_superior)
-			PIXEL_UI_THEME.apply(cerrar_superior, false)
-			_contenido.add_child(fila_saldo)
-		else:
-			var saldo := Label.new()
-			saldo.text = "%d" % GameState.obtener_dinero()
-			saldo.size_flags_horizontal = Control.SIZE_SHRINK_END
-			_contenido.add_child(saldo)
+	_saldo_superior.visible = _tipo != "vivero"
+	_saldo_superior.text = "%d" % GameState.obtener_dinero()
 
 	match _tipo:
 		"cuartel": _construir_menu_cuartel()
@@ -181,13 +178,6 @@ func _actualizar() -> void:
 		"escuela": _construir_escuela()
 		"clinica": _construir_clinica()
 
-	if _tipo in ["cuartel_licencia", "cuartel_armas", "cuartel_entrenamiento"]:
-		var volver := Button.new()
-		volver.text = "Volver al cuartel"
-		volver.pressed.connect(_volver_menu_cuartel)
-		_contenido.add_child(volver)
-		PIXEL_UI_THEME.apply(volver, false)
-
 	_contenido.add_child(_estado)
 	# Los textos informativos conservan contraste aunque el tema global cambie.
 	for nodo in _contenido.find_children("*", "Label", true, false):
@@ -195,13 +185,6 @@ func _actualizar() -> void:
 		etiqueta.add_theme_color_override("font_color", Color("#FFF3D6"))
 		etiqueta.add_theme_color_override("font_outline_color", Color("#302014"))
 		etiqueta.add_theme_constant_override("outline_size", 2)
-	if _tipo != "carpinteria":
-		var cerrar := Button.new()
-		cerrar.text = "Cerrar"
-		cerrar.custom_minimum_size = Vector2(0, 34)
-		cerrar.pressed.connect(cerrar_interfaz)
-		_contenido.add_child(cerrar)
-		PIXEL_UI_THEME.apply(cerrar, false)
 	call_deferred("_ajustar_menu_al_viewport")
 
 
