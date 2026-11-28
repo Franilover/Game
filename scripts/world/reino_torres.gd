@@ -1356,8 +1356,30 @@ func teletransportar_admin_a_edificio(edificio_id: String, servicio: String = ""
 	if not _interior_activo:
 		Events.notification_pushed.emit("No se pudo acceder al interior del edificio.")
 		return
-	if not servicio.is_empty() and servicio != "cuartel":
-		call_deferred("_abrir_menu_servicio_edificio", servicio)
+	if servicio.is_empty() or servicio == "cuartel":
+		return
+	match servicio:
+		"laboratorio_oris":
+			call_deferred("_interactuar_estacion_laboratorio", _jugador, "examen")
+		"laboratorio_forja":
+			call_deferred("_interactuar_estacion_laboratorio", _jugador, "forja_inspeccion")
+		"archivo":
+			call_deferred("_abrir_archivo_desde_admin")
+		"posada":
+			call_deferred("_mostrar_menu_posada", "principal")
+		_:
+			call_deferred("_abrir_menu_servicio_edificio", servicio)
+
+
+func _abrir_archivo_desde_admin() -> void:
+	if get_tree().get_first_node_in_group("royal_archive_ui") != null:
+		return
+	var interfaz := ROYAL_ARCHIVE_UI_SCRIPT.new() as CanvasLayer
+	if not is_instance_valid(interfaz):
+		return
+	interfaz.call("configurar_vista", "documentos_personajes")
+	interfaz.add_to_group("royal_archive_ui")
+	get_tree().root.add_child(interfaz)
 
 
 func _entrar_al_interior(entrada: Dictionary) -> void:
