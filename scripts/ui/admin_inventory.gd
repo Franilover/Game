@@ -128,6 +128,8 @@ func _actualizar_visibilidad() -> void:
 		_al_mundo_actualizado_dialogos()
 	else:
 		_cargar_lista()
+		if _modo == "edificios":
+			_mostrar_detalle()
 	_actualizar_panel_tiempo()
 
 
