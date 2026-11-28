@@ -252,6 +252,7 @@ func _exit_tree() -> void:
 
 
 func _ready() -> void:
+	add_to_group("torres_reino")
 	# Los dos accesos laterales quedan cerrados: no abren selector ni cambian de zona.
 	if is_instance_valid(_expedition_entrance):
 		_expedition_entrance.set_deferred("monitoring", false)
@@ -1333,6 +1334,30 @@ func obtener_posicion_exterior_para_viaje() -> Vector2:
 	if is_instance_valid(_jugador):
 		return _jugador.global_position
 	return Vector2.ZERO
+
+
+func teletransportar_admin_a_edificio(edificio_id: String, servicio: String = "") -> void:
+	if not is_instance_valid(_jugador):
+		_jugador = get_tree().get_first_node_in_group("player") as Node2D
+	if not is_instance_valid(_jugador):
+		Events.notification_pushed.emit("No se encontró al jugador para el traslado.")
+		return
+	var entrada: Dictionary = {}
+	for registro in ENTRADAS:
+		if str(registro.get("id", "")) == edificio_id:
+			entrada = registro.duplicate(true)
+			break
+	if entrada.is_empty():
+		Events.notification_pushed.emit("Ese edificio no tiene una entrada registrada.")
+		return
+	if _interior_activo:
+		_salir_del_interior()
+	_entrar_al_interior(entrada)
+	if not _interior_activo:
+		Events.notification_pushed.emit("No se pudo acceder al interior del edificio.")
+		return
+	if not servicio.is_empty() and servicio != "cuartel":
+		call_deferred("_abrir_menu_servicio_edificio", servicio)
 
 
 func _entrar_al_interior(entrada: Dictionary) -> void:
