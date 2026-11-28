@@ -96,10 +96,19 @@ func _crear_interfaz() -> void:
 	margen.add_theme_constant_override("margin_bottom", 12)
 	_panel.add_child(margen)
 
+	# MarginContainer admite un único hijo. La columna organiza la barra
+	# superior y el área desplazable sin solaparlas.
+	var columna_principal := VBoxContainer.new()
+	columna_principal.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna_principal.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	columna_principal.add_theme_constant_override("separation", 8)
+	margen.add_child(columna_principal)
+
 	_barra_superior = HBoxContainer.new()
 	_barra_superior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_barra_superior.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
 	_barra_superior.alignment = BoxContainer.ALIGNMENT_END
-	margen.add_child(_barra_superior)
+	columna_principal.add_child(_barra_superior)
 
 	var saldo_panel := PanelContainer.new()
 	var fondo_saldo := PIXEL_UI_THEME.button_surface_style()
@@ -130,7 +139,7 @@ func _crear_interfaz() -> void:
 	scroll_contenido.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_contenido.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll_contenido.vertical_scroll_mode = ScrollContainer.SCROLL_MODE_AUTO
-	margen.add_child(scroll_contenido)
+	columna_principal.add_child(scroll_contenido)
 
 	_contenido = VBoxContainer.new()
 	_contenido.add_theme_constant_override("separation", 7)
