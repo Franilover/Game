@@ -78,12 +78,23 @@ func _crear_interfaz() -> void:
 	encabezado.add_child(cerrar)
 	PIXEL_UI_THEME.apply(cerrar, false)
 
+	var saldo_panel := PanelContainer.new()
+	saldo_panel.size_flags_horizontal = Control.SIZE_SHRINK_END
+	var fondo_saldo := PIXEL_UI_THEME.button_surface_style()
+	if fondo_saldo != null:
+		saldo_panel.add_theme_stylebox_override("panel", fondo_saldo)
+	var saldo_margen := MarginContainer.new()
+	saldo_margen.add_theme_constant_override("margin_left", 8)
+	saldo_margen.add_theme_constant_override("margin_top", 4)
+	saldo_margen.add_theme_constant_override("margin_right", 8)
+	saldo_margen.add_theme_constant_override("margin_bottom", 4)
+	saldo_panel.add_child(saldo_margen)
 	_saldo = Label.new()
 	_saldo.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
 	_saldo.add_theme_color_override("font_color", Color("#E8C98F"))
 	_saldo.add_theme_font_size_override("font_size", 11)
-	_saldo.add_theme_font_size_override("font_size", 11)
-	contenido.add_child(_saldo)
+	saldo_margen.add_child(_saldo)
+	contenido.add_child(saldo_panel)
 
 	var pestanas := HBoxContainer.new()
 	contenido.add_child(pestanas)
