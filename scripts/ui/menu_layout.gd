@@ -54,19 +54,19 @@ static func crear_selector_dos_paneles(
 	distribucion.add_theme_constant_override("separation", separacion)
 	distribucion.custom_minimum_size = Vector2(0.0, alto_minimo)
 	distribucion.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	# El selector conserva su altura solicitada; no debe estirarse para llenar
-	# todo el ScrollContainer que lo contiene.
-	distribucion.size_flags_vertical = Control.SIZE_FILL
+	# El alto indicado es el mínimo; el selector crece hasta ocupar el
+	# espacio interior que le ofrece el menú flotante.
+	distribucion.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	padre.add_child(distribucion)
 
 	var panel_lista := PanelContainer.new()
 	panel_lista.custom_minimum_size = Vector2(ancho_lista, alto_minimo)
-	panel_lista.size_flags_vertical = Control.SIZE_FILL
+	panel_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	distribucion.add_child(panel_lista)
 
 	var scroll_lista := ScrollContainer.new()
 	scroll_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_lista.size_flags_vertical = Control.SIZE_FILL
+	scroll_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_lista.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel_lista.add_child(scroll_lista)
 
@@ -75,23 +75,25 @@ static func crear_selector_dos_paneles(
 	contenido_lista.add_theme_constant_override("h_separation", 4)
 	contenido_lista.add_theme_constant_override("v_separation", 4)
 	contenido_lista.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contenido_lista.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_lista.add_child(contenido_lista)
 
 	var panel_detalle := PanelContainer.new()
 	panel_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	panel_detalle.custom_minimum_size.y = alto_minimo
-	panel_detalle.size_flags_vertical = Control.SIZE_FILL
+	panel_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	distribucion.add_child(panel_detalle)
 
 	var scroll_detalle := ScrollContainer.new()
 	scroll_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scroll_detalle.size_flags_vertical = Control.SIZE_FILL
+	scroll_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_detalle.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	panel_detalle.add_child(scroll_detalle)
 
 	var contenido_detalle := VBoxContainer.new()
 	contenido_detalle.add_theme_constant_override("separation", 6)
 	contenido_detalle.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	contenido_detalle.size_flags_vertical = Control.SIZE_EXPAND_FILL
 	scroll_detalle.add_child(contenido_detalle)
 
 	return {
