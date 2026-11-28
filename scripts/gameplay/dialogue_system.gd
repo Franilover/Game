@@ -745,12 +745,13 @@ func _buscar_npc_hablante(nombre_hablante: String) -> Creature:
 	if is_instance_valid(_fuente):
 		if buscado in [_fuente.get_nombre().strip_edges().to_lower(), _fuente.get_nombre_visual().strip_edges().to_lower()]:
 			return _fuente
-	for nodo in get_tree().get_nodes_in_group("torres_game_npc"):
-		if not nodo is Creature or not is_instance_valid(nodo):
-			continue
-		var npc := nodo as Creature
-		if buscado in [npc.get_nombre().strip_edges().to_lower(), npc.get_nombre_visual().strip_edges().to_lower()]:
-			return npc
+	for grupo_npc in ["torres_game_npc", "froslia_game_npc"]:
+		for nodo in get_tree().get_nodes_in_group(grupo_npc):
+			if not nodo is Creature or not is_instance_valid(nodo):
+				continue
+			var npc := nodo as Creature
+			if buscado in [npc.get_nombre().strip_edges().to_lower(), npc.get_nombre_visual().strip_edges().to_lower()]:
+				return npc
 	return null
 
 
@@ -851,19 +852,33 @@ func _actualizar_retrato(hablante: String) -> void:
 	var textura: Texture2D = null
 	if is_instance_valid(npc_retrato):
 		var ruta_personalizada := str(npc_retrato.datos.get("portrait_path", "")).strip_edges()
-		if ruta_personalizada.begins_with("res://assets/art/kingdom/Froslia/Personajes/Heads/") and ResourceLoader.exists(ruta_personalizada):
+		# Los retratos pueden pertenecer al paquete artístico de cualquier reino.
+		# Se valida el recurso sin asumir una única carpeta ni capitalización.
+		if (
+			ruta_personalizada.begins_with("res://assets/art/kingdom/")
+			and ruta_personalizada.contains("/Personajes/")
+			and ResourceLoader.exists(ruta_personalizada)
+		):
 			textura = ResourceLoader.load(ruta_personalizada) as Texture2D
+
+	var carpetas_retratos := [
+		"res://assets/art/kingdom/Torres/Personajes/heads/",
+		"res://assets/art/kingdom/Froslia/Personajes/Heads/"
+	]
 	for nombre_retrato in nombres_retrato:
 		if textura != null:
 			break
 		if nombre_retrato.is_empty() or nombre_retrato.contains("/") or nombre_retrato.contains("\\"):
 			continue
-		for extension in [".png", ".PNG"]:
-			var ruta: String = "res://assets/art/characters/heads/" + nombre_retrato + str(extension)
-			if not FileAccess.file_exists(ruta) and not ResourceLoader.exists(ruta):
-				continue
-			var recurso_retrato: Resource = ResourceLoader.load(ruta)
-			textura = recurso_retrato as Texture2D
+		for carpeta in carpetas_retratos:
+			for extension in [".png", ".PNG"]:
+				var ruta: String = carpeta + nombre_retrato + str(extension)
+				if not FileAccess.file_exists(ruta) and not ResourceLoader.exists(ruta):
+					continue
+				var recurso_retrato: Resource = ResourceLoader.load(ruta)
+				textura = recurso_retrato as Texture2D
+				if textura != null:
+					break
 			if textura != null:
 				break
 		if textura != null:
