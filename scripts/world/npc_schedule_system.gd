@@ -1476,7 +1476,7 @@ func _actualizar_rutina_interior(npc: Creature, edificio_id: String, minutos: in
 		return
 	if edificio_id == "castillo":
 		return
-	var interior_activo := bool(_zona.get("_interior_activo")) if is_instance_valid(_zona) else false
+	var interior_activo := (_zona.get("_interior_activo") == true) if is_instance_valid(_zona) else false
 	var interior_actual := str(_zona.get("_entrada_interior_id")) if is_instance_valid(_zona) else ""
 	var movimiento := npc.get_node_or_null("CreatureMovement") as CreatureMovement
 	var padre_npc := npc.get_parent()
