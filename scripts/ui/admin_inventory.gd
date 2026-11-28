@@ -49,6 +49,8 @@ var _botones_pestana_narrativa: Dictionary = {}
 var _escenario_debug: Dictionary = {}
 var _controles_debug: Dictionary = {}
 var _resultado_debug: VBoxContainer = null
+var _edificio_seleccionado: String = "forja"
+var _edificios_admin: Array[Dictionary] = []
 
 
 func _ready() -> void:
@@ -139,7 +141,7 @@ func _crear_ui() -> void:
 	encabezado.add_theme_constant_override("separation", 3)
 	titulo_columna.add_child(encabezado)
 
-	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["aldeanos", "Aldeanos"], ["dialogos", "Diálogos"], ["tiempo", "Tiempo"]]:
+	for entrada in [["criaturas", "Criaturas"], ["objetos", "Objetos"], ["aldeanos", "Aldeanos"], ["dialogos", "Diálogos"], ["edificios", "Edificios"], ["tiempo", "Tiempo"]]:
 		var boton := Button.new()
 		boton.text = str(entrada[1])
 		boton.toggle_mode = true
@@ -274,8 +276,127 @@ func _cargar_lista() -> void:
 		_cargar_objetos()
 	elif _modo == "dialogos":
 		_cargar_dialogos()
+	elif _modo == "edificios":
+		_cargar_edificios()
 	else:
 		_cargar_aldeanos()
+
+
+func _cargar_edificios() -> void:
+	_edificios_admin = [
+		{"id":"castillo","nombre":"Castillo de Torres","sprite":"Castillo.png","acciones":[]},
+		{"id":"panaderia","nombre":"Panadería","sprite":"Panaderia.png","acciones":[]},
+		{"id":"posada","nombre":"Posada","sprite":"Posada.png","acciones":[{"nombre":"Recepción y estancia","servicio":"posada"}]},
+		{"id":"forja","nombre":"Forja","sprite":"Forja.png","acciones":[{"nombre":"Reparar herramientas","servicio":"forja"}]},
+		{"id":"casa_estudio","nombre":"Estudio Oris","sprite":"Casa_de_Estudio_Oris.png","acciones":[{"nombre":"Analizar muestras","servicio":"laboratorio"}]},
+		{"id":"carpinteria","nombre":"Carpintería","sprite":"Carpinteria.png","acciones":[{"nombre":"Encargar muebles","servicio":"carpinteria"}]},
+		{"id":"herbolario","nombre":"Herbolario","sprite":"Herbolario.png","acciones":[{"nombre":"Elaborar infusiones y remedios","servicio":"herbolario_elaboracion"},{"nombre":"Secar y triturar materiales","servicio":"herbolario_procesamiento"}]},
+		{"id":"vivero","nombre":"Vivero","sprite":"Vivero.png","acciones":[{"nombre":"Gestionar bancales","servicio":"vivero"}]},
+		{"id":"biblioteca","nombre":"Biblioteca","sprite":"Biblioteca.png","acciones":[{"nombre":"Consultar biblioteca","servicio":"biblioteca"}]},
+		{"id":"archivo_real","nombre":"Archivo Real","sprite":"Archivo_Real.png","acciones":[{"nombre":"Consultar archivo","servicio":"archivo"}]},
+		{"id":"centro_expediciones","nombre":"Centro de Expediciones","sprite":"Centro de Expediciones.png","acciones":[{"nombre":"Mesa de expediciones","servicio":"centro_expediciones"}]},
+		{"id":"clinica","nombre":"Clínica","sprite":"Clinica.png","acciones":[{"nombre":"Tratamientos","servicio":"clinica"}]},
+		{"id":"cuartel","nombre":"Cuartel de la Guardia","sprite":"Cuartel_de_la_Guardia.png","acciones":[{"nombre":"Licencias y entrenamiento","servicio":"cuartel"}]},
+		{"id":"casa_comercio","nombre":"Casa de Comercio","sprite":"Casa_de_Comercio.png","acciones":[{"nombre":"Puesto de comercio","servicio":"comercio"}]},
+		{"id":"taberna","nombre":"Taberna","sprite":"Taberna.png","acciones":[{"nombre":"Sala común","servicio":"taberna"}]},
+		{"id":"escuela","nombre":"Escuela de Oficios","sprite":"Escuela.png","acciones":[{"nombre":"Consultar lecciones","servicio":"escuela"}]},
+		{"id":"registro","nombre":"Registro de la Puerta","sprite":"Registro_de_la_Puerta.png","acciones":[{"nombre":"Solicitar pasaje","servicio":"pasaje_exterior"}]},
+		{"id":"sala_consejo","nombre":"Sala del Consejo","sprite":"Sala_del_Consejo.png","acciones":[]},
+		{"id":"reparaciones","nombre":"Taller de Reparaciones","sprite":"Taller_de_Reparaciones.png","acciones":[]},
+		{"id":"granero","nombre":"Granero","sprite":"Granero.png","acciones":[]},
+		{"id":"molino","nombre":"Molino","sprite":"Molino.png","acciones":[]},
+		{"id":"corrales","nombre":"Corrales","sprite":"Corrales.png","acciones":[]}
+	]
+	var seleccion_valida := false
+	for edificio in _edificios_admin:
+		var id := str(edificio.get("id", ""))
+		var boton := Button.new()
+		boton.text = str(edificio.get("nombre", id))
+		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
+		boton.custom_minimum_size = Vector2(0, 34)
+		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		boton.button_pressed = id == _edificio_seleccionado
+		boton.toggle_mode = true
+		boton.pressed.connect(_seleccionar_edificio_admin.bind(id))
+		PIXEL_UI_THEME.apply(boton, false)
+		_lista.add_child(boton)
+		seleccion_valida = seleccion_valida or id == _edificio_seleccionado
+	if not seleccion_valida and not _edificios_admin.is_empty():
+		_edificio_seleccionado = str(_edificios_admin[0].get("id", "castillo"))
+
+
+func _seleccionar_edificio_admin(edificio_id: String) -> void:
+	_edificio_seleccionado = edificio_id
+	_mostrar_detalle()
+
+
+func _mostrar_detalle_edificio() -> void:
+	_limpiar_detalle()
+	_boton_accion.visible = false
+	_cantidad.visible = false
+	var edificio: Dictionary = {}
+	for entrada in _edificios_admin:
+		if str(entrada.get("id", "")) == _edificio_seleccionado:
+			edificio = entrada
+			break
+	if edificio.is_empty():
+		_estado.visible = true
+		_estado.text = "Selecciona un edificio."
+		return
+	_estado.visible = false
+	var ruta := "res://assets/art/kingdom/Torres/Edificios/" + str(edificio.get("sprite", ""))
+	var textura := load(ruta) as Texture2D
+	var imagen := TextureRect.new()
+	imagen.custom_minimum_size = Vector2(0, 172)
+	imagen.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	imagen.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	imagen.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	imagen.texture_filter = CanvasItem.TEXTURE_FILTER_NEAREST
+	imagen.texture = textura
+	_detalle.add_child(imagen)
+	var titulo := Label.new()
+	titulo.text = str(edificio.get("nombre", "Edificio"))
+	titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	titulo.add_theme_font_size_override("font_size", 16)
+	_detalle.add_child(titulo)
+	var teletransporte := Button.new()
+	teletransporte.text = "Teletransportarme"
+	teletransporte.custom_minimum_size = Vector2(0, 30)
+	teletransporte.pressed.connect(_teletransportar_a_edificio_admin.bind(_edificio_seleccionado, ""))
+	PIXEL_UI_THEME.apply(teletransporte, false)
+	_detalle.add_child(teletransporte)
+	var subtitulo := Label.new()
+	subtitulo.text = "Muebles y funciones"
+	subtitulo.add_theme_font_size_override("font_size", 12)
+	_detalle.add_child(subtitulo)
+	var acciones_variant: Variant = edificio.get("acciones", [])
+	if acciones_variant is Array:
+		for accion_variant in acciones_variant as Array:
+			if not accion_variant is Dictionary:
+				continue
+			var accion := accion_variant as Dictionary
+			var boton := Button.new()
+			boton.text = str(accion.get("nombre", "Abrir"))
+			boton.custom_minimum_size = Vector2(0, 28)
+			boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+			boton.pressed.connect(_teletransportar_a_edificio_admin.bind(_edificio_seleccionado, str(accion.get("servicio", ""))))
+			PIXEL_UI_THEME.apply(boton, false)
+			_detalle.add_child(boton)
+	if (acciones_variant as Array).is_empty():
+		var vacio := Label.new()
+		vacio.text = "Sin funciones interactivas registradas."
+		vacio.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		_detalle.add_child(vacio)
+
+
+func _teletransportar_a_edificio_admin(edificio_id: String, servicio: String) -> void:
+	var reino := get_tree().get_first_node_in_group("torres_reino")
+	if not is_instance_valid(reino) or not reino.has_method("teletransportar_admin_a_edificio"):
+		Events.notification_pushed.emit("No se encontró el reino activo de Torres.")
+		return
+	reino.call("teletransportar_admin_a_edificio", edificio_id, servicio)
+	if servicio.is_empty():
+		Events.notification_pushed.emit("Te has trasladado a " + edificio_id.replace("_", " ") + ".")
 
 
 func _cargar_criaturas() -> void:
@@ -712,6 +833,9 @@ func _mostrar_detalle() -> void:
 
 	if _modo == "dialogos":
 		_mostrar_detalle_dialogos()
+		return
+	if _modo == "edificios":
+		_mostrar_detalle_edificio()
 		return
 
 	_boton_accion.visible = true
