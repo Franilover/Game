@@ -289,11 +289,11 @@ func _cargar_edificios() -> void:
 		{"id":"castillo","nombre":"Castillo de Torres","sprite":"Castillo.png","acciones":[]},
 		{"id":"panaderia","nombre":"Panadería","sprite":"Panaderia.png","acciones":[]},
 		{"id":"posada","nombre":"Posada","sprite":"Posada.png","acciones":[{"nombre":"Recepción y estancia","servicio":"posada"}]},
-		{"id":"forja","nombre":"Forja","sprite":"Forja.png","acciones":[{"nombre":"Reparar herramientas","servicio":"forja"},{"nombre":"Estudio de materiales","servicio":"laboratorio_forja"}]},
-		{"id":"casa_estudio","nombre":"Estudio Oris","sprite":"Casa_de_Estudio_Oris.png","acciones":[{"nombre":"Analizar muestras","servicio":"laboratorio_oris"}]},
-		{"id":"carpinteria","nombre":"Carpintería","sprite":"Carpinteria.png","acciones":[{"nombre":"Encargar muebles","servicio":"carpinteria"}]},
-		{"id":"herbolario","nombre":"Herbolario","sprite":"Herbolario.png","acciones":[{"nombre":"Elaborar infusiones y remedios","servicio":"herbolario_elaboracion"},{"nombre":"Secar y triturar materiales","servicio":"herbolario_procesamiento"}]},
-		{"id":"vivero","nombre":"Vivero","sprite":"Vivero.png","acciones":[{"nombre":"Gestionar bancales","servicio":"vivero"}]},
+		{"id":"forja","nombre":"Forja","sprite":"Forja.png","acciones":[{"nombre":"Yunque · Reparar herramientas","servicio":"forja"},{"nombre":"Mesa de análisis","servicio":"laboratorio_forja"}]},
+		{"id":"casa_estudio","nombre":"Estudio Oris","sprite":"Casa_de_Estudio_Oris.png","acciones":[{"nombre":"Mesa de estudio · Analizar muestras","servicio":"laboratorio_oris"}]},
+		{"id":"carpinteria","nombre":"Carpintería","sprite":"Carpinteria.png","acciones":[{"nombre":"Banco de carpintería · Encargar muebles","servicio":"carpinteria"}]},
+		{"id":"herbolario","nombre":"Herbolario","sprite":"Herbolario.png","acciones":[{"nombre":"Mesa de elaboración · Infusiones y remedios","servicio":"herbolario_elaboracion"},{"nombre":"Mesa de procesamiento · Secar y triturar","servicio":"herbolario_procesamiento"}]},
+		{"id":"vivero","nombre":"Vivero","sprite":"Vivero.png","acciones":[{"nombre":"Bancales · Cultivos y riego","servicio":"vivero"}]},
 		{"id":"biblioteca","nombre":"Biblioteca","sprite":"Biblioteca.png","acciones":[{"nombre":"Consultar biblioteca","servicio":"biblioteca"}]},
 		{"id":"archivo_real","nombre":"Archivo Real","sprite":"Archivo_Real.png","acciones":[{"nombre":"Documentos de personajes","servicio":"archivo_personajes"},{"nombre":"Historia de Torres","servicio":"archivo_historia"}]},
 		{"id":"centro_expediciones","nombre":"Centro de Expediciones","sprite":"Centro de Expediciones.png","acciones":[{"nombre":"Mesa de expediciones","servicio":"centro_expediciones"}]},
@@ -310,6 +310,7 @@ func _cargar_edificios() -> void:
 		{"id":"corrales","nombre":"Corrales","sprite":"Corrales.png","acciones":[]}
 	]
 	var seleccion_valida := false
+	var grupo_edificios := ButtonGroup.new()
 	for edificio in _edificios_admin:
 		var id := str(edificio.get("id", ""))
 		var boton := Button.new()
@@ -324,6 +325,7 @@ func _cargar_edificios() -> void:
 		boton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.button_pressed = id == _edificio_seleccionado
 		boton.toggle_mode = true
+		boton.button_group = grupo_edificios
 		boton.pressed.connect(_seleccionar_edificio_admin.bind(id))
 		PIXEL_UI_THEME.apply(boton, false)
 		_lista.add_child(boton)
