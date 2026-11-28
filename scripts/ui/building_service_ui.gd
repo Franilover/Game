@@ -1035,11 +1035,15 @@ func _abrir_enciclopedia(modo: String = "criaturas") -> void:
 	fondo.add_child(margen)
 	var columna := VBoxContainer.new()
 	margen.add_child(columna)
+	var barra_superior := HBoxContainer.new()
+	barra_superior.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	barra_superior.alignment = BoxContainer.ALIGNMENT_END
+	columna.add_child(barra_superior)
 	var cerrar := Button.new()
-	cerrar.text = "Volver a la Biblioteca"
-	cerrar.custom_minimum_size.y = 34
+	cerrar.text = "×"
+	cerrar.custom_minimum_size = Vector2(32, 32)
 	cerrar.pressed.connect(capa.queue_free)
-	columna.add_child(cerrar)
+	barra_superior.add_child(cerrar)
 	PIXEL_UI_THEME.apply(cerrar, false)
 	var enciclopedia := ENCYCLOPEDIA_UI_SCRIPT.new() as Control
 	enciclopedia.size_flags_horizontal = Control.SIZE_EXPAND_FILL
