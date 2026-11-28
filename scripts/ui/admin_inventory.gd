@@ -287,8 +287,8 @@ func _cargar_edificios() -> void:
 		{"id":"castillo","nombre":"Castillo de Torres","sprite":"Castillo.png","acciones":[]},
 		{"id":"panaderia","nombre":"Panadería","sprite":"Panaderia.png","acciones":[]},
 		{"id":"posada","nombre":"Posada","sprite":"Posada.png","acciones":[{"nombre":"Recepción y estancia","servicio":"posada"}]},
-		{"id":"forja","nombre":"Forja","sprite":"Forja.png","acciones":[{"nombre":"Reparar herramientas","servicio":"forja"}]},
-		{"id":"casa_estudio","nombre":"Estudio Oris","sprite":"Casa_de_Estudio_Oris.png","acciones":[{"nombre":"Analizar muestras","servicio":"laboratorio"}]},
+		{"id":"forja","nombre":"Forja","sprite":"Forja.png","acciones":[{"nombre":"Reparar herramientas","servicio":"forja"},{"nombre":"Estudio de materiales","servicio":"laboratorio_forja"}]},
+		{"id":"casa_estudio","nombre":"Estudio Oris","sprite":"Casa_de_Estudio_Oris.png","acciones":[{"nombre":"Analizar muestras","servicio":"laboratorio_oris"}]},
 		{"id":"carpinteria","nombre":"Carpintería","sprite":"Carpinteria.png","acciones":[{"nombre":"Encargar muebles","servicio":"carpinteria"}]},
 		{"id":"herbolario","nombre":"Herbolario","sprite":"Herbolario.png","acciones":[{"nombre":"Elaborar infusiones y remedios","servicio":"herbolario_elaboracion"},{"nombre":"Secar y triturar materiales","servicio":"herbolario_procesamiento"}]},
 		{"id":"vivero","nombre":"Vivero","sprite":"Vivero.png","acciones":[{"nombre":"Gestionar bancales","servicio":"vivero"}]},
@@ -313,8 +313,13 @@ func _cargar_edificios() -> void:
 		var boton := Button.new()
 		boton.text = str(edificio.get("nombre", id))
 		boton.alignment = HORIZONTAL_ALIGNMENT_LEFT
-		boton.custom_minimum_size = Vector2(0, 34)
+		boton.custom_minimum_size = Vector2(0, 42)
 		boton.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		var sprite_ruta := "res://assets/art/kingdom/Torres/Edificios/" + str(edificio.get("sprite", ""))
+		boton.icon = load(sprite_ruta) as Texture2D
+		boton.expand_icon = true
+		boton.icon_max_width = 34
+		boton.icon_alignment = HORIZONTAL_ALIGNMENT_LEFT
 		boton.button_pressed = id == _edificio_seleccionado
 		boton.toggle_mode = true
 		boton.pressed.connect(_seleccionar_edificio_admin.bind(id))
