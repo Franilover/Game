@@ -170,9 +170,21 @@ func _construir_interfaz() -> void:
 	encabezado.add_child(cerrar)
 	PIXEL_UI_THEME.apply(cerrar, false)
 
+	var balance_panel := PanelContainer.new()
+	balance_panel.size_flags_horizontal = Control.SIZE_SHRINK_END
+	var fondo_balance := PIXEL_UI_THEME.button_surface_style()
+	if fondo_balance != null:
+		balance_panel.add_theme_stylebox_override("panel", fondo_balance)
+	var balance_margen := MarginContainer.new()
+	balance_margen.add_theme_constant_override("margin_left", 8)
+	balance_margen.add_theme_constant_override("margin_top", 4)
+	balance_margen.add_theme_constant_override("margin_right", 8)
+	balance_margen.add_theme_constant_override("margin_bottom", 4)
+	balance_panel.add_child(balance_margen)
 	_balance = Label.new()
 	_balance.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-	columna.add_child(_balance)
+	balance_margen.add_child(_balance)
+	columna.add_child(balance_panel)
 
 	var separador := HSeparator.new()
 	columna.add_child(separador)
