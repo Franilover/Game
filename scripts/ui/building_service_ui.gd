@@ -43,9 +43,8 @@ var _mueble_seleccionado := "silla"
 var _receta_seleccionada := ""
 var _bancal_seleccionado := "BancalOeste"
 var _seccion_biblioteca := "criaturas"
-var _seccion_expedicion := "primera_expedicion"
 var _seccion_clinica := "basico"
-signal solicitar_selector_expediciones
+signal solicitar_destino_viaje(destino_id: String)
 signal solicitar_expedicion_saltus
 signal solicitar_exploracion_3d
 
@@ -161,7 +160,7 @@ func _actualizar() -> void:
 	_estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	_estado.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 
-	if _tipo not in ["forja", "carpinteria", "vivero", "herbolario_elaboracion", "herbolario_procesamiento", "herbolario"]:
+	if _tipo not in ["forja", "carpinteria", "vivero", "herbolario_elaboracion", "herbolario_procesamiento", "herbolario", "centro_expediciones"]:
 		var titulo := Label.new()
 		titulo.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		titulo.add_theme_font_size_override("font_size", 18)
@@ -1086,60 +1085,35 @@ func _abrir_enciclopedia(modo: String = "criaturas") -> void:
 
 
 func _construir_centro_expediciones() -> void:
+	var columnas := HBoxContainer.new()
+	columnas.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columnas.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columnas.add_theme_constant_override("separation", 28)
+	_contenido.add_child(columnas)
 
-	var layout := _crear_selector_edificio(160.0, 260.0)
-	var lista := layout["list_content"] as GridContainer
-	lista.columns = 1
-	var grupo_selector := ButtonGroup.new()
-	var detalle := layout["detail_content"] as VBoxContainer
-	_agregar_opcion_selector(lista, "Explorar", _seccion_expedicion == "explorar_3d", _seleccionar_seccion_expedicion.bind("explorar_3d", detalle), grupo_selector)
-	_agregar_opcion_selector(lista, "Primera\nexpedición", _seccion_expedicion == "primera_expedicion", _seleccionar_seccion_expedicion.bind("primera_expedicion", detalle), grupo_selector)
-	_agregar_opcion_selector(lista, "Saltus", _seccion_expedicion == "saltus", _seleccionar_seccion_expedicion.bind("saltus", detalle), grupo_selector)
-	_agregar_opcion_selector(lista, "Rutas\ny destinos", _seccion_expedicion == "rutas", _seleccionar_seccion_expedicion.bind("rutas", detalle), grupo_selector)
-	_agregar_opcion_selector(lista, "Bitácora", _seccion_expedicion == "bitacora", _seleccionar_seccion_expedicion.bind("bitacora", detalle), grupo_selector)
-	_mostrar_detalle_expedicion(_seccion_expedicion, detalle)
+	var columna_reinos := VBoxContainer.new()
+	columna_reinos.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna_reinos.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columna_reinos.add_theme_constant_override("separation", 10)
+	columnas.add_child(columna_reinos)
+	_agregar_titulo_detalle(columna_reinos, "Reinos")
+	_agregar_boton_detalle(columna_reinos, "Torres", _emitir_solicitud_destino_viaje.bind("torres"))
+	_agregar_boton_detalle(columna_reinos, "Froslia", _emitir_solicitud_destino_viaje.bind("froslia"))
+
+	var columna_expediciones := VBoxContainer.new()
+	columna_expediciones.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	columna_expediciones.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	columna_expediciones.add_theme_constant_override("separation", 10)
+	columnas.add_child(columna_expediciones)
+	_agregar_titulo_detalle(columna_expediciones, "Expediciones")
+	_agregar_boton_detalle(columna_expediciones, "Mundo abierto", _emitir_solicitud_destino_viaje.bind("mundo_abierto"))
+	_agregar_boton_detalle(columna_expediciones, "Saltus", _emitir_solicitud_expedicion_saltus)
+	_agregar_boton_detalle(columna_expediciones, "Desconocido (3D)", _emitir_solicitud_exploracion_3d)
 
 
-func _seleccionar_seccion_expedicion(id: String, detalle: VBoxContainer) -> void:
-	_seccion_expedicion = id
-	_mostrar_detalle_expedicion(id, detalle)
-
-
-func _mostrar_detalle_expedicion(id: String, detalle: VBoxContainer) -> void:
-	_limpiar_detalle(detalle)
-	match id:
-		"explorar_3d":
-			_agregar_titulo_detalle(detalle, "Exploración en primera persona")
-			_agregar_texto_detalle(detalle, "Entra en un entorno 3D y continúa usando tu partida, inventario y equipo habituales.")
-			_agregar_boton_detalle(detalle, "Entrar a explorar", _emitir_solicitud_exploracion_3d)
-		"primera_expedicion":
-			_agregar_titulo_detalle(detalle, "Primera expedición")
-			var finalizada := _primera_expedicion_finalizada()
-			var estado := Label.new()
-			estado.text = "Completada" if finalizada else "Disponible"
-			estado.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			detalle.add_child(estado)
-			_agregar_boton_detalle(detalle, "Ver destinos y salir", _emitir_solicitud_selector_expediciones, finalizada)
-		"saltus":
-			_agregar_titulo_detalle(detalle, "Saltus")
-			_agregar_texto_detalle(detalle, "Expedición lateral de plataformas. Explora el bosque y sus alturas.")
-			_agregar_boton_detalle(detalle, "Entrar a Saltus", _emitir_solicitud_expedicion_saltus)
-		"rutas":
-			_agregar_titulo_detalle(detalle, "Rutas y destinos")
-			var destinos := Label.new()
-			destinos.text = "Torres · Froslia · Mundo Abierto · Primera expedición · Saltus"
-			destinos.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-			detalle.add_child(destinos)
-			_agregar_boton_detalle(detalle, "Abrir selector de viajes", _emitir_solicitud_selector_expediciones)
-		"bitacora":
-			_agregar_titulo_detalle(detalle, "Bitácora del gremio")
-			var resumen := Label.new()
-			resumen.text = "Criaturas: %d\nBiomas: %d\nEcosistemas: %d\nHábitats: %d" % [
-				_contar_descubrimientos("criaturas"), _contar_descubrimientos("biomas"),
-				_contar_descubrimientos("ecosistemas"), _contar_descubrimientos("habitats")
-			]
-			detalle.add_child(resumen)
-			_agregar_boton_detalle(detalle, "Consultar registros", _abrir_enciclopedia.bind("biomas"))
+func _emitir_solicitud_destino_viaje(destino_id: String) -> void:
+	cerrar_interfaz()
+	solicitar_destino_viaje.emit(destino_id)
 
 
 func _construir_taberna() -> void:
@@ -1301,11 +1275,6 @@ func _aplicar_tratamiento_clinica(completo: bool) -> void:
 	GameState.call_deferred("_ejecutar_guardado_rapido")
 	_mostrar_estado("Tratamiento completado. Ya puedes volver a la aventura.")
 	_actualizar()
-
-
-func _emitir_solicitud_selector_expediciones() -> void:
-	cerrar_interfaz()
-	solicitar_selector_expediciones.emit()
 
 
 func _emitir_solicitud_expedicion_saltus() -> void:
